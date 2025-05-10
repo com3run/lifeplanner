@@ -1,0 +1,42 @@
+CREATE TABLE GoalEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    category TEXT NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    status TEXT NOT NULL,
+    timeline TEXT NOT NULL,
+    dueDate TEXT NOT NULL
+);
+
+selectAll:
+SELECT * FROM GoalEntity;
+
+insertGoal:
+INSERT INTO GoalEntity(id, category, title, description, status, timeline, dueDate)
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+selectGoalsByTimeline:
+SELECT * FROM GoalEntity
+WHERE timeline = ?;
+
+selectGoalsByCategory:
+SELECT * FROM GoalEntity
+WHERE category = ?;
+
+deleteGoalById:
+DELETE FROM GoalEntity
+WHERE id = ?;
+
+updateGoal:
+UPDATE GoalEntity
+SET
+  category = ?,
+  title = ?,
+  description = ?,
+  status = ?,
+  timeline = ?,
+  dueDate = ?
+WHERE id = ?;
+
+deleteAllGoals:
+DELETE FROM GoalEntity;
