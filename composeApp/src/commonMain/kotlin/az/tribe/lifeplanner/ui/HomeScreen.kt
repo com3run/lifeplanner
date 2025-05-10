@@ -120,6 +120,15 @@ fun HomeScreen(
                 .padding(innerPadding)
         ) {
             Spacer(modifier = Modifier.height(8.dp))
+//
+//            Button(
+//                onClick = {
+//                    throw RuntimeException("Test Crash") // Force a crash
+//
+//                },
+//            ){
+//                Text("Crash button")
+//            }
             TimelineTabs(
                 selected = selectedTimeline,
                 onSelect = {

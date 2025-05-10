@@ -27,6 +27,12 @@ uiTextGoogleFonts = "1.6.10"
 core-splashscreen = "1.0.1"
 accompanistSystemuicontroller = "0.30.1"
 
+googleGmsGoogleServices = "4.4.2"
+firebase-bom = "33.13.0"
+firebase-crashlytics-plugin = "3.0.3"
+#Gitlive
+firebase-gitlive-sdk = "2.1.0"
+
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activityCompose" }
 androidx-lifecycle-viewmodel = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-viewmodel", version.ref = "androidx-lifecycle" }
@@ -59,6 +65,9 @@ androidx-navigation-compose = { group = "androidx.navigation", name = "navigatio
 ui-text = { module = "org.jetbrains.compose.ui:ui-text", version.ref = "uiText" }
 ui-text-google-fonts = { module = "org.jetbrains.compose.ui:ui-text-google-fonts", version.ref = "uiTextGoogleFonts" }
 
+firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebase-bom" }
+firebase-android-crashlytics-ktx = { module = "com.google.firebase:firebase-crashlytics" }
+
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
@@ -68,3 +77,5 @@ composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "k
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlinxSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 sqlDelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }
+google-gms-google-services = { id = "com.google.gms.google-services", version.ref = "googleGmsGoogleServices" }
+firebase-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "firebase-crashlytics-plugin"}

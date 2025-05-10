@@ -13,6 +13,7 @@ import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import org.koin.compose.koinInject
 
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         enableEdgeToEdge()

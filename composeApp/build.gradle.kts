@@ -9,6 +9,8 @@ plugins {
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.kotlinxSerialization)
     alias(libs.plugins.sqlDelight)
+    alias(libs.plugins.google.gms.google.services)
+    alias(libs.plugins.firebase.crashlytics)
 }
 
 kotlin {
@@ -17,7 +19,7 @@ kotlin {
             jvmTarget.set(JvmTarget.JVM_11)
         }
     }
-    
+
     listOf(
         iosX64(),
         iosArm64(),
@@ -29,9 +31,9 @@ kotlin {
             linkerOpts.add("-lsqlite3")
         }
     }
-    
+
     sourceSets {
-        
+
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
@@ -41,7 +43,8 @@ kotlin {
             implementation(libs.ktor.client.android)
             implementation(libs.koin.android)
 
-            implementation (libs.accompanist.systemuicontroller)
+            implementation(libs.accompanist.systemuicontroller)
+
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -67,6 +70,7 @@ kotlin {
 
             implementation(libs.multiplatform.settings)
             implementation(libs.multiplatform.settings.no.arg)
+
         }
 
         iosMain.dependencies {
@@ -123,7 +127,8 @@ dependencies {
 }
 
 rootProject.plugins.withType(org.jetbrains.kotlin.gradle.targets.js.yarn.YarnPlugin::class.java) {
-    rootProject.the<YarnRootExtension>().yarnLockMismatchReport = YarnLockMismatchReport.WARNING // NONE | FAIL
+    rootProject.the<YarnRootExtension>().yarnLockMismatchReport =
+        YarnLockMismatchReport.WARNING // NONE | FAIL
     rootProject.the<YarnRootExtension>().reportNewYarnLock = false // true
     rootProject.the<YarnRootExtension>().yarnLockAutoReplace = false // true
 }
