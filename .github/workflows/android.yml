@@ -52,5 +52,5 @@ jobs:
           firebase appdistribution:distribute composeApp/build/outputs/bundle/release/composeApp-release.aab \
             --app ${{ secrets.FIREBASE_APP_ID }} \
             --token ${{ secrets.FIREBASE_TOKEN }} \
-            --groups "qa-testers" \
+            --groups "internal" \
             --release-notes "Latest release AAB from GitHub Actions"
