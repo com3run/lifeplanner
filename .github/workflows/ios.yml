@@ -1,0 +1,45 @@
+name: iOS CI/CD
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-and-distribute:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Xcode
+        run: sudo xcode-select -s /Applications/Xcode_15.0.app
+
+      - name: Install Fastlane
+        run: sudo gem install fastlane -NV
+
+      - name: Create Export Options Plist
+        run: |
+          echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?><plist version=\"1.0\"><dict><key>method</key><string>${{ secrets.EXPORT_METHOD }}</string></dict></plist>" > exportOptions.plist
+
+      - name: Build and export IPA
+        run: |
+          xcodebuild -project iosApp/iosApp.xcodeproj \
+            -scheme iosApp \
+            -sdk iphoneos \
+            -configuration Release \
+            -archivePath $PWD/build/App.xcarchive archive
+
+          xcodebuild -exportArchive \
+            -archivePath $PWD/build/App.xcarchive \
+            -exportOptionsPlist exportOptions.plist \
+            -exportPath $PWD/build
+
+      - name: Upload to TestFlight
+        uses: apple-actions/upload-testflight-build@v1
+        with:
+          issuer-id: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          key-id: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          private-key: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+          app-path: build/iosApp.ipa
