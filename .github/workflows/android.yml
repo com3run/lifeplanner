@@ -49,8 +49,11 @@ jobs:
 
       - name: Upload AAB to Firebase App Distribution
         run: |
+          echo "Starting Firebase App Distribution"
           firebase appdistribution:distribute composeApp/build/outputs/bundle/release/composeApp-release.aab \
             --app ${{ secrets.FIREBASE_APP_ID }} \
             --token ${{ secrets.FIREBASE_TOKEN }} \
-            --groups "internal" \
-            --release-notes "Latest release AAB from GitHub Actions"
+            --groups "internal,testers" \
+            --release-notes "GitHub Action Build: $(git log -1 --pretty=%B)" \
+            --debug
+          echo "Firebase Distribution upload completed"
