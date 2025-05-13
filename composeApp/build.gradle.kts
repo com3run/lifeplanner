@@ -92,14 +92,14 @@ sqldelight {
 }
 
 android {
-    signingConfigs {
-        create("release") {
-            storeFile = file("${rootDir}/lifeplanner.jks")
-            storePassword = project.property("RELEASE_STORE_PASSWORD") as String
-            keyAlias = project.property("RELEASE_KEY_ALIAS") as String
-            keyPassword = project.property("RELEASE_KEY_PASSWORD") as String
-        }
-    }
+//    signingConfigs {
+//        create("release") {
+//            storeFile = file("${rootDir}/lifeplanner.jks")
+//            storePassword = project.property("RELEASE_STORE_PASSWORD") as String
+//            keyAlias = project.property("RELEASE_KEY_ALIAS") as String
+//            keyPassword = project.property("RELEASE_KEY_PASSWORD") as String
+//        }
+//    }
     namespace = "az.tribe.lifeplanner"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
@@ -124,7 +124,7 @@ android {
         getByName("release") {
             isMinifyEnabled = true
             isShrinkResources = true
-            signingConfig = signingConfigs.getByName("release")
+//            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {
