@@ -92,6 +92,14 @@ sqldelight {
 }
 
 android {
+    signingConfigs {
+        create("release") {
+            storeFile = file("/Users/kamranmammadov/StudioProjects/Life Planner/lifeplanner.jks")
+            storePassword = project.property("RELEASE_STORE_PASSWORD") as String
+            keyAlias = project.property("RELEASE_KEY_ALIAS") as String
+            keyPassword = project.property("RELEASE_KEY_PASSWORD") as String
+        }
+    }
     namespace = "az.tribe.lifeplanner"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
@@ -105,6 +113,7 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
+
     }
     packaging {
         resources {
@@ -113,7 +122,9 @@ android {
     }
     buildTypes {
         getByName("release") {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {
