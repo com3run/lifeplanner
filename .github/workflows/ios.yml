@@ -2,8 +2,8 @@ name: iOS CI/CD
 
 on:
   push:
-    branches: [ main ]
-  workflow_dispatch:
+    branches: [ develop ]
+#  workflow_dispatch:
 
 jobs:
   build-and-distribute:
