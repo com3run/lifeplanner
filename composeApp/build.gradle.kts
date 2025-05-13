@@ -94,7 +94,7 @@ sqldelight {
 android {
     signingConfigs {
         create("release") {
-            storeFile = file("../lifeplanner.jks")
+            storeFile = file("${rootDir}/lifeplanner.jks")
             storePassword = project.property("RELEASE_STORE_PASSWORD") as String
             keyAlias = project.property("RELEASE_KEY_ALIAS") as String
             keyPassword = project.property("RELEASE_KEY_PASSWORD") as String
