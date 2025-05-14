@@ -5,15 +5,16 @@ CREATE TABLE GoalEntity (
     description TEXT NOT NULL,
     status TEXT NOT NULL,
     timeline TEXT NOT NULL,
-    dueDate TEXT NOT NULL
+    dueDate TEXT NOT NULL,
+    progress INTEGER NOT NULL DEFAULT 0
 );
 
 selectAll:
 SELECT * FROM GoalEntity;
 
 insertGoal:
-INSERT INTO GoalEntity(id, category, title, description, status, timeline, dueDate)
-VALUES (?, ?, ?, ?, ?, ?, ?);
+INSERT INTO GoalEntity(id, category, title, description, status, timeline, dueDate, progress)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
 
 selectGoalsByTimeline:
 SELECT * FROM GoalEntity
@@ -35,8 +36,30 @@ SET
   description = ?,
   status = ?,
   timeline = ?,
-  dueDate = ?
+  dueDate = ?,
+  progress = ?
+WHERE id = ?;
+
+updateGoalProgress:
+UPDATE GoalEntity
+SET progress = ?
 WHERE id = ?;
 
 deleteAllGoals:
 DELETE FROM GoalEntity;
+
+CREATE TABLE GoalHistoryEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    goalId TEXT NOT NULL,
+    field TEXT NOT NULL,
+    oldValue TEXT,
+    newValue TEXT,
+    changedAt TEXT NOT NULL
+);
+
+insertGoalHistory:
+INSERT INTO GoalHistoryEntity(id, goalId, field, oldValue, newValue, changedAt)
+VALUES (?, ?, ?, ?, ?, ?);
+
+getGoalHistory:
+SELECT * FROM GoalHistoryEntity WHERE goalId = ? ORDER BY changedAt DESC;

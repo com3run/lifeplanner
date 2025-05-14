@@ -1,5 +1,7 @@
 package az.tribe.lifeplanner.infrastructure
 
+import az.tribe.lifeplanner.domain.GoalChange
+
 import az.tribe.lifeplanner.database.LifePlannerDB
 import az.tribe.lifeplanner.di.DatabaseDriverFactory
 import az.tribe.lifeplanner.database.GoalEntity
@@ -43,7 +45,8 @@ class SharedDatabase(
                 description = goal.description,
                 status = goal.status,
                 timeline = goal.timeline,
-                dueDate = goal.dueDate
+                dueDate = goal.dueDate,
+                progress = goal.progress
             )
         }
     }
@@ -58,7 +61,8 @@ class SharedDatabase(
                     description = goal.description,
                     status = goal.status,
                     timeline = goal.timeline,
-                    dueDate = goal.dueDate
+                    dueDate = goal.dueDate,
+                    progress = goal.progress
                 )
             }
         }
@@ -91,8 +95,50 @@ class SharedDatabase(
                 status = goal.status,
                 timeline = goal.timeline,
                 dueDate = goal.dueDate,
+                progress = goal.progress,
                 id = goal.id
             )
+        }
+    }
+
+    suspend fun insertGoalHistory(
+        id: String,
+        goalId: String,
+        field: String,
+        oldValue: String?,
+        newValue: String,
+        changedAt: String
+    ) {
+        this { db ->
+            db.lifePlannerDBQueries.insertGoalHistory(
+                id = id,
+                goalId = goalId,
+                field_ = field,
+                oldValue = oldValue,
+                newValue = newValue,
+                changedAt = changedAt,
+            )
+        }
+    }
+
+    suspend fun getGoalHistory(goalId: String): List<GoalChange> {
+        return this { db ->
+            db.lifePlannerDBQueries.getGoalHistory(goalId).executeAsList().map {
+                GoalChange(
+                    id = it.id,
+                    goalId = it.goalId,
+                    field = it.field_,
+                    oldValue = it.oldValue,
+                    newValue = it.newValue?:"unknown",
+                    changedAt = it.changedAt
+                )
+            }
+        }
+    }
+
+    suspend fun updateGoalProgress(id: String, progress: Long) {
+        this { db ->
+            db.lifePlannerDBQueries.updateGoalProgress(progress = progress, id = id)
         }
     }
 }

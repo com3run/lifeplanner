@@ -1,5 +1,7 @@
 package az.tribe.lifeplanner
 
+import com.mmk.kmpnotifier.notification.NotifierManager
+import com.mmk.kmpnotifier.notification.configuration.NotificationPlatformConfiguration
 import platform.UIKit.UIDevice
 
 class IOSPlatform: Platform {
@@ -10,4 +12,11 @@ actual fun getPlatform(): Platform = IOSPlatform()
 
 
 actual fun onApplicationStartPlatformSpecific() {
+    NotifierManager.initialize(
+        NotificationPlatformConfiguration.Ios(
+            showPushNotification = true,
+            askNotificationPermissionOnStart = true,
+            notificationSoundName = "custom_notification_sound.wav"
+        )
+    )
 }

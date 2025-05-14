@@ -11,6 +11,7 @@ plugins {
     alias(libs.plugins.sqlDelight)
     alias(libs.plugins.google.gms.google.services)
     alias(libs.plugins.firebase.crashlytics)
+    alias(libs.plugins.firebase.performance)
 }
 
 kotlin {
@@ -29,6 +30,7 @@ kotlin {
             baseName = "ComposeApp"
             isStatic = true
             linkerOpts.add("-lsqlite3")
+            export(libs.kmpnotifier)
         }
     }
 
@@ -71,6 +73,15 @@ kotlin {
             implementation(libs.multiplatform.settings)
             implementation(libs.multiplatform.settings.no.arg)
 
+            implementation(libs.firebase.common)
+            implementation(libs.gitlive.firebase.config)
+            implementation(libs.firebase.crashlytics)
+            implementation(libs.firebase.perf)
+            implementation(libs.firebase.messaging)
+            implementation(libs.gitlive.firebase.analytics)
+            api(libs.kmpnotifier) // in iOS export this library
+
+
         }
 
         iosMain.dependencies {
@@ -85,6 +96,8 @@ sqldelight {
     databases {
         create("LifePlannerDB") {
             packageName.set("az.tribe.lifeplanner.database")
+            schemaOutputDirectory = file("src/commonMain/sqldelight/databases")
+            version = 2 // 👈 Update this
             generateAsync.set(true)
         }
     }
@@ -92,14 +105,15 @@ sqldelight {
 }
 
 android {
-//    signingConfigs {
-//        create("release") {
-//            storeFile = file("${rootDir}/lifeplanner.jks")
-//            storePassword = project.property("RELEASE_STORE_PASSWORD") as String
-//            keyAlias = project.property("RELEASE_KEY_ALIAS") as String
-//            keyPassword = project.property("RELEASE_KEY_PASSWORD") as String
-//        }
-//    }
+
+    signingConfigs {
+        create("release") {
+            storeFile = file("${rootDir}/lifeplanner.jks")
+            storePassword = project.property("RELEASE_STORE_PASSWORD") as String
+            keyAlias = project.property("RELEASE_KEY_ALIAS") as String
+            keyPassword = project.property("RELEASE_KEY_PASSWORD") as String
+        }
+    }
     namespace = "az.tribe.lifeplanner"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
@@ -111,8 +125,8 @@ android {
         applicationId = "az.tribe.lifeplanner"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 3
+        versionName = "1.1"
 
     }
     packaging {
@@ -124,10 +138,11 @@ android {
         getByName("release") {
             isMinifyEnabled = true
             isShrinkResources = true
-//            signingConfig = signingConfigs.getByName("release")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
@@ -135,6 +150,7 @@ android {
 
 dependencies {
     debugImplementation(compose.uiTooling)
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
 }
 
 rootProject.plugins.withType(org.jetbrains.kotlin.gradle.targets.js.yarn.YarnPlugin::class.java) {

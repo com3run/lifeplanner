@@ -11,7 +11,5 @@ fun MainViewController() = ComposeUIViewController (
     }
 ){
     val mainViewModel =  koinInject<GoalViewModel>()
-
     App(mainViewModel)
-
 }

@@ -22,9 +22,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.MinorCrash
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -34,6 +37,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -56,25 +60,16 @@ import az.tribe.lifeplanner.domain.GoalCategory
 import az.tribe.lifeplanner.domain.GoalTimeline
 import az.tribe.lifeplanner.ui.components.GoalCard
 import az.tribe.lifeplanner.ui.components.TimelineTabs
+import az.tribe.lifeplanner.ui.components.backgroundColor
 import az.tribe.lifeplanner.ui.theme.brutalistColors
 
-// Utility function to map each GoalCategory to a bold, high-contrast Neo-Brutalist color
-fun GoalCategory?.backgroundColor(): Color {
-    return when (this) {
-        GoalCategory.FINANCIAL -> Color(0xFFFF3B3B)      // Vivid Red
-        GoalCategory.CAREER -> Color(0xFF00BFA5)         // Teal Mint
-        GoalCategory.EMOTIONAL -> Color(0xFFFFEB3B)      // Banana Yellow
-        GoalCategory.FAMILY -> Color(0xFFB388FF)         // Light Purple
-        GoalCategory.PHYSICAL -> Color(0xFF00C853)       // Strong Green
-        GoalCategory.SPIRITUAL -> Color(0xFF7C4DFF)      // Deep Violet
-        else -> Color(0xFFB388FF)                        // Neutral off-white
-    }
-}
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     viewModel: GoalViewModel,
     onGoalClick: (Goal) -> Unit,
+    goToAnalytics: () -> Unit,
     onAddGoalClick: () -> Unit
 ) {
     val snackBarHostState = remember { SnackbarHostState() }
@@ -98,6 +93,26 @@ fun HomeScreen(
     }
 
     Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Welcome!") },
+                actions = {
+
+                    IconButton(
+                        onClick = {
+                            goToAnalytics()
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Analytics,
+                            contentDescription = "Analytics",
+                            tint = firstVisibleCategoryColor
+                        )
+                    }
+
+                }
+            )
+        },
         floatingActionButton = {
             Button(
                 onClick = onAddGoalClick,
@@ -119,16 +134,9 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
+
             Spacer(modifier = Modifier.height(8.dp))
-//
-//            Button(
-//                onClick = {
-//                    throw RuntimeException("Test Crash") // Force a crash
-//
-//                },
-//            ){
-//                Text("Crash button")
-//            }
+
             TimelineTabs(
                 selected = selectedTimeline,
                 onSelect = {
@@ -166,6 +174,7 @@ fun HomeScreen(
 
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun GoalListSection(
     groupedGoals: Map<GoalCategory, List<Goal>>,
@@ -190,100 +199,116 @@ fun GoalListSection(
             )
         }
     } else {
-        LazyColumn(modifier = Modifier.fillMaxSize(), state = scrollState) {
-            groupedGoals.forEach { (category, goals) ->
-                stickyHeader {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(MaterialTheme.brutalistColors.background)
-                    ) {
-                        Text(
-                            text = category.name.lowercase().replaceFirstChar(Char::uppercase),
-                            modifier = Modifier
-                                .padding(start = 16.dp, top = 12.dp, bottom = 4.dp),
-                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.brutalistColors.textPrimary
-                        )
-                    }
-                }
-
-                items(goals, key = { it.id }) { goal ->
-                    val currentCategory = category
-
-                    var offsetX by remember { mutableStateOf(0f) }
-                    val maxOffset = 100f
-                    val animatedOffset by animateFloatAsState(targetValue = offsetX, label = "")
-
-                    val visibleItems = scrollState.layoutInfo.visibleItemsInfo
-                    val indexInVisible = visibleItems.indexOfFirst { it.key == goal.id }
-
-                    val rawScale =
-                        if (indexInVisible in 0..2 || indexInVisible >= visibleItems.size - 3) {
-                            0.95f
-                        } else {
-                            1f
-                        }
-                    val scale by animateFloatAsState(targetValue = rawScale, label = "scale")
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 4.dp)
-                            .pointerInput(Unit) {
-                                detectHorizontalDragGestures(
-                                    onDragEnd = {
-                                        if (offsetX > -maxOffset / 2) {
-                                            offsetX = 0f
-                                        } else {
-                                            offsetX = -maxOffset
-                                        }
-                                    },
-                                    onHorizontalDrag = { _, dragAmount ->
-                                        offsetX = (offsetX + dragAmount).coerceIn(-maxOffset, 0f)
-                                    }
-                                )
-                            }
-                    ) {
-                        // Neo-Brutalist: Swipe delete background with flat color, square edges, and thick black border
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            state = scrollState,
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 80.dp)
+        ) {
+            groupedGoals.keys.sortedBy { it.order }.forEach { category ->
+                val goals = groupedGoals[category].orEmpty()
+                if (goals.isNotEmpty()) {
+                    stickyHeader {
                         Box(
                             modifier = Modifier
-                                .matchParentSize()
-                                .background(
-                                    currentCategory.backgroundColor(),
-                                ),
-                            contentAlignment = Alignment.CenterEnd
+                                .fillMaxWidth()
+                                .background(MaterialTheme.brutalistColors.background)
                         ) {
-                            IconButton(
-                                onClick = { onGoalDelete(goal) },
-                                modifier = Modifier.padding(end = 16.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = "Delete",
-                                    tint = MaterialTheme.colorScheme.onError
-                                )
-                            }
+                            Text(
+                                text = category.name.lowercase().replaceFirstChar(Char::uppercase),
+                                modifier = Modifier
+                                    .padding(start = 16.dp, top = 12.dp, bottom = 4.dp),
+                                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.brutalistColors.textPrimary
+                            )
                         }
-                        GoalCard(
-                            goal = goal,
-                            onClick = { onGoalClick(goal) },
+                    }
+
+                    items(goals, key = { it.id }) { goal ->
+                        val currentCategory = category
+
+                        var offsetX by remember { mutableStateOf(0f) }
+                        val maxOffset = 100f
+                        val animatedOffset by animateFloatAsState(targetValue = offsetX, label = "")
+
+                        val visibleItems = scrollState.layoutInfo.visibleItemsInfo
+                        val indexInVisible = visibleItems.indexOfFirst { it.key == goal.id }
+
+                        val rawScale =
+                            if (indexInVisible in 0..2 || indexInVisible >= visibleItems.size - 3) {
+                                0.95f
+                            } else {
+                                1f
+                            }
+                        val scale by animateFloatAsState(targetValue = rawScale, label = "scale")
+
+                        Box(
                             modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 4.dp)
+                                .pointerInput(Unit) {
+                                    detectHorizontalDragGestures(
+                                        onDragEnd = {
+                                            if (offsetX > -maxOffset / 2) {
+                                                offsetX = 0f
+                                            } else {
+                                                offsetX = -maxOffset
+                                            }
+                                        },
+                                        onHorizontalDrag = { _, dragAmount ->
+                                            offsetX = (offsetX + dragAmount).coerceIn(-maxOffset, 0f)
+                                        }
+                                    )
+                                }
+                        ) {
+                            // Neo-Brutalist: Swipe delete background with flat color, square edges, and thick black border
+                            Box(
+                                modifier = Modifier
+                                    .matchParentSize()
+                                    .background(
+                                        currentCategory.backgroundColor(),
+                                    ),
+                                contentAlignment = Alignment.CenterEnd
+                            ) {
+                                IconButton(
+                                    onClick = { onGoalDelete(goal) },
+                                    modifier = Modifier.padding(end = 16.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = "Delete",
+                                        tint = MaterialTheme.colorScheme.onError
+                                    )
+                                }
+                            }
+                            val bgColor = remember(goal.id) { currentCategory.backgroundColor() }
+                            Modifier
                                 .graphicsLayer(
                                     scaleX = scale,
                                     scaleY = scale,
-                                    transformOrigin = TransformOrigin(
-                                        0f,
-                                        0.5f
-                                    ) // Anchor scaling from start edge
+                                    transformOrigin = TransformOrigin(0f, 0.5f)
                                 )
-                                .offset(x = animatedOffset.dp)
-                                .background(currentCategory.backgroundColor())
-                                .border(
-                                    2.dp,
-                                    MaterialTheme.colorScheme.outline,
-                                )
-                        )
+                                .background(bgColor)
+                                .border(2.dp, MaterialTheme.colorScheme.outline)
+                            GoalCard(
+                                goal = goal,
+                                onClick = { onGoalClick(goal) },
+                                modifier = Modifier
+                                    .graphicsLayer(
+                                        scaleX = scale,
+                                        scaleY = scale,
+                                        transformOrigin = TransformOrigin(
+                                            0f,
+                                            0.5f
+                                        ) // Anchor scaling from start edge
+                                    )
+                                    .offset(x = animatedOffset.dp)
+                                    .background(currentCategory.backgroundColor())
+                                    .border(
+                                        2.dp,
+                                        MaterialTheme.colorScheme.outline,
+                                    )
+                            )
+                        }
                     }
                 }
             }

@@ -3,6 +3,7 @@ package az.tribe.lifeplanner.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import az.tribe.lifeplanner.domain.Goal
+import az.tribe.lifeplanner.domain.GoalAnalytics
 import az.tribe.lifeplanner.domain.GoalCategory
 import az.tribe.lifeplanner.domain.GoalStatus
 import az.tribe.lifeplanner.domain.GoalTimeline
@@ -11,12 +12,22 @@ import az.tribe.lifeplanner.usecases.DeleteGoalUseCase
 import az.tribe.lifeplanner.usecases.GetAllGoalsUseCase
 import az.tribe.lifeplanner.usecases.GetGoalsByCategoryUseCase
 import az.tribe.lifeplanner.usecases.GetGoalsByTimelineUseCase
+import az.tribe.lifeplanner.usecases.LogGoalChangeUseCase
+import az.tribe.lifeplanner.usecases.GetGoalHistoryUseCase
+import az.tribe.lifeplanner.domain.GoalChange
+import az.tribe.lifeplanner.usecases.GetGoalAnalyticsUseCase
 import az.tribe.lifeplanner.usecases.UpdateGoalUseCase
+import az.tribe.lifeplanner.usecases.UpdateGoalProgressUseCase
+import dev.gitlive.firebase.Firebase
+import dev.gitlive.firebase.remoteconfig.FirebaseRemoteConfig
+import dev.gitlive.firebase.remoteconfig.get
+import dev.gitlive.firebase.remoteconfig.remoteConfig
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
+import kotlin.time.Duration
 
 class GoalViewModel(
     private val getAllGoalsUseCase: GetAllGoalsUseCase,
@@ -25,17 +36,46 @@ class GoalViewModel(
     private val getGoalsByCategoryUseCase: GetGoalsByCategoryUseCase,
     private val createGoalUseCase: CreateGoalUseCase,
     private val updateGoalUseCase: UpdateGoalUseCase,
+    private val updateGoalProgressUseCase: UpdateGoalProgressUseCase,
+    private val logGoalChangeUseCase: LogGoalChangeUseCase,
+    private val getGoalHistoryUseCase: GetGoalHistoryUseCase,
+    private val getGoalAnalyticsUseCase: GetGoalAnalyticsUseCase
 ) : ViewModel() {
 
     private val _goals = MutableStateFlow<List<Goal>>(emptyList())
     val goals: StateFlow<List<Goal>> = _goals.asStateFlow()
 
+    private val _analytics = MutableStateFlow<GoalAnalytics?>(null)
+    val analytics: StateFlow<GoalAnalytics?> = _analytics
+
+    private val _isForceUpdateEnabled = MutableStateFlow<Boolean?>(null)
+    val isForceUpdateEnabled: StateFlow<Boolean?> = _isForceUpdateEnabled
+
+    private val _goalHistory = MutableStateFlow<List<GoalChange>>(emptyList())
+    val goalHistory: StateFlow<List<GoalChange>> = _goalHistory.asStateFlow()
+
 
     init {
+        checkConfig()
+
 //        deleteAllGoals()
         loadAllGoals()
+
+        checkConfig()
+
+
     }
 
+    fun checkConfig()  {
+        viewModelScope.launch {
+
+            val remoteConfig: FirebaseRemoteConfig = Firebase.remoteConfig
+            remoteConfig.fetch(Duration.ZERO)
+            remoteConfig.fetchAndActivate()
+
+            _isForceUpdateEnabled.value = Firebase.remoteConfig.getValue("isForceUpdateEnabled").asBoolean()
+        }
+    }
 
     fun loadAllGoals() {
         viewModelScope.launch {
@@ -46,6 +86,12 @@ class GoalViewModel(
                 createGoalUseCase(dummyBusinessGoals())
                 _goals.value = getAllGoalsUseCase()
             }
+        }
+    }
+
+    fun loadAnalytics() {
+        viewModelScope.launch {
+            _analytics.value = getGoalAnalyticsUseCase()
         }
     }
 
@@ -91,9 +137,8 @@ class GoalViewModel(
 
     fun deleteGoal(id: String) {
         viewModelScope.launch {
-            // Assuming delete functionality is implemented in the repository or use case
             deleteGoalUseCase(id)
-            loadAllGoals()
+            _goals.value = _goals.value.filterNot { it.id == id }
         }
     }
 
@@ -107,7 +152,7 @@ class GoalViewModel(
             GoalStatus.IN_PROGRESS,
             GoalTimeline.SHORT_TERM,
             LocalDate.parse("2025-06-01"),
-            emptyList()
+            steps = emptyList()
         ),
         Goal(
             "2",
@@ -117,7 +162,7 @@ class GoalViewModel(
             GoalStatus.NOT_STARTED,
             GoalTimeline.MID_TERM,
             LocalDate.parse("2025-08-01"),
-            emptyList()
+            steps = emptyList()
         ),
         Goal(
             "3",
@@ -127,7 +172,7 @@ class GoalViewModel(
             GoalStatus.IN_PROGRESS,
             GoalTimeline.LONG_TERM,
             LocalDate.parse("2025-12-15"),
-            emptyList()
+            steps = emptyList()
         ),
         Goal(
             "4",
@@ -137,7 +182,7 @@ class GoalViewModel(
             GoalStatus.IN_PROGRESS,
             GoalTimeline.SHORT_TERM,
             LocalDate.parse("2025-05-30"),
-            emptyList()
+            steps = emptyList()
         ),
         Goal(
             "5",
@@ -147,7 +192,7 @@ class GoalViewModel(
             GoalStatus.NOT_STARTED,
             GoalTimeline.LONG_TERM,
             LocalDate.parse("2025-12-31"),
-            emptyList()
+            steps = emptyList()
         ),
         Goal(
             "6",
@@ -157,7 +202,7 @@ class GoalViewModel(
             GoalStatus.IN_PROGRESS,
             GoalTimeline.MID_TERM,
             LocalDate.parse("2025-09-15"),
-            emptyList()
+            steps = emptyList()
         ),
         Goal(
             "7",
@@ -167,7 +212,7 @@ class GoalViewModel(
             GoalStatus.NOT_STARTED,
             GoalTimeline.SHORT_TERM,
             LocalDate.parse("2025-06-30"),
-            emptyList()
+            steps = emptyList()
         ),
         Goal(
             "8",
@@ -177,7 +222,7 @@ class GoalViewModel(
             GoalStatus.NOT_STARTED,
             GoalTimeline.MID_TERM,
             LocalDate.parse("2025-07-15"),
-            emptyList()
+            steps = emptyList()
         ),
         Goal(
             "9",
@@ -187,7 +232,7 @@ class GoalViewModel(
             GoalStatus.IN_PROGRESS,
             GoalTimeline.LONG_TERM,
             LocalDate.parse("2025-12-31"),
-            emptyList()
+            steps = emptyList()
         ),
         Goal(
             "10",
@@ -197,7 +242,7 @@ class GoalViewModel(
             GoalStatus.COMPLETED,
             GoalTimeline.SHORT_TERM,
             LocalDate.parse("2025-04-01"),
-            emptyList()
+            steps = emptyList()
         ),
 
         Goal(
@@ -208,7 +253,7 @@ class GoalViewModel(
             GoalStatus.COMPLETED,
             GoalTimeline.SHORT_TERM,
             LocalDate.parse("2025-04-20"),
-            emptyList()
+            steps = emptyList()
         ),
         Goal(
             "12",
@@ -218,7 +263,7 @@ class GoalViewModel(
             GoalStatus.IN_PROGRESS,
             GoalTimeline.LONG_TERM,
             LocalDate.parse("2025-11-30"),
-            emptyList()
+            steps = emptyList()
         ),
         Goal(
             "13",
@@ -228,7 +273,7 @@ class GoalViewModel(
             GoalStatus.NOT_STARTED,
             GoalTimeline.LONG_TERM,
             LocalDate.parse("2025-12-31"),
-            emptyList()
+            steps = emptyList()
         ),
         Goal(
             "14",
@@ -238,7 +283,7 @@ class GoalViewModel(
             GoalStatus.IN_PROGRESS,
             GoalTimeline.MID_TERM,
             LocalDate.parse("2025-08-01"),
-            emptyList()
+            steps = emptyList()
         ),
         Goal(
             "15",
@@ -248,7 +293,7 @@ class GoalViewModel(
             GoalStatus.NOT_STARTED,
             GoalTimeline.LONG_TERM,
             LocalDate.parse("2025-12-15"),
-            emptyList()
+            steps = emptyList()
         ),
         Goal(
             "16",
@@ -258,7 +303,7 @@ class GoalViewModel(
             GoalStatus.COMPLETED,
             GoalTimeline.SHORT_TERM,
             LocalDate.parse("2025-05-01"),
-            emptyList()
+            steps = emptyList()
         ),
         Goal(
             "17",
@@ -268,7 +313,7 @@ class GoalViewModel(
             GoalStatus.IN_PROGRESS,
             GoalTimeline.LONG_TERM,
             LocalDate.parse("2025-12-31"),
-            emptyList()
+            steps = emptyList()
         ),
         Goal(
             "18",
@@ -278,7 +323,7 @@ class GoalViewModel(
             GoalStatus.NOT_STARTED,
             GoalTimeline.LONG_TERM,
             LocalDate.parse("2025-11-01"),
-            emptyList()
+            steps = emptyList()
         ),
         Goal(
             "19",
@@ -288,7 +333,7 @@ class GoalViewModel(
             GoalStatus.NOT_STARTED,
             GoalTimeline.LONG_TERM,
             LocalDate.parse("2025-10-10"),
-            emptyList()
+            steps = emptyList()
         ),
         Goal(
             "20",
@@ -298,8 +343,27 @@ class GoalViewModel(
             GoalStatus.IN_PROGRESS,
             GoalTimeline.MID_TERM,
             LocalDate.parse("2025-07-01"),
-            emptyList()
+            steps = emptyList()
         )
     )
 
+    fun updateGoalProgress(id: String, newProgress: Int) {
+        viewModelScope.launch {
+            updateGoalProgressUseCase(id, newProgress)
+            logGoalChangeUseCase(
+                goalId = id,
+                field = "progress",
+                oldValue = getGoalById(id)?.progress?.toString() ?: "unknown",
+                newValue = newProgress.toString() ?: "unknown"
+            )
+            loadAllGoals()
+        }
+    }
+
+
+    fun loadGoalHistory(goalId: String) {
+        viewModelScope.launch {
+            _goalHistory.value = getGoalHistoryUseCase(goalId)
+        }
+    }
 }

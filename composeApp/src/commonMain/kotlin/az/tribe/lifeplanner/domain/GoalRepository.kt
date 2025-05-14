@@ -8,4 +8,6 @@ interface GoalRepository {
     suspend fun deleteGoalById(id: String)
     suspend fun deleteAllGoals()
     suspend fun getGoalsByTimeline(timeline: GoalTimeline): List<Goal>
+    suspend fun updateProgress(id: String, progress: Int)
+    suspend fun getAnalytics(): GoalAnalytics
 }

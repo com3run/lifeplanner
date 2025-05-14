@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Life Planner.ipa</key>
+	<array>
+		<dict>
+			<key>architectures</key>
+			<array>
+				<string>arm64</string>
+			</array>
+			<key>buildNumber</key>
+			<string>3</string>
+			<key>certificate</key>
+			<dict>
+				<key>SHA1</key>
+				<string>26ABFC007059A537D987E0447713836FC5D2E222</string>
+				<key>dateExpires</key>
+				<string>7/9/25</string>
+				<key>type</key>
+				<string>Cloud Managed Apple Distribution</string>
+			</dict>
+			<key>entitlements</key>
+			<dict>
+				<key>application-identifier</key>
+				<string>9T27H6JKJM.az.tribe.lifeplanner</string>
+				<key>com.apple.developer.team-identifier</key>
+				<string>9T27H6JKJM</string>
+				<key>get-task-allow</key>
+				<false/>
+			</dict>
+			<key>name</key>
+			<string>Life Planner.app</string>
+			<key>profile</key>
+			<dict>
+				<key>UUID</key>
+				<string>933606f5-978d-424c-a645-ff0530344b64</string>
+				<key>dateExpires</key>
+				<string>7/9/25</string>
+				<key>name</key>
+				<string>iOS Team Ad Hoc Provisioning Profile: az.tribe.lifeplanner</string>
+			</dict>
+			<key>team</key>
+			<dict>
+				<key>id</key>
+				<string>9T27H6JKJM</string>
+				<key>name</key>
+				<string>Kamran Mammadov</string>
+			</dict>
+			<key>versionNumber</key>
+			<string>1.1</string>
+		</dict>
+	</array>
+</dict>
+</plist>

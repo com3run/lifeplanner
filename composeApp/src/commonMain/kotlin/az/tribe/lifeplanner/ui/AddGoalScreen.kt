@@ -149,7 +149,14 @@ fun <T> MyDropdownMenuBox(
 
     Box {
         OutlinedButton(onClick = { expanded = true }, shape = RectangleShape) {
-            Text(selected.toString().lowercase().replaceFirstChar(Char::uppercase), color = MaterialTheme.brutalistColors.textPrimary)
+            Text(
+                selected.toString()
+                    .lowercase()
+                    .replace('_', ' ')
+                    .split(' ')
+                    .joinToString(" ") { it.replaceFirstChar(Char::uppercase) },
+                color = MaterialTheme.brutalistColors.textPrimary
+            )
         }
         DropdownMenu(
             expanded = expanded,
@@ -157,7 +164,15 @@ fun <T> MyDropdownMenuBox(
         ) {
             options.forEach {
                 DropdownMenuItem(
-                    text = { Text(it.toString().lowercase().replaceFirstChar(Char::uppercase)) },
+                    text = {
+                        Text(
+                            it.toString()
+                                .lowercase()
+                                .replace('_', ' ')
+                                .split(' ')
+                                .joinToString(" ") { word -> word.replaceFirstChar(Char::uppercase) }
+                        )
+                    },
                     onClick = {
                         onSelected(it)
                         expanded = false

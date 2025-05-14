@@ -10,5 +10,6 @@ data class Goal(
     val status: GoalStatus,
     val timeline: GoalTimeline,
     val dueDate: LocalDate,
+    val progress: Long? = 0,
     val steps: List<Step> = emptyList()
 )

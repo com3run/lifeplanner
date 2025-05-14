@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Lean LifePlan</string>
+    <string name="default_notification_channel_id">az.tribe.lifeplanner.app.urgent</string>
 </resources>
