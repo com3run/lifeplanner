@@ -6,7 +6,6 @@ sealed class Screen(val route: String) {
     object Home : Screen("home")
     object Goals : Screen("goals")
     object Profile : Screen("profile")
-    object AddGoal : Screen("add_goal")
     object Analytics : Screen("analytics")
     object EditGoal : Screen("edit_goal/{goalId}")
     object GoalDetail : Screen("goal_detail/{goalId}")
@@ -33,7 +32,6 @@ sealed class Screen(val route: String) {
     object FocusSetup : Screen("focus_setup?goalId={goalId}&milestoneId={milestoneId}")
     object Retrospective : Screen("retrospective")
     object CoachProfile : Screen("coach_profile/{coachId}")
-    object OnboardingReminders : Screen("onboarding_reminders")
     object Health : Screen("health")
     object Feedback : Screen("feedback")
     object StoryReader : Screen("story_reader")
@@ -43,4 +41,5 @@ sealed class Screen(val route: String) {
     object Search : Screen("search?filter={filter}")
     object GoalWizard : Screen("goal_wizard")
     object SmartHabitGenerator : Screen("smart_habit_generator")
+    object CoachOnboarding : Screen("coach_onboarding")
 }

@@ -11,7 +11,16 @@ import az.tribe.lifeplanner.domain.model.HabitDayStatus
 import az.tribe.lifeplanner.domain.model.HabitDaySummary
 import az.tribe.lifeplanner.domain.repository.RetrospectiveRepository
 import az.tribe.lifeplanner.infrastructure.SharedDatabase
+import az.tribe.lifeplanner.infrastructure.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
+import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.minus
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
 
 class RetrospectiveRepositoryImpl(
     private val database: SharedDatabase
@@ -28,7 +37,8 @@ class RetrospectiveRepositoryImpl(
                 title = row.title,
                 category = try { GoalCategory.valueOf(row.category) } catch (_: Exception) { GoalCategory.CAREER },
                 wasCompleted = row.completed == 1L,
-                notes = row.checkInNotes ?: ""
+                notes = row.checkInNotes ?: "",
+                linkedGoalId = row.linkedGoalId
             )
         }
 
@@ -75,6 +85,33 @@ class RetrospectiveRepositoryImpl(
             focusSessions = focusSessions,
             goalChanges = goalChanges,
             badgesEarned = badges
+        )
+    }
+
+    override fun observeWeeklySnapshots(): Flow<List<DaySnapshot>> {
+        val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+        val dates = (6 downTo 0).map { today.minus(DatePeriod(days = it)) }
+        val startDate = dates.first().toString()
+        val endDate = dates.last().toString()
+
+        return combine(
+            database.observeAllHabits(),
+            database.observeCheckInsInRange(startDate, endDate),
+            database.observeAllJournalEntries(),
+            database.observeAllFocusSessions()
+        ) { _, _, _, _ -> Unit }
+            .map { dates.map { date -> getDaySnapshot(date) } }
+    }
+
+    override suspend fun getDayRecap(date: LocalDate): String? {
+        return database.getDayRecap(date.toString())?.recap
+    }
+
+    override suspend fun saveDayRecap(date: LocalDate, recap: String) {
+        database.insertOrReplaceDayRecap(
+            date = date.toString(),
+            recap = recap,
+            generatedAt = Clock.System.now().toString()
         )
     }
 

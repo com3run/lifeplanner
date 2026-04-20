@@ -1,8 +1,10 @@
 package az.tribe.lifeplanner.data.mapper
 
 import az.tribe.lifeplanner.database.AbilityEntity
+import az.tribe.lifeplanner.database.AbilityGoalLinkEntity
 import az.tribe.lifeplanner.database.AbilityHabitLinkEntity
 import az.tribe.lifeplanner.domain.model.Ability
+import az.tribe.lifeplanner.domain.model.AbilityGoalLink
 import az.tribe.lifeplanner.domain.model.AbilityHabitLink
 import kotlin.time.Clock
 import kotlin.uuid.ExperimentalUuidApi
@@ -25,6 +27,13 @@ fun AbilityHabitLinkEntity.toDomain(): AbilityHabitLink = AbilityHabitLink(
     abilityId = abilityId,
     habitId = habitId,
     xpWeight = xpWeight.toFloat(),
+    createdAt = createdAt
+)
+
+fun AbilityGoalLinkEntity.toDomain(): AbilityGoalLink = AbilityGoalLink(
+    id = id,
+    abilityId = abilityId,
+    goalId = goalId,
     createdAt = createdAt
 )
 

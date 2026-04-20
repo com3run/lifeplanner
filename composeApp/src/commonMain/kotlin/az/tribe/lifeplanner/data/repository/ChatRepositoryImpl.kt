@@ -6,141 +6,43 @@ import az.tribe.lifeplanner.data.mapper.toDomain
 import az.tribe.lifeplanner.data.mapper.toDomainMessages
 import az.tribe.lifeplanner.data.mapper.toDomainSessions
 import az.tribe.lifeplanner.data.network.AiProxyService
-import co.touchlab.kermit.Logger
+import az.tribe.lifeplanner.data.sync.SyncManager
 import az.tribe.lifeplanner.domain.model.ChatMessage
 import az.tribe.lifeplanner.domain.model.ChatMessageMetadata
 import az.tribe.lifeplanner.domain.model.ChatSession
-import az.tribe.lifeplanner.domain.model.CoachCharacteristics
-import az.tribe.lifeplanner.domain.model.CoachGroup
 import az.tribe.lifeplanner.domain.model.CoachPersona
 import az.tribe.lifeplanner.domain.model.CoachResponse
-import az.tribe.lifeplanner.domain.model.CoachSuggestion
-import az.tribe.lifeplanner.domain.model.CoachType
-import az.tribe.lifeplanner.domain.model.CustomCoach
 import az.tribe.lifeplanner.domain.model.MessageRole
-import az.tribe.lifeplanner.domain.model.SuggestedMilestone
 import az.tribe.lifeplanner.domain.model.UserContext
 import az.tribe.lifeplanner.domain.repository.ChatRepository
 import az.tribe.lifeplanner.domain.repository.CoachRepository
 import az.tribe.lifeplanner.domain.repository.StreamingChatEvent
-import az.tribe.lifeplanner.data.sync.SyncManager
+import az.tribe.lifeplanner.domain.repository.UserSituationRepository
 import az.tribe.lifeplanner.infrastructure.SharedDatabase
-import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
+import az.tribe.lifeplanner.infrastructure.*
+import az.tribe.lifeplanner.infrastructure.toUserSituationDomain
+import co.touchlab.kermit.Logger
+import kotlin.time.Clock
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import kotlin.time.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.*
-
-// ============================================================================
-// REQUEST DATA CLASSES - What we send to Gemini
-// ============================================================================
-
-@Serializable
-data class GeminiGenerationConfig(
-    val temperature: Double = 0.7,
-    val maxOutputTokens: Int = 2048,
-    val topP: Double = 0.9,
-    val topK: Int = 40,
-    val responseMimeType: String = "application/json",
-    val responseSchema: ResponseSchema = ResponseSchema()
-)
-
-@Serializable
-data class ResponseSchema(
-    val type: String = "object",
-    val properties: Map<String, SchemaProperty> = emptyMap(),
-    val required: List<String> = listOf("messages", "suggestions")
-)
-
-@Serializable
-data class SchemaProperty(
-    val type: String,
-    val description: String = "",
-    val items: SchemaProperty? = null,
-    val properties: Map<String, SchemaProperty>? = null,
-    val enum: List<String>? = null,
-    val maxItems: Int? = null
-)
-
-// ============================================================================
-// RESPONSE DATA CLASSES - What Gemini returns
-// ============================================================================
-
-@Serializable
-data class CoachResponseData(
-    val messages: List<String> = emptyList(),
-    val suggestions: List<SuggestionData> = emptyList()
-)
-
-// Council-specific response format where each message has a coach
-@Serializable
-data class CouncilResponseData(
-    val messages: List<CouncilMessage> = emptyList(),
-    val suggestions: List<SuggestionData> = emptyList()
-)
-
-@Serializable
-data class CouncilMessage(
-    val coach: String = "",
-    val text: String = ""
-)
-
-@Serializable
-data class SuggestionData(
-    val type: String = "",
-    val label: String = "",
-    val data: SuggestionPayload = SuggestionPayload()
-)
-
-@Serializable
-data class SuggestionPayload(
-    val title: String? = null,
-    val description: String? = null,
-    val category: String? = null,
-    val timeline: String? = null,
-    val frequency: String? = null,
-    val content: String? = null,
-    val mood: String? = null,
-    val habitId: String? = null,
-    val habitTitle: String? = null,
-    // Milestones for goals
-    val milestones: List<MilestoneData> = emptyList(),
-    // Question fields
-    val question: String? = null,
-    val options: List<OptionData> = emptyList(),
-    val questionType: String? = null
-)
-
-@Serializable
-data class MilestoneData(
-    val title: String = "",
-    val weekOffset: Int = 0
-)
-
-@Serializable
-data class OptionData(
-    val id: String = "",
-    val label: String = "",
-    val value: String = "",
-    val description: String? = null
-)
+import kotlinx.serialization.json.Json
 
 // ============================================================================
 // REPOSITORY IMPLEMENTATION
 // ============================================================================
 
 class ChatRepositoryImpl(
-    private val database: SharedDatabase,
-    private val aiProxy: AiProxyService,
-    private val coachRepository: CoachRepository? = null,
-    private val syncManager: SyncManager? = null
+    internal val database: SharedDatabase,
+    internal val aiProxy: AiProxyService,
+    internal val coachRepository: CoachRepository? = null,
+    private val syncManager: SyncManager? = null,
+    private val userSituationRepository: UserSituationRepository? = null,
+    internal val orchestrator: CoachOrchestrator = CoachOrchestrator()
 ) : ChatRepository {
 
-    private val json = Json {
+    internal val json = Json {
         ignoreUnknownKeys = true
         encodeDefaults = false
     }
@@ -156,233 +58,6 @@ class ChatRepositoryImpl(
         fun extractGroupId(coachId: String): String = coachId.removePrefix(GROUP_PREFIX)
         fun makeCustomCoachId(id: String): String = "$CUSTOM_COACH_PREFIX$id"
         fun makeGroupId(id: String): String = "$GROUP_PREFIX$id"
-
-        private const val COACH_PERSONA = """
-You are Luna, a Personal Coach. Reply ONLY with valid JSON, nothing else.
-
-FORMAT (strict):
-{"messages":["msg1","msg2"],"suggestions":[]}
-
-RULES:
-- messages: 1-3 short strings (max 80 chars each)
-- suggestions: 0-2 items, only when helpful
-- NO emojis, NO markdown, NO repetition
-- Keep titles under 25 chars
-
-SUGGESTION FORMAT:
-{"type":"CREATE_GOAL","label":"Add Goal","data":{"title":"...","description":"...","category":"CAREER","timeline":"MID_TERM"}}
-{"type":"CREATE_HABIT","label":"Add Habit","data":{"title":"...","description":"...","category":"HEALTH","frequency":"DAILY"}}
-
-Categories: CAREER, FINANCIAL, PHYSICAL, SOCIAL, EMOTIONAL, SPIRITUAL, FAMILY
-Timelines: SHORT_TERM, MID_TERM, LONG_TERM
-Frequencies: DAILY, WEEKLY
-"""
-
-        private const val COUNCIL_PERSONA = """
-You are "The Council" - a group of specialized coaches in a meeting room. Each coach has a unique personality:
-
-COACHES:
-1. Luna (Life Coach) - warm, big-picture thinker, moderates the discussion
-2. Alex (Career Coach) - professional, strategic, business-minded
-3. Morgan (Finance Coach) - analytical, numbers-focused, practical
-4. Kai (Fitness Coach) - energetic, action-oriented, motivating
-5. Sam (Social Coach) - friendly, empathetic, relationship-focused
-6. River (Wellness Coach) - calm, mindful, thoughtful
-7. Jamie (Family Coach) - nurturing, patient, family-oriented
-
-RESPONSE FORMAT:
-{"messages":[{"coach":"luna","text":"msg"},{"coach":"alex","text":"msg"}],"suggestions":[]}
-
-RULES:
-- 2-4 coaches respond per message (pick most relevant ones)
-- Each message: max 100 chars
-- Coaches build on each other's points like a real meeting
-- Mix serious advice with occasional light humor
-- Luna often opens or summarizes, but not always
-- Only relevant coaches speak (career question = Alex + maybe Morgan)
-- Coaches can agree, add perspective, or playfully disagree
-- Keep it natural like a supportive team discussion
-- suggestions: 0-2 items total
-
-Example flow:
-User: "I want to get a promotion"
-Luna: "Exciting goal! Let's hear from our experts."
-Alex: "Focus on visible projects and document your wins."
-Morgan: "Promotion usually means salary bump - have a number in mind!"
-Kai: "Don't forget: confident posture in meetings makes a difference!"
-
-Categories: CAREER, FINANCIAL, PHYSICAL, SOCIAL, EMOTIONAL, SPIRITUAL, FAMILY
-Timelines: SHORT_TERM, MID_TERM, LONG_TERM
-Frequencies: DAILY, WEEKLY
-"""
-
-        /**
-         * Get coach-specific system prompt
-         */
-        private suspend fun getCoachSystemPrompt(coach: CoachPersona, personaOverride: String? = null): String {
-            return """
-You are ${coach.name}, a ${coach.title} in the LifePlanner app. Reply ONLY with valid JSON.
-
-YOUR PERSONALITY: ${coach.personality}
-YOUR SPECIALTIES: ${coach.specialties.joinToString(", ")}
-YOUR GREETING STYLE: ${coach.greeting}
-${if (personaOverride != null) "USER'S CUSTOMIZATION (follow this closely): $personaOverride" else ""}
-
-FORMAT (strict):
-{"messages":["msg1","msg2"],"suggestions":[]}
-
-RULES:
-- messages: 1-3 short strings (max 80 chars each)
-- Stay in character as ${coach.name}
-- Use your ${coach.personality} tone
-- suggestions: 0-2 items, only when helpful
-- NO emojis in JSON, NO markdown, NO repetition
-- Keep titles under 25 chars
-
-Categories: CAREER, FINANCIAL, PHYSICAL, SOCIAL, EMOTIONAL, SPIRITUAL, FAMILY
-Timelines: SHORT_TERM, MID_TERM, LONG_TERM
-Frequencies: DAILY, WEEKLY
-""".trimIndent()
-        }
-
-        /**
-         * Get system prompt for a user-created custom coach
-         */
-        private fun getCustomCoachSystemPrompt(coach: CustomCoach): String {
-            val characteristicsPrompt = if (coach.characteristics.isNotEmpty()) {
-                CoachCharacteristics.getPromptForCharacteristics(coach.characteristics)
-            } else ""
-
-            return """
-You are ${coach.name}, a personal coach in the LifePlanner app. Reply ONLY with valid JSON.
-
-YOUR PERSONALITY AND INSTRUCTIONS:
-${coach.systemPrompt}
-
-${if (characteristicsPrompt.isNotEmpty()) "YOUR CHARACTERISTICS:\n$characteristicsPrompt" else ""}
-
-FORMAT (strict):
-{"messages":["msg1","msg2"],"suggestions":[]}
-
-RULES:
-- messages: 1-3 short strings (max 80 chars each)
-- Stay in character as ${coach.name}
-- suggestions: 0-2 items, only when helpful
-- NO emojis in JSON, NO markdown, NO repetition
-- Keep titles under 25 chars
-
-Categories: CAREER, FINANCIAL, PHYSICAL, SOCIAL, EMOTIONAL, SPIRITUAL, FAMILY
-Timelines: SHORT_TERM, MID_TERM, LONG_TERM
-Frequencies: DAILY, WEEKLY
-""".trimIndent()
-        }
-
-        /**
-         * Get system prompt for a custom coach group (council-style)
-         */
-        private fun getCustomGroupSystemPrompt(
-            group: CoachGroup,
-            customCoaches: List<CustomCoach>,
-            builtinCoaches: List<CoachPersona>
-        ): String {
-            val coachDescriptions = buildList {
-                builtinCoaches.forEach { coach ->
-                    add("${coach.name} (${coach.title}) - ${coach.personality}")
-                }
-                customCoaches.forEach { coach ->
-                    val traits = coach.characteristics.take(2).joinToString(", ")
-                    add("${coach.name} - ${traits.ifEmpty { "Custom Coach" }}")
-                }
-            }.mapIndexed { index, desc -> "${index + 1}. $desc" }.joinToString("\n")
-
-            val coachNames = (builtinCoaches.map { it.name } + customCoaches.map { it.name })
-                .joinToString(", ") { it.lowercase() }
-
-            return """
-You are "${group.name}" - a group of coaches having a discussion.
-
-${if (group.description.isNotEmpty()) "GROUP PURPOSE: ${group.description}\n" else ""}
-COACHES IN THIS GROUP:
-$coachDescriptions
-
-RESPONSE FORMAT (strict JSON):
-{"messages":[{"coach":"coachname","text":"message"}],"suggestions":[]}
-
-RULES:
-- 2-4 coaches respond per message (pick most relevant ones)
-- Use EXACT coach names (lowercase): $coachNames
-- Each message: max 100 chars
-- Coaches build on each other's points like a real meeting
-- messages array contains objects with "coach" (lowercase name) and "text"
-- suggestions: 0-2 items when genuinely helpful
-- NO emojis, NO markdown
-
-Categories: CAREER, FINANCIAL, PHYSICAL, SOCIAL, EMOTIONAL, SPIRITUAL, FAMILY
-Timelines: SHORT_TERM, MID_TERM, LONG_TERM
-Frequencies: DAILY, WEEKLY
-""".trimIndent()
-        }
-
-        private fun buildSystemPrompt(userContext: UserContext): String {
-            return """
-$COACH_PERSONA
-
-Current User Context:
-- Name: ${userContext.userName ?: "User"}
-- Level: ${userContext.level} (${userContext.totalXp} XP)
-- Current Streak: ${userContext.currentStreak} days
-- Goals: ${userContext.activeGoals} active, ${userContext.completedGoals} completed out of ${userContext.totalGoals} total
-- Recent milestones completed: ${userContext.recentMilestones.take(3).joinToString(", ").ifEmpty { "None recently" }}
-- Habit completion rate: ${(userContext.habitCompletionRate * 100).toInt()}%
-- Journal entries: ${userContext.journalEntryCount}
-- Primary focus areas: ${userContext.primaryCategories.joinToString(", ").ifEmpty { "Not set" }}
-${if (userContext.upcomingDeadlines.isNotEmpty()) "- Upcoming deadlines: ${userContext.upcomingDeadlines.take(3).joinToString(", ") { "${it.title} (${it.dueDate})" }}" else ""}
-
-Use this context to personalize your responses and make relevant suggestions.
-""".trimIndent()
-        }
-
-        private fun buildResponseSchema(): ResponseSchema {
-            return ResponseSchema(
-                properties = mapOf(
-                    "messages" to SchemaProperty(
-                        type = "array",
-                        description = "1-3 short messages, each under 150 chars",
-                        maxItems = 3,
-                        items = SchemaProperty(type = "string")
-                    ),
-                    "suggestions" to SchemaProperty(
-                        type = "array",
-                        description = "0-2 action suggestions",
-                        maxItems = 2,
-                        items = SchemaProperty(
-                            type = "object",
-                            properties = mapOf(
-                                "type" to SchemaProperty(
-                                    type = "string",
-                                    enum = listOf("CREATE_GOAL", "CREATE_HABIT", "CREATE_JOURNAL", "CHECK_IN_HABIT")
-                                ),
-                                "label" to SchemaProperty(type = "string"),
-                                "data" to SchemaProperty(
-                                    type = "object",
-                                    properties = mapOf(
-                                        "title" to SchemaProperty(type = "string"),
-                                        "description" to SchemaProperty(type = "string"),
-                                        "category" to SchemaProperty(type = "string"),
-                                        "timeline" to SchemaProperty(type = "string"),
-                                        "frequency" to SchemaProperty(type = "string"),
-                                        "content" to SchemaProperty(type = "string"),
-                                        "mood" to SchemaProperty(type = "string"),
-                                        "habitId" to SchemaProperty(type = "string"),
-                                        "habitTitle" to SchemaProperty(type = "string")
-                                    )
-                                )
-                            )
-                        )
-                    )
-                )
-            )
-        }
     }
 
     override suspend fun getAllSessions(): List<ChatSession> {
@@ -529,6 +204,16 @@ Use this context to personalize your responses and make relevant suggestions.
         // Get conversation history BEFORE adding current message to avoid duplication
         val recentMessages = getRecentMessages(sessionId, 10)
 
+        // Load user situation for personalized prompts
+        val situation = userSituationRepository?.let {
+            try { database.getUserSituation()?.toUserSituationDomain() } catch (_: Exception) { null }
+        }
+
+        // Load active goals for habit linking
+        val goalSummaries = try {
+            database.getActiveGoals().map { g -> "${g.id}: ${g.title} (${g.category})" }
+        } catch (_: Exception) { emptyList() }
+
         // Now add the user message to the database
         addUserMessage(sessionId, userMessage, relatedGoalId)
 
@@ -542,7 +227,7 @@ Use this context to personalize your responses and make relevant suggestions.
                 if (customCoach != null) {
                     callGeminiCustomCoachChat(userMessage, recentMessages, userContext, customCoach)
                 } else {
-                    callGeminiChat(userMessage, recentMessages, userContext, null)
+                    callGeminiChat(userMessage, recentMessages, userContext, null, situation, goalSummaries)
                 }
             }
             isCustomGroup && coachRepository != null -> {
@@ -556,7 +241,7 @@ Use this context to personalize your responses and make relevant suggestions.
             }
             else -> {
                 val coach = if (coachId == "luna_general") null else CoachPersona.getById(coachId)
-                callGeminiChat(userMessage, recentMessages, userContext, coach)
+                callGeminiChat(userMessage, recentMessages, userContext, coach, situation, goalSummaries)
             }
         }
 
@@ -602,12 +287,41 @@ Use this context to personalize your responses and make relevant suggestions.
         // Get conversation history BEFORE adding current message
         val recentMessages = getRecentMessages(sessionId, 10)
 
+        // Load user situation for personalized prompts
+        val situation = userSituationRepository?.let {
+            try { database.getUserSituation()?.toUserSituationDomain() } catch (_: Exception) { null }
+        }
+
+        // Load active goals for habit linking
+        val goalSummaries = try {
+            database.getActiveGoals().map { g -> "${g.id}: ${g.title} (${g.category})" }
+        } catch (_: Exception) { emptyList() }
+
         // Save user message to DB and notify the ViewModel immediately
         val savedUserMessage = addUserMessage(sessionId, userMessage, relatedGoalId)
         emit(StreamingChatEvent.UserMessageSaved(savedUserMessage))
 
+        // Resolve custom coach and persona override before building the prompt
+        val customCoach = if (isCustomCoachId(coachId) && coachRepository != null) {
+            val customId = extractCustomCoachId(coachId)
+            coachRepository.getCustomCoachById(customId)
+        } else null
+
+        val personaOverride = if (customCoach == null && coach != null) {
+            coachRepository?.getPersonaOverride(coach.id)
+        } else null
+
         // Build plain-text system prompt (no JSON schema for streaming)
-        val systemPrompt = buildStreamingSystemPrompt(userContext, coach, recentMessages, coachId)
+        val systemPrompt = buildStreamingSystemPrompt(
+            userContext = userContext,
+            coach = coach,
+            conversationHistory = recentMessages,
+            customCoach = customCoach,
+            personaOverride = personaOverride,
+            situation = situation,
+            orchestrator = orchestrator,
+            activeGoals = goalSummaries
+        )
 
         // Build messages for the proxy
         val proxyMessages = listOf(
@@ -633,8 +347,13 @@ Use this context to personalize your responses and make relevant suggestions.
                     is AiProxyService.StreamEvent.Done -> {
                         val rawText = accumulated.toString().ifEmpty { event.fullText }
 
+                        // Write back any profile updates the AI extracted
+                        persistMemoryUpdate(rawText, situation)
+
                         // Parse inline suggestion tags directly — no second API call needed
-                        val (cleanedText, suggestions) = parseInlineSuggestions(rawText)
+                        val (cleanedText, suggestions) = parseInlineSuggestions(
+                            rawText.replace(Regex("""\[UPDATE_SITUATION:[^\]]+\]"""), "")
+                        )
                         Logger.d("ChatRepositoryImpl") {
                             "Parsed ${suggestions.size} inline suggestions from response"
                         }
@@ -673,819 +392,6 @@ Use this context to personalize your responses and make relevant suggestions.
         }
     }
 
-    /**
-     * Parse inline suggestion tags from streaming response text.
-     * Tags: [SUGGEST_GOAL:title|desc|category|timeline]
-     *        [SUGGEST_HABIT:title|desc|category|frequency]
-     *        [SUGGEST_JOURNAL:title|content|mood]
-     * Returns the cleaned text (tags removed) and parsed suggestions.
-     */
-    @OptIn(ExperimentalUuidApi::class)
-    private fun parseInlineSuggestions(rawText: String): Pair<String, List<CoachSuggestion>> {
-        val suggestions = mutableListOf<CoachSuggestion>()
-        val tagPattern = Regex("""\[SUGGEST_(GOAL|HABIT|JOURNAL):([^\]]+)\]""")
-        val matches = tagPattern.findAll(rawText)
-
-        for (match in matches) {
-            try {
-                val type = match.groupValues[1]
-                val parts = match.groupValues[2].split("|").map { it.trim() }
-                val id = Uuid.random().toString()
-
-                val suggestion: CoachSuggestion? = when (type) {
-                    "GOAL" -> {
-                        if (parts.size >= 2) {
-                            CoachSuggestion.CreateGoal(
-                                id = id,
-                                label = "Add Goal",
-                                title = parts[0],
-                                description = parts.getOrElse(1) { "" },
-                                category = parts.getOrElse(2) { "CAREER" },
-                                timeline = parts.getOrElse(3) { "MID_TERM" }
-                            )
-                        } else null
-                    }
-                    "HABIT" -> {
-                        if (parts.size >= 2) {
-                            CoachSuggestion.CreateHabit(
-                                id = id,
-                                label = "Add Habit",
-                                title = parts[0],
-                                description = parts.getOrElse(1) { "" },
-                                category = parts.getOrElse(2) { "PERSONAL" },
-                                frequency = parts.getOrElse(3) { "DAILY" }
-                            )
-                        } else null
-                    }
-                    "JOURNAL" -> {
-                        if (parts.size >= 2) {
-                            CoachSuggestion.CreateJournalEntry(
-                                id = id,
-                                label = "Add Entry",
-                                title = parts[0],
-                                content = parts.getOrElse(1) { "" },
-                                mood = parts.getOrElse(2) { null }
-                            )
-                        } else null
-                    }
-                    else -> null
-                }
-
-                if (suggestion != null) {
-                    suggestions.add(suggestion)
-                    Logger.d("ChatRepositoryImpl") { "Parsed suggestion: $type - ${parts[0]}" }
-                }
-            } catch (e: Exception) {
-                Logger.w("ChatRepositoryImpl") { "Failed to parse suggestion tag: ${match.value}, error: ${e.message}" }
-            }
-        }
-
-        // Also handle legacy [SUGGEST_ACTION] tag (just remove it)
-        val cleanedText = rawText.replace(tagPattern, "").replace("[SUGGEST_ACTION]", "").trimEnd()
-        return Pair(cleanedText, suggestions)
-    }
-
-    private suspend fun buildStreamingSystemPrompt(
-        userContext: UserContext,
-        coach: CoachPersona?,
-        conversationHistory: List<ChatMessage>,
-        coachId: String
-    ): String {
-        val coachName = coach?.name ?: "Luna"
-        val coachPersonality = coach?.personality ?: "warm, encouraging, holistic thinker"
-
-        // Check if it's a custom coach
-        val customCoach = if (isCustomCoachId(coachId) && coachRepository != null) {
-            val customId = extractCustomCoachId(coachId)
-            coachRepository.getCustomCoachById(customId)
-        } else null
-
-        val historyText = if (conversationHistory.isNotEmpty()) {
-            conversationHistory.takeLast(10).joinToString("\n") { msg ->
-                "${if (msg.role == MessageRole.USER) "User" else coachName}: ${msg.content}"
-            }
-        } else ""
-
-        val personaOverride = if (customCoach == null && coach != null) {
-            coachRepository?.getPersonaOverride(coach.id)
-        } else null
-
-        val coachIntro = if (customCoach != null) {
-            """
-You are ${customCoach.name}, a personal coach in the LifePlanner app.
-YOUR PERSONALITY AND INSTRUCTIONS: ${customCoach.systemPrompt}
-""".trimIndent()
-        } else {
-            """
-You are $coachName, a friendly ${coach?.title ?: "Life Coach"} in LifePlanner app.
-${if (coach != null) "YOUR PERSONALITY: $coachPersonality\nYOUR SPECIALTIES: ${coach.specialties.joinToString(", ")}" else ""}
-${if (personaOverride != null) "USER'S CUSTOMIZATION (follow this closely): $personaOverride" else ""}
-""".trimIndent()
-        }
-
-        return """
-$coachIntro
-
-User Context:
-- Name: ${userContext.userName ?: "User"}
-- Level: ${userContext.level} (${userContext.totalXp} XP)
-- Goals: ${userContext.activeGoals} active, ${userContext.completedGoals} completed
-- Streak: ${userContext.currentStreak} days
-
-${if (historyText.isNotEmpty()) "CONVERSATION HISTORY:\n$historyText\n" else ""}
-
-INSTRUCTIONS:
-- Respond in plain text (NOT JSON). Write naturally.
-- Keep responses to 1-3 sentences. Get to the point.
-- Stay in character as $coachName.
-- Give actionable advice, not cheerleading. No filler phrases like "That's great!", "I love that!", "Absolutely!".
-- Don't repeat back what the user said.
-- Ask at most 1 follow-up question, and only if truly needed.
-- If the user already provided details in the conversation history, don't re-ask.
-- NEVER claim you have created, added, or set up a goal, habit, or journal entry. You cannot do that directly. The user will see action buttons to create items themselves.
-- SUGGESTION TAGS: Only append a hidden suggestion tag when the user EXPLICITLY asks to create, add, or start a goal, habit, or journal entry. Do NOT suggest on casual mentions — just have a conversation. If unsure whether they want to create something, ask first. Use at most 1 tag per response, placed at the very end:
-  For a goal: [SUGGEST_GOAL:title|description|CATEGORY|TIMELINE]
-  For a habit: [SUGGEST_HABIT:title|description|CATEGORY|FREQUENCY]
-  For a journal entry: [SUGGEST_JOURNAL:title|content|MOOD]
-  Categories: CAREER, FINANCIAL, PHYSICAL, SOCIAL, EMOTIONAL, SPIRITUAL, FAMILY
-  Timelines: SHORT_TERM, MID_TERM, LONG_TERM
-  Frequencies: DAILY, WEEKLY
-  Moods: HAPPY, SAD, ANXIOUS, CALM, EXCITED, GRATEFUL, ANGRY, NEUTRAL
-""".trimIndent()
-    }
-
-    private suspend fun callGeminiChat(
-        userMessage: String,
-        conversationHistory: List<ChatMessage>,
-        userContext: UserContext,
-        coach: CoachPersona? = null
-    ): CoachResponse {
-        val coachName = coach?.name ?: "Luna"
-        val coachPersonality = coach?.personality ?: "warm, encouraging, holistic thinker"
-        val personaOverride = coach?.let { coachRepository?.getPersonaOverride(it.id) }
-
-        // Build conversation history with last 10 messages for better context
-        val historyText = if (conversationHistory.isNotEmpty()) {
-            conversationHistory.takeLast(10).joinToString("\n") { msg ->
-                "${if (msg.role == MessageRole.USER) "User" else coachName}: ${msg.content}"
-            }
-        } else ""
-
-        // Log conversation history for debugging
-        co.touchlab.kermit.Logger.d("ChatRepository") {
-            "Sending message to $coachName with ${conversationHistory.size} history messages"
-        }
-        if (historyText.isNotEmpty()) {
-            co.touchlab.kermit.Logger.d("ChatRepository") {
-                "History:\n$historyText"
-            }
-        }
-
-        val prompt = """
-You are $coachName, a friendly ${coach?.title ?: "Life Coach"} in LifePlanner app.
-${if (coach != null) "YOUR PERSONALITY: $coachPersonality\nYOUR SPECIALTIES: ${coach.specialties.joinToString(", ")}" else ""}
-${if (personaOverride != null) "USER'S CUSTOMIZATION (follow this closely): $personaOverride" else ""}
-
-User Context:
-- Level: ${userContext.level} (${userContext.totalXp} XP)
-- Goals: ${userContext.activeGoals} active, ${userContext.completedGoals} completed
-- Streak: ${userContext.currentStreak} days
-
-${if (historyText.isNotEmpty()) "CONVERSATION HISTORY (use this to understand context):\n$historyText\n" else ""}
-User's current message: $userMessage
-
-INSTRUCTIONS:
-1. Keep messages short (under 100 chars each), friendly and encouraging
-2. Stay in character as $coachName with your ${coachPersonality} personality
-3. READ THE CONVERSATION HISTORY - if user already provided details or answered questions, DO NOT ask again
-4. Be HELPFUL - suggest goals/habits when:
-   - User explicitly asks to create something
-   - User has given enough context (what they want to achieve)
-   - You've already asked a question in history and user responded
-5. Only ask ONE quick clarifying question if the request is truly vague (like just "help me")
-6. When creating a goal, include 3-5 meaningful milestones with weekOffset (1=week 1, 2=week 2, etc.)
-7. If discussing an attached goal/habit, provide relevant advice
-
-SUGGESTION FORMAT - Add to "suggestions" array when appropriate:
-- CREATE_GOAL: {"type":"CREATE_GOAL","label":"Add Goal","data":{"title":"Goal title","description":"Description","category":"CAREER","timeline":"MID_TERM","milestones":[{"title":"Step 1","weekOffset":1}]}}
-- CREATE_HABIT: {"type":"CREATE_HABIT","label":"Add Habit","data":{"title":"Habit title","description":"Description","category":"HEALTH","frequency":"DAILY"}}
-
-Categories: CAREER, FINANCIAL, PHYSICAL, SOCIAL, EMOTIONAL, SPIRITUAL, FAMILY
-Timelines: SHORT_TERM (30 days), MID_TERM (90 days), LONG_TERM (1 year)
-Frequencies: DAILY, WEEKLY
-
-IMPORTANT: If user explained what they want to achieve, include the goal/habit in the suggestions array immediately. In your messages, say you're suggesting it — never claim you created it. The user will see action buttons to create items themselves.
-        """.trimIndent()
-
-        // Log the full prompt for debugging
-        co.touchlab.kermit.Logger.d("ChatRepository") {
-            "Full prompt being sent:\n$prompt"
-        }
-
-        val requestBody = buildJsonObject {
-            putJsonArray("contents") {
-                addJsonObject {
-                    putJsonArray("parts") {
-                        addJsonObject {
-                            put("text", prompt)
-                        }
-                    }
-                }
-            }
-            putJsonObject("generationConfig") {
-                put("responseMimeType", "application/json")
-                putJsonObject("responseSchema") {
-                    put("type", "object")
-                    putJsonObject("properties") {
-                        putJsonObject("messages") {
-                            put("type", "array")
-                            putJsonObject("items") {
-                                put("type", "string")
-                            }
-                        }
-                        putJsonObject("suggestions") {
-                            put("type", "array")
-                            putJsonObject("items") {
-                                put("type", "object")
-                                putJsonObject("properties") {
-                                    putJsonObject("type") {
-                                        put("type", "string")
-                                        putJsonArray("enum") {
-                                            add("CREATE_GOAL")
-                                            add("CREATE_HABIT")
-                                        }
-                                    }
-                                    putJsonObject("label") {
-                                        put("type", "string")
-                                    }
-                                    putJsonObject("data") {
-                                        put("type", "object")
-                                        putJsonObject("properties") {
-                                            putJsonObject("title") { put("type", "string") }
-                                            putJsonObject("description") { put("type", "string") }
-                                            putJsonObject("category") {
-                                                put("type", "string")
-                                                putJsonArray("enum") {
-                                                    add("CAREER")
-                                                    add("FINANCIAL")
-                                                    add("PHYSICAL")
-                                                    add("SOCIAL")
-                                                    add("EMOTIONAL")
-                                                    add("SPIRITUAL")
-                                                    add("FAMILY")
-                                                    add("HEALTH")
-                                                    add("PRODUCTIVITY")
-                                                    add("MINDFULNESS")
-                                                    add("LEARNING")
-                                                    add("PERSONAL")
-                                                }
-                                            }
-                                            putJsonObject("timeline") {
-                                                put("type", "string")
-                                                putJsonArray("enum") {
-                                                    add("SHORT_TERM")
-                                                    add("MID_TERM")
-                                                    add("LONG_TERM")
-                                                }
-                                            }
-                                            putJsonObject("frequency") {
-                                                put("type", "string")
-                                                putJsonArray("enum") {
-                                                    add("DAILY")
-                                                    add("WEEKLY")
-                                                }
-                                            }
-                                            // Milestones for goals
-                                            putJsonObject("milestones") {
-                                                put("type", "array")
-                                                putJsonObject("items") {
-                                                    put("type", "object")
-                                                    putJsonObject("properties") {
-                                                        putJsonObject("title") { put("type", "string") }
-                                                        putJsonObject("weekOffset") { put("type", "integer") }
-                                                    }
-                                                    putJsonArray("required") { add("title") }
-                                                }
-                                            }
-                                        }
-                                        putJsonArray("required") {
-                                            add("title")
-                                        }
-                                    }
-                                }
-                                putJsonArray("required") {
-                                    add("type")
-                                    add("label")
-                                    add("data")
-                                }
-                            }
-                        }
-                    }
-                    putJsonArray("required") {
-                        add("messages")
-                        add("suggestions")
-                    }
-                }
-            }
-        }
-
-        return try {
-            val proxyMessages = buildAiProxyMessages(requestBody)
-            val systemPrompt = extractSystemPrompt(requestBody)
-            val responseSchema = extractResponseSchema(requestBody)
-            Logger.d("ChatRepositoryImpl") {
-                "Calling aiProxy.chat: ${proxyMessages.size} messages, " +
-                    "systemPrompt=${systemPrompt != null}, schema=${responseSchema != null}"
-            }
-            val rawText = aiProxy.chat(
-                messages = proxyMessages,
-                systemPrompt = systemPrompt,
-                responseSchema = responseSchema
-            )
-            Logger.d("ChatRepositoryImpl") { "AI response received (${rawText.length} chars)" }
-            parseCoachResponse(rawText)
-        } catch (e: Exception) {
-            Logger.e("ChatRepositoryImpl") { "Coach chat request failed: ${e.message}\n${e.stackTraceToString()}" }
-            CoachResponse(
-                messages = listOf("I'm having trouble connecting right now. Could you try again in a moment?"),
-                suggestions = emptyList()
-            )
-        }
-    }
-
-    /**
-     * Custom coach chat: Uses user-defined personality and prompt
-     */
-    private suspend fun callGeminiCustomCoachChat(
-        userMessage: String,
-        conversationHistory: List<ChatMessage>,
-        userContext: UserContext,
-        customCoach: CustomCoach
-    ): CoachResponse {
-        val historyText = if (conversationHistory.isNotEmpty()) {
-            conversationHistory.takeLast(10).joinToString("\n") { msg ->
-                "${if (msg.role == MessageRole.USER) "User" else customCoach.name}: ${msg.content}"
-            }
-        } else ""
-
-        val systemPrompt = getCustomCoachSystemPrompt(customCoach)
-        val userContextInfo = buildUserContextInfo(userContext)
-
-        val fullPrompt = """
-$systemPrompt
-
-$userContextInfo
-
-${if (historyText.isNotEmpty()) "Recent conversation:\n$historyText\n" else ""}
-User's message: $userMessage
-
-Respond as ${customCoach.name} in the required JSON format.
-""".trimIndent()
-
-        return makeGeminiRequest(fullPrompt, customCoach.name)
-    }
-
-    /**
-     * Custom group chat: Multiple coaches (custom and/or built-in) respond council-style
-     */
-    private suspend fun callGeminiCustomGroupChat(
-        userMessage: String,
-        conversationHistory: List<ChatMessage>,
-        userContext: UserContext,
-        group: CoachGroup
-    ): CoachResponse {
-        // Separate built-in and custom coaches from group members
-        val builtinCoaches = mutableListOf<CoachPersona>()
-        val customCoaches = mutableListOf<CustomCoach>()
-
-        for (member in group.members) {
-            when (member.coachType) {
-                CoachType.BUILTIN -> {
-                    CoachPersona.getById(member.coachId)?.let { builtinCoaches.add(it) }
-                }
-                CoachType.CUSTOM -> {
-                    coachRepository?.getCustomCoachById(member.coachId)?.let { customCoaches.add(it) }
-                }
-            }
-        }
-
-        val allCoachNames = (builtinCoaches.map { it.name } + customCoaches.map { it.name })
-
-        val historyText = if (conversationHistory.isNotEmpty()) {
-            conversationHistory.takeLast(10).joinToString("\n") { msg ->
-                if (msg.role == MessageRole.USER) {
-                    "User: ${msg.content}"
-                } else {
-                    msg.content
-                }
-            }
-        } else ""
-
-        val systemPrompt = getCustomGroupSystemPrompt(group, customCoaches, builtinCoaches)
-        val userContextInfo = buildUserContextInfo(userContext)
-
-        val fullPrompt = """
-$systemPrompt
-
-$userContextInfo
-
-${if (historyText.isNotEmpty()) "Recent conversation:\n$historyText\n" else ""}
-User's message: $userMessage
-
-Have 2-4 relevant coaches respond in the required JSON format.
-""".trimIndent()
-
-        return makeGeminiCouncilRequest(fullPrompt, allCoachNames)
-    }
-
-    /**
-     * Build user context info for prompts
-     */
-    private fun buildUserContextInfo(userContext: UserContext): String {
-        return """
-Current User Context:
-- Name: ${userContext.userName ?: "User"}
-- Level: ${userContext.level} (${userContext.totalXp} XP)
-- Current Streak: ${userContext.currentStreak} days
-- Goals: ${userContext.activeGoals} active, ${userContext.completedGoals} completed
-- Habit completion rate: ${(userContext.habitCompletionRate * 100).toInt()}%
-""".trimIndent()
-    }
-
-    /**
-     * Make a Gemini API request and parse the response (for individual coach)
-     */
-    private suspend fun makeGeminiRequest(prompt: String, coachName: String): CoachResponse {
-        val requestBody = buildJsonObject {
-            putJsonArray("contents") {
-                addJsonObject {
-                    putJsonArray("parts") {
-                        addJsonObject { put("text", prompt) }
-                    }
-                }
-            }
-            putJsonObject("generationConfig") {
-                put("temperature", 0.7)
-                put("maxOutputTokens", 1024)
-                put("responseMimeType", "application/json")
-            }
-        }
-
-        return try {
-            val rawText = aiProxy.chat(
-                messages = buildAiProxyMessages(requestBody),
-                systemPrompt = extractSystemPrompt(requestBody),
-                responseSchema = extractResponseSchema(requestBody)
-            )
-            parseCoachResponse(rawText)
-        } catch (e: Exception) {
-            Logger.e("ChatRepositoryImpl") { "Custom coach chat request failed: ${e.message}\n${e.stackTraceToString()}" }
-            CoachResponse(
-                messages = listOf("I'm having trouble connecting right now. Could you try again?"),
-                suggestions = emptyList()
-            )
-        }
-    }
-
-    /**
-     * Make a Gemini API request for council-style responses
-     */
-    private suspend fun makeGeminiCouncilRequest(prompt: String, coachNames: List<String>): CoachResponse {
-        val requestBody = buildJsonObject {
-            putJsonArray("contents") {
-                addJsonObject {
-                    putJsonArray("parts") {
-                        addJsonObject { put("text", prompt) }
-                    }
-                }
-            }
-            putJsonObject("generationConfig") {
-                put("temperature", 0.7)
-                put("maxOutputTokens", 1500)
-                put("responseMimeType", "application/json")
-            }
-        }
-
-        return try {
-            val rawText = aiProxy.chat(
-                messages = buildAiProxyMessages(requestBody),
-                systemPrompt = extractSystemPrompt(requestBody),
-                responseSchema = extractResponseSchema(requestBody)
-            )
-            parseCouncilResponse(rawText, coachNames)
-        } catch (e: Exception) {
-            Logger.e("ChatRepositoryImpl") { "Council chat request failed: ${e.message}\n${e.stackTraceToString()}" }
-            CoachResponse(
-                messages = listOf("We're having trouble connecting right now. Please try again."),
-                suggestions = emptyList()
-            )
-        }
-    }
-
-    /**
-     * Council mode: Multiple coaches respond in a meeting-style discussion
-     */
-    private suspend fun callGeminiCouncilChat(
-        userMessage: String,
-        conversationHistory: List<ChatMessage>,
-        userContext: UserContext
-    ): CoachResponse {
-        // Build conversation history - in council mode, messages may have coach prefixes
-        val historyText = if (conversationHistory.isNotEmpty()) {
-            conversationHistory.takeLast(10).joinToString("\n") { msg ->
-                if (msg.role == MessageRole.USER) {
-                    "User: ${msg.content}"
-                } else {
-                    // Assistant messages in council mode might have coach names embedded
-                    msg.content
-                }
-            }
-        } else ""
-
-        co.touchlab.kermit.Logger.d("ChatRepository") {
-            "Sending council message with ${conversationHistory.size} history messages"
-        }
-
-        val prompt = """
-$COUNCIL_PERSONA
-
-User Context:
-- Level: ${userContext.level} (${userContext.totalXp} XP)
-- Goals: ${userContext.activeGoals} active, ${userContext.completedGoals} completed
-- Streak: ${userContext.currentStreak} days
-
-${if (historyText.isNotEmpty()) "CONVERSATION HISTORY:\n$historyText\n" else ""}
-User's current message: $userMessage
-
-Remember:
-- Pick 2-4 most relevant coaches to respond
-- Each coach should add unique value, not repeat others
-- Build on each other's points like a real meeting
-- Mix serious and light-hearted tones based on coach personality
-
-SUGGESTION FORMAT - Add to "suggestions" array when user wants to create something:
-- CREATE_GOAL: {"type":"CREATE_GOAL","label":"Add Goal","data":{"title":"Goal title","description":"Description","category":"CAREER","timeline":"MID_TERM","milestones":[{"title":"Step 1","weekOffset":1}]}}
-- CREATE_HABIT: {"type":"CREATE_HABIT","label":"Add Habit","data":{"title":"Habit title","description":"Description","category":"HEALTH","frequency":"DAILY"}}
-
-Categories: CAREER, FINANCIAL, PHYSICAL, SOCIAL, EMOTIONAL, SPIRITUAL, FAMILY
-If user explained their goal clearly, one coach should propose a goal/habit suggestion immediately!
-        """.trimIndent()
-
-        co.touchlab.kermit.Logger.d("ChatRepository") {
-            "Council prompt being sent:\n$prompt"
-        }
-
-        val requestBody = buildJsonObject {
-            putJsonArray("contents") {
-                addJsonObject {
-                    putJsonArray("parts") {
-                        addJsonObject {
-                            put("text", prompt)
-                        }
-                    }
-                }
-            }
-            putJsonObject("generationConfig") {
-                put("responseMimeType", "application/json")
-                putJsonObject("responseSchema") {
-                    put("type", "object")
-                    putJsonObject("properties") {
-                        putJsonObject("messages") {
-                            put("type", "array")
-                            putJsonObject("items") {
-                                put("type", "object")
-                                putJsonObject("properties") {
-                                    putJsonObject("coach") {
-                                        put("type", "string")
-                                        putJsonArray("enum") {
-                                            add("luna")
-                                            add("alex")
-                                            add("morgan")
-                                            add("kai")
-                                            add("sam")
-                                            add("river")
-                                            add("jamie")
-                                        }
-                                    }
-                                    putJsonObject("text") {
-                                        put("type", "string")
-                                    }
-                                }
-                                putJsonArray("required") {
-                                    add("coach")
-                                    add("text")
-                                }
-                            }
-                        }
-                        putJsonObject("suggestions") {
-                            put("type", "array")
-                            putJsonObject("items") {
-                                put("type", "object")
-                                putJsonObject("properties") {
-                                    putJsonObject("type") {
-                                        put("type", "string")
-                                        putJsonArray("enum") {
-                                            add("CREATE_GOAL")
-                                            add("CREATE_HABIT")
-                                        }
-                                    }
-                                    putJsonObject("label") {
-                                        put("type", "string")
-                                    }
-                                    putJsonObject("data") {
-                                        put("type", "object")
-                                        putJsonObject("properties") {
-                                            putJsonObject("title") { put("type", "string") }
-                                            putJsonObject("description") { put("type", "string") }
-                                            putJsonObject("category") { put("type", "string") }
-                                            putJsonObject("timeline") { put("type", "string") }
-                                            putJsonObject("frequency") { put("type", "string") }
-                                            putJsonObject("milestones") {
-                                                put("type", "array")
-                                                putJsonObject("items") {
-                                                    put("type", "object")
-                                                    putJsonObject("properties") {
-                                                        putJsonObject("title") { put("type", "string") }
-                                                        putJsonObject("weekOffset") { put("type", "integer") }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    putJsonArray("required") {
-                        add("messages")
-                        add("suggestions")
-                    }
-                }
-            }
-        }
-
-        return try {
-            val rawText = aiProxy.chat(
-                messages = buildAiProxyMessages(requestBody),
-                systemPrompt = extractSystemPrompt(requestBody),
-                responseSchema = extractResponseSchema(requestBody)
-            )
-            parseCouncilResponse(rawText)
-        } catch (e: Exception) {
-            Logger.e("ChatRepositoryImpl") { "Council meeting request failed: ${e.message}\n${e.stackTraceToString()}" }
-            CoachResponse(
-                messages = listOf("Luna: The council is having a moment. Let me help you directly!"),
-                suggestions = emptyList()
-            )
-        }
-    }
-
-    /**
-     * Parse council response where messages have coach + text structure
-     */
-    @OptIn(ExperimentalUuidApi::class)
-    private fun parseCouncilResponse(rawText: String): CoachResponse {
-        return parseCouncilResponse(rawText, null)
-    }
-
-    /**
-     * Parse council response with optional custom coach names
-     * Used for custom groups where coach names are dynamic
-     */
-    @OptIn(ExperimentalUuidApi::class)
-    private fun parseCouncilResponse(rawText: String, coachNames: List<String>?): CoachResponse {
-        val trimmed = rawText.trim()
-        val fallbackCoach = coachNames?.firstOrNull() ?: "Luna"
-
-        if (!trimmed.startsWith("{") || !trimmed.endsWith("}")) {
-            return CoachResponse(
-                messages = listOf("$fallbackCoach: Let me gather the team's thoughts on this..."),
-                suggestions = emptyList()
-            )
-        }
-
-        return try {
-            val responseData = json.decodeFromString<CouncilResponseData>(trimmed)
-
-            // Format messages with coach names (e.g., "Luna: message")
-            val messages = responseData.messages
-                .filter { it.text.isNotBlank() }
-                .map { msg ->
-                    val coachName = msg.coach.replaceFirstChar { it.uppercase() }
-                    "$coachName: ${msg.text}"
-                }
-                .ifEmpty { listOf("$fallbackCoach: I'm here to help!") }
-
-            val suggestions = responseData.suggestions.mapNotNull { suggestionData ->
-                convertToCoachSuggestion(suggestionData)
-            }
-
-            CoachResponse(messages = messages, suggestions = suggestions)
-        } catch (e: Exception) {
-            Logger.e("ChatRepositoryImpl") { "Council response parsing failed: ${e.message}" }
-            CoachResponse(
-                messages = listOf("$fallbackCoach: Let me try again... What would you like help with?"),
-                suggestions = emptyList()
-            )
-        }
-    }
-
-    private fun buildAiProxyMessages(requestBody: JsonObject): List<AiProxyService.ChatMessage> {
-        val contents = requestBody["contents"]?.jsonArray ?: return emptyList()
-        return contents.mapNotNull { content ->
-            val obj = content.jsonObject
-            val role = obj["role"]?.jsonPrimitive?.content ?: "user"
-            val text = obj["parts"]?.jsonArray?.firstOrNull()
-                ?.jsonObject?.get("text")?.jsonPrimitive?.content ?: return@mapNotNull null
-            AiProxyService.ChatMessage(role = role, content = text)
-        }
-    }
-
-    private fun extractSystemPrompt(requestBody: JsonObject): String? {
-        val systemInstruction = requestBody["systemInstruction"]?.jsonObject ?: return null
-        return systemInstruction["parts"]?.jsonArray?.firstOrNull()
-            ?.jsonObject?.get("text")?.jsonPrimitive?.content
-    }
-
-    private fun extractResponseSchema(requestBody: JsonObject): JsonObject? {
-        val config = requestBody["generationConfig"]?.jsonObject ?: return null
-        return config["responseSchema"]?.jsonObject
-    }
-
-    @OptIn(ExperimentalUuidApi::class)
-    private fun parseCoachResponse(rawText: String): CoachResponse {
-        val trimmed = rawText.trim()
-
-        if (!trimmed.startsWith("{") || !trimmed.endsWith("}")) {
-            return CoachResponse(
-                messages = listOf("I'm thinking about that... Could you try asking again?"),
-                suggestions = emptyList()
-            )
-        }
-
-        return try {
-            val responseData = json.decodeFromString<CoachResponseData>(trimmed)
-
-            val messages = responseData.messages
-                .filter { it.isNotBlank() }
-                .ifEmpty { listOf("I'm here to help!") }
-
-            val suggestions = responseData.suggestions.mapNotNull { suggestionData ->
-                convertToCoachSuggestion(suggestionData)
-            }
-
-            CoachResponse(messages = messages, suggestions = suggestions)
-        } catch (e: Exception) {
-            Logger.e("ChatRepositoryImpl") { "Coach response parsing failed: ${e.message}" }
-            CoachResponse(
-                messages = listOf("Let me try that again... What would you like help with?"),
-                suggestions = emptyList()
-            )
-        }
-    }
-
-    @OptIn(ExperimentalUuidApi::class)
-    private fun convertToCoachSuggestion(suggestionData: SuggestionData): CoachSuggestion? {
-        val id = Uuid.random().toString()
-        val payload = suggestionData.data
-
-        return when (suggestionData.type) {
-            "CREATE_GOAL" -> CoachSuggestion.CreateGoal(
-                id = id,
-                label = suggestionData.label,
-                title = payload.title ?: return null,
-                description = payload.description ?: "",
-                category = payload.category ?: "CAREER",
-                timeline = payload.timeline ?: "MID_TERM",
-                milestones = payload.milestones.map { m ->
-                    SuggestedMilestone(title = m.title, weekOffset = m.weekOffset)
-                }
-            )
-            "CREATE_HABIT" -> CoachSuggestion.CreateHabit(
-                id = id,
-                label = suggestionData.label,
-                title = payload.title ?: return null,
-                description = payload.description ?: "",
-                category = payload.category ?: "PERSONAL",
-                frequency = payload.frequency ?: "DAILY"
-            )
-            "CREATE_JOURNAL" -> CoachSuggestion.CreateJournalEntry(
-                id = id,
-                label = suggestionData.label,
-                title = payload.title ?: return null,
-                content = payload.content ?: "",
-                mood = payload.mood
-            )
-            "CHECK_IN_HABIT" -> CoachSuggestion.CheckInHabit(
-                id = id,
-                label = suggestionData.label,
-                habitId = payload.habitId ?: return null,
-                habitTitle = payload.habitTitle ?: ""
-            )
-            else -> null
-        }
-    }
-
     override suspend fun getUserContext(): UserContext {
         val userProgress = database.getUserProgressEntity()
         val activeGoals = database.getActiveGoals()
@@ -1503,8 +409,11 @@ If user explained their goal clearly, one coach should propose a goal/habit sugg
 
         val recentMilestones = mutableListOf<String>()
 
+        val userEntity = database { db -> db.lifePlannerDBQueries.getCurrentUser().executeAsOneOrNull() }
+        val userName = userEntity?.displayName?.takeIf { it.isNotBlank() }
+
         return UserContext(
-            userName = null,
+            userName = userName,
             totalGoals = allGoals.size,
             completedGoals = completedGoals.size,
             activeGoals = activeGoals.size,
@@ -1531,6 +440,24 @@ If user explained their goal clearly, one coach should propose a goal/habit sugg
 
     override suspend fun getSessionCount(): Long {
         return database.getChatSessionCount()
+    }
+
+    // ===== UserSituation helpers =====
+
+    internal suspend fun persistMemoryUpdate(
+        rawText: String,
+        currentSituation: az.tribe.lifeplanner.domain.model.UserSituation?
+    ) {
+        val repo = userSituationRepository ?: return
+        val tag = orchestrator.parseMemoryUpdateTag(rawText) ?: return
+        val userId = database.getCurrentUserId() ?: return
+        val base = currentSituation ?: repo.getOrCreate(userId)
+        val updated = orchestrator.applyUpdate(tag, base)
+        try {
+            repo.upsert(userId, updated)
+        } catch (e: Exception) {
+            Logger.w("ChatRepositoryImpl") { "Memory update write failed: ${e.message}" }
+        }
     }
 
     override suspend fun markSuggestionExecuted(messageId: String, suggestionId: String) {

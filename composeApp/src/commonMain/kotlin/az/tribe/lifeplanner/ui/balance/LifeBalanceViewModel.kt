@@ -51,11 +51,11 @@ class LifeBalanceViewModel(
         loadBalance()
     }
 
-    fun loadBalance() {
+    fun loadBalance(forceRefresh: Boolean = false) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             try {
-                val report = repository.calculateCurrentBalance()
+                val report = repository.calculateCurrentBalance(forceRefresh)
                 Analytics.lifeBalanceChecked(report.overallScore.toFloat())
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,

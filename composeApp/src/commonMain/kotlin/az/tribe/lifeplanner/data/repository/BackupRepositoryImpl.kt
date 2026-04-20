@@ -5,6 +5,7 @@ import az.tribe.lifeplanner.domain.repository.BackupRepository
 import az.tribe.lifeplanner.domain.repository.MergeStrategy
 import az.tribe.lifeplanner.domain.repository.ValidationResult
 import az.tribe.lifeplanner.infrastructure.SharedDatabase
+import az.tribe.lifeplanner.infrastructure.*
 import com.russhwolf.settings.Settings
 import kotlin.time.Clock
 import kotlinx.datetime.TimeZone
@@ -267,6 +268,7 @@ class BackupRepositoryImpl(
                             createdAt = habitBackup.createdAt,
                             reminderTime = habitBackup.reminderTime,
                             type = "BUILD",
+                            unit = null,
                             sync_updated_at = Clock.System.now().toString(),
                             is_deleted = 0L,
                             sync_version = 0L,

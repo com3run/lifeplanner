@@ -1,21 +1,16 @@
 package az.tribe.lifeplanner
 
-import android.Manifest
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.media.AudioManager
-import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.SideEffect
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
-import az.tribe.lifeplanner.ui.GoalViewModel
+import az.tribe.lifeplanner.ui.goal.GoalViewModel
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.mmk.kmpnotifier.extensions.onCreateOrOnNewIntent
 import com.mmk.kmpnotifier.notification.NotifierManager
@@ -44,19 +39,7 @@ class MainActivity : ComponentActivity() {
         NotifierManager.onCreateOrOnNewIntent(intent)
         handleAuthDeeplink(intent)
         handlePromoDeeplink(intent)
-
-        // Request POST_NOTIFICATIONS permission on Android 13+
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
-                != PackageManager.PERMISSION_GRANTED
-            ) {
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-                    1001
-                )
-            }
-        }
+        handleGoalDeeplink(intent)
 
         setContent {
             val systemUiController = rememberSystemUiController()
@@ -86,6 +69,7 @@ class MainActivity : ComponentActivity() {
         NotifierManager.onCreateOrOnNewIntent(intent)
         handleAuthDeeplink(intent)
         handlePromoDeeplink(intent)
+        handleGoalDeeplink(intent)
     }
 
     /**
@@ -102,6 +86,15 @@ class MainActivity : ComponentActivity() {
             when (path) {
                 "chat" -> pendingPromoRoute = "ai_chat"
             }
+        }
+    }
+
+    private fun handleGoalDeeplink(intent: Intent) {
+        val uri = intent.data ?: return
+        if (uri.host == "tribe.az" && uri.pathSegments.contains("goal")) {
+            val goalId = uri.lastPathSegment ?: return
+            Logger.d("MainActivity") { "Goal deep link detected: $goalId" }
+            pendingPromoRoute = "goal_detail/$goalId"
         }
     }
 

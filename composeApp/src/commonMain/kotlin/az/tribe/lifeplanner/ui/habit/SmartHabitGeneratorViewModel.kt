@@ -95,12 +95,16 @@ class SmartHabitGeneratorViewModel(
     fun addHabit(habit: GeneratedHabit) {
         viewModelScope.launch {
             try {
+                val numeric = HabitNumericParser.parse(habit.title)
+                    ?: HabitNumericParser.parse(habit.description)
                 val newHabit = createNewHabit(
                     title = habit.title,
                     description = habit.description,
                     category = habit.category,
                     frequency = habit.frequency,
-                    type = habit.type
+                    type = habit.type,
+                    targetCount = numeric?.first ?: 1,
+                    unit = numeric?.second
                 )
                 createHabitUseCase(newHabit)
                 smartReminderManager.syncRemindersForHabit(newHabit)

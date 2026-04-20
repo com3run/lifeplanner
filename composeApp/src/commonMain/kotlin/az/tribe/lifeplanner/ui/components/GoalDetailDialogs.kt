@@ -3,12 +3,12 @@ package az.tribe.lifeplanner.ui.components
 import androidx.compose.runtime.Composable
 import az.tribe.lifeplanner.domain.enum.GoalStatus
 import az.tribe.lifeplanner.domain.model.Goal
-import az.tribe.lifeplanner.ui.AddMilestoneDialog
-import az.tribe.lifeplanner.ui.AllMilestonesCompletedDialog
-import az.tribe.lifeplanner.ui.CompleteGoalDialog
-import az.tribe.lifeplanner.ui.DeleteGoalDialog
-import az.tribe.lifeplanner.ui.GoalViewModel
-import az.tribe.lifeplanner.ui.NotesDialog
+import az.tribe.lifeplanner.ui.goal.AddMilestoneDialog
+import az.tribe.lifeplanner.ui.goal.AllMilestonesCompletedDialog
+import az.tribe.lifeplanner.ui.goal.CompleteGoalDialog
+import az.tribe.lifeplanner.ui.goal.DeleteGoalDialog
+import az.tribe.lifeplanner.ui.goal.GoalViewModel
+import az.tribe.lifeplanner.ui.goal.NotesDialog
 
 @Composable
 fun GoalDetailDialogs(
@@ -23,7 +23,9 @@ fun GoalDetailDialogs(
     onDismissDelete: () -> Unit,
     onDismissNotes: () -> Unit,
     onDismissAddMilestone: () -> Unit,
+    onCompleteConfirmed: () -> Unit,
     onDismissComplete: () -> Unit,
+    onAllMilestonesConfirmed: () -> Unit,
     onDismissAllMilestonesCompleted: () -> Unit,
     onBackClick: () -> Unit
 ) {
@@ -43,7 +45,6 @@ fun GoalDetailDialogs(
             currentNotes = goal.notes,
             onSave = { newNotes ->
                 viewModel.updateGoalNotes(goalId, newNotes)
-                viewModel.loadAllGoals()
                 onDismissNotes()
             },
             onDismiss = onDismissNotes
@@ -54,7 +55,6 @@ fun GoalDetailDialogs(
         AddMilestoneDialog(
             onAdd = { title, dueDate ->
                 viewModel.addMilestone(goalId, title, dueDate)
-                viewModel.loadAllGoals()
                 onDismissAddMilestone()
             },
             onDismiss = onDismissAddMilestone
@@ -66,8 +66,7 @@ fun GoalDetailDialogs(
             goalTitle = goal.title,
             onConfirm = {
                 viewModel.updateGoalStatus(goalId, GoalStatus.COMPLETED)
-                viewModel.loadAllGoals()
-                onDismissComplete()
+                onCompleteConfirmed()
             },
             onDismiss = onDismissComplete
         )
@@ -78,8 +77,7 @@ fun GoalDetailDialogs(
             goalTitle = goal.title,
             onConfirm = {
                 viewModel.updateGoalStatus(goalId, GoalStatus.COMPLETED)
-                viewModel.loadAllGoals()
-                onDismissAllMilestonesCompleted()
+                onAllMilestonesConfirmed()
             },
             onDismiss = onDismissAllMilestonesCompleted
         )

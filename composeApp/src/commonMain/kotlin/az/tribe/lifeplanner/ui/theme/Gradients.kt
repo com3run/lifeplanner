@@ -117,68 +117,57 @@ object LifePlannerGradients {
         )
 
     /**
-     * Financial gradient - Money green
+     * Money gradient - Money green
      */
-    val financial: Brush
+    val money: Brush
         @Composable get() = Brush.linearGradient(
             colors = listOf(
-                Color(0xFF11998E),  // Teal
-                Color(0xFF38EF7D)   // Green
+                Color(0xFF11998E),
+                Color(0xFF38EF7D)
             )
         )
 
     /**
-     * Physical gradient - Energy orange
+     * Body gradient - Energy orange
      */
-    val physical: Brush
+    val body: Brush
         @Composable get() = Brush.linearGradient(
             colors = listOf(
-                Color(0xFFFF8008),  // Orange
-                Color(0xFFFFC837)   // Yellow
+                Color(0xFFFF8008),
+                Color(0xFFFFC837)
             )
         )
 
     /**
-     * Social gradient - Vibrant purple
+     * People gradient - Vibrant purple
      */
-    val social: Brush
+    val people: Brush
         @Composable get() = Brush.linearGradient(
             colors = listOf(
-                Color(0xFF9C27B0),  // Purple
-                Color(0xFFE040FB)   // Light purple
+                Color(0xFF9C27B0),
+                Color(0xFFE040FB)
             )
         )
 
     /**
-     * Emotional gradient - Calm teal
+     * Wellbeing gradient - Calm teal
      */
-    val emotional: Brush
+    val wellbeing: Brush
         @Composable get() = Brush.linearGradient(
             colors = listOf(
-                Color(0xFF009688),  // Teal
-                Color(0xFF4DB6AC)   // Light teal
+                Color(0xFF009688),
+                Color(0xFF4DB6AC)
             )
         )
 
     /**
-     * Spiritual gradient - Deep rose
+     * Purpose gradient - Deep rose
      */
-    val spiritual: Brush
+    val purpose: Brush
         @Composable get() = Brush.linearGradient(
             colors = listOf(
-                Color(0xFFE91E63),  // Pink
-                Color(0xFFFF6090)   // Light pink
-            )
-        )
-
-    /**
-     * Family gradient - Warm indigo
-     */
-    val family: Brush
-        @Composable get() = Brush.linearGradient(
-            colors = listOf(
-                Color(0xFF3F51B5),  // Indigo
-                Color(0xFF7986CB)   // Light indigo
+                Color(0xFFE91E63),
+                Color(0xFFFF6090)
             )
         )
 
@@ -191,12 +180,11 @@ object LifePlannerGradients {
     fun forCategory(category: GoalCategory): Brush {
         return when (category) {
             GoalCategory.CAREER -> career
-            GoalCategory.FINANCIAL -> financial
-            GoalCategory.PHYSICAL -> physical
-            GoalCategory.SOCIAL -> social
-            GoalCategory.EMOTIONAL -> emotional
-            GoalCategory.SPIRITUAL -> spiritual
-            GoalCategory.FAMILY -> family
+            GoalCategory.MONEY -> money
+            GoalCategory.BODY -> body
+            GoalCategory.PEOPLE -> people
+            GoalCategory.WELLBEING -> wellbeing
+            GoalCategory.PURPOSE -> purpose
         }
     }
 
@@ -206,19 +194,18 @@ object LifePlannerGradients {
     fun colorsForCategory(category: GoalCategory): List<Color> {
         return when (category) {
             GoalCategory.CAREER -> listOf(Color(0xFF2196F3), Color(0xFF21CBF3))
-            GoalCategory.FINANCIAL -> listOf(Color(0xFF11998E), Color(0xFF38EF7D))
-            GoalCategory.PHYSICAL -> listOf(Color(0xFFFF8008), Color(0xFFFFC837))
-            GoalCategory.SOCIAL -> listOf(Color(0xFF9C27B0), Color(0xFFE040FB))
-            GoalCategory.EMOTIONAL -> listOf(Color(0xFF009688), Color(0xFF4DB6AC))
-            GoalCategory.SPIRITUAL -> listOf(Color(0xFFE91E63), Color(0xFFFF6090))
-            GoalCategory.FAMILY -> listOf(Color(0xFF3F51B5), Color(0xFF7986CB))
+            GoalCategory.MONEY -> listOf(Color(0xFF11998E), Color(0xFF38EF7D))
+            GoalCategory.BODY -> listOf(Color(0xFFFF8008), Color(0xFFFFC837))
+            GoalCategory.PEOPLE -> listOf(Color(0xFF9C27B0), Color(0xFFE040FB))
+            GoalCategory.WELLBEING -> listOf(Color(0xFF009688), Color(0xFF4DB6AC))
+            GoalCategory.PURPOSE -> listOf(Color(0xFFE91E63), Color(0xFFFF6090))
         }
     }
 
     // ==================== GLASS EFFECT GRADIENTS ====================
 
     /**
-     * Subtle glass overlay gradient
+     * Subtle glass overlay gradient — light mode only
      * Use for: Glass card backgrounds
      */
     val glassOverlay: Brush
@@ -226,6 +213,19 @@ object LifePlannerGradients {
             colors = listOf(
                 Color.White.copy(alpha = 0.25f),
                 Color.White.copy(alpha = 0.05f)
+            )
+        )
+
+    /**
+     * Dark-mode glass overlay — a gentle top-to-bottom dark gradient that
+     * lifts the card top just enough to read without any white wash.
+     * Uses the app's surfaceVariant dark tone (#252E42) fading to near-transparent.
+     */
+    val glassOverlayDark: Brush
+        @Composable get() = Brush.verticalGradient(
+            colors = listOf(
+                Color(0xFF252E42).copy(alpha = 0.55f),  // surfaceVariant dark — top highlight
+                Color(0xFF1B2437).copy(alpha = 0.08f)   // surface dark — barely there at bottom
             )
         )
     /**
@@ -248,6 +248,30 @@ object LifePlannerGradients {
             colors = listOf(
                 Color.White.copy(alpha = 0.5f),
                 Color.White.copy(alpha = 0.1f)
+            )
+        )
+
+    /**
+     * Dark blue glass — for nav bar and floating surfaces in dark mode.
+     * Deep navy with a subtle blue tint, ~93% opaque so the background
+     * colour bleeds through just enough to feel layered.
+     */
+    val glassNavDark: Brush
+        @Composable get() = Brush.verticalGradient(
+            colors = listOf(
+                Color(0xFF1C2D50).copy(alpha = 0.93f),  // deep navy top
+                Color(0xFF141F3A).copy(alpha = 0.97f)   // darker navy bottom
+            )
+        )
+
+    /**
+     * Soft blue border for dark-mode floating surfaces.
+     */
+    val glassBorderDark: Brush
+        @Composable get() = Brush.linearGradient(
+            colors = listOf(
+                Color(0xFF667EEA).copy(alpha = 0.45f),  // brand blue
+                Color(0xFF4A6CF7).copy(alpha = 0.12f)   // fade to near-invisible
             )
         )
 

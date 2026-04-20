@@ -1,14 +1,8 @@
 package az.tribe.lifeplanner.ui.components
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
@@ -16,31 +10,33 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.Undo
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.rounded.*
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.Trash
+import com.adamglin.phosphoricons.regular.Timer
+import com.adamglin.phosphoricons.regular.Briefcase
+import com.adamglin.phosphoricons.regular.Bank
+import com.adamglin.phosphoricons.regular.Barbell
+import com.adamglin.phosphoricons.regular.Users
+import com.adamglin.phosphoricons.regular.Heart
+import com.adamglin.phosphoricons.regular.Flower
+import com.adamglin.phosphoricons.regular.House
+import androidx.compose.foundation.clickable
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import az.tribe.lifeplanner.domain.enum.GoalCategory
-import az.tribe.lifeplanner.domain.enum.HabitFrequency
-import az.tribe.lifeplanner.domain.enum.HabitType
-import az.tribe.lifeplanner.domain.model.Habit
 import az.tribe.lifeplanner.ui.habit.HabitWithStatus
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
 import kotlin.math.absoluteValue
@@ -54,7 +50,7 @@ private enum class ThresholdState {
 }
 
 // Swipe thresholds
-private const val EDIT_THRESHOLD = 0.25f  // 25% for edit
+internal const val EDIT_THRESHOLD = 0.25f  // 25% for edit
 private const val DELETE_THRESHOLD = 0.45f  // 45% for delete
 
 /**
@@ -79,7 +75,6 @@ fun SwipeableHabitCard(
 
     var offsetX by remember { mutableStateOf(0f) }
     var cardWidth by remember { mutableStateOf(1f) }
-    val density = LocalDensity.current
 
     // Track threshold state for haptic feedback
     var currentThresholdState by remember { mutableStateOf(ThresholdState.NONE) }
@@ -185,7 +180,7 @@ fun SwipeableHabitCard(
             onDismissRequest = { showDeleteDialog = false },
             icon = {
                 Icon(
-                    imageVector = Icons.Rounded.Delete,
+                    imageVector = PhosphorIcons.Regular.Trash,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.error,
                     modifier = Modifier.size(32.dp)
@@ -216,114 +211,6 @@ fun SwipeableHabitCard(
 }
 
 @Composable
-private fun HabitSwipeBackgroundNew(
-    swipeProgress: Float,
-    isSwipingLeft: Boolean,
-    isSwipingRight: Boolean,
-    isInDeleteZone: Boolean,
-    isInEditZone: Boolean,
-    isCompletedToday: Boolean,
-    modifier: Modifier = Modifier
-) {
-    // Colors for different states
-    val editColor = Color(0xFF2196F3) // Blue for edit
-    val deleteColor = Color(0xFFF44336) // Red for delete
-    val checkInColor = if (isCompletedToday) Color(0xFFFF9800) else Color(0xFF4CAF50)
-
-    val backgroundColor by animateColorAsState(
-        targetValue = when {
-            isInDeleteZone -> deleteColor
-            isInEditZone -> editColor
-            isSwipingLeft && swipeProgress > 0.1f -> editColor.copy(alpha = 0.7f)
-            isSwipingRight && swipeProgress > 0.1f -> checkInColor
-            else -> Color.Transparent
-        },
-        animationSpec = tween(150),
-        label = "backgroundColor"
-    )
-
-    val icon = when {
-        isInDeleteZone -> Icons.Rounded.Delete
-        isSwipingLeft -> Icons.Rounded.Edit
-        isSwipingRight && isCompletedToday -> Icons.AutoMirrored.Rounded.Undo
-        isSwipingRight -> Icons.Rounded.CheckCircle
-        else -> null
-    }
-
-    val actionText = when {
-        isInDeleteZone -> "Delete"
-        isInEditZone -> "Edit"
-        isSwipingLeft && swipeProgress > 0.1f -> "Edit"
-        isSwipingRight && swipeProgress > EDIT_THRESHOLD -> if (isCompletedToday) "Undo" else "Check in"
-        else -> null
-    }
-
-    val alignment = if (isSwipingLeft) Alignment.CenterEnd else Alignment.CenterStart
-
-    val iconScale by animateFloatAsState(
-        targetValue = when {
-            isInDeleteZone -> 1.2f
-            swipeProgress > 0.15f -> 1f
-            else -> 0.8f
-        },
-        animationSpec = tween(150),
-        label = "iconScale"
-    )
-
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(LifePlannerDesign.CornerRadius.medium))
-            .background(backgroundColor)
-            .padding(horizontal = 20.dp),
-        contentAlignment = alignment
-    ) {
-        if (swipeProgress > 0.1f) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = if (isSwipingLeft) Arrangement.End else Arrangement.Start,
-                modifier = Modifier.graphicsLayer {
-                    scaleX = iconScale
-                    scaleY = iconScale
-                }
-            ) {
-                if (!isSwipingLeft) {
-                    icon?.let {
-                        Icon(
-                            imageVector = it,
-                            contentDescription = actionText,
-                            tint = Color.White,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                }
-
-                actionText?.let {
-                    Text(
-                        text = it,
-                        color = Color.White,
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-
-                if (isSwipingLeft) {
-                    Spacer(modifier = Modifier.width(8.dp))
-                    icon?.let {
-                        Icon(
-                            imageVector = it,
-                            contentDescription = actionText,
-                            tint = Color.White,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
 fun HabitCard(
     habitWithStatus: HabitWithStatus,
     onCheckIn: (() -> Unit)? = null,
@@ -333,8 +220,24 @@ fun HabitCard(
     val habit = habitWithStatus.habit
     val isCompletedToday = habitWithStatus.isCompletedToday
 
+    val haptic = rememberHapticManager()
+    val soundPlayer = rememberCelebrationSoundPlayer()
+    var showBurst by remember { mutableStateOf(false) }
+    val previouslyCompleted = remember { mutableStateOf(isCompletedToday) }
+
+    LaunchedEffect(isCompletedToday) {
+        val wasCompleted = previouslyCompleted.value
+        previouslyCompleted.value = isCompletedToday
+        if (isCompletedToday && !wasCompleted) {
+            showBurst = true
+            haptic.success()
+            soundPlayer.play(CelebrationType.STREAK_MILESTONE)
+        }
+    }
+
+    Box(modifier = modifier.fillMaxWidth()) {
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.medium),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
@@ -411,7 +314,7 @@ fun HabitCard(
                             .clickable(onClick = onFocusClick)
                     ) {
                         Icon(
-                            imageVector = Icons.Rounded.Timer,
+                            imageVector = PhosphorIcons.Regular.Timer,
                             contentDescription = "Focus",
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(18.dp)
@@ -459,245 +362,26 @@ fun HabitCard(
             }
         }
     }
-}
 
-/**
- * Category icon badge — shows the category symbol.
- * When completed, shows a green background with check overlay.
- */
-@Composable
-private fun CategoryIconBadge(
-    category: GoalCategory,
-    isCompleted: Boolean
-) {
-    val categoryColor = category.backgroundColor()
-
-    val bgColor by animateColorAsState(
-        targetValue = if (isCompleted) Color(0xFF4CAF50) else categoryColor.copy(alpha = 0.12f),
-        animationSpec = tween(300),
-        label = "iconBgColor"
-    )
-
-    val iconTint by animateColorAsState(
-        targetValue = if (isCompleted) Color.White else categoryColor,
-        animationSpec = tween(300),
-        label = "iconTint"
-    )
-
-    Box(contentAlignment = Alignment.Center) {
-        Surface(
-            modifier = Modifier.size(44.dp),
-            shape = RoundedCornerShape(12.dp),
-            color = bgColor
-        ) {
-            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                Icon(
-                    imageVector = category.getIcon(),
-                    contentDescription = category.name,
-                    tint = iconTint,
-                    modifier = Modifier.size(22.dp)
-                )
-            }
-        }
-    }
-}
-
-/**
- * Tappable circle for check-in — empty ring when pending, filled green check when done.
- */
-@Composable
-private fun CheckInCircle(
-    isCompleted: Boolean,
-    onClick: (() -> Unit)? = null
-) {
-    val checkScale by animateFloatAsState(
-        targetValue = if (isCompleted) 1f else 0f,
-        animationSpec = if (isCompleted) keyframes {
-            durationMillis = 300
-            0f at 0
-            1.2f at 150
-            1f at 300
-        } else tween(150),
-        label = "checkScale"
-    )
-
-    val borderColor by animateColorAsState(
-        targetValue = if (isCompleted) Color(0xFF4CAF50) else MaterialTheme.colorScheme.outlineVariant,
-        animationSpec = tween(200),
-        label = "borderColor"
-    )
-
-    val fillColor by animateColorAsState(
-        targetValue = if (isCompleted) Color(0xFF4CAF50) else Color.Transparent,
-        animationSpec = tween(200),
-        label = "fillColor"
-    )
-
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = Modifier
-            .size(36.dp)
-            .clip(CircleShape)
-            .then(
-                if (onClick != null) Modifier.clickable(onClick = onClick)
-                else Modifier
-            )
-    ) {
-        // Circle: empty ring when not done, filled green when done
-        Box(
-            contentAlignment = Alignment.Center,
+    if (showBurst) {
+        CheckInBurstOverlay(
             modifier = Modifier
-                .size(28.dp)
-                .clip(CircleShape)
-                .background(fillColor)
-                .then(
-                    if (!isCompleted) Modifier.background(
-                        color = Color.Transparent,
-                        shape = CircleShape
-                    ) else Modifier
-                )
-        ) {
-            // Border ring for uncompleted state
-            if (!isCompleted) {
-                Box(
-                    modifier = Modifier
-                        .size(28.dp)
-                        .clip(CircleShape)
-                        .background(borderColor, CircleShape)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .padding(2.dp)
-                            .fillMaxSize()
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.surface)
-                    )
-                }
-            }
-
-            // Checkmark icon — only visible when completed
-            if (isCompleted) {
-                Icon(
-                    imageVector = Icons.Filled.Check,
-                    contentDescription = "Completed",
-                    tint = Color.White,
-                    modifier = Modifier
-                        .size(16.dp)
-                        .scale(checkScale)
-                )
-            }
-        }
-    }
-}
-
-/**
- * Mini weekly completion dots — 7 dots for Mon through Sun.
- * Completed days are filled with the category color, future/incomplete days are hollow.
- */
-@Composable
-private fun WeeklyDots(
-    completions: List<Boolean>,
-    categoryColor: Color
-) {
-    val dayLabels = listOf("M", "T", "W", "T", "F", "S", "S")
-
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        completions.forEachIndexed { index, completed ->
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(8.dp)
-                        .clip(CircleShape)
-                        .background(
-                            if (completed) categoryColor
-                            else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
-                        )
-                )
-                if (index < dayLabels.size) {
-                    Text(
-                        text = dayLabels[index],
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                        fontSize = MaterialTheme.typography.labelSmall.fontSize * 0.75f
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun StreakBadge(
-    streak: Int
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        Icon(
-            imageVector = Icons.Rounded.LocalFireDepartment,
-            contentDescription = null,
-            tint = Color(0xFFFF6B35),
-            modifier = Modifier.size(14.dp)
-        )
-        Text(
-            text = "${streak}d",
-            style = MaterialTheme.typography.labelSmall.copy(
-                fontWeight = FontWeight.SemiBold
-            ),
-            color = Color(0xFFFF6B35)
+                .matchParentSize()
+                .clip(RoundedCornerShape(LifePlannerDesign.CornerRadius.medium)),
+            onComplete = { showBurst = false }
         )
     }
-}
-
-@Composable
-private fun HabitTypePill(type: HabitType) {
-    val color = if (type == HabitType.BUILD) Color(0xFF4CAF50) else Color(0xFFF44336)
-    Surface(
-        shape = RoundedCornerShape(8.dp),
-        color = color.copy(alpha = 0.12f),
-        modifier = Modifier.height(20.dp)
-    ) {
-        Text(
-            text = type.displayName,
-            style = MaterialTheme.typography.labelSmall,
-            color = color,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-        )
-    }
-}
-
-@Composable
-private fun FrequencyChip(frequency: HabitFrequency) {
-    Surface(
-        shape = RoundedCornerShape(8.dp),
-        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
-        modifier = Modifier.height(20.dp)
-    ) {
-        Text(
-            text = frequency.displayName,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSecondaryContainer,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-        )
-    }
+    } // end Box
 }
 
 
 fun GoalCategory.getIcon(): ImageVector {
     return when (this) {
-        GoalCategory.CAREER -> Icons.Rounded.Work
-        GoalCategory.FINANCIAL -> Icons.Rounded.AccountBalance
-        GoalCategory.PHYSICAL -> Icons.Rounded.FitnessCenter
-        GoalCategory.SOCIAL -> Icons.Rounded.People
-        GoalCategory.EMOTIONAL -> Icons.Rounded.Favorite
-        GoalCategory.SPIRITUAL -> Icons.Rounded.SelfImprovement
-        GoalCategory.FAMILY -> Icons.Rounded.Home
+        GoalCategory.CAREER -> PhosphorIcons.Regular.Briefcase
+        GoalCategory.MONEY -> PhosphorIcons.Regular.Bank
+        GoalCategory.BODY -> PhosphorIcons.Regular.Barbell
+        GoalCategory.PEOPLE -> PhosphorIcons.Regular.Users
+        GoalCategory.WELLBEING -> PhosphorIcons.Regular.Heart
+        GoalCategory.PURPOSE -> PhosphorIcons.Regular.Flower
     }
 }

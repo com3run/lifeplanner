@@ -1,11 +1,14 @@
 package az.tribe.lifeplanner.data.repository
 
 import az.tribe.lifeplanner.data.mapper.toDomain
+import az.tribe.lifeplanner.database.AbilityGoalLinkEntity
 import az.tribe.lifeplanner.database.AbilityHabitLinkEntity
 import az.tribe.lifeplanner.domain.model.Ability
+import az.tribe.lifeplanner.domain.model.AbilityGoalLink
 import az.tribe.lifeplanner.domain.model.AbilityHabitLink
 import az.tribe.lifeplanner.domain.repository.AbilityRepository
 import az.tribe.lifeplanner.infrastructure.SharedDatabase
+import az.tribe.lifeplanner.infrastructure.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlin.time.Clock
@@ -102,8 +105,6 @@ class AbilityRepositoryImpl(
     }
 
     private fun calculateLevel(totalXp: Int): Int {
-        // xpForLevel = 50 * level → sum = 50*(1+2+...+n) = 25*n*(n+1)
-        // Find n such that 25*n*(n+1) >= totalXp
         var level = 1
         var xpAccum = 0
         while (true) {
@@ -112,5 +113,28 @@ class AbilityRepositoryImpl(
             level++
         }
         return max(1, level)
+    }
+
+    @OptIn(ExperimentalUuidApi::class)
+    override suspend fun linkGoal(abilityId: String, goalId: String) {
+        val link = AbilityGoalLinkEntity(
+            id = Uuid.random().toString(),
+            abilityId = abilityId,
+            goalId = goalId,
+            createdAt = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).toString()
+        )
+        database.insertAbilityGoalLink(link)
+    }
+
+    override suspend fun unlinkGoal(abilityId: String, goalId: String) {
+        database.deleteAbilityGoalLink(abilityId, goalId)
+    }
+
+    override suspend fun getGoalLinksForAbility(abilityId: String): List<AbilityGoalLink> {
+        return database.getGoalLinksForAbility(abilityId).map { it.toDomain() }
+    }
+
+    override suspend fun getAbilityLinksForGoal(goalId: String): List<AbilityGoalLink> {
+        return database.getAbilityLinksForGoal(goalId).map { it.toDomain() }
     }
 }

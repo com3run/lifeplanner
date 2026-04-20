@@ -46,7 +46,8 @@ data class HabitDayStatus(
     val title: String,
     val category: GoalCategory,
     val wasCompleted: Boolean,
-    val notes: String
+    val notes: String,
+    val linkedGoalId: String? = null
 )
 
 data class GoalChangeWithTitle(

@@ -1,23 +1,36 @@
 package az.tribe.lifeplanner.ui.ability
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.AutoAwesome
-import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.Refresh
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.ArrowLeft
+import com.adamglin.phosphoricons.regular.Plus
+import com.adamglin.phosphoricons.regular.Sparkle
+import com.adamglin.phosphoricons.regular.Check
+import com.adamglin.phosphoricons.regular.X
+import com.adamglin.phosphoricons.regular.PencilSimple
+import com.adamglin.phosphoricons.regular.Flag
+import com.adamglin.phosphoricons.regular.ArrowsClockwise
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import az.tribe.lifeplanner.domain.enum.GoalStatus
+import az.tribe.lifeplanner.domain.model.Goal
 import az.tribe.lifeplanner.domain.model.Habit
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
 import org.koin.compose.viewmodel.koinViewModel
@@ -28,14 +41,35 @@ import org.koin.core.parameter.parametersOf
 fun AbilityDetailScreen(
     abilityId: String,
     onBackClick: () -> Unit,
+    onGoalClick: (String) -> Unit = {},
     viewModel: AbilityDetailViewModel = koinViewModel(parameters = { parametersOf(abilityId) })
 ) {
     val ability by viewModel.ability.collectAsState()
     val linkedHabits by viewModel.linkedHabits.collectAsState()
     val allHabitsForLinking by viewModel.allHabitsForLinking.collectAsState()
+    val linkedGoals by viewModel.linkedGoals.collectAsState()
+    val allGoalsForLinking by viewModel.allGoalsForLinking.collectAsState()
     val supervisionInsight by viewModel.supervisionInsight.collectAsState()
     val isGeneratingInsight by viewModel.isGeneratingInsight.collectAsState()
-    var showLinkSheet by remember { mutableStateOf(false) }
+    var showLinkHabitSheet by remember { mutableStateOf(false) }
+    var showLinkGoalSheet by remember { mutableStateOf(false) }
+
+    // Inline title editing
+    var isEditingTitle by remember { mutableStateOf(false) }
+    var titleInput by remember { mutableStateOf("") }
+    val titleFocusRequester = remember { FocusRequester() }
+
+    // Seed titleInput when ability first loads (e.g. "New Ability" from quick-create)
+    LaunchedEffect(ability?.title) {
+        ability?.title?.let { t ->
+            titleInput = t
+            // Auto-open editing when the title is the default placeholder
+            if (t == "New Ability") isEditingTitle = true
+        }
+    }
+    LaunchedEffect(isEditingTitle) {
+        if (isEditingTitle) titleFocusRequester.requestFocus()
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -50,7 +84,7 @@ fun AbilityDetailScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
+                        Icon(PhosphorIcons.Regular.ArrowLeft, "Back")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -82,11 +116,56 @@ fun AbilityDetailScreen(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Text(ab.iconEmoji, fontSize = 56.sp)
-                        Text(
-                            ab.title,
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold
-                        )
+
+                        // Tappable / editable title
+                        if (isEditingTitle) {
+                            OutlinedTextField(
+                                value = titleInput,
+                                onValueChange = { titleInput = it },
+                                singleLine = true,
+                                placeholder = { Text("Name this ability…") },
+                                trailingIcon = {
+                                    IconButton(onClick = {
+                                        viewModel.updateTitle(titleInput)
+                                        isEditingTitle = false
+                                    }) {
+                                        Icon(PhosphorIcons.Regular.Check, "Save", tint = MaterialTheme.colorScheme.primary)
+                                    }
+                                },
+                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                                keyboardActions = KeyboardActions(onDone = {
+                                    viewModel.updateTitle(titleInput)
+                                    isEditingTitle = false
+                                }),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .focusRequester(titleFocusRequester),
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                        } else {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center,
+                                modifier = Modifier.clickable {
+                                    titleInput = ab.title
+                                    isEditingTitle = true
+                                }
+                            ) {
+                                Text(
+                                    ab.title,
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                Icon(
+                                    PhosphorIcons.Regular.PencilSimple,
+                                    contentDescription = "Rename",
+                                    modifier = Modifier.size(16.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                )
+                            }
+                        }
+
                         if (ab.description.isNotBlank()) {
                             Text(
                                 ab.description,
@@ -130,7 +209,7 @@ fun AbilityDetailScreen(
                 }
             }
 
-            // Linked habits section
+            // ── Linked Habits ────────────────────────────────────────────────
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -142,8 +221,8 @@ fun AbilityDetailScreen(
                     fontWeight = FontWeight.SemiBold
                 )
                 if (allHabitsForLinking.isNotEmpty()) {
-                    TextButton(onClick = { showLinkSheet = true }) {
-                        Icon(Icons.Rounded.Add, null, modifier = Modifier.size(16.dp))
+                    TextButton(onClick = { showLinkHabitSheet = true }) {
+                        Icon(PhosphorIcons.Regular.Plus, null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(4.dp))
                         Text("Add Habit")
                     }
@@ -174,7 +253,51 @@ fun AbilityDetailScreen(
                 }
             }
 
-            // AI Supervision card
+            // ── Contributing To Goals ────────────────────────────────────────
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "Contributing To Goals",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+                if (allGoalsForLinking.isNotEmpty()) {
+                    TextButton(onClick = { showLinkGoalSheet = true }) {
+                        Icon(PhosphorIcons.Regular.Plus, null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("Link Goal")
+                    }
+                }
+            }
+
+            if (linkedGoals.isEmpty()) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                ) {
+                    Text(
+                        "Link a goal to see how this ability drives your bigger outcomes.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    linkedGoals.forEach { (goal, _) ->
+                        LinkedGoalRow(
+                            goal = goal,
+                            onClick = { onGoalClick(goal.id) },
+                            onUnlink = { viewModel.unlinkGoal(goal.id) }
+                        )
+                    }
+                }
+            }
+
+            // ── AI Coaching Insight ──────────────────────────────────────────
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.medium),
@@ -189,7 +312,7 @@ fun AbilityDetailScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Icon(
-                            Icons.Rounded.AutoAwesome,
+                            PhosphorIcons.Regular.Sparkle,
                             null,
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp)
@@ -225,7 +348,7 @@ fun AbilityDetailScreen(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Icon(Icons.Rounded.Refresh, null, modifier = Modifier.size(16.dp))
+                        Icon(PhosphorIcons.Regular.ArrowsClockwise, null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(6.dp))
                         Text(if (supervisionInsight.isBlank()) "Get Insight" else "Refresh Insight")
                     }
@@ -237,8 +360,8 @@ fun AbilityDetailScreen(
     }
 
     // Link habit bottom sheet
-    if (showLinkSheet) {
-        ModalBottomSheet(onDismissRequest = { showLinkSheet = false }) {
+    if (showLinkHabitSheet) {
+        ModalBottomSheet(onDismissRequest = { showLinkHabitSheet = false }) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -258,11 +381,58 @@ fun AbilityDetailScreen(
                         trailingContent = {
                             TextButton(onClick = {
                                 viewModel.linkHabit(habit.id)
-                                showLinkSheet = false
+                                showLinkHabitSheet = false
                             }) { Text("Link") }
                         }
                     )
                 }
+                Spacer(Modifier.height(32.dp))
+            }
+        }
+    }
+
+    // Link goal bottom sheet
+    if (showLinkGoalSheet) {
+        ModalBottomSheet(onDismissRequest = { showLinkGoalSheet = false }) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    "Link to Goal",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                allGoalsForLinking
+                    .filter { it.status != GoalStatus.COMPLETED }
+                    .forEach { goal ->
+                        ListItem(
+                            leadingContent = {
+                                Surface(
+                                    shape = CircleShape,
+                                    color = MaterialTheme.colorScheme.primaryContainer
+                                ) {
+                                    Icon(
+                                        PhosphorIcons.Regular.Flag,
+                                        null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.padding(8.dp).size(16.dp)
+                                    )
+                                }
+                            },
+                            headlineContent = { Text(goal.title, maxLines = 1) },
+                            supportingContent = { Text(goal.category.name.lowercase().replaceFirstChar { it.uppercase() }) },
+                            trailingContent = {
+                                TextButton(onClick = {
+                                    viewModel.linkGoal(goal.id)
+                                    showLinkGoalSheet = false
+                                }) { Text("Link") }
+                            }
+                        )
+                    }
                 Spacer(Modifier.height(32.dp))
             }
         }
@@ -295,7 +465,46 @@ private fun LinkedHabitRow(
                 )
             }
             IconButton(onClick = onUnlink) {
-                Icon(Icons.Rounded.Close, "Unlink", modifier = Modifier.size(18.dp))
+                Icon(PhosphorIcons.Regular.X, "Unlink", modifier = Modifier.size(18.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun LinkedGoalRow(
+    goal: Goal,
+    onClick: () -> Unit,
+    onUnlink: () -> Unit
+) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Icon(
+                PhosphorIcons.Regular.Flag,
+                null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp)
+            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(goal.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium, maxLines = 1)
+                Text(
+                    goal.status.name.lowercase().replaceFirstChar { it.uppercase() } + " · " + goal.category.name.lowercase().replaceFirstChar { it.uppercase() },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            IconButton(onClick = onUnlink) {
+                Icon(PhosphorIcons.Regular.X, "Unlink", modifier = Modifier.size(18.dp))
             }
         }
     }

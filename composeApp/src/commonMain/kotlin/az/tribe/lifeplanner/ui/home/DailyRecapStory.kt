@@ -72,7 +72,7 @@ fun generateDailyRecapStory(
                 append(". Today is a chance to do more.")
             }
             else -> {
-                append("Yesterday was quiet — but today counts.")
+                append("Yesterday was quiet, but today counts.")
                 if (streak > 0) append(" Your 🔥 $streak-day streak shows you've got this.")
             }
         }
@@ -116,6 +116,57 @@ fun generateDailyRecapStory(
     )
 }
 
+private val intentionQuotes = listOf(
+    Pair(
+        "What you live right now,\nonce remembered,\nis eternal.",
+        "This moment is being written into your forever."
+    ),
+    Pair(
+        "This second, right now,\nis being written\ninto forever.",
+        "Presence is the only thing that becomes history."
+    ),
+    Pair(
+        "Every moment lived\nwith intention\nechoes through time.",
+        "What you do today will always have happened."
+    ),
+    Pair(
+        "Be here. Fully.\nThis moment\nalways will have been.",
+        "The present is the only thing that ever becomes the past."
+    ),
+    Pair(
+        "The present you feel today\nlives forever\nin your story.",
+        "Memory is how the finite becomes eternal."
+    ),
+    Pair(
+        "What you do today\nwill always\nhave happened.",
+        "Live it fully — you cannot unlive it."
+    ),
+    Pair(
+        "Live it fully.\nMemory makes\nit eternal.",
+        "Everything you experience today becomes part of what was."
+    )
+)
+
+/**
+ * Generates a full-screen daily intention story — the first card the user sees.
+ * Rotates through 7 philosophical quotes, one per day of the week.
+ */
+fun generateDailyIntentionStory(today: LocalDate): Story {
+    val quote = intentionQuotes[today.dayOfWeek.ordinal % intentionQuotes.size]
+    return Story(
+        id = "intention_$today",
+        title = quote.first,
+        subtitle = quote.second,
+        emoji = "✦",
+        category = "intention",
+        gradientStart = "#0F0C29",
+        gradientEnd = "#302B63",
+        ctaText = "Capture this moment",
+        ctaAction = "journal",
+        sortOrder = -1
+    )
+}
+
 /**
  * Returns a small rotation of curated tip/fact stories that changes every day.
  * Content is gossip-style — interesting science, surprising stats, counter-intuitive facts
@@ -138,7 +189,7 @@ fun getCuratedTipStories(today: LocalDate): List<Story> {
         Story(
             id = "tip_compound",
             title = "1% Better Every Day",
-            subtitle = "If you improve 1% each day for a year, you end up 37× better. If you decline 1% each day, you're almost at zero. James Clear calls this the aggregation of marginal gains — tiny edges compound into massive results.",
+            subtitle = "If you improve 1% each day for a year, you end up 37× better. If you decline 1% each day, you're almost at zero. James Clear calls this the aggregation of marginal gains. Tiny edges compound into massive results.",
             emoji = "📈",
             category = "science",
             gradientStart = "#059669",
@@ -150,7 +201,7 @@ fun getCuratedTipStories(today: LocalDate): List<Story> {
         Story(
             id = "tip_2min_rule",
             title = "The 2-Minute Rule",
-            subtitle = "Any habit can be started in 2 minutes. \"Read before bed\" → open the book. \"Run 5km\" → put on shoes. The goal is to make starting frictionless — momentum takes care of the rest.",
+            subtitle = "Any habit can be started in 2 minutes. \"Read before bed\" → open the book. \"Run 5km\" → put on shoes. The goal is to make starting frictionless. Momentum takes care of the rest.",
             emoji = "⏱️",
             category = "tips",
             gradientStart = "#DC2626",
@@ -186,7 +237,7 @@ fun getCuratedTipStories(today: LocalDate): List<Story> {
         Story(
             id = "tip_planning_fallacy",
             title = "You're Too Optimistic",
-            subtitle = "The \"planning fallacy\" is real — humans consistently underestimate how long tasks take, even with past experience. The fix? Multiply your time estimate by 1.5× and add a buffer. You'll be closer to right.",
+            subtitle = "The planning fallacy is real: humans consistently underestimate how long tasks take, even with past experience. The fix? Multiply your time estimate by 1.5× and add a buffer. You'll be closer to right.",
             emoji = "🗓️",
             category = "science",
             gradientStart = "#7C3AED",

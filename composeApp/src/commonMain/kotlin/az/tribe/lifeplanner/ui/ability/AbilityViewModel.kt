@@ -22,11 +22,15 @@ class AbilityViewModel(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
-    fun createAbility(title: String, description: String, iconEmoji: String) {
+    private val _lastCreatedId = MutableStateFlow<String?>(null)
+    val lastCreatedId: StateFlow<String?> = _lastCreatedId.asStateFlow()
+
+    fun createAbility(title: String, description: String = "", iconEmoji: String) {
         viewModelScope.launch {
             try {
                 val ability = createNewAbility(title = title, description = description, iconEmoji = iconEmoji)
                 abilityRepository.createAbility(ability)
+                _lastCreatedId.value = ability.id
             } catch (e: Exception) {
                 _error.value = "Failed to create ability: ${e.message}"
             }

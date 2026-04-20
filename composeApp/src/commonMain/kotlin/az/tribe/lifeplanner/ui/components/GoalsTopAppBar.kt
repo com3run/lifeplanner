@@ -4,10 +4,11 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.Search
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.ArrowLeft
+import com.adamglin.phosphoricons.regular.X
+import com.adamglin.phosphoricons.regular.MagnifyingGlass
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -81,7 +82,7 @@ fun GoalsTopAppBar(
                             onSearchQueryChange(TextFieldValue(""))
                             onSearchToggle(false)
                         }) {
-                            Icon(Icons.Rounded.Close, "Close search")
+                            Icon(PhosphorIcons.Regular.X, "Close search")
                         }
                     }
                 )
@@ -98,7 +99,7 @@ fun GoalsTopAppBar(
             if (onBack != null && !showSearchBar) {
                 IconButton(onClick = onBack) {
                     Icon(
-                        Icons.AutoMirrored.Rounded.ArrowBack,
+                        PhosphorIcons.Regular.ArrowLeft,
                         contentDescription = "Back",
                         tint = MaterialTheme.colorScheme.onSurface
                     )
@@ -109,7 +110,7 @@ fun GoalsTopAppBar(
             if (!showSearchBar) {
                 IconButton(onClick = { onSearchToggle(true) }) {
                     Icon(
-                        Icons.Rounded.Search,
+                        PhosphorIcons.Regular.MagnifyingGlass,
                         contentDescription = "Search",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )

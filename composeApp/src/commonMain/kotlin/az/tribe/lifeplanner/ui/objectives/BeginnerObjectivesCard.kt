@@ -20,13 +20,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.CheckCircle
-import androidx.compose.material.icons.rounded.ChevronRight
-import androidx.compose.material.icons.rounded.ExpandLess
-import androidx.compose.material.icons.rounded.ExpandMore
-import androidx.compose.material.icons.rounded.RadioButtonUnchecked
-import androidx.compose.material.icons.rounded.Star
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.CheckCircle
+import com.adamglin.phosphoricons.regular.CaretRight
+import com.adamglin.phosphoricons.regular.CaretUp
+import com.adamglin.phosphoricons.regular.CaretDown
+import com.adamglin.phosphoricons.regular.Circle
+import com.adamglin.phosphoricons.regular.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -107,7 +108,7 @@ fun BeginnerObjectivesCard(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            Icons.Rounded.Star,
+                            PhosphorIcons.Regular.Star,
                             contentDescription = null,
                             tint = if (allDone) Color(0xFF4CAF50) else Color(0xFFFF6B35),
                             modifier = Modifier.size(18.dp)
@@ -128,7 +129,7 @@ fun BeginnerObjectivesCard(
                     }
                 }
                 Icon(
-                    if (isExpanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                    if (isExpanded) PhosphorIcons.Regular.CaretUp else PhosphorIcons.Regular.CaretDown,
                     contentDescription = if (isExpanded) "Collapse" else "Expand",
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(20.dp)
@@ -285,7 +286,7 @@ private fun NextObjectiveSpotlight(
         Spacer(Modifier.width(6.dp))
 
         Icon(
-            Icons.Rounded.ChevronRight,
+            PhosphorIcons.Regular.CaretRight,
             contentDescription = null,
             tint = Color(0xFFFF6B35),
             modifier = Modifier.size(18.dp)
@@ -312,8 +313,8 @@ private fun ObjectiveRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
-            imageVector = if (objective.isCompleted) Icons.Rounded.CheckCircle
-            else Icons.Rounded.RadioButtonUnchecked,
+            imageVector = if (objective.isCompleted) PhosphorIcons.Regular.CheckCircle
+            else PhosphorIcons.Regular.Circle,
             contentDescription = null,
             tint = iconColor,
             modifier = Modifier.size(22.dp)

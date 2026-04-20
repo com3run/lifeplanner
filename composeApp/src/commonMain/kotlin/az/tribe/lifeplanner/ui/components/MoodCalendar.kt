@@ -25,11 +25,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.CalendarMonth
-import androidx.compose.material.icons.rounded.ChevronLeft
-import androidx.compose.material.icons.rounded.ChevronRight
-import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.Calendar
+import com.adamglin.phosphoricons.regular.CaretLeft
+import com.adamglin.phosphoricons.regular.CaretRight
+import com.adamglin.phosphoricons.regular.CaretDown
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -118,7 +119,7 @@ fun MoodCalendar(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Rounded.CalendarMonth,
+                        imageVector = PhosphorIcons.Regular.Calendar,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(24.dp)
@@ -138,7 +139,7 @@ fun MoodCalendar(
                 }
 
                 Icon(
-                    imageVector = Icons.Rounded.KeyboardArrowDown,
+                    imageVector = PhosphorIcons.Regular.CaretDown,
                     contentDescription = if (isExpanded) "Collapse" else "Expand",
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.rotate(rotationAngle)
@@ -283,7 +284,7 @@ private fun CalendarHeader(
     ) {
         IconButton(onClick = onPreviousMonth) {
             Icon(
-                imageVector = Icons.Rounded.ChevronLeft,
+                imageVector = PhosphorIcons.Regular.CaretLeft,
                 contentDescription = "Previous month",
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -297,7 +298,7 @@ private fun CalendarHeader(
 
         IconButton(onClick = onNextMonth) {
             Icon(
-                imageVector = Icons.Rounded.ChevronRight,
+                imageVector = PhosphorIcons.Regular.CaretRight,
                 contentDescription = "Next month",
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )

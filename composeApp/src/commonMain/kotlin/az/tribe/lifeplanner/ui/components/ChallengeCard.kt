@@ -16,11 +16,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.rounded.PlayArrow
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.CheckCircle
+import com.adamglin.phosphoricons.regular.Clock
+import com.adamglin.phosphoricons.regular.Star
+import com.adamglin.phosphoricons.regular.Play
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -108,7 +109,7 @@ fun ChallengeCard(
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
-                            imageVector = Icons.Default.Star,
+                            imageVector = PhosphorIcons.Regular.Star,
                             contentDescription = "XP",
                             modifier = Modifier.size(14.dp),
                             tint = Color.White
@@ -168,7 +169,7 @@ fun ChallengeCard(
                 if (challenge.isCompleted) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
-                            imageVector = Icons.Default.CheckCircle,
+                            imageVector = PhosphorIcons.Regular.CheckCircle,
                             contentDescription = "Completed",
                             modifier = Modifier.size(16.dp),
                             tint = MaterialTheme.colorScheme.primary
@@ -184,7 +185,7 @@ fun ChallengeCard(
                 } else {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
-                            imageVector = Icons.Default.Schedule,
+                            imageVector = PhosphorIcons.Regular.Clock,
                             contentDescription = "Time remaining",
                             modifier = Modifier.size(16.dp),
                             tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
@@ -274,7 +275,7 @@ fun AvailableChallengeCard(
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
             ) {
                 Icon(
-                    imageVector = Icons.Rounded.PlayArrow,
+                    imageVector = PhosphorIcons.Regular.Play,
                     contentDescription = "Start challenge",
                     tint = Color.White
                 )

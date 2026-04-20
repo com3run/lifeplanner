@@ -11,13 +11,13 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Cloud
-import androidx.compose.material.icons.filled.CloudDone
-import androidx.compose.material.icons.filled.CloudOff
-import androidx.compose.material.icons.filled.CloudSync
-import androidx.compose.material.icons.filled.CloudUpload
-import androidx.compose.material.icons.rounded.ErrorOutline
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.Cloud
+import com.adamglin.phosphoricons.regular.CloudCheck
+import com.adamglin.phosphoricons.regular.CloudSlash
+import com.adamglin.phosphoricons.regular.CloudArrowUp
+import com.adamglin.phosphoricons.regular.WarningCircle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -59,7 +59,7 @@ fun SyncStatusIndicator(
                     )
                 )
                 Icon(
-                    imageVector = Icons.Default.CloudSync,
+                    imageVector = PhosphorIcons.Regular.CloudArrowUp,
                     contentDescription = "Syncing with cloud",
                     modifier = Modifier.size(20.dp).alpha(alpha),
                     tint = MaterialTheme.colorScheme.primary
@@ -68,7 +68,7 @@ fun SyncStatusIndicator(
 
             SyncState.SYNCED -> {
                 Icon(
-                    imageVector = Icons.Default.CloudDone,
+                    imageVector = PhosphorIcons.Regular.CloudCheck,
                     contentDescription = "All data synced",
                     modifier = Modifier.size(20.dp),
                     tint = Color(0xFF4CAF50)
@@ -77,7 +77,7 @@ fun SyncStatusIndicator(
 
             SyncState.OFFLINE -> {
                 Icon(
-                    imageVector = Icons.Default.CloudOff,
+                    imageVector = PhosphorIcons.Regular.CloudSlash,
                     contentDescription = "No internet connection",
                     modifier = Modifier.size(20.dp),
                     tint = MaterialTheme.colorScheme.outline
@@ -87,7 +87,7 @@ fun SyncStatusIndicator(
             SyncState.ERROR -> {
                 IconButton(onClick = onRetryClick, modifier = Modifier.size(32.dp)) {
                     Icon(
-                        imageVector = Icons.Rounded.ErrorOutline,
+                        imageVector = PhosphorIcons.Regular.WarningCircle,
                         contentDescription = "Sync failed — tap to retry",
                         modifier = Modifier.size(20.dp),
                         tint = MaterialTheme.colorScheme.error
@@ -98,14 +98,14 @@ fun SyncStatusIndicator(
             SyncState.IDLE -> {
                 if (status.pendingChanges > 0) {
                     Icon(
-                        imageVector = Icons.Default.CloudUpload,
+                        imageVector = PhosphorIcons.Regular.CloudArrowUp,
                         contentDescription = "${status.pendingChanges} changes waiting to sync",
                         modifier = Modifier.size(20.dp),
                         tint = MaterialTheme.colorScheme.tertiary
                     )
                 } else {
                     Icon(
-                        imageVector = Icons.Default.Cloud,
+                        imageVector = PhosphorIcons.Regular.Cloud,
                         contentDescription = "Connected",
                         modifier = Modifier.size(20.dp),
                         tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)

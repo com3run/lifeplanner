@@ -13,6 +13,7 @@ data class Habit(
     val category: GoalCategory,
     val frequency: HabitFrequency,
     val targetCount: Int = 1,
+    val unit: String? = null,
     val currentStreak: Int = 0,
     val longestStreak: Int = 0,
     val totalCompletions: Int = 0,

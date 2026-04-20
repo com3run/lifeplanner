@@ -1,17 +1,10 @@
 package az.tribe.lifeplanner.ui.components
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,44 +12,27 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.AccountTree
-import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.ArrowForward
-import androidx.compose.material.icons.rounded.Block
-import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.Delete
-import androidx.compose.material.icons.rounded.Link
-import androidx.compose.material.icons.rounded.SubdirectoryArrowRight
-import androidx.compose.material.icons.rounded.Support
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.ArrowBendDownRight
+import com.adamglin.phosphoricons.regular.Lifebuoy
+import com.adamglin.phosphoricons.regular.Link
+import com.adamglin.phosphoricons.regular.Plus
+import com.adamglin.phosphoricons.regular.Prohibit
+import com.adamglin.phosphoricons.regular.Trash
+import com.adamglin.phosphoricons.regular.TreeStructure
+import com.adamglin.phosphoricons.regular.X
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -84,21 +60,15 @@ fun DependenciesCard(
     onViewDependencyGraph: () -> Unit,
     onGoalClick: (String) -> Unit
 ) {
-    Card(
+    GlassCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 2.dp
-        )
+        cornerRadius = 16.dp
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             // Header
             Row(
@@ -108,17 +78,18 @@ fun DependenciesCard(
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Icon(
-                        Icons.Rounded.AccountTree,
+                        PhosphorIcons.Regular.Link,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(16.dp)
                     )
                     Text(
-                        text = "Dependencies",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface
+                        text = "Linked Goals",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold
                     )
                     if (dependencies.isNotEmpty()) {
                         Surface(
@@ -129,112 +100,84 @@ fun DependenciesCard(
                                 text = "${dependencies.size}",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
                             )
                         }
                     }
                 }
 
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    IconButton(
-                        onClick = onViewDependencyGraph,
-                        modifier = Modifier
-                            .size(32.dp)
-                            .background(
-                                MaterialTheme.colorScheme.secondaryContainer,
-                                CircleShape
-                            )
+                Surface(
+                    modifier = Modifier.clickable(onClick = onAddDependency),
+                    shape = RoundedCornerShape(20.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Icon(
-                            Icons.Rounded.AccountTree,
-                            contentDescription = "View Graph",
-                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-
-                    IconButton(
-                        onClick = onAddDependency,
-                        modifier = Modifier
-                            .size(32.dp)
-                            .background(
-                                MaterialTheme.colorScheme.primaryContainer,
-                                CircleShape
-                            )
-                    ) {
-                        Icon(
-                            Icons.Rounded.Add,
-                            contentDescription = "Add Dependency",
+                            PhosphorIcons.Regular.Plus,
+                            contentDescription = null,
                             tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(12.dp)
+                        )
+                        Text(
+                            text = "Link",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     }
                 }
             }
 
             if (dependencies.isEmpty()) {
-                // Empty state
-                Column(
+                // Compact empty state
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        Icons.Rounded.Link,
-                        contentDescription = null,
-                        modifier = Modifier.size(40.dp),
-                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                    )
                     Text(
-                        text = "No linked goals",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = "Link related goals to track dependencies",
+                        text = "No linked goals yet",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                        textAlign = TextAlign.Center
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                     )
                 }
             } else {
                 // Dependency list
-                dependencies.forEach { dependency ->
-                    val linkedGoalId = if (dependency.sourceGoalId == currentGoalId) {
-                        dependency.targetGoalId
-                    } else {
-                        dependency.sourceGoalId
-                    }
-                    val linkedGoal = goals.find { it.id == linkedGoalId }
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    dependencies.forEach { dependency ->
+                        val linkedGoalId = if (dependency.sourceGoalId == currentGoalId)
+                            dependency.targetGoalId else dependency.sourceGoalId
+                        val linkedGoal = goals.find { it.id == linkedGoalId }
 
-                    linkedGoal?.let { goal ->
-                        DependencyItem(
-                            goal = goal,
-                            dependencyType = dependency.dependencyType,
-                            isSource = dependency.sourceGoalId == currentGoalId,
-                            onGoalClick = { onGoalClick(goal.id) },
-                            onRemove = { onRemoveDependency(dependency.id) }
-                        )
+                        linkedGoal?.let { goal ->
+                            DependencyItem(
+                                goal = goal,
+                                dependencyType = dependency.dependencyType,
+                                isSource = dependency.sourceGoalId == currentGoalId,
+                                onGoalClick = { onGoalClick(goal.id) },
+                                onRemove = { onRemoveDependency(dependency.id) }
+                            )
+                        }
                     }
                 }
-            }
 
-            // Suggestions
-            if (suggestedDependencies.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "Suggested Links",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                suggestedDependencies.take(3).forEach { (goal, type) ->
-                    SuggestedDependencyItem(
-                        goal = goal,
-                        suggestedType = type,
-                        onClick = { onGoalClick(goal.id) }
+                // See map link
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 2.dp),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    Text(
+                        text = "See dependency map →",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                        modifier = Modifier.clickable(onClick = onViewDependencyGraph)
                     )
                 }
             }
@@ -253,46 +196,43 @@ fun DependencyItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
+            .clip(RoundedCornerShape(10.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
             .clickable { onGoalClick() }
-            .padding(8.dp),
+            .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        // Dependency type icon
-        Icon(
-            imageVector = dependencyType.icon(),
-            contentDescription = null,
-            tint = dependencyType.color(),
-            modifier = Modifier.size(20.dp)
+        Text(
+            text = goal.title,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f)
         )
 
-        Column(modifier = Modifier.weight(1f)) {
+        Surface(
+            shape = RoundedCornerShape(6.dp),
+            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f)
+        ) {
             Text(
-                text = goal.title,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                text = if (isSource) dependencyType.displayName else dependencyType.getInverseType().displayName,
-                style = MaterialTheme.typography.bodySmall,
-                color = dependencyType.color()
+                text = dependencyType.simpleLabel(isSource),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
             )
         }
 
-        IconButton(
-            onClick = onRemove,
-            modifier = Modifier.size(24.dp)
-        ) {
-            Icon(
-                Icons.Rounded.Close,
-                contentDescription = "Remove dependency",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(16.dp)
-            )
-        }
+        Icon(
+            PhosphorIcons.Regular.X,
+            contentDescription = "Remove",
+            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f),
+            modifier = Modifier
+                .size(14.dp)
+                .clickable { onRemove() }
+        )
     }
 }
 
@@ -343,233 +283,6 @@ fun SuggestedDependencyItem(
 }
 
 /**
- * Bottom sheet for adding a new dependency
- */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
-@Composable
-fun AddDependencyBottomSheet(
-    isVisible: Boolean,
-    currentGoal: Goal,
-    availableGoals: List<Goal>,
-    onDismiss: () -> Unit,
-    onAddDependency: (targetGoalId: String, dependencyType: DependencyType) -> Unit
-) {
-    if (!isVisible) return
-
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    var selectedGoal by remember { mutableStateOf<Goal?>(null) }
-    var selectedType by remember { mutableStateOf(DependencyType.RELATED) }
-
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surface
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .padding(bottom = 32.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Text(
-                text = "Link Goal",
-                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface
-            )
-
-            Text(
-                text = "Select a goal to link with \"${currentGoal.title}\"",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            // Dependency type selector
-            Text(
-                text = "Relationship Type",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                DependencyType.entries.forEach { type ->
-                    FilterChip(
-                        selected = selectedType == type,
-                        onClick = { selectedType = type },
-                        label = { Text(type.displayName) },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = type.icon(),
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = type.color().copy(alpha = 0.2f),
-                            selectedLabelColor = type.color()
-                        )
-                    )
-                }
-            }
-
-            // Type description
-            Text(
-                text = selectedType.description,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Goal list
-            Text(
-                text = "Select Goal",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(250.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(vertical = 4.dp)
-            ) {
-                items(availableGoals.filter { it.id != currentGoal.id }) { goal ->
-                    GoalSelectionItem(
-                        goal = goal,
-                        isSelected = selectedGoal?.id == goal.id,
-                        onClick = { selectedGoal = goal }
-                    )
-                }
-
-                if (availableGoals.filter { it.id != currentGoal.id }.isEmpty()) {
-                    item {
-                        Text(
-                            text = "No other goals available to link",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(16.dp)
-                        )
-                    }
-                }
-            }
-
-            // Actions
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                OutlinedButton(
-                    onClick = onDismiss,
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text("Cancel")
-                }
-
-                Button(
-                    onClick = {
-                        selectedGoal?.let { goal ->
-                            onAddDependency(goal.id, selectedType)
-                            onDismiss()
-                        }
-                    },
-                    enabled = selectedGoal != null,
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    )
-                ) {
-                    Text("Link Goal")
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun GoalSelectionItem(
-    goal: Goal,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    val backgroundColor by animateColorAsState(
-        targetValue = if (isSelected) {
-            MaterialTheme.colorScheme.primaryContainer
-        } else {
-            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-        },
-        animationSpec = tween(200)
-    )
-
-    val borderColor by animateColorAsState(
-        targetValue = if (isSelected) {
-            MaterialTheme.colorScheme.primary
-        } else {
-            Color.Transparent
-        },
-        animationSpec = tween(200)
-    )
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(backgroundColor)
-            .border(
-                width = if (isSelected) 2.dp else 0.dp,
-                color = borderColor,
-                shape = RoundedCornerShape(12.dp)
-            )
-            .clickable { onClick() }
-            .padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        // Category color indicator
-        Box(
-            modifier = Modifier
-                .size(8.dp)
-                .background(
-                    goal.category.backgroundColor(),
-                    CircleShape
-                )
-        )
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = goal.title,
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                ),
-                color = if (isSelected) {
-                    MaterialTheme.colorScheme.onPrimaryContainer
-                } else {
-                    MaterialTheme.colorScheme.onSurface
-                },
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-
-            Text(
-                text = "${goal.category.name.lowercase().replaceFirstChar { it.uppercase() }} • ${goal.progress ?: 0}%",
-                style = MaterialTheme.typography.bodySmall,
-                color = if (isSelected) {
-                    MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                }
-            )
-        }
-    }
-}
-
-/**
  * Dialog for confirming dependency removal
  */
 @Composable
@@ -585,7 +298,7 @@ fun RemoveDependencyDialog(
         onDismissRequest = onDismiss,
         icon = {
             Icon(
-                Icons.Rounded.Delete,
+                PhosphorIcons.Regular.Trash,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.error
             )
@@ -614,14 +327,23 @@ fun RemoveDependencyDialog(
     )
 }
 
+fun DependencyType.simpleLabel(isSource: Boolean): String = when (this) {
+    DependencyType.BLOCKS -> if (isSource) "blocks" else "blocked by"
+    DependencyType.BLOCKED_BY -> if (isSource) "blocked by" else "blocks"
+    DependencyType.RELATED -> "related"
+    DependencyType.PARENT_OF -> if (isSource) "parent" else "child"
+    DependencyType.CHILD_OF -> if (isSource) "child" else "parent"
+    DependencyType.SUPPORTS -> "supports"
+}
+
 // Extension functions for DependencyType
 fun DependencyType.icon(): ImageVector = when (this) {
-    DependencyType.BLOCKS -> Icons.Rounded.Block
-    DependencyType.BLOCKED_BY -> Icons.Rounded.Block
-    DependencyType.RELATED -> Icons.Rounded.Link
-    DependencyType.PARENT_OF -> Icons.Rounded.AccountTree
-    DependencyType.CHILD_OF -> Icons.Rounded.SubdirectoryArrowRight
-    DependencyType.SUPPORTS -> Icons.Rounded.Support
+    DependencyType.BLOCKS -> PhosphorIcons.Regular.Prohibit
+    DependencyType.BLOCKED_BY -> PhosphorIcons.Regular.Prohibit
+    DependencyType.RELATED -> PhosphorIcons.Regular.Link
+    DependencyType.PARENT_OF -> PhosphorIcons.Regular.TreeStructure
+    DependencyType.CHILD_OF -> PhosphorIcons.Regular.ArrowBendDownRight
+    DependencyType.SUPPORTS -> PhosphorIcons.Regular.Lifebuoy
 }
 
 fun DependencyType.color(): Color = when (this) {

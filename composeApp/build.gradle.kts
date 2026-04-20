@@ -15,7 +15,6 @@ plugins {
     alias(libs.plugins.buildkonfig)
     alias(libs.plugins.google.gms.google.services)
     alias(libs.plugins.firebase.crashlytics)
-    alias(libs.plugins.firebase.performance)
     alias(libs.plugins.kover)
 }
 
@@ -81,11 +80,6 @@ kotlin {
 
             // PostHog (product analytics)
             implementation(libs.posthog.android)
-            implementation(libs.play.app.update)
-            implementation(libs.play.app.update.ktx)
-            implementation(libs.play.review)
-            implementation(libs.play.review.ktx)
-            implementation(libs.health.connect)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -93,6 +87,8 @@ kotlin {
             implementation(compose.material3)
             implementation(compose.materialIconsExtended)
             implementation(libs.phosphor.icons)
+            implementation(libs.coil3.compose)
+            implementation(libs.coil3.network.ktor)
             implementation(compose.ui)
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
@@ -165,7 +161,7 @@ sqldelight {
         create("LifePlannerDB") {
             packageName.set("az.tribe.lifeplanner.database")
             schemaOutputDirectory = file("src/commonMain/sqldelight/databases")
-            version = 19 // v2.4: Add HabitEntity.type, AbilityEntity, AbilityHabitLinkEntity
+            version = 21 // v2.5: DayRecapEntity (20), category rename 7→6 (21)
             generateAsync.set(true)
         }
     }
@@ -195,6 +191,17 @@ android {
 
     namespace = "az.tribe.lifeplanner"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
+
+    flavorDimensions += "store"
+    productFlavors {
+        create("playStore") {
+            dimension = "store"
+        }
+        create("quest") {
+            dimension = "store"
+            versionNameSuffix = "-quest"
+        }
+    }
 
     sourceSets["main"].manifest.srcFile("src/androidMain/AndroidManifest.xml")
     sourceSets["main"].res.srcDirs("src/androidMain/res")
@@ -239,6 +246,16 @@ dependencies {
 
     // Firebase BOM
     implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
+
+    // Play Store only — not available on Meta Quest
+    "playStoreImplementation"(libs.play.app.update)
+    "playStoreImplementation"(libs.play.app.update.ktx)
+    "playStoreImplementation"(libs.play.review)
+    "playStoreImplementation"(libs.play.review.ktx)
+    "playStoreImplementation"(libs.health.connect)
+
+    // Meta Horizon Platform SDK (Quest only)
+    "questImplementation"("com.meta.horizon.platform.ovr:android-platform-sdk:71")
 }
 
 

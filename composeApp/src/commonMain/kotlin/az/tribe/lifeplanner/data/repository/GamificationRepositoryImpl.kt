@@ -11,6 +11,7 @@ import az.tribe.lifeplanner.domain.model.UserProgress
 import az.tribe.lifeplanner.domain.repository.GamificationRepository
 import az.tribe.lifeplanner.data.sync.SyncManager
 import az.tribe.lifeplanner.infrastructure.SharedDatabase
+import az.tribe.lifeplanner.infrastructure.*
 import az.tribe.lifeplanner.widget.WidgetDataSyncService
 import co.touchlab.kermit.Logger
 import io.github.jan.supabase.SupabaseClient

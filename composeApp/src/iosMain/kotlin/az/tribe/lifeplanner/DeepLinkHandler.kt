@@ -59,6 +59,13 @@ object DeepLinkHandler {
                 } else {
                     Logger.e("DeepLinkHandler") { "Failed to rewrite callback URL" }
                 }
+            } else if (url.host == "tribe.az" && url.pathComponents?.contains("goal") == true) {
+                // Goal deep links
+                val goalId = url.lastPathComponent
+                if (goalId != null) {
+                    Logger.d("DeepLinkHandler") { "Goal deep link detected: $goalId" }
+                    az.tribe.lifeplanner.util.DeepLinkNavigator.navigate("goal_detail/$goalId")
+                }
             } else {
                 supabaseClient.handleDeeplinks(url)
             }

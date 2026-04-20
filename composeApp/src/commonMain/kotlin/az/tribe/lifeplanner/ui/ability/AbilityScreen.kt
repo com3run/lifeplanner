@@ -6,8 +6,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Add
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.Lightning
+import com.adamglin.phosphoricons.regular.Plus
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -53,7 +55,7 @@ fun AbilityScreen(
                     onClick = onCreateAbility,
                     containerColor = MaterialTheme.colorScheme.primary
                 ) {
-                    Icon(Icons.Rounded.Add, contentDescription = "Create Ability")
+                    Icon(PhosphorIcons.Regular.Plus, contentDescription = "Create Ability")
                 }
             }
         }
@@ -69,7 +71,7 @@ fun AbilityScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Text("⚡", fontSize = 56.sp)
+                    Icon(PhosphorIcons.Regular.Lightning, contentDescription = null, modifier = Modifier.size(56.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(
                         "No abilities yet",
                         style = MaterialTheme.typography.titleMedium,

@@ -109,6 +109,7 @@ data class HabitSyncDto(
     @SerialName("created_at") val createdAt: String,
     @SerialName("reminder_time") val reminderTime: String? = null,
     @SerialName("type") val type: String = "BUILD",
+    @SerialName("unit") val unit: String? = null,
     @SerialName("updated_at") val updatedAt: String? = null,
     @SerialName("is_deleted") val isDeleted: Boolean = false,
     @SerialName("sync_version") val syncVersion: Long = 0
@@ -331,6 +332,22 @@ data class CoachPersonaOverrideSyncDto(
     @SerialName("coach_id") val coachId: String,
     @SerialName("user_id") val userId: String,
     @SerialName("user_persona") val userPersona: String = "",
+    @SerialName("updated_at") val updatedAt: String,
+    @SerialName("is_deleted") val isDeleted: Boolean = false,
+    @SerialName("sync_version") val syncVersion: Long = 0
+)
+
+@Serializable
+data class UserSituationSyncDto(
+    val id: String,
+    @SerialName("user_id") val userId: String,
+    @SerialName("meta_json") val metaJson: String = "{}",
+    @SerialName("career_json") val careerJson: String = "{}",
+    @SerialName("money_json") val moneyJson: String = "{}",
+    @SerialName("body_json") val bodyJson: String = "{}",
+    @SerialName("people_json") val peopleJson: String = "{}",
+    @SerialName("purpose_json") val purposeJson: String = "{}",
+    @SerialName("last_updated_by") val lastUpdatedBy: String = "",
     @SerialName("updated_at") val updatedAt: String,
     @SerialName("is_deleted") val isDeleted: Boolean = false,
     @SerialName("sync_version") val syncVersion: Long = 0

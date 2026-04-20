@@ -38,8 +38,12 @@ class MainApplication : Application(), KoinComponent {
 
         AppInitializer.onApplicationStart()
 
-        Firebase.initialize(appContext)
-        Firebase.performance.android.isPerformanceCollectionEnabled = true
+        try {
+            Firebase.initialize(appContext)
+            Firebase.performance.android.isPerformanceCollectionEnabled = true
+        } catch (e: Exception) {
+            Logger.w("MainApplication") { "Firebase init skipped (no Play Services?): ${e.message}" }
+        }
 
         // PostHog product analytics
         Logger.i("PostHog") { "API key present: ${BuildKonfig.POSTHOG_API_KEY.isNotBlank()}, host: ${BuildKonfig.POSTHOG_HOST}" }

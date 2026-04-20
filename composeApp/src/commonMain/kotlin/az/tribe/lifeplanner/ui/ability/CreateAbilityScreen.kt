@@ -8,15 +8,17 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.ArrowLeft
+import com.adamglin.phosphoricons.regular.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.koin.compose.viewmodel.koinViewModel
@@ -29,15 +31,17 @@ private val emojiOptions = listOf(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateAbilityScreen(
-    onAbilitySaved: () -> Unit,
+    onAbilityCreated: (abilityId: String) -> Unit,
     onBackClick: () -> Unit,
     viewModel: AbilityViewModel = koinViewModel()
 ) {
-    var title by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
     var selectedEmoji by remember { mutableStateOf("⚡") }
+    val lastCreatedId by viewModel.lastCreatedId.collectAsState()
 
-    val isFormValid = title.isNotBlank()
+    // Navigate to detail as soon as ability is persisted
+    LaunchedEffect(lastCreatedId) {
+        lastCreatedId?.let { id -> onAbilityCreated(id) }
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -46,7 +50,7 @@ fun CreateAbilityScreen(
                 title = { Text("New Ability", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold)) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
+                        Icon(PhosphorIcons.Regular.ArrowLeft, "Back")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
@@ -55,23 +59,16 @@ fun CreateAbilityScreen(
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = {
-                    if (isFormValid) {
-                        viewModel.createAbility(
-                            title = title.trim(),
-                            description = description.trim(),
-                            iconEmoji = selectedEmoji
-                        )
-                        onAbilitySaved()
-                    }
+                    viewModel.createAbility(
+                        title = "New Ability",
+                        iconEmoji = selectedEmoji
+                    )
                 },
-                text = { Text("Create Ability") },
-                icon = { Icon(Icons.Default.Check, null) },
-                expanded = isFormValid,
+                text = { Text("Create") },
+                icon = { Icon(PhosphorIcons.Regular.Check, null) },
                 shape = RoundedCornerShape(16.dp),
-                containerColor = if (isFormValid) MaterialTheme.colorScheme.primaryContainer
-                else MaterialTheme.colorScheme.surfaceVariant,
-                contentColor = if (isFormValid) MaterialTheme.colorScheme.onPrimaryContainer
-                else MaterialTheme.colorScheme.onSurfaceVariant
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
             )
         }
     ) { innerPadding ->
@@ -80,74 +77,58 @@ fun CreateAbilityScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
                 .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(16.dp))
 
-            // Emoji preview + picker
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+            // Large emoji preview
+            Box(
+                modifier = Modifier
+                    .size(100.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(80.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primaryContainer),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(selectedEmoji, fontSize = 40.sp)
-                }
-                Text(
-                    "Choose an icon",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Text(selectedEmoji, fontSize = 52.sp)
             }
+
+            Text(
+                "Pick an icon for your ability",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+
+            Text(
+                "You can name it once you're inside",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                textAlign = TextAlign.Center
+            )
 
             LazyVerticalGrid(
                 columns = GridCells.Fixed(5),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
                 modifier = Modifier.wrapContentHeight()
             ) {
                 items(emojiOptions) { emoji ->
                     Box(
                         modifier = Modifier
-                            .size(56.dp)
-                            .clip(RoundedCornerShape(12.dp))
+                            .size(60.dp)
+                            .clip(RoundedCornerShape(14.dp))
                             .background(
                                 if (emoji == selectedEmoji) MaterialTheme.colorScheme.primaryContainer
-                                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                else MaterialTheme.colorScheme.surfaceVariant
                             )
                             .clickable { selectedEmoji = emoji },
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(emoji, fontSize = 28.sp)
+                        Text(emoji, fontSize = 30.sp)
                     }
                 }
             }
-
-            OutlinedTextField(
-                value = title,
-                onValueChange = { title = it },
-                label = { Text("Ability name") },
-                placeholder = { Text("e.g., Public Speaking") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
-            )
-
-            OutlinedTextField(
-                value = description,
-                onValueChange = { description = it },
-                label = { Text("Description (optional)") },
-                placeholder = { Text("e.g., Speak confidently in front of others") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
-            )
 
             Spacer(Modifier.height(80.dp))
         }

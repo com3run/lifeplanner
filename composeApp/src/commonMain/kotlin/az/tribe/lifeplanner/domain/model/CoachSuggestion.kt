@@ -38,7 +38,10 @@ sealed class CoachSuggestion {
         val title: String,
         val description: String,
         val category: String,
-        val frequency: String // DAILY or WEEKLY
+        val frequency: String, // DAILY or WEEKLY
+        val goalId: String? = null,
+        val targetCount: Int = 1,
+        val targetUnit: String? = null
     ) : CoachSuggestion()
 
     /**

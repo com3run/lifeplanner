@@ -19,9 +19,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.Groups
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.Plus
+import com.adamglin.phosphoricons.regular.UsersThree
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -33,6 +34,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import coil3.compose.AsyncImage
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -136,7 +139,7 @@ fun CoachListContentExtended(
                         ),
                         icon = {
                             Icon(
-                                Icons.Rounded.Groups,
+                                PhosphorIcons.Regular.UsersThree,
                                 contentDescription = null,
                                 tint = Color.White,
                                 modifier = Modifier.size(24.dp)
@@ -152,15 +155,19 @@ fun CoachListContentExtended(
                 }
                 is ChatListItem.BuiltinCoach -> {
                     val lastMsg = item.session?.messages?.lastOrNull()
+                    val available = item.coach.isAvailableNow()
                     ChatListRow(
                         emoji = item.coach.emoji,
+                        imageUrl = item.coach.imageUrl,
                         gradient = getCoachGradient(item.coach),
                         name = item.coach.name,
                         lastMessage = lastMsg?.content,
                         isYourTurn = lastMsg?.role == MessageRole.ASSISTANT,
-                        defaultSubtitle = item.coach.greeting,
+                        defaultSubtitle = if (available) item.coach.greeting
+                                          else "${item.coach.countryFlag} Away · ${item.coach.city}",
                         timestamp = item.session?.lastMessageAt,
-                        onClick = { onBuiltinCoachClick(item.coach) }
+                        onClick = { onBuiltinCoachClick(item.coach) },
+                        isAvailable = available
                     )
                 }
                 is ChatListItem.Custom -> {
@@ -229,7 +236,9 @@ private fun ChatListRow(
     timestamp: LocalDateTime?,
     onClick: () -> Unit,
     emoji: String? = null,
-    icon: @Composable (() -> Unit)? = null
+    imageUrl: String? = null,
+    icon: @Composable (() -> Unit)? = null,
+    isAvailable: Boolean? = null
 ) {
     Row(
         modifier = Modifier
@@ -239,20 +248,41 @@ private fun ChatListRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Avatar
-        Box(
-            modifier = Modifier
-                .size(52.dp)
-                .background(gradient, CircleShape),
-            contentAlignment = Alignment.Center
-        ) {
-            if (icon != null) {
-                icon()
-            } else if (emoji != null) {
-                Text(
-                    text = emoji,
-                    style = MaterialTheme.typography.titleLarge
-                )
+        // Avatar with optional availability dot
+        Box(modifier = Modifier.size(52.dp)) {
+            Box(
+                modifier = Modifier
+                    .size(52.dp)
+                    .background(gradient, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                when {
+                    icon != null -> icon()
+                    imageUrl != null -> AsyncImage(
+                        model = imageUrl,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize().clip(CircleShape)
+                    )
+                    emoji != null -> Text(text = emoji, style = MaterialTheme.typography.titleLarge)
+                }
+            }
+            if (isAvailable != null) {
+                Box(
+                    modifier = Modifier
+                        .size(15.dp)
+                        .align(Alignment.BottomEnd)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.background)
+                        .padding(2.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(CircleShape)
+                            .background(if (isAvailable) Color(0xFF4CAF50) else Color(0xFF9E9E9E))
+                    )
+                }
             }
         }
 
@@ -342,7 +372,7 @@ private fun CreateActionsRow(
                 horizontalArrangement = Arrangement.Center
             ) {
                 Icon(
-                    Icons.Rounded.Add,
+                    PhosphorIcons.Regular.Plus,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(20.dp)
@@ -370,7 +400,7 @@ private fun CreateActionsRow(
                 horizontalArrangement = Arrangement.Center
             ) {
                 Icon(
-                    Icons.Rounded.Groups,
+                    PhosphorIcons.Regular.UsersThree,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(20.dp)

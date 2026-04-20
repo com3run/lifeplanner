@@ -5,9 +5,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.Assignment
-import androidx.compose.material.icons.rounded.*
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.Play
+import com.adamglin.phosphoricons.regular.CheckCircle
+import com.adamglin.phosphoricons.regular.ChartPie
+import com.adamglin.phosphoricons.regular.CalendarBlank
+import com.adamglin.phosphoricons.regular.Clock
+import com.adamglin.phosphoricons.regular.Fire
+import com.adamglin.phosphoricons.regular.Hash
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -191,12 +197,12 @@ data class StatData(
  * Predefined stat icons based on common metrics
  */
 object StatIcons {
-    val Active = Icons.Rounded.PlayCircle
-    val Completed = Icons.Rounded.CheckCircle
-    val Progress = Icons.Rounded.DonutLarge
-    val Upcoming = Icons.Rounded.Event
-    val Overdue = Icons.Rounded.Schedule
-    val Tasks = Icons.AutoMirrored.Rounded.Assignment
-    val Streak = Icons.Rounded.LocalFireDepartment
-    val Total = Icons.Rounded.Numbers
+    val Active = PhosphorIcons.Regular.Play
+    val Completed = PhosphorIcons.Regular.CheckCircle
+    val Progress = PhosphorIcons.Regular.ChartPie
+    val Upcoming = PhosphorIcons.Regular.CalendarBlank
+    val Overdue = PhosphorIcons.Regular.Clock
+    val Tasks = PhosphorIcons.Regular.CheckCircle
+    val Streak = PhosphorIcons.Regular.Fire
+    val Total = PhosphorIcons.Regular.Hash
 }

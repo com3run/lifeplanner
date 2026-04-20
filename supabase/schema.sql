@@ -746,6 +746,38 @@ CREATE POLICY ai_usage_logs_select ON ai_usage_logs FOR SELECT TO authenticated 
 CREATE POLICY ai_usage_logs_insert ON ai_usage_logs FOR INSERT TO authenticated WITH CHECK ((select auth.uid()) = user_id);
 
 -- ────────────────────────────────────────────────────────────
+-- 2.X user_situations  (one row per user, six coach slices as JSON)
+-- ────────────────────────────────────────────────────────────
+
+CREATE TABLE user_situations (
+    id           TEXT        PRIMARY KEY,
+    user_id      UUID        NOT NULL UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
+    meta_json    TEXT        NOT NULL DEFAULT '{}',
+    career_json  TEXT        NOT NULL DEFAULT '{}',
+    money_json   TEXT        NOT NULL DEFAULT '{}',
+    body_json    TEXT        NOT NULL DEFAULT '{}',
+    people_json  TEXT        NOT NULL DEFAULT '{}',
+    purpose_json TEXT        NOT NULL DEFAULT '{}',
+    last_updated_by TEXT     NOT NULL DEFAULT '',
+    -- sync metadata
+    updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    is_deleted   BOOLEAN     NOT NULL DEFAULT FALSE,
+    sync_version BIGINT      NOT NULL DEFAULT 0
+);
+
+CREATE INDEX idx_user_situations_user_id ON user_situations(user_id);
+
+ALTER TABLE user_situations ENABLE ROW LEVEL SECURITY;
+CREATE POLICY user_situations_select ON user_situations FOR SELECT TO authenticated USING ((select auth.uid()) = user_id);
+CREATE POLICY user_situations_insert ON user_situations FOR INSERT TO authenticated WITH CHECK ((select auth.uid()) = user_id);
+CREATE POLICY user_situations_update ON user_situations FOR UPDATE TO authenticated USING ((select auth.uid()) = user_id) WITH CHECK ((select auth.uid()) = user_id);
+CREATE POLICY user_situations_delete ON user_situations FOR DELETE TO authenticated USING ((select auth.uid()) = user_id);
+
+CREATE TRIGGER trg_user_situations_sync
+    BEFORE UPDATE ON user_situations
+    FOR EACH ROW EXECUTE FUNCTION update_sync_metadata();
+
+-- ────────────────────────────────────────────────────────────
 -- 7. Tombstone cleanup – hard-delete soft-deleted rows > 30 days
 -- ────────────────────────────────────────────────────────────
 
@@ -762,7 +794,7 @@ BEGIN
             'habits', 'habit_check_ins', 'journal_entries', 'badges', 'challenges',
             'goal_dependencies', 'chat_sessions', 'chat_messages', 'review_reports',
             'reminders', 'custom_coaches', 'coach_groups', 'coach_group_members',
-            'focus_sessions', 'coach_persona_overrides'
+            'focus_sessions', 'coach_persona_overrides', 'user_situations'
         ])
     LOOP
         EXECUTE format(

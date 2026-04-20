@@ -35,6 +35,7 @@ import az.tribe.lifeplanner.domain.service.UpdateMode
 import az.tribe.lifeplanner.domain.service.UpdateState
 import az.tribe.lifeplanner.ui.ForceUpdateScreen
 import az.tribe.lifeplanner.ui.goal.GoalViewModel
+import az.tribe.lifeplanner.ui.onboarding.CoachOnboardingViewModel
 import az.tribe.lifeplanner.ui.components.BottomNavigationBar
 import az.tribe.lifeplanner.ui.components.CelebrationOverlay
 import az.tribe.lifeplanner.ui.components.CelebrationType
@@ -79,9 +80,9 @@ fun App(
     LifePlannerTheme {
         var myPushNotificationToken by remember { mutableStateOf("") }
 
-        // Collect onboarding state from ViewModel
         val hasCompletedOnboarding by authViewModel.hasCompletedOnboarding.collectAsState()
         val authState by authViewModel.authState.collectAsState()
+        val settings: com.russhwolf.settings.Settings = koinInject()
 
         LaunchedEffect(true) {
             Logger.d("App") { "LaunchedEffectApp is called" }
@@ -89,6 +90,15 @@ fun App(
                 override fun onNewToken(token: String) {
                     myPushNotificationToken = token
                     Logger.d("App") { "onNewToken: $token" }
+                }
+
+                override fun onNotificationClicked(data: Map<String, Any?>) {
+                    super.onNotificationClicked(data)
+                    Logger.d("App") { "Notification clicked with data: $data" }
+                    val goalId = data["linked_goal_id"] as? String
+                    if (!goalId.isNullOrBlank()) {
+                        az.tribe.lifeplanner.util.DeepLinkNavigator.navigate("goal_detail/$goalId")
+                    }
                 }
             })
             myPushNotificationToken = NotifierManager.getPushNotifier().getToken() ?: ""
@@ -295,7 +305,13 @@ fun App(
                     // Only auto-navigate from sign_in; WelcomeScreen handles its own
                     // splash timing and calls onComplete() when ready
                     if (current == "sign_in") {
-                        navController.navigate(Screen.Home.route) {
+                        // Existing users (hasCompletedOnboarding=true) skip coach onboarding
+                        if (hasCompletedOnboarding == true && !CoachOnboardingViewModel.isComplete(settings)) {
+                            settings.putBoolean(CoachOnboardingViewModel.COACH_ONBOARDING_KEY, true)
+                        }
+                        val next = if (CoachOnboardingViewModel.isComplete(settings)) Screen.Home.route
+                        else Screen.CoachOnboarding.route
+                        navController.navigate(next) {
                             popUpTo(0) { inclusive = true }
                         }
                     }
@@ -327,6 +343,17 @@ fun App(
             if (promoRoute != null && (authState is AuthState.Authenticated || authState is AuthState.Guest)) {
                 navController.navigate(promoRoute) {
                     launchSingleTop = true
+                }
+            }
+        }
+
+        // Handle generic deep link navigation via DeepLinkNavigator
+        LaunchedEffect(Unit) {
+            az.tribe.lifeplanner.util.DeepLinkNavigator.navEvents.collect { route ->
+                if (authState is AuthState.Authenticated || authState is AuthState.Guest) {
+                    navController.navigate(route) {
+                        launchSingleTop = true
+                    }
                 }
             }
         }

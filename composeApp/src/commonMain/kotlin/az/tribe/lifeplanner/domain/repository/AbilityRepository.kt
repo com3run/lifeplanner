@@ -1,6 +1,7 @@
 package az.tribe.lifeplanner.domain.repository
 
 import az.tribe.lifeplanner.domain.model.Ability
+import az.tribe.lifeplanner.domain.model.AbilityGoalLink
 import az.tribe.lifeplanner.domain.model.AbilityHabitLink
 import kotlinx.coroutines.flow.Flow
 
@@ -15,4 +16,9 @@ interface AbilityRepository {
     suspend fun getLinksForAbility(abilityId: String): List<AbilityHabitLink>
     suspend fun getLinksForHabit(habitId: String): List<AbilityHabitLink>
     suspend fun awardXpToAbilitiesForHabit(habitId: String, baseXp: Int = 10)
+    // Goal linking
+    suspend fun linkGoal(abilityId: String, goalId: String)
+    suspend fun unlinkGoal(abilityId: String, goalId: String)
+    suspend fun getGoalLinksForAbility(abilityId: String): List<AbilityGoalLink>
+    suspend fun getAbilityLinksForGoal(goalId: String): List<AbilityGoalLink>
 }

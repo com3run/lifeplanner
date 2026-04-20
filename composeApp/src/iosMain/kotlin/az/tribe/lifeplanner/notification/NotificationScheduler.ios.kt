@@ -27,6 +27,9 @@ object IOSNotificationScheduler : NotificationSchedulerInterface {
             setTitle(reminder.title)
             setBody(reminder.message.ifEmpty { reminder.title })
             setSound(platform.UserNotifications.UNNotificationSound.defaultSound())
+            reminder.linkedGoalId?.let { goalId ->
+                setUserInfo(mapOf("linked_goal_id" to goalId))
+            }
         }
 
         val triggers = createTriggers(reminder)

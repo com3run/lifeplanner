@@ -9,23 +9,21 @@ object GoalTemplateProvider {
 
     fun getAllTemplates(): List<GoalTemplate> = buildList {
         addAll(careerTemplates)
-        addAll(financialTemplates)
-        addAll(physicalTemplates)
-        addAll(socialTemplates)
-        addAll(emotionalTemplates)
-        addAll(spiritualTemplates)
-        addAll(familyTemplates)
+        addAll(moneyTemplates)
+        addAll(bodyTemplates)
+        addAll(peopleTemplates)
+        addAll(wellbeingTemplates)
+        addAll(purposeTemplates)
     }
 
     fun getTemplatesByCategory(category: GoalCategory): List<GoalTemplate> {
         return when (category) {
             GoalCategory.CAREER -> careerTemplates
-            GoalCategory.FINANCIAL -> financialTemplates
-            GoalCategory.PHYSICAL -> physicalTemplates
-            GoalCategory.SOCIAL -> socialTemplates
-            GoalCategory.EMOTIONAL -> emotionalTemplates
-            GoalCategory.SPIRITUAL -> spiritualTemplates
-            GoalCategory.FAMILY -> familyTemplates
+            GoalCategory.MONEY -> moneyTemplates
+            GoalCategory.BODY -> bodyTemplates
+            GoalCategory.PEOPLE -> peopleTemplates
+            GoalCategory.WELLBEING -> wellbeingTemplates
+            GoalCategory.PURPOSE -> purposeTemplates
         }
     }
 
@@ -104,10 +102,10 @@ object GoalTemplateProvider {
         )
     )
 
-    private val financialTemplates = listOf(
+    private val moneyTemplates = listOf(
         GoalTemplate(
             id = "financial_emergency_fund",
-            category = GoalCategory.FINANCIAL,
+            category = GoalCategory.MONEY,
             title = "Build Emergency Fund",
             description = "Save 3-6 months of expenses for financial security and peace of mind",
             suggestedTimeline = GoalTimeline.MID_TERM,
@@ -124,7 +122,7 @@ object GoalTemplateProvider {
         ),
         GoalTemplate(
             id = "financial_debt_free",
-            category = GoalCategory.FINANCIAL,
+            category = GoalCategory.MONEY,
             title = "Become Debt-Free",
             description = "Pay off all consumer debt and achieve financial freedom",
             suggestedTimeline = GoalTimeline.LONG_TERM,
@@ -141,7 +139,7 @@ object GoalTemplateProvider {
         ),
         GoalTemplate(
             id = "financial_budget",
-            category = GoalCategory.FINANCIAL,
+            category = GoalCategory.MONEY,
             title = "Master Monthly Budgeting",
             description = "Create and stick to a monthly budget to take control of your finances",
             suggestedTimeline = GoalTimeline.SHORT_TERM,
@@ -158,7 +156,7 @@ object GoalTemplateProvider {
         ),
         GoalTemplate(
             id = "financial_invest",
-            category = GoalCategory.FINANCIAL,
+            category = GoalCategory.MONEY,
             title = "Start Investing",
             description = "Begin building wealth through regular investing in stocks, ETFs, or retirement accounts",
             suggestedTimeline = GoalTimeline.MID_TERM,
@@ -175,10 +173,10 @@ object GoalTemplateProvider {
         )
     )
 
-    private val physicalTemplates = listOf(
+    private val bodyTemplates = listOf(
         GoalTemplate(
             id = "physical_weight_loss",
-            category = GoalCategory.PHYSICAL,
+            category = GoalCategory.BODY,
             title = "Lose Weight Healthily",
             description = "Achieve a healthy weight through sustainable diet and exercise habits",
             suggestedTimeline = GoalTimeline.MID_TERM,
@@ -195,7 +193,7 @@ object GoalTemplateProvider {
         ),
         GoalTemplate(
             id = "physical_run_5k",
-            category = GoalCategory.PHYSICAL,
+            category = GoalCategory.BODY,
             title = "Run a 5K",
             description = "Train to complete a 5K run, building endurance and fitness",
             suggestedTimeline = GoalTimeline.SHORT_TERM,
@@ -212,7 +210,7 @@ object GoalTemplateProvider {
         ),
         GoalTemplate(
             id = "physical_strength",
-            category = GoalCategory.PHYSICAL,
+            category = GoalCategory.BODY,
             title = "Build Strength",
             description = "Develop physical strength through consistent weight training",
             suggestedTimeline = GoalTimeline.MID_TERM,
@@ -229,7 +227,7 @@ object GoalTemplateProvider {
         ),
         GoalTemplate(
             id = "physical_sleep",
-            category = GoalCategory.PHYSICAL,
+            category = GoalCategory.BODY,
             title = "Improve Sleep Quality",
             description = "Develop healthy sleep habits for better rest and recovery",
             suggestedTimeline = GoalTimeline.SHORT_TERM,
@@ -246,10 +244,10 @@ object GoalTemplateProvider {
         )
     )
 
-    private val socialTemplates = listOf(
+    private val peopleTemplates = listOf(
         GoalTemplate(
             id = "social_network",
-            category = GoalCategory.SOCIAL,
+            category = GoalCategory.PEOPLE,
             title = "Expand Professional Network",
             description = "Build meaningful professional connections to advance your career",
             suggestedTimeline = GoalTimeline.MID_TERM,
@@ -266,7 +264,7 @@ object GoalTemplateProvider {
         ),
         GoalTemplate(
             id = "social_friendships",
-            category = GoalCategory.SOCIAL,
+            category = GoalCategory.PEOPLE,
             title = "Deepen Friendships",
             description = "Strengthen existing friendships and create more meaningful connections",
             suggestedTimeline = GoalTimeline.SHORT_TERM,
@@ -283,7 +281,7 @@ object GoalTemplateProvider {
         ),
         GoalTemplate(
             id = "social_public_speaking",
-            category = GoalCategory.SOCIAL,
+            category = GoalCategory.PEOPLE,
             title = "Master Public Speaking",
             description = "Overcome fear of public speaking and become a confident presenter",
             suggestedTimeline = GoalTimeline.MID_TERM,
@@ -300,7 +298,7 @@ object GoalTemplateProvider {
         ),
         GoalTemplate(
             id = "social_community",
-            category = GoalCategory.SOCIAL,
+            category = GoalCategory.PEOPLE,
             title = "Get Involved in Community",
             description = "Make a positive impact by contributing to your local community",
             suggestedTimeline = GoalTimeline.SHORT_TERM,
@@ -317,10 +315,10 @@ object GoalTemplateProvider {
         )
     )
 
-    private val emotionalTemplates = listOf(
+    private val wellbeingTemplates = listOf(
         GoalTemplate(
             id = "emotional_mindfulness",
-            category = GoalCategory.EMOTIONAL,
+            category = GoalCategory.WELLBEING,
             title = "Build Mindfulness Practice",
             description = "Develop a consistent meditation practice for mental clarity and emotional balance",
             suggestedTimeline = GoalTimeline.SHORT_TERM,
@@ -337,7 +335,7 @@ object GoalTemplateProvider {
         ),
         GoalTemplate(
             id = "emotional_stress",
-            category = GoalCategory.EMOTIONAL,
+            category = GoalCategory.WELLBEING,
             title = "Manage Stress Better",
             description = "Develop healthy coping mechanisms to reduce and manage stress",
             suggestedTimeline = GoalTimeline.SHORT_TERM,
@@ -354,7 +352,7 @@ object GoalTemplateProvider {
         ),
         GoalTemplate(
             id = "emotional_confidence",
-            category = GoalCategory.EMOTIONAL,
+            category = GoalCategory.WELLBEING,
             title = "Build Self-Confidence",
             description = "Develop stronger self-belief and confidence in your abilities",
             suggestedTimeline = GoalTimeline.MID_TERM,
@@ -371,7 +369,7 @@ object GoalTemplateProvider {
         ),
         GoalTemplate(
             id = "emotional_therapy",
-            category = GoalCategory.EMOTIONAL,
+            category = GoalCategory.WELLBEING,
             title = "Start Therapy Journey",
             description = "Begin working with a therapist to improve mental health and wellbeing",
             suggestedTimeline = GoalTimeline.SHORT_TERM,
@@ -388,10 +386,10 @@ object GoalTemplateProvider {
         )
     )
 
-    private val spiritualTemplates = listOf(
+    private val purposeTemplates = listOf(
         GoalTemplate(
             id = "spiritual_practice",
-            category = GoalCategory.SPIRITUAL,
+            category = GoalCategory.PURPOSE,
             title = "Develop Daily Spiritual Practice",
             description = "Create a consistent spiritual routine that brings meaning and peace",
             suggestedTimeline = GoalTimeline.SHORT_TERM,
@@ -408,7 +406,7 @@ object GoalTemplateProvider {
         ),
         GoalTemplate(
             id = "spiritual_gratitude",
-            category = GoalCategory.SPIRITUAL,
+            category = GoalCategory.PURPOSE,
             title = "Cultivate Gratitude",
             description = "Develop a gratitude practice to increase happiness and appreciation",
             suggestedTimeline = GoalTimeline.SHORT_TERM,
@@ -425,7 +423,7 @@ object GoalTemplateProvider {
         ),
         GoalTemplate(
             id = "spiritual_purpose",
-            category = GoalCategory.SPIRITUAL,
+            category = GoalCategory.PURPOSE,
             title = "Discover Life Purpose",
             description = "Explore and clarify your values, passions, and life purpose",
             suggestedTimeline = GoalTimeline.MID_TERM,
@@ -442,7 +440,7 @@ object GoalTemplateProvider {
         ),
         GoalTemplate(
             id = "spiritual_nature",
-            category = GoalCategory.SPIRITUAL,
+            category = GoalCategory.PURPOSE,
             title = "Connect with Nature",
             description = "Spend more time in nature to improve wellbeing and spiritual connection",
             suggestedTimeline = GoalTimeline.SHORT_TERM,
@@ -459,74 +457,4 @@ object GoalTemplateProvider {
         )
     )
 
-    private val familyTemplates = listOf(
-        GoalTemplate(
-            id = "family_quality_time",
-            category = GoalCategory.FAMILY,
-            title = "Increase Quality Family Time",
-            description = "Spend more meaningful time with family members",
-            suggestedTimeline = GoalTimeline.SHORT_TERM,
-            suggestedMilestones = listOf(
-                "Audit current family time",
-                "Plan weekly family activity",
-                "Establish device-free time",
-                "Create family traditions",
-                "Plan family vacation/outing"
-            ),
-            icon = "👨‍👩‍👧‍👦",
-            difficulty = TemplateDifficulty.EASY,
-            tags = listOf("family time", "bonding")
-        ),
-        GoalTemplate(
-            id = "family_relationship",
-            category = GoalCategory.FAMILY,
-            title = "Strengthen Partner Relationship",
-            description = "Invest in your romantic relationship to deepen connection",
-            suggestedTimeline = GoalTimeline.MID_TERM,
-            suggestedMilestones = listOf(
-                "Schedule regular date nights",
-                "Improve communication habits",
-                "Read relationship book together",
-                "Plan special trip/experience",
-                "Express appreciation daily"
-            ),
-            icon = "💑",
-            difficulty = TemplateDifficulty.MEDIUM,
-            tags = listOf("relationship", "marriage")
-        ),
-        GoalTemplate(
-            id = "family_parenting",
-            category = GoalCategory.FAMILY,
-            title = "Become a Better Parent",
-            description = "Develop parenting skills to better support your children's growth",
-            suggestedTimeline = GoalTimeline.MID_TERM,
-            suggestedMilestones = listOf(
-                "Read parenting book",
-                "Establish consistent routines",
-                "Practice active listening",
-                "Create one-on-one time with each child",
-                "Model healthy behaviors"
-            ),
-            icon = "👶",
-            difficulty = TemplateDifficulty.MEDIUM,
-            tags = listOf("parenting", "children")
-        ),
-        GoalTemplate(
-            id = "family_reconnect",
-            category = GoalCategory.FAMILY,
-            title = "Reconnect with Extended Family",
-            description = "Strengthen bonds with extended family members",
-            suggestedTimeline = GoalTimeline.SHORT_TERM,
-            suggestedMilestones = listOf(
-                "Create family contact list",
-                "Schedule monthly calls with relatives",
-                "Plan family reunion/gathering",
-                "Share family stories and history",
-                "Create family group chat/album"
-            ),
-            icon = "🏠",
-            difficulty = TemplateDifficulty.EASY,
-            tags = listOf("extended family", "relatives")
-        )
-    )
 }

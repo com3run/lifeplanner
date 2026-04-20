@@ -4,6 +4,7 @@ import az.tribe.lifeplanner.domain.model.GoalChange
 import az.tribe.lifeplanner.domain.repository.GoalHistoryRepository
 import az.tribe.lifeplanner.data.sync.SyncManager
 import az.tribe.lifeplanner.infrastructure.SharedDatabase
+import az.tribe.lifeplanner.infrastructure.*
 
 class GoalHistoryRepositoryImpl(
     private val localGoalStore: SharedDatabase,

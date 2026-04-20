@@ -7,6 +7,7 @@ import az.tribe.lifeplanner.domain.model.CoachPersona
 import az.tribe.lifeplanner.domain.model.CustomCoach
 import az.tribe.lifeplanner.domain.model.MessageRole
 import az.tribe.lifeplanner.domain.model.UserContext
+import az.tribe.lifeplanner.domain.model.UserSituation
 
 // ============================================================================
 // SYSTEM PROMPT CONSTANTS (hardcoded defaults — overridden by SystemPromptStore)
@@ -88,7 +89,12 @@ private const val STREAMING_INSTRUCTIONS_DEFAULT = """INSTRUCTIONS:
 - NEVER claim you have created, added, or set up a goal, habit, or journal entry. You cannot do that directly. The user will see action buttons to create items themselves.
 - SUGGESTION TAGS: Only append a hidden suggestion tag when the user EXPLICITLY asks to create, add, or start a goal, habit, or journal entry. Do NOT suggest on casual mentions — just have a conversation. If unsure whether they want to create something, ask first. Use at most 1 tag per response, placed at the very end:
   For a goal: [SUGGEST_GOAL:title|description|CATEGORY|TIMELINE]
-  For a habit: [SUGGEST_HABIT:title|description|CATEGORY|FREQUENCY]
+  For a habit: [SUGGEST_HABIT:title|description|CATEGORY|FREQUENCY|goalId|targetCount|targetUnit]
+    - goalId: the goal ID from ACTIVE GOALS this habit supports (leave empty if not linked to a goal)
+    - targetCount: numeric target (e.g. 2, 8, 10) — use 1 if no specific quantity
+    - targetUnit: unit for the target (e.g. L, min, times, glasses, pages, steps) — leave empty if no unit
+    - Example: [SUGGEST_HABIT:Drink water daily|Stay hydrated|BODY|DAILY|goal-abc123|2|L]
+    - Example: [SUGGEST_HABIT:Morning meditation|10 min mindfulness|WELLBEING|DAILY||10|min]
   For a journal entry: [SUGGEST_JOURNAL:title|content|MOOD]
   Categories: CAREER, MONEY, BODY, PEOPLE, WELLBEING, PURPOSE
   Timelines: SHORT_TERM, MID_TERM, LONG_TERM
@@ -290,7 +296,10 @@ internal fun buildStreamingSystemPrompt(
     coach: CoachPersona?,
     conversationHistory: List<ChatMessage>,
     customCoach: CustomCoach?,
-    personaOverride: String?
+    personaOverride: String?,
+    situation: UserSituation? = null,
+    orchestrator: CoachOrchestrator? = null,
+    activeGoals: List<String> = emptyList()
 ): String {
     val coachName = coach?.name ?: "Luna"
     val coachPersonality = coach?.personality ?: "warm, encouraging, holistic thinker"
@@ -314,17 +323,26 @@ ${if (personaOverride != null) "USER'S CUSTOMIZATION (follow this closely): $per
 """.trimIndent()
     }
 
+    val situationBlock = if (situation != null && orchestrator != null && customCoach == null) {
+        orchestrator.buildSituationContext(situation, coach)
+    } else ""
+
+    val goalsBlock = if (activeGoals.isNotEmpty()) {
+        "ACTIVE GOALS (use goalId when suggesting linked habits):\n" +
+            activeGoals.joinToString("\n") { "  - $it" }
+    } else ""
+
     return """
 $coachIntro
 
-User Context:
+${if (situationBlock.isNotEmpty()) "$situationBlock\n" else ""}User Context:
 - Name: ${userContext.userName ?: "User"}
 - Level: ${userContext.level} (${userContext.totalXp} XP)
 - Goals: ${userContext.activeGoals} active, ${userContext.completedGoals} completed
 - Streak: ${userContext.currentStreak} days
 
-${if (historyText.isNotEmpty()) "CONVERSATION HISTORY:\n$historyText\n" else ""}
-
+${if (goalsBlock.isNotEmpty()) "$goalsBlock\n" else ""}${if (historyText.isNotEmpty()) "CONVERSATION HISTORY:\n$historyText\n" else ""}
 ${getStreamingInstructions(coachName)}
+${if (situationBlock.isNotEmpty()) SITUATION_UPDATE_INSTRUCTION else ""}
 """.trimIndent()
 }

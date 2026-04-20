@@ -35,6 +35,7 @@ object AndroidNotificationScheduler : NotificationSchedulerInterface {
             putExtra(ReminderAlarmReceiver.EXTRA_FREQUENCY, reminder.frequency.name)
             putExtra(ReminderAlarmReceiver.EXTRA_HOUR, reminder.scheduledTime.hour)
             putExtra(ReminderAlarmReceiver.EXTRA_MINUTE, reminder.scheduledTime.minute)
+            putExtra(ReminderAlarmReceiver.EXTRA_LINKED_GOAL_ID, reminder.linkedGoalId)
             putExtra(
                 ReminderAlarmReceiver.EXTRA_SCHEDULED_DAYS,
                 reminder.scheduledDays.joinToString(",") { it.name }

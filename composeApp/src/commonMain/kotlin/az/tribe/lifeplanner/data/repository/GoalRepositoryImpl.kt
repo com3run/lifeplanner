@@ -11,6 +11,7 @@ import az.tribe.lifeplanner.domain.model.Milestone
 import az.tribe.lifeplanner.domain.repository.GoalRepository
 import az.tribe.lifeplanner.data.sync.SyncManager
 import az.tribe.lifeplanner.infrastructure.SharedDatabase
+import az.tribe.lifeplanner.infrastructure.*
 import az.tribe.lifeplanner.widget.WidgetDataSyncService
 import co.touchlab.kermit.Logger
 import kotlinx.coroutines.flow.Flow
@@ -83,6 +84,7 @@ class GoalRepositoryImpl(
                 localGoalStore.insertMilestone(milestone.toEntity(goal.id))
             }
         }
+        notifyWidgets()
         syncManager.requestSync()
     }
 

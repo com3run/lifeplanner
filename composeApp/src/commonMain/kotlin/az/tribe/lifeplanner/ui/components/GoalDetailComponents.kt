@@ -17,12 +17,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.CalendarToday
-import androidx.compose.material.icons.rounded.CheckCircle
-import androidx.compose.material.icons.rounded.Flag
-import androidx.compose.material.icons.rounded.HourglassEmpty
-import androidx.compose.material.icons.rounded.PlayArrow
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.CalendarBlank
+import com.adamglin.phosphoricons.regular.CheckCircle
+import com.adamglin.phosphoricons.regular.Flag
+import com.adamglin.phosphoricons.regular.Hourglass
+import com.adamglin.phosphoricons.regular.Play
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -45,8 +46,11 @@ import az.tribe.lifeplanner.domain.enum.GoalStatus
 import az.tribe.lifeplanner.domain.model.Goal
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
 import az.tribe.lifeplanner.ui.theme.gradientColors
+import kotlin.time.Clock
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
 import kotlinx.datetime.number
+import kotlinx.datetime.toLocalDateTime
 
 /**
  * Hero header with gradient background, circular progress, and key stats
@@ -124,17 +128,39 @@ fun GoalDetailHeroHeader(
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(
-                        text = "${goal.progress ?: 0}%",
-                        style = MaterialTheme.typography.headlineLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                    Text(
-                        text = "Progress",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.White.copy(alpha = 0.8f)
-                    )
+                    val hasProgress = (goal.progress ?: 0) > 0
+                    if (hasProgress) {
+                        Text(
+                            text = "${goal.progress}%",
+                            style = MaterialTheme.typography.headlineLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                        Text(
+                            text = "Progress",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.White.copy(alpha = 0.8f)
+                        )
+                    } else {
+                        val today = Clock.System.now()
+                            .toLocalDateTime(TimeZone.currentSystemDefault()).date
+                        val daysLeft = (goal.dueDate.toEpochDays() - today.toEpochDays()).toInt()
+                        Text(
+                            text = if (daysLeft == 0) "Today" else "${if (daysLeft > 0) daysLeft else -daysLeft}",
+                            style = MaterialTheme.typography.headlineLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                        Text(
+                            text = when {
+                                daysLeft == 0 -> "due today"
+                                daysLeft > 0 -> "days left"
+                                else -> "days over"
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.White.copy(alpha = 0.8f)
+                        )
+                    }
                 }
             }
 
@@ -158,12 +184,12 @@ fun GoalDetailHeroHeader(
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 HeroStatItem(
-                    icon = Icons.Rounded.Flag,
+                    icon = PhosphorIcons.Regular.Flag,
                     value = "${goal.milestones.count { it.isCompleted }}/${goal.milestones.size}",
                     label = "Milestones"
                 )
                 HeroStatItem(
-                    icon = Icons.Rounded.CalendarToday,
+                    icon = PhosphorIcons.Regular.CalendarBlank,
                     value = formatShortDate(goal.dueDate),
                     label = "Due Date"
                 )
@@ -288,19 +314,19 @@ private enum class StatusToggleButton(
     NOT_STARTED(
         GoalStatus.NOT_STARTED,
         "Not Started",
-        Icons.Rounded.HourglassEmpty,
+        PhosphorIcons.Regular.Hourglass,
         Color(0xFF9E9E9E)
     ),
     IN_PROGRESS(
         GoalStatus.IN_PROGRESS,
         "In Progress",
-        Icons.Rounded.PlayArrow,
+        PhosphorIcons.Regular.Play,
         Color(0xFFFFA726)
     ),
     COMPLETED(
         GoalStatus.COMPLETED,
         "Completed",
-        Icons.Rounded.CheckCircle,
+        PhosphorIcons.Regular.CheckCircle,
         Color(0xFF66BB6A)
     )
 }

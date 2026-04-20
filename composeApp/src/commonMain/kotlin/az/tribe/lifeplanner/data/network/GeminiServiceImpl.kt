@@ -28,7 +28,7 @@ class GeminiServiceImpl(
         val prompt = """
             Based on the user's goal statement: "$userPrompt"
 
-            1. First, analyze their prompt and determine the most relevant goal type(s) from: FINANCIAL, CAREER, PHYSICAL, SOCIAL, EMOTIONAL, SPIRITUAL, FAMILY
+            1. First, analyze their prompt and determine the most relevant goal type(s) from: MONEY, CAREER, BODY, PEOPLE, WELLBEING, PURPOSE
 
             2. Then generate 5-7 focused questions that will help create personalized goals for their specific situation.
 
@@ -42,7 +42,7 @@ class GeminiServiceImpl(
             Each question should have 3-4 realistic multiple choice options.
 
             Example: If user says "I want to get fit and save money"
-            - Determine goal_type as something like "PHYSICAL_AND_FINANCIAL"
+            - Determine goal_type as something like "BODY_AND_MONEY"
             - Ask questions about fitness level, time availability, budget constraints, savings targets, etc.
 
             Focus all questions on helping achieve their specific stated goal.
@@ -145,8 +145,8 @@ class GeminiServiceImpl(
                             putJsonObject("category") {
                                 put("type", "string")
                                 putJsonArray("enum") {
-                                    add("FINANCIAL"); add("CAREER"); add("PHYSICAL")
-                                    add("SOCIAL"); add("EMOTIONAL"); add("SPIRITUAL"); add("FAMILY")
+                                    add("MONEY"); add("CAREER"); add("BODY")
+                                    add("PEOPLE"); add("WELLBEING"); add("PURPOSE")
                                 }
                             }
                             putJsonObject("timeline") {

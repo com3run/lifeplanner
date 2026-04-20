@@ -24,6 +24,7 @@ interface HabitRepository {
     suspend fun getCheckInsByDate(date: LocalDate): List<HabitCheckIn>
     suspend fun getCheckInByHabitAndDate(habitId: String, date: LocalDate): HabitCheckIn?
     suspend fun getCheckInsInRange(habitId: String, startDate: LocalDate, endDate: LocalDate): List<HabitCheckIn>
+    suspend fun getAllCheckInsInRange(startDate: LocalDate, endDate: LocalDate): List<HabitCheckIn>
     suspend fun deleteCheckIn(id: String)
 
     // Streak calculations

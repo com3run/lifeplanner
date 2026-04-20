@@ -13,6 +13,9 @@ import az.tribe.lifeplanner.domain.service.SmartReminderManager
 import az.tribe.lifeplanner.usecases.habit.CheckInHabitUseCase
 import az.tribe.lifeplanner.usecases.habit.CreateHabitUseCase
 import az.tribe.lifeplanner.usecases.habit.DeleteHabitUseCase
+import az.tribe.lifeplanner.core.FeatureFlags
+import az.tribe.lifeplanner.domain.model.XpRewards
+import az.tribe.lifeplanner.domain.repository.GamificationRepository
 import az.tribe.lifeplanner.usecases.ability.AwardAbilityXpUseCase
 import az.tribe.lifeplanner.usecases.habit.UncheckHabitUseCase
 import az.tribe.lifeplanner.usecases.habit.UpdateHabitUseCase
@@ -27,12 +30,14 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
+import com.russhwolf.settings.Settings
 import kotlinx.coroutines.launch
 import kotlin.time.Clock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
+import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 
 data class HabitWithStatus(
@@ -57,8 +62,11 @@ class HabitViewModel(
     private val checkInHabitUseCase: CheckInHabitUseCase,
     private val uncheckHabitUseCase: UncheckHabitUseCase,
     private val smartReminderManager: SmartReminderManager,
-    private val awardAbilityXpUseCase: AwardAbilityXpUseCase
+    private val awardAbilityXpUseCase: AwardAbilityXpUseCase,
+    private val gamificationRepository: GamificationRepository
 ) : ViewModel() {
+
+    private val settings = Settings()
 
     // Smart reminder events (one-shot, collected by UI for snackbar)
     private val _reminderEvent = MutableSharedFlow<String>()
@@ -72,29 +80,35 @@ class HabitViewModel(
 
     val habits: StateFlow<List<HabitWithStatus>> = habitRepository.observeHabitsWithTodayStatus()
         .map { pairs ->
-            val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+            val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+            val today = now.date
+            val nowMinutes = now.hour * 60 + now.minute
+
             // Calculate Monday of this week
             val daysFromMonday = (today.dayOfWeek.ordinal - DayOfWeek.MONDAY.ordinal + 7) % 7
             val monday = today.minus(daysFromMonday, DateTimeUnit.DAY)
 
+            // Single batched query for all habits — avoids N separate DB calls per reactive update
+            val allWeeklyCheckIns = try {
+                habitRepository.getAllCheckInsInRange(monday, today)
+            } catch (_: Exception) {
+                emptyList()
+            }
+            val weeklyCheckInsByHabitId = allWeeklyCheckIns
+                .filter { it.completed }
+                .groupBy { it.habitId }
+
             pairs.map { (habit, isCompleted) ->
-                val weeklyCompletions = try {
-                    val checkIns = habitRepository.getCheckInsInRange(
-                        habit.id,
-                        monday,
-                        today
-                    )
-                    val completedDates = checkIns.filter { it.completed }.map { it.date }.toSet()
-                    // Build Mon-Sun list (up to today)
-                    (0..6).map { dayOffset ->
-                        val day = monday.minus(-dayOffset, DateTimeUnit.DAY)
-                        if (day <= today) completedDates.contains(day) else false
-                    }
-                } catch (_: Exception) {
-                    emptyList()
+                val completedDates = weeklyCheckInsByHabitId[habit.id]
+                    ?.map { it.date }
+                    ?.toSet()
+                    ?: emptySet()
+                val weeklyCompletions = (0..6).map { dayOffset ->
+                    val day = monday.plus(dayOffset, DateTimeUnit.DAY)
+                    if (day <= today) completedDates.contains(day) else false
                 }
                 HabitWithStatus(habit, isCompleted, weeklyCompletions)
-            }.sortedWith(compareBy<HabitWithStatus> { it.isCompletedToday }.thenByDescending { it.habit.currentStreak })
+            }.sortedWith(timeAwareHabitComparator(nowMinutes))
         }
         .onEach { _isLoading.value = false }
         .catch { e ->
@@ -109,9 +123,6 @@ class HabitViewModel(
     // Track recently checked-in habit for reflection prompt
     private val _recentCheckIn = MutableStateFlow<RecentCheckIn?>(null)
     val recentCheckIn: StateFlow<RecentCheckIn?> = _recentCheckIn.asStateFlow()
-
-    @Deprecated("No-op: data flows reactively via SQLDelight Flows", level = DeprecationLevel.WARNING)
-    fun loadHabits() { }
 
     private var isCreatingHabit = false
 
@@ -163,7 +174,23 @@ class HabitViewModel(
             try {
                 val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
                 checkInHabitUseCase(habitId, today, notes)
-                awardAbilityXpUseCase(habitId)
+                gamificationRepository.awardXp(XpRewards.HABIT_CHECK_IN.toLong())
+                if (FeatureFlags.ABILITIES_ENABLED) {
+                    awardAbilityXpUseCase(habitId)
+                }
+
+                // Perfect day bonus: all habits completed after this check-in (once per day)
+                val allCheckIns = habitRepository.getAllCheckInsInRange(today, today)
+                val completedTodayIds = allCheckIns.filter { it.completed }.map { it.habitId }.toSet()
+                val allHabitIds = habits.value.map { it.habit.id }.toSet()
+                val todayStr = today.toString()
+                if (allHabitIds.isNotEmpty() &&
+                    allHabitIds == completedTodayIds &&
+                    settings.getStringOrNull(PREF_PERFECT_DAY_DATE) != todayStr
+                ) {
+                    gamificationRepository.awardXp(XpRewards.PERFECT_DAY_BONUS.toLong())
+                    settings.putString(PREF_PERFECT_DAY_DATE, todayStr)
+                }
 
                 // Track check-in
                 val streak = habitRepository.getHabitById(habitId)?.currentStreak ?: 0
@@ -254,4 +281,56 @@ class HabitViewModel(
         return habits.value.maxByOrNull { it.habit.currentStreak }?.habit
     }
 
+    companion object {
+        private const val PREF_PERFECT_DAY_DATE = "gamification_perfect_day_date"
+    }
+}
+
+/**
+ * Sorts habits so that upcoming scheduled ones appear first, then unscheduled,
+ * then past-scheduled (time already passed today), then completed.
+ *
+ * This way, at night, morning habits sink to the bottom and evening habits
+ * float to the top — showing what's actually still relevant right now.
+ */
+private fun timeAwareHabitComparator(nowMinutes: Int): Comparator<HabitWithStatus> {
+    return Comparator { a, b ->
+        // Completed always go to the bottom
+        val completedCmp = a.isCompletedToday.compareTo(b.isCompletedToday)
+        if (completedCmp != 0) return@Comparator completedCmp
+
+        // Both completed — keep stable order
+        if (a.isCompletedToday) return@Comparator 0
+
+        // Both incomplete — assign a time group
+        val aGroup = timeGroup(a.habit.reminderTime, nowMinutes)
+        val bGroup = timeGroup(b.habit.reminderTime, nowMinutes)
+
+        val groupCmp = aGroup.compareTo(bGroup)
+        if (groupCmp != 0) return@Comparator groupCmp
+
+        // Within "upcoming" group: sort by reminder time ascending (soonest first)
+        if (aGroup == 0) {
+            val aMins = parseReminderMinutes(a.habit.reminderTime)
+            val bMins = parseReminderMinutes(b.habit.reminderTime)
+            if (aMins != null && bMins != null) return@Comparator aMins.compareTo(bMins)
+        }
+
+        // Within other groups: sort by streak descending
+        b.habit.currentStreak.compareTo(a.habit.currentStreak)
+    }
+}
+
+/** 0 = upcoming, 1 = no scheduled time, 2 = time already passed today */
+private fun timeGroup(reminderTime: String?, nowMinutes: Int): Int {
+    val mins = parseReminderMinutes(reminderTime) ?: return 1
+    return if (mins > nowMinutes) 0 else 2
+}
+
+private fun parseReminderMinutes(reminderTime: String?): Int? {
+    reminderTime ?: return null
+    val parts = reminderTime.split(":")
+    val h = parts.getOrNull(0)?.toIntOrNull() ?: return null
+    val m = parts.getOrNull(1)?.toIntOrNull() ?: return null
+    return h * 60 + m
 }

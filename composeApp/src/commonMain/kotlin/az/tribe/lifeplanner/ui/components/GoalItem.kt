@@ -1,25 +1,17 @@
 package az.tribe.lifeplanner.ui.components
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.*
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import az.tribe.lifeplanner.domain.model.Goal
@@ -53,68 +45,62 @@ fun GoalItem(
     // Get category gradient colors
     val categoryGradientColors = goal.category.gradientColors()
 
-    Box(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-    ) {
-        // Modern glass-style card with gradient accent
-        GlassCard(
-            modifier = Modifier
-                .fillMaxWidth()
-                .graphicsLayer {
-                    translationY = yOffset
-                    scaleX = scale
-                    scaleY = scale
+            .padding(horizontal = 16.dp, vertical = 4.dp)
+            .graphicsLayer {
+                translationY = yOffset
+                scaleX = scale
+                scaleY = scale
+            }
+            .clickable {
+                if (showDeleteConfirm) {
+                    showDeleteConfirm = false
+                } else {
+                    onClick()
                 }
-                .shadow(
-                    elevation = 8.dp,
-                    shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large),
-                    spotColor = categoryGradientColors.first().copy(alpha = 0.3f),
-                    ambientColor = categoryGradientColors.first().copy(alpha = 0.1f)
-                )
-                .clickable {
-                    if (showDeleteConfirm) {
-                        showDeleteConfirm = false
-                    } else {
-                        onClick()
-                    }
-                },
-            cornerRadius = LifePlannerDesign.CornerRadius.large
-        ) {
-            Row(modifier = Modifier.fillMaxWidth()) {
-                // Gradient accent bar on the left
+            },
+        shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.medium),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = LifePlannerDesign.Elevation.low)
+    ) {
+        Row(modifier = Modifier.fillMaxWidth()) {
+            // Thin category accent bar on the left
+            Box(
+                modifier = Modifier
+                    .width(4.dp)
+                    .fillMaxHeight()
+                    .background(brush = Brush.verticalGradient(categoryGradientColors))
+            )
+
+            // Goal content
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(LifePlannerDesign.Padding.standard),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.Top
+            ) {
+                val categoryColor = goal.category.backgroundColor()
                 Box(
+                    contentAlignment = Alignment.Center,
                     modifier = Modifier
-                        .width(5.dp)
-                        .fillMaxHeight()
-                        .background(
-                            brush = Brush.verticalGradient(categoryGradientColors)
-                        )
-                )
-
-                Column(modifier = Modifier.weight(1f)) {
-                    // Category indicator - gradient line at the top
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(4.dp)
-                            .background(
-                                brush = Brush.horizontalGradient(
-                                    colors = listOf(
-                                        categoryGradientColors.first(),
-                                        categoryGradientColors.last().copy(alpha = 0.5f)
-                                    )
-                                )
-                            )
+                        .size(44.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(categoryColor.copy(alpha = 0.12f))
+                ) {
+                    Icon(
+                        imageVector = goal.category.getIcon(),
+                        contentDescription = null,
+                        tint = categoryColor,
+                        modifier = Modifier.size(22.dp)
                     )
-
-                    // Goal content
-                    Column(
-                        modifier = Modifier.padding(LifePlannerDesign.Padding.standard)
-                    ) {
-                        GoalCard(goal = goal)
-                    }
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    GoalCard(goal = goal)
                 }
             }
         }

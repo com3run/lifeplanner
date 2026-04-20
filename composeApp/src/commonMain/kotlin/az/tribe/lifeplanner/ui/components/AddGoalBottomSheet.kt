@@ -16,11 +16,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.AutoAwesome
-import androidx.compose.material.icons.rounded.ChevronRight
-import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.Edit
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.Sparkle
+import com.adamglin.phosphoricons.regular.CaretRight
+import com.adamglin.phosphoricons.regular.X
+import com.adamglin.phosphoricons.regular.PencilSimple
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -82,7 +83,7 @@ fun AddGoalBottomSheet(
                 )
                 IconButton(onClick = onDismiss) {
                     Icon(
-                        imageVector = Icons.Rounded.Close,
+                        imageVector = PhosphorIcons.Regular.X,
                         contentDescription = "Close"
                     )
                 }
@@ -97,7 +98,7 @@ fun AddGoalBottomSheet(
                 // Quick Add option
                 item {
                     AddGoalOption(
-                        icon = Icons.Rounded.Edit,
+                        icon = PhosphorIcons.Regular.PencilSimple,
                         iconGradient = LifePlannerGradients.primary,
                         title = "Quick Add",
                         subtitle = "Create a goal manually",
@@ -108,7 +109,7 @@ fun AddGoalBottomSheet(
                 // AI Suggest option
                 item {
                     AddGoalOption(
-                        icon = Icons.Rounded.AutoAwesome,
+                        icon = PhosphorIcons.Regular.Sparkle,
                         iconGradient = LifePlannerGradients.warm,
                         title = "AI Suggest",
                         subtitle = "Get personalized suggestions",
@@ -178,7 +179,7 @@ private fun AddGoalOption(
 
             // Chevron
             Icon(
-                imageVector = Icons.Rounded.ChevronRight,
+                imageVector = PhosphorIcons.Regular.CaretRight,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )

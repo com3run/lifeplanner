@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS AbilityGoalLinkEntity (
+    id TEXT PRIMARY KEY NOT NULL,
+    abilityId TEXT NOT NULL,
+    goalId TEXT NOT NULL,
+    createdAt TEXT NOT NULL,
+    FOREIGN KEY (abilityId) REFERENCES AbilityEntity(id) ON DELETE CASCADE,
+    FOREIGN KEY (goalId) REFERENCES GoalEntity(id) ON DELETE CASCADE
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_ability_goal_unique ON AbilityGoalLinkEntity(abilityId, goalId);

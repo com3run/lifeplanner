@@ -162,7 +162,7 @@ private fun getDefaultDueDate(): LocalDate {
 fun GoalEntity.toDomain(milestones: List<Milestone> = emptyList()): Goal {
     return Goal(
         id = id,
-        category = GoalCategory.valueOf(category),
+        category = try { GoalCategory.valueOf(category) } catch (_: Exception) { GoalCategory.CAREER },
         title = title,
         description = description,
         status = GoalStatus.valueOf(status),

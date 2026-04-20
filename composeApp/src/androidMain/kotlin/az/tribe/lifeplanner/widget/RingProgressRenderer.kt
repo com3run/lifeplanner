@@ -213,12 +213,11 @@ object RingProgressRenderer {
     fun getCategoryColor(category: String): Int {
         return when (category.uppercase()) {
             "CAREER" -> 0xFF4A6FFF.toInt()
-            "FINANCIAL" -> 0xFF28C76F.toInt()
-            "PHYSICAL" -> 0xFFFF9F43.toInt()
-            "SOCIAL" -> 0xFF7A5AF8.toInt()
-            "EMOTIONAL" -> 0xFF00CFE8.toInt()
-            "SPIRITUAL" -> 0xFFEA5455.toInt()
-            "FAMILY" -> 0xFF6236FF.toInt()
+            "MONEY" -> 0xFF28C76F.toInt()
+            "BODY" -> 0xFFFF9F43.toInt()
+            "PEOPLE" -> 0xFF7A5AF8.toInt()
+            "WELLBEING" -> 0xFF00CFE8.toInt()
+            "PURPOSE" -> 0xFFEA5455.toInt()
             else -> 0xFF667EEA.toInt()
         }
     }

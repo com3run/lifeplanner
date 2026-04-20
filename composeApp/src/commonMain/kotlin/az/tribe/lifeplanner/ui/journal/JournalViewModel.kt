@@ -3,13 +3,19 @@ package az.tribe.lifeplanner.ui.journal
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import az.tribe.lifeplanner.data.mapper.createNewJournalEntry
+import az.tribe.lifeplanner.data.network.AiProxyService
 import az.tribe.lifeplanner.domain.enum.Mood
+import az.tribe.lifeplanner.domain.model.Goal
+import az.tribe.lifeplanner.domain.model.Habit
 import az.tribe.lifeplanner.domain.model.JournalEntry
 import az.tribe.lifeplanner.domain.model.JournalPrompts
+import az.tribe.lifeplanner.domain.model.XpRewards
+import az.tribe.lifeplanner.domain.repository.GamificationRepository
 import az.tribe.lifeplanner.domain.repository.JournalRepository
 import az.tribe.lifeplanner.usecases.journal.CreateJournalEntryUseCase
 import az.tribe.lifeplanner.usecases.journal.DeleteJournalEntryUseCase
 import az.tribe.lifeplanner.usecases.journal.UpdateJournalEntryUseCase
+import co.touchlab.kermit.Logger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -28,7 +34,9 @@ class JournalViewModel(
     private val journalRepository: JournalRepository,
     private val createEntryUseCase: CreateJournalEntryUseCase,
     private val updateEntryUseCase: UpdateJournalEntryUseCase,
-    private val deleteEntryUseCase: DeleteJournalEntryUseCase
+    private val deleteEntryUseCase: DeleteJournalEntryUseCase,
+    private val aiProxyService: AiProxyService,
+    private val gamificationRepository: GamificationRepository,
 ) : ViewModel() {
 
     private val _isLoading = MutableStateFlow(true)
@@ -63,9 +71,6 @@ class JournalViewModel(
     private val _selectedDay = MutableStateFlow<LocalDate?>(null)
     val selectedDay: StateFlow<LocalDate?> = _selectedDay.asStateFlow()
 
-    @Deprecated("No-op: data flows reactively via SQLDelight Flows", level = DeprecationLevel.WARNING)
-    fun loadEntries() { }
-
     fun createEntry(
         title: String,
         content: String,
@@ -87,6 +92,7 @@ class JournalViewModel(
                     tags = tags
                 )
                 createEntryUseCase(entry)
+                gamificationRepository.awardXp(XpRewards.JOURNAL_ENTRY.toLong())
                 _showNewEntryDialog.value = false
                 refreshPrompt()
             } catch (e: Exception) {
@@ -200,4 +206,60 @@ class JournalViewModel(
     fun getEntriesForDay(date: LocalDate): List<JournalEntry> {
         return entries.value.filter { it.date == date }
     }
+
+    // ── AI generation ─────────────────────────────────────────────────────────
+
+    private val _isGeneratingAi = MutableStateFlow(false)
+    val isGeneratingAi: StateFlow<Boolean> = _isGeneratingAi.asStateFlow()
+
+    private val _aiResult = MutableStateFlow<AiJournalResult?>(null)
+    val aiResult: StateFlow<AiJournalResult?> = _aiResult.asStateFlow()
+
+    private val _aiError = MutableStateFlow<String?>(null)
+    val aiError: StateFlow<String?> = _aiError.asStateFlow()
+
+    fun generateJournalEntry(
+        mood: Mood,
+        prompt: String,
+        userNote: String,
+        linkedGoal: Goal?,
+        linkedHabit: Habit?,
+    ) {
+        viewModelScope.launch {
+            _isGeneratingAi.value = true
+            _aiError.value = null
+            try {
+                val result = generateAiJournalEntry(
+                    aiProxy = aiProxyService,
+                    mood = mood,
+                    prompt = prompt,
+                    userNote = userNote,
+                    linkedGoal = linkedGoal,
+                    linkedHabit = linkedHabit,
+                )
+                if (result != null) {
+                    _aiResult.value = result
+                } else {
+                    _aiError.value = "AI generation returned no result. Please try again."
+                }
+            } catch (e: Exception) {
+                Logger.e("JournalViewModel") { "AI journal generation failed: ${e.message}" }
+                _aiError.value = when {
+                    e.message?.contains("timeout", ignoreCase = true) == true ||
+                    e.message?.contains("connect", ignoreCase = true) == true ||
+                    e.message?.contains("network", ignoreCase = true) == true ->
+                        "No internet connection. Check your network and try again."
+                    e.message?.contains("authenticated", ignoreCase = true) == true ||
+                    e.message?.contains("sign in", ignoreCase = true) == true ->
+                        "Session expired. Please sign in again."
+                    else -> "AI generation failed. Please try again."
+                }
+            } finally {
+                _isGeneratingAi.value = false
+            }
+        }
+    }
+
+    fun clearAiResult() { _aiResult.value = null }
+    fun clearAiError() { _aiError.value = null }
 }

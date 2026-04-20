@@ -9,6 +9,7 @@ import az.tribe.lifeplanner.domain.model.CoachType
 import az.tribe.lifeplanner.domain.model.CustomCoach
 import az.tribe.lifeplanner.domain.model.MessageRole
 import az.tribe.lifeplanner.domain.model.UserContext
+import az.tribe.lifeplanner.domain.model.UserSituation
 import co.touchlab.kermit.Logger
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.addJsonObject
@@ -25,7 +26,9 @@ internal suspend fun ChatRepositoryImpl.callGeminiChat(
     userMessage: String,
     conversationHistory: List<ChatMessage>,
     userContext: UserContext,
-    coach: CoachPersona? = null
+    coach: CoachPersona? = null,
+    situation: UserSituation? = null,
+    activeGoals: List<String> = emptyList()
 ): CoachResponse {
     val coachName = coach?.name ?: "Luna"
     val coachPersonality = coach?.personality ?: "warm, encouraging, holistic thinker"
@@ -48,15 +51,22 @@ internal suspend fun ChatRepositoryImpl.callGeminiChat(
         }
     }
 
+    val situationBlock = if (situation != null) orchestrator.buildSituationContext(situation, coach) else ""
+
+    val goalsBlock = if (activeGoals.isNotEmpty()) {
+        "\nACTIVE GOALS (link habits to these when relevant):\n" +
+            activeGoals.joinToString("\n") { "  - $it" }
+    } else ""
+
     val prompt = """
 You are $coachName, a friendly ${coach?.title ?: "Life Coach"} in LifePlanner app.
 ${if (coach != null) "YOUR PERSONALITY: $coachPersonality\nYOUR SPECIALTIES: ${coach.specialties.joinToString(", ")}" else ""}
 ${if (personaOverride != null) "USER'S CUSTOMIZATION (follow this closely): $personaOverride" else ""}
 
-User Context:
+${if (situationBlock.isNotEmpty()) "$situationBlock\n" else ""}User Context:
 - Level: ${userContext.level} (${userContext.totalXp} XP)
 - Goals: ${userContext.activeGoals} active, ${userContext.completedGoals} completed
-- Streak: ${userContext.currentStreak} days
+- Streak: ${userContext.currentStreak} days$goalsBlock
 
 ${if (historyText.isNotEmpty()) "CONVERSATION HISTORY (use this to understand context):\n$historyText\n" else ""}
 User's current message: $userMessage
@@ -75,7 +85,7 @@ INSTRUCTIONS:
 
 SUGGESTION FORMAT - Add to "suggestions" array when appropriate:
 - CREATE_GOAL: {"type":"CREATE_GOAL","label":"Add Goal","data":{"title":"<specific goal name derived from user's message>","description":"<1-2 sentence description of what user wants to achieve>","category":"CAREER","timeline":"MID_TERM","milestones":[{"title":"Step 1","weekOffset":1}]}}
-- CREATE_HABIT: {"type":"CREATE_HABIT","label":"Add Habit","data":{"title":"<specific habit name derived from user's message>","description":"<why this habit helps the user>","category":"HEALTH","frequency":"DAILY"}}
+- CREATE_HABIT: {"type":"CREATE_HABIT","label":"Add Habit","data":{"title":"<specific habit name>","description":"<why this habit helps>","category":"HEALTH","frequency":"DAILY","goalId":"<matching goal ID from ACTIVE GOALS if applicable, else omit>","targetCount":<numeric target if applicable>,"targetUnit":"<unit e.g. L/min/times/pages>"}}
 
 Categories: CAREER, MONEY, BODY, PEOPLE, WELLBEING, PURPOSE
 Timelines: SHORT_TERM (30 days), MID_TERM (90 days), LONG_TERM (1 year)
@@ -162,6 +172,9 @@ IMPORTANT: If user explained what they want to achieve, include the goal/habit i
                                                 add("WEEKLY")
                                             }
                                         }
+                                        putJsonObject("goalId") { put("type", "string") }
+                                        putJsonObject("targetCount") { put("type", "integer") }
+                                        putJsonObject("targetUnit") { put("type", "string") }
                                         // Milestones for goals
                                         putJsonObject("milestones") {
                                             put("type", "array")
@@ -402,7 +415,7 @@ internal suspend fun ChatRepositoryImpl.callGeminiCouncilChat(
 
     val prompt = """
 ${getCouncilPersona()}
-
+cou
 User Context:
 - Level: ${userContext.level} (${userContext.totalXp} XP)
 - Goals: ${userContext.activeGoals} active, ${userContext.completedGoals} completed

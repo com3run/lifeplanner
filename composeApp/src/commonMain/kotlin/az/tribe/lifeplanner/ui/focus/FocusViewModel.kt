@@ -9,7 +9,6 @@ import az.tribe.lifeplanner.domain.enum.GoalStatus
 import az.tribe.lifeplanner.domain.model.FocusSession
 import az.tribe.lifeplanner.domain.model.Goal
 import az.tribe.lifeplanner.domain.model.Milestone
-import az.tribe.lifeplanner.domain.model.XpRewards
 import az.tribe.lifeplanner.domain.repository.FocusRepository
 import az.tribe.lifeplanner.domain.repository.GamificationRepository
 import az.tribe.lifeplanner.domain.repository.GoalRepository
@@ -17,10 +16,12 @@ import az.tribe.lifeplanner.usecases.GetGoalByIdUseCase
 import az.tribe.lifeplanner.usecases.ToggleMilestoneCompletionUseCase
 import az.tribe.lifeplanner.usecases.UpdateGoalProgressUseCase
 import az.tribe.lifeplanner.usecases.UpdateGoalStatusUseCase
-import kotlinx.coroutines.flow.firstOrNull
 import az.tribe.lifeplanner.data.analytics.Analytics
 import co.touchlab.kermit.Logger
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,19 +36,18 @@ import kotlinx.datetime.toLocalDateTime
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-enum class TimerState {
-    IDLE, RUNNING, PAUSED, COMPLETED, CANCELLED
-}
-
 class FocusViewModel(
-    private val focusRepository: FocusRepository,
+    internal val focusRepository: FocusRepository,
     private val goalRepository: GoalRepository,
-    private val gamificationRepository: GamificationRepository,
+    internal val gamificationRepository: GamificationRepository,
     private val toggleMilestoneCompletionUseCase: ToggleMilestoneCompletionUseCase,
     private val getGoalByIdUseCase: GetGoalByIdUseCase,
     private val updateGoalProgressUseCase: UpdateGoalProgressUseCase,
     private val updateGoalStatusUseCase: UpdateGoalStatusUseCase
 ) : ViewModel() {
+
+    // Independent scope for cleanup work that must survive ViewModel cancellation
+    private val cleanupScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     // Setup state — milestone-first selection
     private val _activeGoals = MutableStateFlow<List<Goal>>(emptyList())
@@ -60,7 +60,7 @@ class FocusViewModel(
     private val _selectedGoal = MutableStateFlow<Goal?>(null)
     val selectedGoal: StateFlow<Goal?> = _selectedGoal.asStateFlow()
 
-    private val _selectedMilestone = MutableStateFlow<Milestone?>(null)
+    internal val _selectedMilestone = MutableStateFlow<Milestone?>(null)
     val selectedMilestone: StateFlow<Milestone?> = _selectedMilestone.asStateFlow()
 
     private val _durationMinutes = MutableStateFlow(25)
@@ -93,21 +93,21 @@ class FocusViewModel(
     val lastXpEarned: StateFlow<Int> = _lastXpEarned.asStateFlow()
 
     // Today stats
-    private val _todaySessionCount = MutableStateFlow(0)
+    internal val _todaySessionCount = MutableStateFlow(0)
     val todaySessionCount: StateFlow<Int> = _todaySessionCount.asStateFlow()
 
-    private val _todaySeconds = MutableStateFlow(0)
+    internal val _todaySeconds = MutableStateFlow(0)
     val todaySeconds: StateFlow<Int> = _todaySeconds.asStateFlow()
 
     // All-time stats
-    private val _allTimeSessionCount = MutableStateFlow(0)
+    internal val _allTimeSessionCount = MutableStateFlow(0)
     val allTimeSessionCount: StateFlow<Int> = _allTimeSessionCount.asStateFlow()
 
-    private val _allTimeSeconds = MutableStateFlow(0)
+    internal val _allTimeSeconds = MutableStateFlow(0)
     val allTimeSeconds: StateFlow<Int> = _allTimeSeconds.asStateFlow()
 
     // Mood, Ambient Sound, Focus Theme
-    private val _selectedMood = MutableStateFlow<Mood?>(null)
+    internal val _selectedMood = MutableStateFlow<Mood?>(null)
     val selectedMood: StateFlow<Mood?> = _selectedMood.asStateFlow()
 
     private val _selectedAmbientSound = MutableStateFlow(AmbientSound.NONE)
@@ -121,20 +121,20 @@ class FocusViewModel(
     val focusEvents = _focusEvents.asSharedFlow()
 
     // Milestone completion prompt state
-    private val _showMilestonePrompt = MutableStateFlow(false)
+    internal val _showMilestonePrompt = MutableStateFlow(false)
     val showMilestonePrompt: StateFlow<Boolean> = _showMilestonePrompt.asStateFlow()
 
     private val _milestoneMarkedComplete = MutableStateFlow(false)
     val milestoneMarkedComplete: StateFlow<Boolean> = _milestoneMarkedComplete.asStateFlow()
 
-    private val _canCompleteMilestone = MutableStateFlow(true)
+    internal val _canCompleteMilestone = MutableStateFlow(true)
     val canCompleteMilestone: StateFlow<Boolean> = _canCompleteMilestone.asStateFlow()
 
-    private val _milestoneFocusMinutes = MutableStateFlow(0)
+    internal val _milestoneFocusMinutes = MutableStateFlow(0)
     val milestoneFocusMinutes: StateFlow<Int> = _milestoneFocusMinutes.asStateFlow()
 
     private var timerJob: Job? = null
-    private var currentSessionId: String? = null
+    internal var currentSessionId: String? = null
     private var timerStartInstant: Instant? = null
     private var pausedElapsedSeconds: Int = 0
 
@@ -162,31 +162,6 @@ class FocusViewModel(
                 }
             } catch (e: Exception) { Logger.e("FocusViewModel") { "loadGoalsAndMilestones failed: ${e.message}" } }
         }
-    }
-
-    private fun loadTodayStats() {
-        viewModelScope.launch {
-            try {
-                val todaySessions = focusRepository.getTodaySessions()
-                _todaySessionCount.value = todaySessions.count { it.wasCompleted }
-                _todaySeconds.value = todaySessions
-                    .filter { it.wasCompleted }
-                    .sumOf { it.actualDurationSeconds }
-            } catch (e: Exception) { Logger.e("FocusViewModel") { "loadTodayStats failed: ${e.message}" } }
-        }
-    }
-
-    private fun loadAllTimeStats() {
-        viewModelScope.launch {
-            try {
-                _allTimeSessionCount.value = focusRepository.getTotalSessionCount()
-                _allTimeSeconds.value = focusRepository.getTotalFocusSeconds().toInt()
-            } catch (e: Exception) { Logger.e("FocusViewModel") { "loadAllTimeStats failed: ${e.message}" } }
-        }
-    }
-
-    private fun autoSuggestMood() {
-        _selectedMood.value = Mood.HAPPY
     }
 
     fun setMood(mood: Mood) {
@@ -533,42 +508,6 @@ class FocusViewModel(
         }
     }
 
-    private fun calculateXpForDuration(minutes: Int): Int {
-        return when {
-            minutes >= 60 -> XpRewards.FOCUS_SESSION_60
-            minutes >= 45 -> XpRewards.FOCUS_SESSION_45
-            minutes >= 25 -> XpRewards.FOCUS_SESSION_25
-            minutes >= 15 -> XpRewards.FOCUS_SESSION_15
-            else -> (minutes * 0.5f).toInt().coerceAtLeast(1)
-        }
-    }
-
-    private fun calculatePartialXp(elapsedSeconds: Int): Int {
-        val elapsedMinutes = elapsedSeconds / 60
-        return if (elapsedMinutes >= 5) {
-            (elapsedMinutes * 0.5f).toInt()
-        } else {
-            0
-        }
-    }
-
-    private fun checkCompletionEligibility() {
-        val milestoneId = _selectedMilestone.value?.id ?: return
-        viewModelScope.launch {
-            try {
-                val sessions = focusRepository.getSessionsByMilestoneId(milestoneId)
-                val completedSessions = sessions.filter { it.wasCompleted }
-                val userProgress = gamificationRepository.getUserProgress().firstOrNull()
-                val level = userProgress?.currentLevel ?: 1
-                // Level 5+ can always complete; below level 5 need at least 1 completed session
-                _canCompleteMilestone.value = level >= 5 || completedSessions.isNotEmpty()
-            } catch (e: Exception) {
-                Logger.e("FocusViewModel") { "checkCompletionEligibility failed: ${e.message}" }
-                _canCompleteMilestone.value = true
-            }
-        }
-    }
-
     fun markMilestoneComplete() {
         val goalId = _selectedGoal.value?.id ?: return
         val milestoneId = _selectedMilestone.value?.id ?: return
@@ -601,17 +540,6 @@ class FocusViewModel(
         _showMilestonePrompt.value = false
     }
 
-    private fun loadMilestoneFocusMinutes(milestoneId: String) {
-        viewModelScope.launch {
-            try {
-                val sessions = focusRepository.getSessionsByMilestoneId(milestoneId)
-                _milestoneFocusMinutes.value = sessions.sumOf { it.actualDurationSeconds } / 60
-            } catch (e: Exception) {
-                Logger.e("FocusViewModel") { "loadMilestoneFocusMinutes failed: ${e.message}" }
-            }
-        }
-    }
-
     override fun onCleared() {
         super.onCleared()
         // If timer is still running or paused, save the partial session before cleanup
@@ -619,8 +547,8 @@ class FocusViewModel(
             timerJob?.cancel()
             val elapsed = _elapsedSeconds.value
             val xp = calculatePartialXp(elapsed)
-            // Use a non-cancellable context so the DB write completes even during ViewModel teardown
-            kotlinx.coroutines.runBlocking {
+            // Use cleanupScope (not viewModelScope) so the DB write survives ViewModel cancellation
+            cleanupScope.launch {
                 try {
                     currentSessionId?.let { id ->
                         val session = focusRepository.getSessionById(id)
@@ -647,13 +575,3 @@ class FocusViewModel(
         }
     }
 }
-
-sealed class FocusEvent {
-    data class SessionCompleted(val xpEarned: Int, val durationMinutes: Int) : FocusEvent()
-    data class SessionCancelled(val partialXp: Int) : FocusEvent()
-}
-
-data class MilestoneItem(
-    val milestone: Milestone,
-    val goal: Goal
-)

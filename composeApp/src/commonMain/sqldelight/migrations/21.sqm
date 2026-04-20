@@ -1,0 +1,13 @@
+UPDATE GoalEntity  SET category = 'MONEY'     WHERE category = 'FINANCIAL';
+UPDATE GoalEntity  SET category = 'BODY'      WHERE category = 'PHYSICAL';
+UPDATE GoalEntity  SET category = 'PEOPLE'    WHERE category = 'SOCIAL';
+UPDATE GoalEntity  SET category = 'PEOPLE'    WHERE category = 'FAMILY';
+UPDATE GoalEntity  SET category = 'WELLBEING' WHERE category = 'EMOTIONAL';
+UPDATE GoalEntity  SET category = 'PURPOSE'   WHERE category = 'SPIRITUAL';
+
+UPDATE HabitEntity SET category = 'MONEY'     WHERE category = 'FINANCIAL';
+UPDATE HabitEntity SET category = 'BODY'      WHERE category = 'PHYSICAL';
+UPDATE HabitEntity SET category = 'PEOPLE'    WHERE category = 'SOCIAL';
+UPDATE HabitEntity SET category = 'PEOPLE'    WHERE category = 'FAMILY';
+UPDATE HabitEntity SET category = 'WELLBEING' WHERE category = 'EMOTIONAL';
+UPDATE HabitEntity SET category = 'PURPOSE'   WHERE category = 'SPIRITUAL';

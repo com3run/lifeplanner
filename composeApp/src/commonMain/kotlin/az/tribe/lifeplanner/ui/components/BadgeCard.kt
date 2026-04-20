@@ -22,14 +22,15 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.EmojiEvents
-import androidx.compose.material.icons.filled.LocalFireDepartment
-import androidx.compose.material.icons.filled.Loop
-import androidx.compose.material.icons.automirrored.filled.MenuBook
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.Check
+import com.adamglin.phosphoricons.regular.Trophy
+import com.adamglin.phosphoricons.regular.Fire
+import com.adamglin.phosphoricons.regular.Repeat
+import com.adamglin.phosphoricons.regular.Book
+import com.adamglin.phosphoricons.regular.Star
+import com.adamglin.phosphoricons.regular.TrendUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -174,11 +175,11 @@ fun BadgeCard(
  */
 fun getBadgeIcon(type: BadgeType): ImageVector {
     return when {
-        type.name.startsWith("STREAK") -> Icons.Default.LocalFireDepartment
-        type.name.startsWith("GOAL") || type.name == "FIRST_STEP" -> Icons.AutoMirrored.Filled.TrendingUp
-        type.name.startsWith("HABIT") -> Icons.Default.Loop
-        type.name.startsWith("JOURNAL") -> Icons.AutoMirrored.Filled.MenuBook
-        type == BadgeType.PERFECTIONIST -> Icons.Default.Check
-        else -> Icons.Default.EmojiEvents
+        type.name.startsWith("STREAK") -> PhosphorIcons.Regular.Fire
+        type.name.startsWith("GOAL") || type.name == "FIRST_STEP" -> PhosphorIcons.Regular.TrendUp
+        type.name.startsWith("HABIT") -> PhosphorIcons.Regular.Repeat
+        type.name.startsWith("JOURNAL") -> PhosphorIcons.Regular.Book
+        type == BadgeType.PERFECTIONIST -> PhosphorIcons.Regular.Check
+        else -> PhosphorIcons.Regular.Trophy
     }
 }

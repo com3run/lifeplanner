@@ -365,6 +365,7 @@ CREATE TABLE IF NOT EXISTS HabitEntity (
     sync_version INTEGER NOT NULL DEFAULT 0,
     last_synced_at TEXT,
     type TEXT NOT NULL DEFAULT 'BUILD',
+    unit TEXT,
     FOREIGN KEY (linkedGoalId) REFERENCES GoalEntity(id) ON DELETE SET NULL
 );
 
@@ -383,8 +384,8 @@ CREATE TABLE IF NOT EXISTS HabitCheckInEntity (
 
 -- Habit queries
 insertHabit:
-INSERT OR REPLACE INTO HabitEntity(id, title, description, category, frequency, targetCount, currentStreak, longestStreak, totalCompletions, lastCompletedDate, linkedGoalId, correlationScore, isActive, createdAt, reminderTime, sync_updated_at, is_deleted, sync_version, last_synced_at, type)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT OR REPLACE INTO HabitEntity(id, title, description, category, frequency, targetCount, currentStreak, longestStreak, totalCompletions, lastCompletedDate, linkedGoalId, correlationScore, isActive, createdAt, reminderTime, sync_updated_at, is_deleted, sync_version, last_synced_at, type, unit)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 getAllHabits:
 SELECT * FROM HabitEntity WHERE isActive = 1 AND is_deleted = 0 ORDER BY createdAt DESC;
@@ -400,7 +401,7 @@ SELECT * FROM HabitEntity WHERE linkedGoalId = ? AND isActive = 1 AND is_deleted
 
 updateHabit:
 UPDATE HabitEntity
-SET title = ?, description = ?, category = ?, frequency = ?, targetCount = ?, linkedGoalId = ?, reminderTime = ?, type = ?, sync_updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+SET title = ?, description = ?, category = ?, frequency = ?, targetCount = ?, linkedGoalId = ?, reminderTime = ?, type = ?, unit = ?, sync_updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
 WHERE id = ?;
 
 updateHabitStreak:
@@ -437,6 +438,14 @@ SELECT * FROM HabitCheckInEntity WHERE date = ? AND is_deleted = 0;
 getCheckInByHabitAndDate:
 SELECT * FROM HabitCheckInEntity WHERE habitId = ? AND date = ? AND is_deleted = 0 LIMIT 1;
 
+-- Get soft-deleted check-in for (habitId, date) — used to restore after undo
+getSoftDeletedCheckIn:
+SELECT * FROM HabitCheckInEntity WHERE habitId = ? AND date = ? AND is_deleted = 1 LIMIT 1;
+
+-- Restore a soft-deleted check-in (re-check after undo)
+restoreHabitCheckIn:
+UPDATE HabitCheckInEntity SET is_deleted = 0, completed = 1, sync_updated_at = ? WHERE id = ?;
+
 -- Delete duplicate check-ins (keeps the first one)
 deleteDuplicateCheckIns:
 DELETE FROM HabitCheckInEntity
@@ -449,6 +458,9 @@ DELETE FROM HabitCheckInEntity WHERE id = ?;
 
 getCheckInsInRange:
 SELECT * FROM HabitCheckInEntity WHERE habitId = ? AND date >= ? AND date <= ? AND is_deleted = 0 ORDER BY date ASC;
+
+getAllCheckInsInRange:
+SELECT * FROM HabitCheckInEntity WHERE date >= ? AND date <= ? AND is_deleted = 0 ORDER BY date ASC;
 
 -- Get completed check-in dates for a habit in descending order (for streak calculation)
 getCompletedCheckInDatesDesc:
@@ -1708,8 +1720,8 @@ INSERT OR REPLACE INTO UserEntity(id, firebaseUid, email, displayName, isGuest, 
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 upsertHabitFromSync:
-INSERT OR REPLACE INTO HabitEntity(id, title, description, category, frequency, targetCount, currentStreak, longestStreak, totalCompletions, lastCompletedDate, linkedGoalId, correlationScore, isActive, createdAt, reminderTime, sync_updated_at, is_deleted, sync_version, last_synced_at, type)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT OR REPLACE INTO HabitEntity(id, title, description, category, frequency, targetCount, currentStreak, longestStreak, totalCompletions, lastCompletedDate, linkedGoalId, correlationScore, isActive, createdAt, reminderTime, sync_updated_at, is_deleted, sync_version, last_synced_at, type, unit)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 upsertHabitCheckInFromSync:
 INSERT OR REPLACE INTO HabitCheckInEntity(id, habitId, date, completed, notes, sync_updated_at, is_deleted, sync_version, last_synced_at)
@@ -2029,3 +2041,99 @@ DELETE FROM AbilityEntity;
 
 deleteAllAbilityHabitLinks:
 DELETE FROM AbilityHabitLinkEntity;
+
+-- ===== Ability-Goal Links =====
+CREATE TABLE IF NOT EXISTS AbilityGoalLinkEntity (
+    id TEXT PRIMARY KEY NOT NULL,
+    abilityId TEXT NOT NULL,
+    goalId TEXT NOT NULL,
+    createdAt TEXT NOT NULL,
+    FOREIGN KEY (abilityId) REFERENCES AbilityEntity(id) ON DELETE CASCADE,
+    FOREIGN KEY (goalId) REFERENCES GoalEntity(id) ON DELETE CASCADE
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_ability_goal_unique ON AbilityGoalLinkEntity(abilityId, goalId);
+
+insertAbilityGoalLink:
+INSERT OR IGNORE INTO AbilityGoalLinkEntity(id, abilityId, goalId, createdAt)
+VALUES (?, ?, ?, ?);
+
+getGoalLinksForAbility:
+SELECT * FROM AbilityGoalLinkEntity WHERE abilityId = ?;
+
+getAbilityLinksForGoal:
+SELECT * FROM AbilityGoalLinkEntity WHERE goalId = ?;
+
+deleteAbilityGoalLink:
+DELETE FROM AbilityGoalLinkEntity WHERE abilityId = ? AND goalId = ?;
+
+deleteAllGoalLinksForAbility:
+DELETE FROM AbilityGoalLinkEntity WHERE abilityId = ?;
+
+deleteAllAbilityGoalLinks:
+DELETE FROM AbilityGoalLinkEntity;
+
+-- ==================== DAY RECAP ====================
+
+CREATE TABLE IF NOT EXISTS DayRecapEntity (
+    date TEXT PRIMARY KEY NOT NULL,
+    recap TEXT NOT NULL,
+    generatedAt TEXT NOT NULL
+);
+
+getDayRecap:
+SELECT * FROM DayRecapEntity WHERE date = ?;
+
+insertOrReplaceDayRecap:
+INSERT OR REPLACE INTO DayRecapEntity(date, recap, generatedAt) VALUES(?, ?, ?);
+
+deleteAllDayRecaps:
+DELETE FROM DayRecapEntity;
+
+-- ==================== USER SITUATION ====================
+
+CREATE TABLE IF NOT EXISTS UserSituationEntity (
+    id TEXT PRIMARY KEY NOT NULL,
+    meta_json TEXT NOT NULL DEFAULT '{}',
+    career_json TEXT NOT NULL DEFAULT '{}',
+    money_json TEXT NOT NULL DEFAULT '{}',
+    body_json TEXT NOT NULL DEFAULT '{}',
+    people_json TEXT NOT NULL DEFAULT '{}',
+    purpose_json TEXT NOT NULL DEFAULT '{}',
+    last_updated_by TEXT NOT NULL DEFAULT '',
+    sync_updated_at TEXT,
+    is_deleted INTEGER NOT NULL DEFAULT 0,
+    sync_version INTEGER NOT NULL DEFAULT 0,
+    last_synced_at TEXT
+);
+
+getUserSituation:
+SELECT * FROM UserSituationEntity WHERE is_deleted = 0 LIMIT 1;
+
+getUserSituationById:
+SELECT * FROM UserSituationEntity WHERE id = ?;
+
+upsertUserSituation:
+INSERT OR REPLACE INTO UserSituationEntity(id, meta_json, career_json, money_json, body_json, people_json, purpose_json, last_updated_by, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+upsertUserSituationFromSync:
+INSERT OR REPLACE INTO UserSituationEntity(id, meta_json, career_json, money_json, body_json, people_json, purpose_json, last_updated_by, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+markUserSituationSynced:
+UPDATE UserSituationEntity SET last_synced_at = ? WHERE id = ?;
+
+getUnsyncedUserSituations:
+SELECT * FROM UserSituationEntity WHERE (last_synced_at IS NULL OR sync_updated_at > last_synced_at) AND is_deleted = 0;
+
+getDeletedUserSituations:
+SELECT * FROM UserSituationEntity WHERE is_deleted = 1;
+
+purgeDeletedUserSituations:
+DELETE FROM UserSituationEntity WHERE is_deleted = 1;
+
+deleteAllUserSituations:
+DELETE FROM UserSituationEntity;
+
+observeUserSituation:
+SELECT * FROM UserSituationEntity WHERE is_deleted = 0 LIMIT 1;

@@ -4,8 +4,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Person
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.User
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -48,7 +49,7 @@ fun UserProfileButton(
                     )
                 } else {
                     Icon(
-                        imageVector = Icons.Default.Person,
+                        imageVector = PhosphorIcons.Regular.User,
                         contentDescription = "Profile",
                         tint = MaterialTheme.colorScheme.onPrimaryContainer
                     )
@@ -77,7 +78,7 @@ fun UserProfileButton(
             modifier = modifier.padding(horizontal = 8.dp)
         ) {
             Icon(
-                imageVector = Icons.Default.Person,
+                imageVector = PhosphorIcons.Regular.User,
                 contentDescription = null,
                 modifier = Modifier.size(18.dp)
             )
@@ -122,7 +123,7 @@ fun UserProfileMenu(
                         )
                     } else {
                         Icon(
-                            imageVector = Icons.Default.Person,
+                            imageVector = PhosphorIcons.Regular.User,
                             contentDescription = null,
                             modifier = Modifier.size(28.dp),
                             tint = MaterialTheme.colorScheme.onPrimaryContainer

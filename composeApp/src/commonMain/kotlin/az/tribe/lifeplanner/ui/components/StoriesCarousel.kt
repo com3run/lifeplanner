@@ -3,7 +3,7 @@ package az.tribe.lifeplanner.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,6 +31,7 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,6 +51,7 @@ import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.X
 import com.russhwolf.settings.Settings
+import kotlinx.coroutines.delay
 import org.koin.compose.koinInject
 
 private const val SEEN_STORIES_KEY = "seen_stories"
@@ -175,11 +177,35 @@ internal fun StoryFullReader(
     onDismiss: () -> Unit
 ) {
     var currentIndex by remember { mutableStateOf(initialIndex) }
+    var isHolding by remember { mutableStateOf(false) }
+    var progress by remember { mutableStateOf(0f) }
+
     val story = stories[currentIndex]
 
-    // Mark as seen when opened
-    if (story.id !in seenIds) {
-        onMarkSeen(story.id)
+    // Mark as seen and reset progress each time we land on a new story
+    LaunchedEffect(currentIndex) {
+        progress = 0f
+        if (stories[currentIndex].id !in seenIds) {
+            onMarkSeen(stories[currentIndex].id)
+        }
+    }
+
+    // Auto-advance: duration scales with subtitle length (250ms/word, clamped 3–7s)
+    LaunchedEffect(currentIndex) {
+        val wordCount = stories[currentIndex].subtitle.split(" ").size
+        val durationMs = (wordCount * 250L).coerceIn(3000L, 7000L)
+        val stepMs = 16L
+        while (progress < 1f) {
+            delay(stepMs)
+            if (!isHolding) {
+                progress = (progress + stepMs.toFloat() / durationMs).coerceAtMost(1f)
+            }
+        }
+        if (currentIndex < stories.lastIndex) {
+            currentIndex++
+        } else {
+            onDismiss()
+        }
     }
 
     val startColor = parseStoryColor(story.gradientStart)
@@ -195,48 +221,31 @@ internal fun StoryFullReader(
             .pointerInput(currentIndex) {
                 detectHorizontalDragGestures { _, dragAmount ->
                     when {
-                        dragAmount < -60 && currentIndex < stories.lastIndex -> currentIndex++
-                        dragAmount > 60 && currentIndex > 0 -> currentIndex--
+                        dragAmount < -60 && currentIndex < stories.lastIndex -> { progress = 0f; currentIndex++ }
+                        dragAmount > 60 && currentIndex > 0 -> { progress = 0f; currentIndex-- }
                         dragAmount < -60 -> onDismiss()
                     }
                 }
             }
-    ) {
-        // Left / right tap zones — only the upper 65% so they never overlap the CTA button
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(0.65f)
-                .align(Alignment.TopCenter)
-        ) {
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null
-                    ) {
-                        if (currentIndex > 0) currentIndex--
-                    }
-            )
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null
-                    ) {
-                        if (currentIndex < stories.lastIndex) {
-                            currentIndex++
-                            onMarkSeen(stories[currentIndex].id)
+            .pointerInput(currentIndex) {
+                detectTapGestures(
+                    onPress = {
+                        isHolding = true
+                        tryAwaitRelease()
+                        isHolding = false
+                    },
+                    onTap = { offset ->
+                        progress = 0f
+                        if (offset.x < size.width / 2) {
+                            if (currentIndex > 0) currentIndex--
                         } else {
-                            onDismiss()
+                            if (currentIndex < stories.lastIndex) currentIndex++
+                            else onDismiss()
                         }
                     }
-            )
-        }
+                )
+            }
+    ) {
 
         // Gradient background glow
         Box(
@@ -276,14 +285,22 @@ internal fun StoryFullReader(
                                 .weight(1f)
                                 .height(3.dp)
                                 .clip(RoundedCornerShape(2.dp))
-                                .background(
-                                    brush = when {
-                                        index < currentIndex -> Brush.horizontalGradient(listOf(startColor, startColor))
-                                        index == currentIndex -> Brush.horizontalGradient(listOf(startColor, endColor))
-                                        else -> Brush.horizontalGradient(listOf(onSurface.copy(alpha = 0.2f), onSurface.copy(alpha = 0.2f)))
-                                    }
+                                .background(onSurface.copy(alpha = 0.2f))
+                        ) {
+                            val fillFraction = when {
+                                index < currentIndex -> 1f
+                                index == currentIndex -> progress
+                                else -> 0f
+                            }
+                            if (fillFraction > 0f) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth(fillFraction)
+                                        .fillMaxHeight()
+                                        .background(Brush.horizontalGradient(listOf(startColor, endColor)))
                                 )
-                        )
+                            }
+                        }
                     }
                 }
                 Spacer(Modifier.width(12.dp))
@@ -368,7 +385,11 @@ internal fun StoryFullReader(
                 }
 
                 Text(
-                    text = if (currentIndex < stories.lastIndex) "Tap right to continue  →" else "Tap to close",
+                    text = when {
+                        isHolding -> "Release to continue"
+                        currentIndex < stories.lastIndex -> "Hold to pause  ·  tap to skip"
+                        else -> "Tap to close"
+                    },
                     style = MaterialTheme.typography.labelSmall,
                     color = onSurface.copy(alpha = 0.3f)
                 )

@@ -13,6 +13,7 @@ import az.tribe.lifeplanner.domain.model.GoalDependency
 import az.tribe.lifeplanner.domain.model.GoalNode
 import az.tribe.lifeplanner.domain.repository.GoalDependencyRepository
 import az.tribe.lifeplanner.infrastructure.SharedDatabase
+import az.tribe.lifeplanner.infrastructure.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
@@ -245,9 +246,9 @@ class GoalDependencyRepositoryImpl(
         // Goals with similar timelines in complementary categories might support each other
         if (currentGoal.timeline == otherGoal.timeline) {
             val complementaryPairs = setOf(
-                setOf(GoalCategory.PHYSICAL, GoalCategory.EMOTIONAL),
-                setOf(GoalCategory.CAREER, GoalCategory.FINANCIAL),
-                setOf(GoalCategory.FAMILY, GoalCategory.SOCIAL)
+                setOf(GoalCategory.BODY, GoalCategory.WELLBEING),
+                setOf(GoalCategory.CAREER, GoalCategory.MONEY),
+                setOf(GoalCategory.PEOPLE, GoalCategory.PURPOSE)
             )
 
             if (complementaryPairs.any {

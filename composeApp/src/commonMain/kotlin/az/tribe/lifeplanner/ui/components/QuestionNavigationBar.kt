@@ -6,10 +6,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.PagerState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.Check
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.ArrowLeft
+import com.adamglin.phosphoricons.regular.ArrowRight
+import com.adamglin.phosphoricons.regular.Check
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
@@ -60,7 +61,7 @@ fun QuestionNavigationBar(
             modifier = Modifier.weight(1f)
         ) {
             Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                imageVector = PhosphorIcons.Regular.ArrowLeft,
                 contentDescription = "Previous"
             )
             Text(
@@ -89,12 +90,12 @@ fun QuestionNavigationBar(
             )
             if (!isLastPage) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                    imageVector = PhosphorIcons.Regular.ArrowRight,
                     contentDescription = "Next"
                 )
             } else {
                 Icon(
-                    imageVector = Icons.Default.Check,
+                    imageVector = PhosphorIcons.Regular.Check,
                     contentDescription = "Complete"
                 )
             }

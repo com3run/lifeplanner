@@ -18,13 +18,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Done
-import androidx.compose.material.icons.filled.Flag
-import androidx.compose.material.icons.filled.Psychology
-import androidx.compose.material.icons.filled.QuestionAnswer
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.Plus
+import com.adamglin.phosphoricons.regular.Check
+import com.adamglin.phosphoricons.regular.Flag
+import com.adamglin.phosphoricons.regular.Brain
+import com.adamglin.phosphoricons.regular.ChatsCircle
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -50,6 +50,7 @@ import az.tribe.lifeplanner.domain.enum.GoalCategory
 import az.tribe.lifeplanner.domain.model.Goal
 import az.tribe.lifeplanner.domain.model.Milestone
 import az.tribe.lifeplanner.ui.theme.backgroundColor
+import az.tribe.lifeplanner.ui.utils.formatHuman
 
 // Helper data class
 data class QuestionWithType(
@@ -67,7 +68,7 @@ fun AiGoalHeader(
         modifier = Modifier.fillMaxWidth()
     ) {
         Icon(
-            Icons.Default.Psychology,
+            PhosphorIcons.Regular.Brain,
             contentDescription = null,
             modifier = Modifier.size(48.dp),
             tint = MaterialTheme.colorScheme.primary
@@ -132,7 +133,7 @@ fun PromptInputCard(
                     Text("Loading...")
                 } else {
                     Icon(
-                        Icons.Default.QuestionAnswer,
+                        PhosphorIcons.Regular.ChatsCircle,
                         contentDescription = null,
                         modifier = Modifier.size(16.dp)
                     )
@@ -283,7 +284,7 @@ fun OptionCard(
             )
             if (isSelected) {
                 Icon(
-                    Icons.Default.Check,
+                    PhosphorIcons.Regular.Check,
                     contentDescription = "Selected",
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(20.dp)
@@ -390,7 +391,7 @@ private fun GoalHeader(goal: Goal) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
-                text = goal.dueDate.toString(),
+                text = goal.dueDate.formatHuman(),
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.onSurface
@@ -466,7 +467,7 @@ private fun GoalMilestones(milestones: List<Milestone>) {
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Icon(
-                Icons.Default.Flag,
+                PhosphorIcons.Regular.Flag,
                 contentDescription = null,
                 modifier = Modifier.size(16.dp),
                 tint = MaterialTheme.colorScheme.primary
@@ -526,7 +527,7 @@ private fun GoalFooter(
                 )
             ) {
                 Icon(
-                    Icons.Default.Add,
+                    PhosphorIcons.Regular.Plus,
                     contentDescription = null,
                     modifier = Modifier.size(16.dp)
                 )
@@ -539,7 +540,7 @@ private fun GoalFooter(
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Icon(
-                    Icons.Default.Done,
+                    PhosphorIcons.Regular.Check,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(16.dp)

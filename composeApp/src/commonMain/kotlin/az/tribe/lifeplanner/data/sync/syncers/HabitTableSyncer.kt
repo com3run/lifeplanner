@@ -48,6 +48,7 @@ class HabitTableSyncer(
         createdAt = local.createdAt,
         reminderTime = local.reminderTime,
         type = local.type,
+        unit = local.unit,
         updatedAt = local.sync_updated_at ?: Clock.System.now().toString(),
         isDeleted = local.is_deleted != 0L,
         syncVersion = local.sync_version
@@ -71,6 +72,7 @@ class HabitTableSyncer(
             createdAt = remote.createdAt,
             reminderTime = remote.reminderTime,
             type = remote.type,
+            unit = remote.unit,
             sync_updated_at = remote.updatedAt,
             is_deleted = if (remote.isDeleted) 1L else 0L,
             sync_version = remote.syncVersion,
@@ -96,6 +98,7 @@ class HabitTableSyncer(
             createdAt = entity.createdAt,
             reminderTime = entity.reminderTime,
             type = entity.type,
+            unit = entity.unit,
             sync_updated_at = entity.sync_updated_at,
             is_deleted = entity.is_deleted,
             sync_version = entity.sync_version,

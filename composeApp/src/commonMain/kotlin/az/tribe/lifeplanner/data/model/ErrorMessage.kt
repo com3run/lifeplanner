@@ -7,9 +7,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Error
-import androidx.compose.material.icons.filled.Refresh
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.Warning
+import com.adamglin.phosphoricons.regular.ArrowsClockwise
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -35,7 +36,7 @@ fun ErrorMessage(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Icon(
-            imageVector = Icons.Default.Error,
+            imageVector = PhosphorIcons.Regular.Warning,
             contentDescription = null,
             modifier = Modifier.size(48.dp),
             tint = MaterialTheme.colorScheme.error
@@ -58,7 +59,7 @@ fun ErrorMessage(
             )
         ) {
             Icon(
-                Icons.Default.Refresh,
+                PhosphorIcons.Regular.ArrowsClockwise,
                 contentDescription = null,
                 modifier = Modifier.size(18.dp)
             )

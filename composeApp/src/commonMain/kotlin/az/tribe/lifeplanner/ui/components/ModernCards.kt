@@ -2,6 +2,7 @@ package az.tribe.lifeplanner.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -32,11 +33,13 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
 import az.tribe.lifeplanner.ui.theme.LifePlannerGradients
+import kotlinx.coroutines.FlowPreview
 
 /**
- * Modern Glass-style Card with subtle transparency and border
+ * Modern Glass-style Card with subtle transparency and border.
  *
- * Creates a frosted glass (glassmorphism) effect popular in modern UI
+ * Light mode: frosted white glass effect with subtle overlay.
+ * Dark mode: clean solid elevated surface — no gradient overlay to avoid visual noise.
  */
 @Composable
 fun GlassCard(
@@ -44,24 +47,43 @@ fun GlassCard(
     cornerRadius: Dp = LifePlannerDesign.CornerRadius.large,
     content: @Composable () -> Unit
 ) {
-    Surface(
-        modifier = modifier
-            .border(
-                width = 1.dp,
-                brush = LifePlannerGradients.glassBorder,
-                shape = RoundedCornerShape(cornerRadius)
-            ),
-        shape = RoundedCornerShape(cornerRadius),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
-        tonalElevation = 0.dp
-    ) {
-        Box(
-            modifier = Modifier.background(LifePlannerGradients.glassOverlay)
+    val isDark = isSystemInDarkTheme()
+
+    if (isDark) {
+        Surface(
+            modifier = modifier
+                .border(
+                    width = 1.dp,
+                    brush = LifePlannerGradients.glassBorderDark,
+                    shape = RoundedCornerShape(cornerRadius)
+                ),
+            shape = RoundedCornerShape(cornerRadius),
+            color = MaterialTheme.colorScheme.primaryContainer,
+            tonalElevation = 0.dp
         ) {
             content()
         }
+    } else {
+        Surface(
+            modifier = modifier
+                .border(
+                    width = 1.dp,
+                    brush = LifePlannerGradients.glassBorder,
+                    shape = RoundedCornerShape(cornerRadius)
+                ),
+            shape = RoundedCornerShape(cornerRadius),
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
+            tonalElevation = 0.dp
+        ) {
+            Box(
+                modifier = Modifier.background(LifePlannerGradients.glassOverlay)
+            ) {
+                content()
+            }
+        }
     }
 }
+
 
 /**
  * Card with beautiful gradient border

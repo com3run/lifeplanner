@@ -13,10 +13,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.AutoAwesome
-import androidx.compose.material.icons.automirrored.rounded.LibraryBooks
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.Books
+import com.adamglin.phosphoricons.regular.Plus
+import com.adamglin.phosphoricons.regular.Sparkle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -93,11 +94,11 @@ private fun EmptyStateWithTemplates(
     // Get featured templates (one from each category) - safely with firstOrNull
     val featuredTemplates = listOfNotNull(
         GoalTemplateProvider.getTemplatesByCategory(GoalCategory.CAREER).firstOrNull(),
-        GoalTemplateProvider.getTemplatesByCategory(GoalCategory.PHYSICAL).firstOrNull(),
-        GoalTemplateProvider.getTemplatesByCategory(GoalCategory.FINANCIAL).firstOrNull(),
-        GoalTemplateProvider.getTemplatesByCategory(GoalCategory.EMOTIONAL).firstOrNull(),
-        GoalTemplateProvider.getTemplatesByCategory(GoalCategory.FAMILY).firstOrNull(),
-        GoalTemplateProvider.getTemplatesByCategory(GoalCategory.SPIRITUAL).firstOrNull()
+        GoalTemplateProvider.getTemplatesByCategory(GoalCategory.BODY).firstOrNull(),
+        GoalTemplateProvider.getTemplatesByCategory(GoalCategory.MONEY).firstOrNull(),
+        GoalTemplateProvider.getTemplatesByCategory(GoalCategory.WELLBEING).firstOrNull(),
+        GoalTemplateProvider.getTemplatesByCategory(GoalCategory.PEOPLE).firstOrNull(),
+        GoalTemplateProvider.getTemplatesByCategory(GoalCategory.PURPOSE).firstOrNull()
     )
 
     // Use Column instead of LazyColumn to avoid nested scrolling issues
@@ -143,7 +144,7 @@ private fun EmptyStateWithTemplates(
             QuickActionCard(
                 title = "Quick Add",
                 subtitle = "Create from scratch",
-                icon = Icons.Rounded.Add,
+                icon = PhosphorIcons.Regular.Plus,
                 gradientColors = listOf(Color(0xFF667EEA), Color(0xFF764BA2)),
                 onClick = onQuickAddClick,
                 modifier = Modifier.weight(1f)
@@ -151,7 +152,7 @@ private fun EmptyStateWithTemplates(
             QuickActionCard(
                 title = "AI Generate",
                 subtitle = "Get suggestions",
-                icon = Icons.Rounded.AutoAwesome,
+                icon = PhosphorIcons.Regular.Sparkle,
                 gradientColors = listOf(Color(0xFF11998E), Color(0xFF38EF7D)),
                 onClick = onAiGenerateClick,
                 modifier = Modifier.weight(1f)
@@ -175,7 +176,7 @@ private fun EmptyStateWithTemplates(
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
             ) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Rounded.LibraryBooks,
+                    imageVector = PhosphorIcons.Regular.Books,
                     contentDescription = null,
                     modifier = Modifier.size(16.dp)
                 )

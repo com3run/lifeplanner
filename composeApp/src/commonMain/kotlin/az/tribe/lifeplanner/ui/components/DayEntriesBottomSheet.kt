@@ -15,10 +15,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.CalendarToday
-import androidx.compose.material.icons.rounded.Close
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.Plus
+import com.adamglin.phosphoricons.regular.CalendarBlank
+import com.adamglin.phosphoricons.regular.X
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -76,7 +77,7 @@ fun DayEntriesBottomSheet(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Rounded.CalendarToday,
+                        imageVector = PhosphorIcons.Regular.CalendarBlank,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(24.dp)
@@ -97,7 +98,7 @@ fun DayEntriesBottomSheet(
 
                 IconButton(onClick = onDismiss) {
                     Icon(
-                        imageVector = Icons.Rounded.Close,
+                        imageVector = PhosphorIcons.Regular.X,
                         contentDescription = "Close"
                     )
                 }
@@ -119,7 +120,7 @@ fun DayEntriesBottomSheet(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     FilledTonalButton(onClick = onAddEntry) {
-                        Icon(Icons.Rounded.Add, contentDescription = null)
+                        Icon(PhosphorIcons.Regular.Plus, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("Add Entry")
                     }
@@ -147,7 +148,7 @@ fun DayEntriesBottomSheet(
                             onClick = onAddEntry,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Icon(Icons.Rounded.Add, contentDescription = null)
+                            Icon(PhosphorIcons.Regular.Plus, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("Add Another Entry")
                         }

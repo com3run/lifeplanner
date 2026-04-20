@@ -19,6 +19,7 @@ import az.tribe.lifeplanner.data.network.AiProxyService
 import az.tribe.lifeplanner.domain.repository.GoalRepository
 import az.tribe.lifeplanner.domain.repository.HabitRepository
 import az.tribe.lifeplanner.domain.repository.LifeBalanceRepository
+import com.russhwolf.settings.Settings
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlin.time.Clock
@@ -26,9 +27,7 @@ import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import kotlin.math.abs
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -36,47 +35,102 @@ import kotlin.uuid.Uuid
 class LifeBalanceRepositoryImpl(
     private val goalRepository: GoalRepository,
     private val habitRepository: HabitRepository,
-    private val aiProxy: AiProxyService
+    private val aiProxy: AiProxyService,
+    private val settings: Settings
 ) : LifeBalanceRepository {
 
     private val balanceHistory = MutableStateFlow<List<LifeBalanceReport>>(emptyList())
     private val manualAssessments = mutableListOf<ManualAssessment>()
     private var latestReport: LifeBalanceReport? = null
 
-    override suspend fun calculateCurrentBalance(): LifeBalanceReport {
+    companion object {
+        private const val CACHE_KEY_DATE = "life_balance_cache_date"
+        private const val CACHE_KEY_DATA = "life_balance_cache_data"
+    }
+
+    override suspend fun calculateCurrentBalance(forceRefresh: Boolean): LifeBalanceReport {
         val areaScores = getAllAreaScores()
-        return generateAIInsights(areaScores)
+        val rating = calculateBalanceRating(areaScores)
+        val today = Clock.System.now()
+            .toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
+
+        // Return cached insights if same day and not forced
+        if (!forceRefresh) {
+            val cacheDate = settings.getStringOrNull(CACHE_KEY_DATE)
+            val cacheJson = settings.getStringOrNull(CACHE_KEY_DATA)
+            if (cacheDate == today && cacheJson != null) {
+                try {
+                    val cached = Json { ignoreUnknownKeys = true }
+                        .decodeFromString<CachedBalanceData>(cacheJson)
+                    val insights = cached.insights.map { it.toBalanceInsight() }
+                    val recs = cached.recommendations.map { it.toBalanceRecommendation() }
+                    return buildReport(areaScores, insights, recs)
+                } catch (_: Exception) {
+                    // Cache corrupt — fall through to regenerate
+                }
+            }
+        }
+
+        // Generate fresh (AI or rule-based fallback)
+        val (insights, recs) = try {
+            generateAIAnalysis(areaScores, rating)
+        } catch (_: Exception) {
+            generateRuleBasedInsights(areaScores, rating)
+        }
+
+        // Persist to cache
+        saveInsightsToCache(today, insights, recs)
+
+        return buildReport(areaScores, insights, recs)
+    }
+
+    private fun buildReport(
+        areaScores: List<LifeAreaScore>,
+        insights: List<BalanceInsight>,
+        recommendations: List<BalanceRecommendation>
+    ): LifeBalanceReport {
+        val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+        val overallScore = areaScores.map { it.score }.average().toInt()
+        val sortedByScore = areaScores.sortedByDescending { it.score }
+        val report = LifeBalanceReport(
+            id = Uuid.random().toString(),
+            overallScore = overallScore,
+            areaScores = areaScores,
+            strongestAreas = sortedByScore.take(3).map { it.area },
+            weakestAreas = sortedByScore.takeLast(3).reversed().map { it.area },
+            balanceRating = calculateBalanceRating(areaScores),
+            aiInsights = insights,
+            recommendations = recommendations,
+            generatedAt = now
+        )
+        latestReport = report
+        return report
+    }
+
+    private fun saveInsightsToCache(
+        dateKey: String,
+        insights: List<BalanceInsight>,
+        recommendations: List<BalanceRecommendation>
+    ) {
+        try {
+            val cached = CachedBalanceData(
+                insights = insights.map { CachedInsight.from(it) },
+                recommendations = recommendations.map { CachedRecommendation.from(it) }
+            )
+            val json = Json.encodeToString(CachedBalanceData.serializer(), cached)
+            settings.putString(CACHE_KEY_DATE, dateKey)
+            settings.putString(CACHE_KEY_DATA, json)
+        } catch (_: Exception) {
+            // Cache write failure is non-fatal
+        }
     }
 
     override suspend fun getAreaScore(area: LifeArea): LifeAreaScore {
         val category = area.toGoalCategory()
         val goals = goalRepository.getAllGoals()
         val habits = habitRepository.getAllHabits()
-
-        val areaGoals = if (category != null) {
-            goals.filter { it.category == category }
-        } else {
-            // PERSONAL_GROWTH - aggregate from all categories with learning/growth keywords
-            goals.filter { goal ->
-                goal.title.lowercase().contains("learn") ||
-                goal.title.lowercase().contains("read") ||
-                goal.title.lowercase().contains("study") ||
-                goal.title.lowercase().contains("skill") ||
-                goal.title.lowercase().contains("course")
-            }
-        }
-
-        val areaHabits = if (category != null) {
-            habits.filter { habit ->
-                habit.category == category
-            }
-        } else {
-            habits.filter { habit ->
-                habit.title.lowercase().contains("learn") ||
-                habit.title.lowercase().contains("read") ||
-                habit.title.lowercase().contains("study")
-            }
-        }
+        val areaGoals = goals.filter { it.category == category }
+        val areaHabits = habits.filter { it.category == category }
 
         val totalGoals = areaGoals.size
         val completedGoals = areaGoals.count { it.status == GoalStatus.COMPLETED }
@@ -129,37 +183,13 @@ class LifeBalanceRepositoryImpl(
     }
 
     override suspend fun generateAIInsights(areaScores: List<LifeAreaScore>): LifeBalanceReport {
-        val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-        val overallScore = areaScores.map { it.score }.average().toInt()
-
-        val sortedByScore = areaScores.sortedByDescending { it.score }
-        val strongestAreas = sortedByScore.take(3).map { it.area }
-        val weakestAreas = sortedByScore.takeLast(3).reversed().map { it.area }
-
-        val balanceRating = calculateBalanceRating(areaScores)
-
-        // Generate AI insights using Gemini
+        val rating = calculateBalanceRating(areaScores)
         val (insights, recommendations) = try {
-            generateAIAnalysis(areaScores, balanceRating)
-        } catch (e: Exception) {
-            // Fallback to rule-based insights
-            generateRuleBasedInsights(areaScores, balanceRating)
+            generateAIAnalysis(areaScores, rating)
+        } catch (_: Exception) {
+            generateRuleBasedInsights(areaScores, rating)
         }
-
-        val report = LifeBalanceReport(
-            id = Uuid.random().toString(),
-            overallScore = overallScore,
-            areaScores = areaScores,
-            strongestAreas = strongestAreas,
-            weakestAreas = weakestAreas,
-            balanceRating = balanceRating,
-            aiInsights = insights,
-            recommendations = recommendations,
-            generatedAt = now
-        )
-
-        latestReport = report
-        return report
+        return buildReport(areaScores, insights, recommendations)
     }
 
     override suspend fun saveManualAssessment(assessment: ManualAssessment) {
@@ -187,76 +217,7 @@ class LifeBalanceRepositoryImpl(
         return latestReport
     }
 
-    // Helper functions
-
-    private fun LifeArea.toGoalCategory(): GoalCategory? {
-        return when (this) {
-            LifeArea.CAREER -> GoalCategory.CAREER
-            LifeArea.FINANCIAL -> GoalCategory.FINANCIAL
-            LifeArea.PHYSICAL -> GoalCategory.PHYSICAL
-            LifeArea.SOCIAL -> GoalCategory.SOCIAL
-            LifeArea.EMOTIONAL -> GoalCategory.EMOTIONAL
-            LifeArea.SPIRITUAL -> GoalCategory.SPIRITUAL
-            LifeArea.FAMILY -> GoalCategory.FAMILY
-            LifeArea.PERSONAL_GROWTH -> null // Special case - aggregated
-        }
-    }
-
-    private fun calculateRecentActivityScore(
-        goals: List<az.tribe.lifeplanner.domain.model.Goal>,
-        habits: List<az.tribe.lifeplanner.domain.model.Habit>
-    ): Int {
-        var score = 0
-
-        // Points for active goals
-        score += goals.count { it.status == GoalStatus.IN_PROGRESS } * 10
-
-        // Points for recent goal completions
-        score += goals.count { it.status == GoalStatus.COMPLETED } * 15
-
-        // Points for habits with streaks
-        habits.forEach { habit ->
-            score += when {
-                habit.currentStreak >= 30 -> 20
-                habit.currentStreak >= 14 -> 15
-                habit.currentStreak >= 7 -> 10
-                habit.currentStreak >= 3 -> 5
-                else -> 0
-            }
-        }
-
-        return score.coerceIn(0, 100)
-    }
-
-    private fun calculateAreaScore(
-        totalGoals: Int,
-        completedGoals: Int,
-        activeGoals: Int,
-        habitCount: Int,
-        habitCompletionRate: Float,
-        recentActivityScore: Int
-    ): Int {
-        // Base score from goal engagement (0-40 points)
-        val goalEngagementScore = when {
-            totalGoals == 0 -> 10 // No goals = low engagement
-            else -> {
-                val completionRatio = completedGoals.toFloat() / totalGoals
-                val activeRatio = activeGoals.toFloat() / totalGoals
-                ((completionRatio * 20) + (activeRatio * 20)).toInt()
-            }
-        }
-
-        // Habit consistency score (0-30 points)
-        val habitScore = when {
-            habitCount == 0 -> 5 // No habits = low consistency
-            else -> (habitCompletionRate * 30).toInt()
-        }
-
-        // Recent activity score (0-30 points)
-        val activityScore = (recentActivityScore * 0.3).toInt()
-
-        return (goalEngagementScore + habitScore + activityScore).coerceIn(0, 100)
-    }
+    // ─── Private helpers ──────────────────────────────────────────────────────
 
     private fun determineTrend(area: LifeArea, currentScore: Int): BalanceTrend {
         val previousAssessment = manualAssessments.find { it.area == area }
@@ -270,26 +231,6 @@ class LifeBalanceRepositoryImpl(
         } else {
             BalanceTrend.STABLE
         }
-    }
-
-    private fun calculateBalanceRating(areaScores: List<LifeAreaScore>): BalanceRating {
-        val overallScore = areaScores.map { it.score }.average()
-        val variance = calculateVariance(areaScores.map { it.score })
-        val minScore = areaScores.minOfOrNull { it.score } ?: 0
-
-        return when {
-            overallScore >= 70 && variance < 200 && minScore >= 50 -> BalanceRating.EXCELLENT
-            overallScore >= 55 && variance < 400 && minScore >= 35 -> BalanceRating.GOOD
-            overallScore >= 40 && minScore >= 20 -> BalanceRating.MODERATE
-            minScore >= 10 -> BalanceRating.NEEDS_ATTENTION
-            else -> BalanceRating.CRITICAL
-        }
-    }
-
-    private fun calculateVariance(scores: List<Int>): Double {
-        if (scores.isEmpty()) return 0.0
-        val mean = scores.average()
-        return scores.map { (it - mean) * (it - mean) }.average()
     }
 
     private suspend fun generateAIAnalysis(
@@ -322,7 +263,7 @@ class LifeBalanceRepositoryImpl(
             Provide your response in this exact JSON format:
             {
                 "insights": [
-                    {"title": "...", "description": "...", "areas": ["CAREER", "FINANCIAL"], "priority": "HIGH"}
+                    {"title": "...", "description": "...", "areas": ["CAREER", "MONEY"], "priority": "HIGH"}
                 ],
                 "recommendations": [
                     {"title": "...", "description": "...", "area": "CAREER", "action": "CREATE_GOAL", "suggestedGoal": "..."}
@@ -451,32 +392,6 @@ class LifeBalanceRepositoryImpl(
         }
 
         return Pair(insights.take(3), recommendations.take(4))
-    }
-
-    private fun getSuggestedGoal(area: LifeArea): String {
-        return when (area) {
-            LifeArea.CAREER -> "Complete a professional certification"
-            LifeArea.FINANCIAL -> "Build a 3-month emergency fund"
-            LifeArea.PHYSICAL -> "Exercise 3 times per week for a month"
-            LifeArea.SOCIAL -> "Reconnect with 5 old friends"
-            LifeArea.EMOTIONAL -> "Practice daily mindfulness for 30 days"
-            LifeArea.SPIRITUAL -> "Establish a daily meditation practice"
-            LifeArea.FAMILY -> "Plan monthly family activities"
-            LifeArea.PERSONAL_GROWTH -> "Read 12 books this year"
-        }
-    }
-
-    private fun getSuggestedHabit(area: LifeArea): String {
-        return when (area) {
-            LifeArea.CAREER -> "Dedicate 30 minutes daily to skill development"
-            LifeArea.FINANCIAL -> "Track daily expenses"
-            LifeArea.PHYSICAL -> "10-minute morning stretch"
-            LifeArea.SOCIAL -> "Reach out to one friend daily"
-            LifeArea.EMOTIONAL -> "5-minute gratitude journaling"
-            LifeArea.SPIRITUAL -> "10-minute morning meditation"
-            LifeArea.FAMILY -> "Quality time with family during dinner"
-            LifeArea.PERSONAL_GROWTH -> "Read for 20 minutes before bed"
-        }
     }
 
     override suspend fun preGenerateGoalsForRecommendations(
@@ -635,18 +550,3 @@ class LifeBalanceRepositoryImpl(
         )
     }
 }
-
-@Serializable
-private data class PreGeneratedGoalsResponse(
-    val goals: List<PreGeneratedGoalData> = emptyList()
-)
-
-@Serializable
-private data class PreGeneratedGoalData(
-    val area: String = "",
-    val title: String = "",
-    val description: String = "",
-    val timeline: String = "SHORT_TERM",
-    val milestones: List<String> = emptyList()
-)
-

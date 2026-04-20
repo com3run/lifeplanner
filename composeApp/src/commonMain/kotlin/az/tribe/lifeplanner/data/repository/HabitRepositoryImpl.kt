@@ -11,6 +11,7 @@ import az.tribe.lifeplanner.domain.model.HabitCheckIn
 import az.tribe.lifeplanner.domain.repository.HabitRepository
 import az.tribe.lifeplanner.data.sync.SyncManager
 import az.tribe.lifeplanner.infrastructure.SharedDatabase
+import az.tribe.lifeplanner.infrastructure.*
 import az.tribe.lifeplanner.widget.WidgetDataSyncService
 import co.touchlab.kermit.Logger
 import kotlinx.coroutines.flow.Flow
@@ -72,6 +73,7 @@ class HabitRepositoryImpl(
 
     override suspend fun insertHabit(habit: Habit) {
         database.insertHabit(habit.toEntity())
+        notifyWidgets()
         syncManager.requestSync()
     }
 
@@ -85,34 +87,47 @@ class HabitRepositoryImpl(
             targetCount = habit.targetCount.toLong(),
             linkedGoalId = habit.linkedGoalId,
             reminderTime = habit.reminderTime,
-            type = habit.type.name
+            type = habit.type.name,
+            unit = habit.unit
         )
+        notifyWidgets()
         syncManager.requestSync()
     }
 
     override suspend fun deleteHabit(id: String) {
         database.deleteHabit(id)
+        notifyWidgets()
         syncManager.requestSync()
     }
 
     override suspend fun deactivateHabit(id: String) {
         database.deactivateHabit(id)
+        notifyWidgets()
         syncManager.requestSync()
     }
 
     override suspend fun checkIn(habitId: String, date: LocalDate, notes: String): HabitCheckIn {
-        val checkIn = createNewCheckIn(
-            habitId = habitId,
-            date = date,
-            completed = true,
-            notes = notes
-        )
-        // INSERT OR IGNORE: idempotent — won't duplicate if (habitId, date) already exists
-        database.insertHabitCheckInOrIgnore(checkIn.toEntity())
+        // A UNIQUE INDEX on (habitId, date) means INSERT OR IGNORE silently fails when a
+        // soft-deleted row already occupies that slot (e.g. after undo). Restore the existing
+        // row instead of inserting a new one, so the unique constraint is never violated.
+        val softDeleted = database.getSoftDeletedCheckIn(habitId, date.toString())
+        if (softDeleted != null) {
+            database.restoreHabitCheckIn(softDeleted.id)
+        } else {
+            val checkIn = createNewCheckIn(
+                habitId = habitId,
+                date = date,
+                completed = true,
+                notes = notes
+            )
+            // INSERT OR IGNORE: idempotent — won't duplicate if (habitId, date) already exists
+            database.insertHabitCheckInOrIgnore(checkIn.toEntity())
+        }
         updateStreakAfterCheckIn(habitId)
         notifyWidgets()
         syncManager.requestSync()
-        return getCheckInByHabitAndDate(habitId, date) ?: checkIn
+        return getCheckInByHabitAndDate(habitId, date)
+            ?: createNewCheckIn(habitId = habitId, date = date, completed = true, notes = notes)
     }
 
     override suspend fun getCheckInsByHabitId(habitId: String): List<HabitCheckIn> {
@@ -133,6 +148,14 @@ class HabitRepositoryImpl(
         endDate: LocalDate
     ): List<HabitCheckIn> {
         return database.getCheckInsInRange(habitId, startDate.toString(), endDate.toString())
+            .toDomainCheckIns()
+    }
+
+    override suspend fun getAllCheckInsInRange(
+        startDate: LocalDate,
+        endDate: LocalDate
+    ): List<HabitCheckIn> {
+        return database.getAllCheckInsInRange(startDate.toString(), endDate.toString())
             .toDomainCheckIns()
     }
 

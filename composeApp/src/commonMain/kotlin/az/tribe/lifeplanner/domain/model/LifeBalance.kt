@@ -9,13 +9,11 @@ import kotlinx.datetime.LocalDateTime
  */
 enum class LifeArea(val displayName: String, val description: String, val icon: String) {
     CAREER("Career", "Professional growth, skills, and work achievements", "💼"),
-    FINANCIAL("Financial", "Money management, savings, and financial security", "💰"),
-    PHYSICAL("Physical", "Health, fitness, and physical wellbeing", "💪"),
-    SOCIAL("Social", "Friendships, networking, and social connections", "👥"),
-    EMOTIONAL("Emotional", "Mental health, self-awareness, and emotional intelligence", "🧠"),
-    SPIRITUAL("Spiritual", "Purpose, mindfulness, and inner peace", "🧘"),
-    FAMILY("Family", "Family relationships and home life", "👨‍👩‍👧‍👦"),
-    PERSONAL_GROWTH("Personal Growth", "Learning, hobbies, and self-improvement", "📚")
+    MONEY("Money", "Money management, savings, and financial security", "💰"),
+    BODY("Body", "Health, fitness, and physical wellbeing", "💪"),
+    PEOPLE("People", "Friendships, relationships, and social connections", "👥"),
+    WELLBEING("Wellbeing", "Mental health, self-awareness, and emotional balance", "🧠"),
+    PURPOSE("Purpose", "Meaning, mindfulness, and inner peace", "🧘")
 }
 
 /**
@@ -114,17 +112,15 @@ data class ManualAssessment(
 )
 
 /**
- * Maps LifeArea to GoalCategory. PERSONAL_GROWTH maps to CAREER as fallback.
+ * Maps LifeArea to GoalCategory.
  */
 fun LifeArea.toGoalCategory(): GoalCategory {
     return when (this) {
         LifeArea.CAREER -> GoalCategory.CAREER
-        LifeArea.FINANCIAL -> GoalCategory.FINANCIAL
-        LifeArea.PHYSICAL -> GoalCategory.PHYSICAL
-        LifeArea.SOCIAL -> GoalCategory.SOCIAL
-        LifeArea.EMOTIONAL -> GoalCategory.EMOTIONAL
-        LifeArea.SPIRITUAL -> GoalCategory.SPIRITUAL
-        LifeArea.FAMILY -> GoalCategory.FAMILY
-        LifeArea.PERSONAL_GROWTH -> GoalCategory.CAREER
+        LifeArea.MONEY -> GoalCategory.MONEY
+        LifeArea.BODY -> GoalCategory.BODY
+        LifeArea.PEOPLE -> GoalCategory.PEOPLE
+        LifeArea.WELLBEING -> GoalCategory.WELLBEING
+        LifeArea.PURPOSE -> GoalCategory.PURPOSE
     }
 }

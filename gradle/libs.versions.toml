@@ -1,5 +1,5 @@
 [versions]
-agp = "8.12.3"
+agp = "9.1.1"
 android-compileSdk = "36"
 android-minSdk = "26"
 android-targetSdk = "35"
@@ -28,7 +28,7 @@ firebaseCommonKtx = "21.0.0"
 
 googleGmsGoogleServices = "4.4.2"
 firebase-crashlytics-plugin = "3.0.4"
-firebase-performance-plugin = "1.4.2"
+firebase-performance-plugin = "2.0.0"
 
 composeMediaPlayer = "1.0.50"
 kmpnotifier = "1.6.1"
@@ -44,6 +44,7 @@ playReview = "2.0.2"
 healthConnect = "1.1.0"
 healthKmp = "1.0.1"
 phosphorIcons = "1.0.0"
+coil3 = "3.0.4"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activityCompose" }
@@ -122,6 +123,10 @@ health-kmp = { module = "com.viktormykhailiv:health-kmp", version.ref = "healthK
 
 # Phosphor Icons
 phosphor-icons = { module = "com.adamglin:phosphor-icon", version.ref = "phosphorIcons" }
+
+# Coil3 — multiplatform async image loading
+coil3-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil3" }
+coil3-network-ktor = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref = "coil3" }
 
 # Test dependencies
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlinTest" }

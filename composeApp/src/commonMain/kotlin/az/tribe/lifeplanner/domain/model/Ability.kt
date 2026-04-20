@@ -28,3 +28,10 @@ data class AbilityHabitLink(
     val xpWeight: Float = 1.0f,
     val createdAt: String
 )
+
+data class AbilityGoalLink(
+    val id: String,
+    val abilityId: String,
+    val goalId: String,
+    val createdAt: String
+)

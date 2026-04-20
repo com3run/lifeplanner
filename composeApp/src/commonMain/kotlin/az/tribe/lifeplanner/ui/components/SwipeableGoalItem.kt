@@ -10,9 +10,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.CheckCircle
-import androidx.compose.material.icons.rounded.Delete
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.CheckCircle
+import com.adamglin.phosphoricons.regular.Trash
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -138,7 +139,7 @@ fun SwipeableGoalItem(
             onDismissRequest = { showDeleteDialog = false },
             icon = {
                 Icon(
-                    imageVector = Icons.Rounded.Delete,
+                    imageVector = PhosphorIcons.Regular.Trash,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.error,
                     modifier = Modifier.size(32.dp)
@@ -190,8 +191,8 @@ private fun SwipeBackground(
     )
 
     val icon = when (dismissDirection) {
-        SwipeToDismissBoxValue.StartToEnd -> Icons.Rounded.CheckCircle
-        SwipeToDismissBoxValue.EndToStart -> Icons.Rounded.Delete
+        SwipeToDismissBoxValue.StartToEnd -> PhosphorIcons.Regular.CheckCircle
+        SwipeToDismissBoxValue.EndToStart -> PhosphorIcons.Regular.Trash
         SwipeToDismissBoxValue.Settled -> null
     }
 
@@ -210,7 +211,7 @@ private fun SwipeBackground(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(horizontal = 16.dp, vertical = 4.dp)
             .clip(RoundedCornerShape(16.dp))
             .background(color)
             .padding(horizontal = 24.dp),

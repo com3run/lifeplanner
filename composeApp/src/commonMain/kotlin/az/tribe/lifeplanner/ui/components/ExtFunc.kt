@@ -26,13 +26,12 @@ fun Instant.formatAsReadableDate(): String {
 // Utility function to map each GoalCategory to a bold, high-contrast Neo-Brutalist color
 fun GoalCategory?.backgroundColor(): Color {
     return when (this) {
-        GoalCategory.FINANCIAL -> Color(0xFFFF3B3B)      // Vivid Red
-        GoalCategory.CAREER -> Color(0xFF00BFA5)         // Teal Mint
-        GoalCategory.EMOTIONAL -> Color(0xFFFFEB3B)      // Banana Yellow
-        GoalCategory.FAMILY -> Color(0xFFB388FF)         // Light Purple
-        GoalCategory.PHYSICAL -> Color(0xFF00C853)       // Strong Green
-        GoalCategory.SPIRITUAL -> Color(0xFF7C4DFF)      // Deep Violet
-        GoalCategory.SOCIAL -> Color(0xFFB388FF)      // Deep Violet
+        GoalCategory.MONEY -> Color(0xFFFF3B3B)
+        GoalCategory.CAREER -> Color(0xFF00BFA5)
+        GoalCategory.WELLBEING -> Color(0xFFFFEB3B)
+        GoalCategory.BODY -> Color(0xFF00C853)
+        GoalCategory.PURPOSE -> Color(0xFF7C4DFF)
+        GoalCategory.PEOPLE -> Color(0xFFB388FF)
         else -> Color(0xFFB388FF)
     }
 }

@@ -7,15 +7,16 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Analytics
-import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.CheckCircle
-import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.FilterList
-import androidx.compose.material.icons.automirrored.rounded.FormatListBulleted
-import androidx.compose.material.icons.rounded.PlayArrow
-import androidx.compose.material.icons.rounded.Search
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.ChartBar
+import com.adamglin.phosphoricons.regular.List
+import com.adamglin.phosphoricons.regular.Check
+import com.adamglin.phosphoricons.regular.CheckCircle
+import com.adamglin.phosphoricons.regular.X
+import com.adamglin.phosphoricons.regular.Funnel
+import com.adamglin.phosphoricons.regular.Play
+import com.adamglin.phosphoricons.regular.MagnifyingGlass
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -118,7 +119,7 @@ import az.tribe.lifeplanner.ui.theme.modernColors
                                 }
                             ) {
                                 Icon(
-                                    Icons.Rounded.Close,
+                                    PhosphorIcons.Regular.X,
                                     contentDescription = "Clear search",
                                     tint = Color.White
                                 )
@@ -126,7 +127,7 @@ import az.tribe.lifeplanner.ui.theme.modernColors
                         },
                         leadingIcon = {
                             Icon(
-                                Icons.Rounded.Search,
+                                PhosphorIcons.Regular.MagnifyingGlass,
                                 contentDescription = null,
                                 tint = Color.White
                             )
@@ -135,9 +136,12 @@ import az.tribe.lifeplanner.ui.theme.modernColors
                 }
                 }
             },
-            colors = TopAppBarDefaults.largeTopAppBarColors(
+            colors = TopAppBarDefaults.topAppBarColors(
                 containerColor = MaterialTheme.colorScheme.surface,
-                scrolledContainerColor = MaterialTheme.colorScheme.surface
+                scrolledContainerColor = MaterialTheme.colorScheme.surface,
+                navigationIconContentColor = Color.Unspecified,
+                titleContentColor = Color.Unspecified,
+                actionIconContentColor = Color.Unspecified
             ),
             actions = {
                 // Profile Button
@@ -164,7 +168,7 @@ import az.tribe.lifeplanner.ui.theme.modernColors
                         onClick = { onSearchToggle(true) }
                     ) {
                         Icon(
-                            imageVector = Icons.Rounded.Search,
+                            imageVector = PhosphorIcons.Regular.MagnifyingGlass,
                             contentDescription = "Search"
                         )
                     }
@@ -175,7 +179,7 @@ import az.tribe.lifeplanner.ui.theme.modernColors
                         onClick = onFilterClick
                     ) {
                         Icon(
-                            imageVector = Icons.Rounded.FilterList,
+                            imageVector = PhosphorIcons.Regular.Funnel,
                             contentDescription = "Filter"
                         )
                     }
@@ -195,9 +199,9 @@ import az.tribe.lifeplanner.ui.theme.modernColors
                                 leadingIcon = {
                                     Icon(
                                         imageVector = when (filter) {
-                                            GoalFilter.ALL -> Icons.AutoMirrored.Rounded.FormatListBulleted
-                                            GoalFilter.ACTIVE -> Icons.Rounded.PlayArrow
-                                            GoalFilter.COMPLETED -> Icons.Rounded.CheckCircle
+                                            GoalFilter.ALL -> PhosphorIcons.Regular.List
+                                            GoalFilter.ACTIVE -> PhosphorIcons.Regular.Play
+                                            GoalFilter.COMPLETED -> PhosphorIcons.Regular.CheckCircle
                                         },
                                         contentDescription = null,
                                         tint = if (selectedFilter == filter)
@@ -209,7 +213,7 @@ import az.tribe.lifeplanner.ui.theme.modernColors
                                 trailingIcon = if (selectedFilter == filter) {
                                     {
                                         Icon(
-                                            Icons.Rounded.Check,
+                                            PhosphorIcons.Regular.Check,
                                             contentDescription = null,
                                             tint = MaterialTheme.colorScheme.primary
                                         )
@@ -224,7 +228,7 @@ import az.tribe.lifeplanner.ui.theme.modernColors
                     onClick = onAnalyticsClick
                 ) {
                     Icon(
-                        imageVector = Icons.Rounded.Analytics,
+                        imageVector = PhosphorIcons.Regular.ChartBar,
                         contentDescription = "Analytics"
                     )
                 }

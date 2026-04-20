@@ -28,6 +28,7 @@ class ReminderAlarmReceiver : BroadcastReceiver() {
         const val EXTRA_HOUR = "hour"
         const val EXTRA_MINUTE = "minute"
         const val EXTRA_SCHEDULED_DAYS = "scheduled_days"
+        const val EXTRA_LINKED_GOAL_ID = "linked_goal_id"
         private const val CHANNEL_ID = "reminders"
         private const val CHANNEL_NAME = "Reminders"
     }
@@ -40,10 +41,11 @@ class ReminderAlarmReceiver : BroadcastReceiver() {
         val hour = intent.getIntExtra(EXTRA_HOUR, -1)
         val minute = intent.getIntExtra(EXTRA_MINUTE, -1)
         val scheduledDaysStr = intent.getStringExtra(EXTRA_SCHEDULED_DAYS) ?: ""
+        val linkedGoalId = intent.getStringExtra(EXTRA_LINKED_GOAL_ID)
 
         Logger.i("ReminderAlarmReceiver") { "Firing reminder: $title" }
 
-        showNotification(context, reminderId, title, message)
+        showNotification(context, reminderId, title, message, linkedGoalId)
 
         // Reschedule for recurring reminders
         val frequency = try {
@@ -78,7 +80,7 @@ class ReminderAlarmReceiver : BroadcastReceiver() {
         }
     }
 
-    private fun showNotification(context: Context, reminderId: String, title: String, message: String) {
+    private fun showNotification(context: Context, reminderId: String, title: String, message: String, linkedGoalId: String? = null) {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         // Create channel (required for Android 8+)
@@ -94,9 +96,12 @@ class ReminderAlarmReceiver : BroadcastReceiver() {
             notificationManager.createNotificationChannel(channel)
         }
 
-        // Tap action opens the app
+        // Tap action opens the app with a deep link if goal ID is present
         val tapIntent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            if (linkedGoalId != null) {
+                data = android.net.Uri.parse("https://tribe.az/lifeplanner/goal/$linkedGoalId")
+            }
         }
         val pendingTapIntent = PendingIntent.getActivity(
             context,

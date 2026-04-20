@@ -26,6 +26,8 @@ import az.tribe.lifeplanner.data.repository.FocusRepositoryImpl
 import az.tribe.lifeplanner.data.repository.RetrospectiveRepositoryImpl
 import az.tribe.lifeplanner.data.repository.GoalRepositoryImpl
 import az.tribe.lifeplanner.data.repository.AbilityRepositoryImpl
+import az.tribe.lifeplanner.data.repository.CoachOrchestrator
+import az.tribe.lifeplanner.data.repository.UserSituationRepositoryImpl
 import az.tribe.lifeplanner.data.repository.HealthRepositoryImpl
 import az.tribe.lifeplanner.data.repository.HabitRepositoryImpl
 import az.tribe.lifeplanner.data.repository.JournalRepositoryImpl
@@ -49,6 +51,7 @@ import az.tribe.lifeplanner.domain.repository.FocusRepository
 import az.tribe.lifeplanner.domain.repository.RetrospectiveRepository
 import az.tribe.lifeplanner.domain.repository.GoalRepository
 import az.tribe.lifeplanner.domain.repository.AbilityRepository
+import az.tribe.lifeplanner.domain.repository.UserSituationRepository
 import az.tribe.lifeplanner.domain.repository.HealthRepository
 import az.tribe.lifeplanner.domain.repository.HabitRepository
 import az.tribe.lifeplanner.domain.repository.JournalRepository
@@ -75,6 +78,7 @@ import az.tribe.lifeplanner.ui.focus.FocusViewModel
 import az.tribe.lifeplanner.ui.retrospective.RetrospectiveViewModel
 import az.tribe.lifeplanner.ui.balance.LifeBalanceViewModel
 import az.tribe.lifeplanner.ui.coach.CoachViewModel
+import az.tribe.lifeplanner.ui.onboarding.CoachOnboardingViewModel
 import az.tribe.lifeplanner.ui.reminder.ReminderViewModel
 import az.tribe.lifeplanner.ui.objectives.BeginnerObjectiveViewModel
 import az.tribe.lifeplanner.ui.viewmodel.AuthViewModel
@@ -220,7 +224,8 @@ val appModule = module {
     single<GoalDependencyRepository> { GoalDependencyRepositoryImpl(get(), get()) }
     single<CoachRepository> { CoachRepositoryImpl(get(), get()) }
     single<CoachPostRepository> { CoachPostRepositoryImpl(get()) }
-    single<ChatRepository> { ChatRepositoryImpl(get(), get<AiProxyService>(), get(), get()) }
+    single { CoachOrchestrator() }
+    single<ChatRepository> { ChatRepositoryImpl(get(), get<AiProxyService>(), get(), get(), get(), get()) }
     single { ReviewMessageBuilder(get()) }
     single<ReminderRepository> { ReminderRepositoryImpl(get(), get(), get()) }
     single { SmartReminderManager(get()) }
@@ -229,6 +234,7 @@ val appModule = module {
     single<RetrospectiveRepository> { RetrospectiveRepositoryImpl(get()) }
     single<BeginnerObjectiveRepository> { BeginnerObjectiveRepositoryImpl(get(), get()) }
     single<AbilityRepository> { AbilityRepositoryImpl(get()) }
+    single<UserSituationRepository> { UserSituationRepositoryImpl(get(), get()) }
     single { HealthDataManager() }
     single<HealthRepository> { HealthRepositoryImpl(get(), get(), get()) }
 
@@ -326,4 +332,5 @@ val appModule = module {
     viewModelOf(::WeeklyEngagementViewModel)
     viewModelOf(::SearchViewModel)
     viewModelOf(::SmartHabitGeneratorViewModel)
+    viewModelOf(::CoachOnboardingViewModel)
 }

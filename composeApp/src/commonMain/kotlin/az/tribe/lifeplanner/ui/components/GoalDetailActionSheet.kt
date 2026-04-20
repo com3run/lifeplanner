@@ -16,12 +16,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.Delete
-import androidx.compose.material.icons.rounded.Edit
-import androidx.compose.material.icons.rounded.History
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.Plus
+import com.adamglin.phosphoricons.regular.X
+import com.adamglin.phosphoricons.regular.Trash
+import com.adamglin.phosphoricons.regular.PencilSimple
+import com.adamglin.phosphoricons.regular.ClockCounterClockwise
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -87,7 +88,7 @@ fun GoalDetailActionSheet(
                 )
                 IconButton(onClick = onDismiss) {
                     Icon(
-                        imageVector = Icons.Rounded.Close,
+                        imageVector = PhosphorIcons.Regular.X,
                         contentDescription = "Close"
                     )
                 }
@@ -102,7 +103,7 @@ fun GoalDetailActionSheet(
                 // Edit
                 item {
                     ActionSheetItem(
-                        icon = Icons.Rounded.Edit,
+                        icon = PhosphorIcons.Regular.PencilSimple,
                         title = "Edit Goal",
                         subtitle = "Modify title, description, or due date",
                         onClick = {
@@ -115,7 +116,7 @@ fun GoalDetailActionSheet(
                 // Add Milestone
                 item {
                     ActionSheetItem(
-                        icon = Icons.Rounded.Add,
+                        icon = PhosphorIcons.Regular.Plus,
                         title = "Add Milestone",
                         subtitle = "Break down your goal into smaller steps",
                         onClick = {
@@ -128,7 +129,7 @@ fun GoalDetailActionSheet(
                 // History
                 item {
                     ActionSheetItem(
-                        icon = Icons.Rounded.History,
+                        icon = PhosphorIcons.Regular.ClockCounterClockwise,
                         title = "View History",
                         subtitle = "See all changes made to this goal",
                         onClick = {
@@ -149,7 +150,7 @@ fun GoalDetailActionSheet(
                 // Delete (destructive)
                 item {
                     ActionSheetItem(
-                        icon = Icons.Rounded.Delete,
+                        icon = PhosphorIcons.Regular.Trash,
                         title = "Delete Goal",
                         subtitle = "Permanently remove this goal",
                         iconColor = MaterialTheme.colorScheme.error,

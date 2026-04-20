@@ -14,6 +14,7 @@ fun createAllSyncers(
     return listOf(
         // Tier 1: No FK dependencies
         UserTableSyncer(supabase, db),
+        UserSituationTableSyncer(supabase, db),
         GoalTableSyncer(supabase, db),
         BadgeTableSyncer(supabase, db),
         CustomCoachTableSyncer(supabase, db),

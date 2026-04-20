@@ -12,7 +12,7 @@ interface LifeBalanceRepository {
     /**
      * Calculate the current life balance scores based on goals, habits, and activity
      */
-    suspend fun calculateCurrentBalance(): LifeBalanceReport
+    suspend fun calculateCurrentBalance(forceRefresh: Boolean = false): LifeBalanceReport
 
     /**
      * Get the score for a specific life area

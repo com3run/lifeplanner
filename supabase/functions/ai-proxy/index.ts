@@ -1,5 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") ?? "";
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY") ?? "";
@@ -83,7 +83,7 @@ function buildMilestoneText(m: Record<string, unknown>): string {
   return `Milestone for goal: ${m.title} - ${status}`;
 }
 
-async function syncEmbeddings(jwt: string): Promise<void> {
+async function syncEmbeddings(jwt: string, userId: string): Promise<void> {
   if (!jwt || !SUPABASE_URL || !SUPABASE_ANON_KEY || !GEMINI_API_KEY) return;
 
   try {
@@ -178,7 +178,7 @@ async function syncEmbeddings(jwt: string): Promise<void> {
           .from("content_embeddings")
           .upsert(
             {
-              user_id: (await supabase.auth.getUser(jwt)).data.user!.id,
+              user_id: userId,
               source_table: row.table,
               source_id: row.id,
               content: row.content,
@@ -485,6 +485,16 @@ function formatUserContext(
   return lines.join("\n");
 }
 
+function parseUserIdFromJwt(jwt: string): string | null {
+  try {
+    const base64 = jwt.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+    const payload = JSON.parse(atob(base64));
+    return typeof payload.sub === "string" ? payload.sub : null;
+  } catch {
+    return null;
+  }
+}
+
 // ── Main handler ────────────────────────────────────────────────────────────
 
 Deno.serve(async (req: Request) => {
@@ -500,7 +510,9 @@ Deno.serve(async (req: Request) => {
 
   // Validate auth: require a valid Supabase user session
   const authHeader = req.headers.get("authorization") ?? "";
-  const jwt = authHeader.replace("Bearer ", "");
+  const jwt = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : authHeader;
+
+  console.log(`AUTH: header present=${!!authHeader}, jwt length=${jwt.length}, jwt starts with eyJ=${jwt.startsWith("eyJ")}`);
 
   if (!jwt) {
     console.warn("AUTH: No JWT token in request");
@@ -518,21 +530,14 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  // Verify the JWT by calling Supabase auth — rejects expired/invalid tokens
-  try {
-    const supabase = createUserClient(jwt);
-    const { data: { user }, error } = await supabase.auth.getUser(jwt);
-    if (error || !user) {
-      console.warn("AUTH: getUser failed —", error?.message ?? "no user returned");
-      return new Response(
-        JSON.stringify({ error: "Invalid or expired token" }),
-        { status: 401, headers: { "Content-Type": "application/json" } }
-      );
-    }
-  } catch (authErr) {
-    console.warn("AUTH: getUser threw —", authErr instanceof Error ? authErr.message : authErr);
+  // JWT is already validated by the Supabase gateway (verify_jwt: true).
+  // Parse the user ID from the payload directly — no extra auth server round-trip.
+  const userId = parseUserIdFromJwt(jwt);
+  console.log(`AUTH: userId=${userId ?? "null"}`);
+  if (!userId) {
+    console.warn("AUTH: could not parse sub from JWT — jwt.split('.').length=" + jwt.split(".").length);
     return new Response(
-      JSON.stringify({ error: "Auth verification failed" }),
+      JSON.stringify({ error: "Invalid token" }),
       { status: 401, headers: { "Content-Type": "application/json" } }
     );
   }
@@ -552,8 +557,8 @@ Deno.serve(async (req: Request) => {
 
     if (body.enrichContext !== false && body.messages) {
       try {
-        // Sync embeddings first (lazy upsert of stale/missing)
-        await syncEmbeddings(jwt);
+        // Sync embeddings in background (non-blocking)
+        EdgeRuntime.waitUntil(syncEmbeddings(jwt, userId));
 
         // Get the last user message for semantic search
         const lastUserMessage = [...body.messages]
@@ -587,21 +592,8 @@ Deno.serve(async (req: Request) => {
       return createStreamingResponse(body, provider, jwt);
     }
 
-    // ── Non-streaming path (unchanged) ──────────────────────────────────
-    let result: AiResponse;
-
-    switch (provider) {
-      case "OPENAI":
-        result = await callOpenAI(body);
-        break;
-      case "GROK":
-        result = await callGrok(body);
-        break;
-      case "GEMINI":
-      default:
-        result = await callGemini(body);
-        break;
-    }
+    // ── Non-streaming path with auto-fallback on rate limit ─────────────
+    const result = await callWithFallback(body, provider);
 
     // Fire-and-forget usage logging
     const requestType = body.messages
@@ -641,6 +633,45 @@ Deno.serve(async (req: Request) => {
     );
   }
 });
+
+// ── Provider fallback ────────────────────────────────────────────────────────
+
+const PROVIDER_ORDER = ["GEMINI", "OPENAI", "GROK"] as const;
+
+function isRateLimited(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return msg.includes("429") || msg.toLowerCase().includes("rate limit") || msg.toLowerCase().includes("quota");
+}
+
+async function callWithFallback(body: AiRequest, preferredProvider: string): Promise<AiResponse> {
+  const order = [
+    preferredProvider,
+    ...PROVIDER_ORDER.filter((p) => p !== preferredProvider),
+  ];
+
+  let lastError: unknown;
+  for (const p of order) {
+    // Skip providers with missing keys
+    if (p === "GEMINI" && !GEMINI_API_KEY) continue;
+    if (p === "OPENAI" && !OPENAI_API_KEY) continue;
+    if (p === "GROK" && !GROK_API_KEY) continue;
+
+    try {
+      if (p === "OPENAI") return await callOpenAI(body);
+      if (p === "GROK") return await callGrok(body);
+      return await callGemini(body);
+    } catch (err) {
+      lastError = err;
+      if (isRateLimited(err)) {
+        console.warn(`Provider ${p} rate-limited, trying next provider`);
+        continue;
+      }
+      // Non-rate-limit errors: don't fall back, let it propagate
+      throw err;
+    }
+  }
+  throw lastError ?? new Error("All AI providers failed or are unavailable");
+}
 
 // ── Gemini ──────────────────────────────────────────────────────────────────
 
@@ -763,9 +794,15 @@ function buildOpenAIMessages(
   if (body.messages && body.messages.length > 0) {
     // When using messages with responseSchema, add JSON instruction so OpenAI accepts json_object format
     if (body.responseSchema) {
+      const schema = body.responseSchema as Record<string, unknown>;
+      const props = schema.properties as Record<string, unknown> | undefined;
+      const topLevelKeys = props ? Object.keys(props) : [];
+      const keyHint = topLevelKeys.length > 0
+        ? `The response object MUST have exactly these top-level keys: ${topLevelKeys.join(", ")}.`
+        : "";
       messages.push({
         role: "system",
-        content: `You must respond in JSON matching this schema:\n${JSON.stringify(body.responseSchema)}`,
+        content: `Respond with a JSON object containing actual DATA values. Do NOT use JSON Schema keywords ("type", "properties", "items", "required", "$schema") as keys in your response — those are schema metadata, not data. ${keyHint} Schema:\n${JSON.stringify(body.responseSchema)}`,
       });
     }
     for (const msg of body.messages) {
@@ -777,7 +814,13 @@ function buildOpenAIMessages(
   } else if (body.prompt) {
     let prompt = body.prompt;
     if (body.responseSchema) {
-      prompt += `\n\nRespond in this exact JSON schema:\n${JSON.stringify(body.responseSchema)}`;
+      const schema = body.responseSchema as Record<string, unknown>;
+      const props = schema.properties as Record<string, unknown> | undefined;
+      const topLevelKeys = props ? Object.keys(props) : [];
+      const keyHint = topLevelKeys.length > 0
+        ? ` Top-level keys must be: ${topLevelKeys.join(", ")}.`
+        : "";
+      prompt += `\n\nRespond with actual JSON data (not a JSON Schema).${keyHint} Schema:\n${JSON.stringify(body.responseSchema)}`;
     }
     messages.push({ role: "user", content: prompt });
   }
@@ -800,10 +843,13 @@ function getModelForProvider(provider: string): string {
 
 function createStreamingResponse(
   body: AiRequest,
-  provider: string,
+  preferredProvider: string,
   jwt: string
 ): Response {
-  const model = getModelForProvider(provider);
+  const providerOrder = [
+    preferredProvider,
+    ...PROVIDER_ORDER.filter((p) => p !== preferredProvider),
+  ];
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -812,37 +858,40 @@ function createStreamingResponse(
         controller.enqueue(encoder.encode(`event: ${event}\ndata: ${data}\n\n`));
       };
 
-      try {
-        let usage: TokenUsage | undefined;
+      for (const p of providerOrder) {
+        if (p === "GEMINI" && !GEMINI_API_KEY) continue;
+        if (p === "OPENAI" && !OPENAI_API_KEY) continue;
+        if (p === "GROK" && !GROK_API_KEY) continue;
 
-        if (provider === "GEMINI") {
-          usage = await streamGemini(body, model, send);
-        } else {
-          usage = await streamOpenAICompatible(body, provider, model, send);
+        const model = getModelForProvider(p);
+        try {
+          let usage: TokenUsage | undefined;
+          if (p === "GEMINI") {
+            usage = await streamGemini(body, model, send);
+          } else {
+            usage = await streamOpenAICompatible(body, p, model, send);
+          }
+          send("done", JSON.stringify({ provider: p, model, usage: usage ?? { inputTokens: 0, outputTokens: 0 } }));
+          logUsage(jwt, { text: "", provider: p, model, usage }, "chat");
+          controller.close();
+          return;
+        } catch (err: unknown) {
+          if (isRateLimited(err)) {
+            console.warn(`Streaming provider ${p} rate-limited, trying next`);
+            continue;
+          }
+          const rawMsg = err instanceof Error ? err.message : "Stream error";
+          console.error("Stream error:", rawMsg);
+          let userMsg = "Something went wrong during streaming. Please try again.";
+          if (rawMsg.includes("timeout") || rawMsg.includes("ETIMEDOUT")) userMsg = "AI provider timed out. Please try again.";
+          send("error", JSON.stringify({ error: userMsg }));
+          controller.close();
+          return;
         }
-
-        const donePayload = JSON.stringify({
-          provider,
-          model,
-          usage: usage ?? { inputTokens: 0, outputTokens: 0 },
-        });
-        send("done", donePayload);
-
-        // Fire-and-forget usage log
-        logUsage(jwt, { text: "", provider, model, usage }, "chat");
-      } catch (err: unknown) {
-        const rawMsg = err instanceof Error ? err.message : "Stream error";
-        console.error("Stream error:", rawMsg);
-        let userMsg = "Something went wrong during streaming. Please try again.";
-        if (rawMsg.includes("rate limit") || rawMsg.includes("429")) {
-          userMsg = "AI provider is rate-limited. Please wait a moment and try again.";
-        } else if (rawMsg.includes("timeout") || rawMsg.includes("ETIMEDOUT")) {
-          userMsg = "AI provider timed out. Please try again.";
-        }
-        send("error", JSON.stringify({ error: userMsg }));
-      } finally {
-        controller.close();
       }
+
+      send("error", JSON.stringify({ error: "AI provider is rate-limited. Please wait a moment and try again." }));
+      controller.close();
     },
   });
 

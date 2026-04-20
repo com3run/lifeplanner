@@ -6,12 +6,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.automirrored.rounded.ListAlt
-import androidx.compose.material.icons.rounded.*
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.CalendarBlank
+import com.adamglin.phosphoricons.regular.ListChecks
+import com.adamglin.phosphoricons.regular.CheckCircle
+import com.adamglin.phosphoricons.regular.Sparkle
+import com.adamglin.phosphoricons.regular.Hourglass
+import com.adamglin.phosphoricons.regular.Play
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,11 +28,10 @@ import androidx.compose.ui.unit.dp
 import az.tribe.lifeplanner.domain.enum.GoalCategory
 import az.tribe.lifeplanner.domain.enum.GoalStatus
 import az.tribe.lifeplanner.domain.model.Goal
+import az.tribe.lifeplanner.ui.utils.formatHuman
 import kotlin.time.Clock
-import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import kotlinx.datetime.number
 
 @Composable
 fun GoalCard(
@@ -49,43 +50,34 @@ fun GoalCard(
             .animateContentSize(),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Title and status
-        Row(
+        // Title — full width so even long titles can display 2 lines
+        Text(
+            text = goal.title,
+            style = MaterialTheme.typography.titleMedium.copy(
+                fontWeight = FontWeight.Bold
+            ),
+            color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
+
+        // Status badges below title
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = goal.title,
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Bold
-                ),
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.weight(1f),
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (isNew) {
-                    NewBadge()
-                }
-                StatusChip(status = goal.status)
-            }
+            if (isNew) NewBadge()
+            StatusChip(status = goal.status)
         }
 
-        // Description
+        // Description — 1 line; full text always accessible on detail screen
         if (goal.description.isNotBlank()) {
             Text(
                 text = goal.description,
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2,
+                maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
         }
@@ -110,13 +102,13 @@ fun GoalCard(
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Icon(
-                    imageVector = Icons.Rounded.CalendarToday,
+                    imageVector = PhosphorIcons.Regular.CalendarBlank,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                     modifier = Modifier.size(16.dp)
                 )
                 Text(
-                    text = formatDate(goal.dueDate),
+                    text = goal.dueDate.formatHuman(),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.9f)
                 )
@@ -206,7 +198,7 @@ private fun MilestoneIndicator(
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         Icon(
-            imageVector = Icons.AutoMirrored.Rounded.ListAlt,
+            imageVector = PhosphorIcons.Regular.ListChecks,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
             modifier = Modifier.size(16.dp)
@@ -255,7 +247,7 @@ fun NewBadge() {
             horizontalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             Icon(
-                imageVector = Icons.Rounded.FiberNew,
+                imageVector = PhosphorIcons.Regular.Sparkle,
                 contentDescription = null,
                 tint = Color.White,
                 modifier = Modifier.size(12.dp)
@@ -275,7 +267,7 @@ fun NewBadge() {
 fun StatusChip(status: GoalStatus) {
     val (icon, text, colors) = when (status) {
         GoalStatus.NOT_STARTED -> Triple(
-            Icons.Rounded.HourglassEmpty,
+            PhosphorIcons.Regular.Hourglass,
             "Not Started",
             ChipColors(
                 containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
@@ -283,7 +275,7 @@ fun StatusChip(status: GoalStatus) {
             )
         )
         GoalStatus.IN_PROGRESS -> Triple(
-            Icons.Rounded.PlayArrow,
+            PhosphorIcons.Regular.Play,
             "In Progress",
             ChipColors(
                 containerColor = Color(0xFFFFF8E1),
@@ -291,7 +283,7 @@ fun StatusChip(status: GoalStatus) {
             )
         )
         GoalStatus.COMPLETED -> Triple(
-            Icons.Rounded.CheckCircle,
+            PhosphorIcons.Regular.CheckCircle,
             "Completed",
             ChipColors(
                 containerColor = Color(0xFFE8F5E9),
@@ -334,20 +326,11 @@ private data class ChipColors(
 fun GoalCategory.backgroundColor(): Color {
     return when (this) {
         GoalCategory.CAREER -> Color(0xFF2196F3)
-        GoalCategory.FINANCIAL -> Color(0xFF4CAF50)
-        GoalCategory.PHYSICAL -> Color(0xFFFF9800)
-        GoalCategory.SOCIAL -> Color(0xFF9C27B0)
-        GoalCategory.EMOTIONAL -> Color(0xFF009688)
-        GoalCategory.SPIRITUAL -> Color(0xFFE91E63)
-        GoalCategory.FAMILY -> Color(0xFF3F51B5)
+        GoalCategory.MONEY -> Color(0xFF4CAF50)
+        GoalCategory.BODY -> Color(0xFFFF9800)
+        GoalCategory.PEOPLE -> Color(0xFF9C27B0)
+        GoalCategory.WELLBEING -> Color(0xFF009688)
+        GoalCategory.PURPOSE -> Color(0xFFE91E63)
     }
 }
 
-// Helper function to format date
-private fun formatDate(date: LocalDate): String {
-    val months = listOf(
-        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-    )
-    return "${months[date.month.number - 1]} ${date.day}, ${date.year}"
-}
