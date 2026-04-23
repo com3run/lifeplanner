@@ -47,6 +47,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import az.tribe.lifeplanner.domain.model.CoachPost
@@ -376,6 +378,129 @@ internal fun StoryReader(
             }
 
             Spacer(Modifier.height(32.dp))
+        }
+    }
+}
+
+// ─── Personality tag chip ─────────────────────────────────────────────────────
+
+@Composable
+internal fun PersonalityTag(trait: String, bgColor: Color, accentColor: Color) {
+    Surface(
+        shape = RoundedCornerShape(50),
+        color = bgColor.copy(alpha = 0.15f)
+    ) {
+        Text(
+            text = trait.replaceFirstChar { it.uppercase() },
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = bgColor
+        )
+    }
+}
+
+// ─── Specialties section ──────────────────────────────────────────────────────
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+internal fun SpecialtiesSection(
+    specialties: List<String>,
+    bgColor: Color,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier) {
+        Text(
+            "Specialties",
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(Modifier.height(8.dp))
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            specialties.forEach { specialty ->
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = bgColor.copy(alpha = 0.12f)
+                ) {
+                    Text(
+                        specialty,
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium,
+                        color = bgColor
+                    )
+                }
+            }
+        }
+    }
+}
+
+// ─── Bio quote block ──────────────────────────────────────────────────────────
+
+@Composable
+internal fun QuoteBlock(text: String, accentColor: Color, modifier: Modifier = Modifier) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        Text(
+            "About",
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(Modifier.height(8.dp))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                .padding(start = 20.dp, end = 16.dp, top = 10.dp, bottom = 16.dp)
+        ) {
+            Text(
+                "“",
+                style = MaterialTheme.typography.displayMedium,
+                color = accentColor.copy(alpha = 0.3f),
+                modifier = Modifier.align(Alignment.TopStart)
+            )
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(top = 24.dp)
+            )
+        }
+    }
+}
+
+// ─── Fun fact bubble ──────────────────────────────────────────────────────────
+
+@Composable
+internal fun FunFactBubble(text: String, accentColor: Color, modifier: Modifier = Modifier) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        Text(
+            "Fun Fact",
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(Modifier.height(8.dp))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(accentColor.copy(alpha = 0.1f))
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.Top
+        ) {
+            Text("💡", fontSize = 22.sp)
+            Text(
+                text,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
         }
     }
 }

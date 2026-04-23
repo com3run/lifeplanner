@@ -81,6 +81,7 @@ data class CoachPersona(
     companion object {
         // Special ID for The Council group chat
         const val COUNCIL_ID = "council"
+        const val LUNA_ID = "luna_general"
 
         val ALL_COACHES = listOf(
             CoachPersona(

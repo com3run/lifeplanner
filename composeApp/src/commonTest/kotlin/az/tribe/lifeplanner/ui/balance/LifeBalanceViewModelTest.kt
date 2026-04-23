@@ -87,7 +87,7 @@ class LifeBalanceViewModelTest {
     fun `loadBalance populates report with area scores`() = runTest(testDispatcher) {
         val scores = listOf(
             testLifeAreaScore(area = LifeArea.CAREER, score = 80),
-            testLifeAreaScore(area = LifeArea.PHYSICAL, score = 60)
+            testLifeAreaScore(area = LifeArea.BODY, score = 60)
         )
         fakeRepository.report = testLifeBalanceReport(areaScores = scores)
 
@@ -129,10 +129,10 @@ class LifeBalanceViewModelTest {
         viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
-        viewModel.showAssessmentDialog(LifeArea.PHYSICAL)
+        viewModel.showAssessmentDialog(LifeArea.BODY)
 
         assertTrue(viewModel.uiState.value.showAssessmentDialog)
-        assertEquals(LifeArea.PHYSICAL, viewModel.uiState.value.assessmentArea)
+        assertEquals(LifeArea.BODY, viewModel.uiState.value.assessmentArea)
     }
 
     @Test
@@ -140,7 +140,7 @@ class LifeBalanceViewModelTest {
         viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
-        viewModel.showAssessmentDialog(LifeArea.PHYSICAL)
+        viewModel.showAssessmentDialog(LifeArea.BODY)
         viewModel.hideAssessmentDialog()
 
         assertFalse(viewModel.uiState.value.showAssessmentDialog)
@@ -167,7 +167,7 @@ class LifeBalanceViewModelTest {
         viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
-        viewModel.saveManualAssessment(LifeArea.FINANCIAL, 50, null)
+        viewModel.saveManualAssessment(LifeArea.MONEY, 50, null)
         testDispatcher.scheduler.advanceUntilIdle()
 
         // Should not error; dialog should be hidden
@@ -182,7 +182,7 @@ class LifeBalanceViewModelTest {
         val recommendation = BalanceRecommendation(
             title = "Start Exercise",
             description = "Begin a workout routine",
-            targetArea = LifeArea.PHYSICAL,
+            targetArea = LifeArea.BODY,
             actionType = BalanceRecommendationAction.CREATE_GOAL,
             preGeneratedGoal = goal
         )
@@ -195,7 +195,7 @@ class LifeBalanceViewModelTest {
 
         assertNotNull(viewModel.uiState.value.goalCreatedFeedback)
         assertTrue(viewModel.uiState.value.goalCreatedFeedback!!.contains("Improve Fitness"))
-        assertTrue(viewModel.uiState.value.createdGoalIds.contains(LifeArea.PHYSICAL.name))
+        assertTrue(viewModel.uiState.value.createdGoalIds.contains(LifeArea.BODY.name))
     }
 
     @Test
@@ -203,7 +203,7 @@ class LifeBalanceViewModelTest {
         val recommendation = BalanceRecommendation(
             title = "Start Exercise",
             description = "Begin a workout routine",
-            targetArea = LifeArea.PHYSICAL,
+            targetArea = LifeArea.BODY,
             actionType = BalanceRecommendationAction.CREATE_GOAL,
             preGeneratedGoal = null
         )
@@ -246,7 +246,7 @@ class LifeBalanceViewModelTest {
         val insight = BalanceInsight(
             title = "Work-life imbalance",
             description = "Career is overpowering other areas",
-            relatedAreas = listOf(LifeArea.CAREER, LifeArea.FAMILY),
+            relatedAreas = listOf(LifeArea.CAREER, LifeArea.PEOPLE),
             priority = InsightPriority.HIGH
         )
 
@@ -304,7 +304,7 @@ class LifeBalanceViewModelTest {
     fun `getAreaScore returns score from report`() = runTest(testDispatcher) {
         val scores = listOf(
             testLifeAreaScore(area = LifeArea.CAREER, score = 80),
-            testLifeAreaScore(area = LifeArea.PHYSICAL, score = 60)
+            testLifeAreaScore(area = LifeArea.BODY, score = 60)
         )
         fakeRepository.report = testLifeBalanceReport(areaScores = scores)
 
@@ -328,8 +328,8 @@ class LifeBalanceViewModelTest {
         viewModel.loadBalance()
         testDispatcher.scheduler.advanceUntilIdle()
 
-        val score = viewModel.getAreaScore(LifeArea.SPIRITUAL)
-        // With empty area scores, it won't find SPIRITUAL in the report
+        val score = viewModel.getAreaScore(LifeArea.PURPOSE)
+        // With empty area scores, it won't find PURPOSE in the report
         assertNull(score)
     }
 }

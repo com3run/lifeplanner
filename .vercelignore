@@ -1,0 +1,11 @@
+composeApp
+iosApp
+gradle
+.gradle
+build
+*.gradle
+*.gradle.kts
+gradlew
+gradlew.bat
+.idea
+*.iml

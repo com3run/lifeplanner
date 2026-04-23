@@ -14,5 +14,6 @@ data class Story(
     @SerialName("gradient_end") val gradientEnd: String,
     @SerialName("cta_text") val ctaText: String? = null,
     @SerialName("cta_action") val ctaAction: String? = null,
-    @SerialName("sort_order") val sortOrder: Int = 0
+    @SerialName("sort_order") val sortOrder: Int = 0,
+    val label: String? = null
 )

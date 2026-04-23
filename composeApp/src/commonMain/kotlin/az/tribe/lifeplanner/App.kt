@@ -290,38 +290,53 @@ fun App(
         // Determine start destination based on auth state
         val startDestination = when (authState) {
             is AuthState.Loading -> return@LifePlannerTheme // Still loading
-            is AuthState.Authenticated, is AuthState.Guest -> Screen.Home.route
-            else -> Screen.Welcome.route
+            is AuthState.Authenticated, is AuthState.Guest -> {
+                // Legacy users who finished the old onboarding before coach onboarding existed
+                if (hasCompletedOnboarding == true && !CoachOnboardingViewModel.isComplete(settings)) {
+                    settings.putBoolean(CoachOnboardingViewModel.COACH_ONBOARDING_KEY, true)
+                }
+                if (CoachOnboardingViewModel.isComplete(settings)) Screen.Home.route
+                else Screen.CoachOnboarding.route
+            }
+            else -> Screen.CoachOnboarding.route
         }
 
         // React to auth state changes — navigate to the right screen
         LaunchedEffect(authState) {
             when {
-                // Authenticated or Guest → ensure on Home
+                // Authenticated or Guest → ensure on Home or force coach onboarding
                 authState is AuthState.Authenticated || authState is AuthState.Guest -> {
                     // Sync is now triggered from AuthViewModel after login completes,
                     // so we don't trigger it here to avoid racing with DB operations.
                     val current = navController.currentDestination?.route
-                    // Only auto-navigate from sign_in; WelcomeScreen handles its own
-                    // splash timing and calls onComplete() when ready
-                    if (current == "sign_in") {
-                        // Existing users (hasCompletedOnboarding=true) skip coach onboarding
-                        if (hasCompletedOnboarding == true && !CoachOnboardingViewModel.isComplete(settings)) {
-                            settings.putBoolean(CoachOnboardingViewModel.COACH_ONBOARDING_KEY, true)
+                    when {
+                        // From sign_in — apply legacy upgrade here too, then route correctly
+                        current == "sign_in" -> {
+                            if (hasCompletedOnboarding == true && !CoachOnboardingViewModel.isComplete(settings)) {
+                                settings.putBoolean(CoachOnboardingViewModel.COACH_ONBOARDING_KEY, true)
+                            }
+                            val next = if (CoachOnboardingViewModel.isComplete(settings)) Screen.Home.route
+                                       else Screen.CoachOnboarding.route
+                            navController.navigate(next) { popUpTo(0) { inclusive = true } }
                         }
-                        val next = if (CoachOnboardingViewModel.isComplete(settings)) Screen.Home.route
-                        else Screen.CoachOnboarding.route
-                        navController.navigate(next) {
-                            popUpTo(0) { inclusive = true }
+                        // On a main app screen but onboarding not done — force it.
+                        // NOTE: do NOT run the legacy auto-upgrade here — it fires on every
+                        // auth-state refresh (e.g. sync updating lastSyncedAt) and would set
+                        // COACH_ONBOARDING_KEY mid-onboarding, causing premature navigation.
+                        !CoachOnboardingViewModel.isComplete(settings) && current != null
+                                && current != Screen.CoachOnboarding.route -> {
+                            navController.navigate(Screen.CoachOnboarding.route) {
+                                popUpTo(0) { inclusive = true }
+                            }
                         }
                     }
                 }
-                // Signed out → reset cached data and go to Welcome
+                // Signed out → reset cached data and go to Coach Onboarding (shows auth gate)
                 authState is AuthState.Unauthenticated -> {
                     gamificationViewModel.resetState()
                     val current = navController.currentDestination?.route
-                    if (current != Screen.Welcome.route && current != "sign_in") {
-                        navController.navigate(Screen.Welcome.route) {
+                    if (current != Screen.CoachOnboarding.route && current != "sign_in") {
+                        navController.navigate(Screen.CoachOnboarding.route) {
                             popUpTo(0) { inclusive = true }
                         }
                     }
@@ -329,7 +344,7 @@ fun App(
                 // Verification pending (recovered from app relaunch) → go to sign_in
                 authState is AuthState.EmailVerificationPending -> {
                     val current = navController.currentDestination?.route
-                    if (current != "sign_in" && current != Screen.Welcome.route) {
+                    if (current != "sign_in" && current != Screen.CoachOnboarding.route) {
                         navController.navigate("sign_in") {
                             popUpTo(0) { inclusive = true }
                         }
@@ -338,11 +353,17 @@ fun App(
             }
         }
 
+        // Track which tab is selected inside the Hub screen (Journal screen)
+        var hubSelectedTab by remember { mutableStateOf(0) }
+
         // Handle marketing deep link (e.g. lifeplanner://promo/chat)
         LaunchedEffect(promoRoute, authState) {
             if (promoRoute != null && (authState is AuthState.Authenticated || authState is AuthState.Guest)) {
-                navController.navigate(promoRoute) {
-                    launchSingleTop = true
+                if (promoRoute == "journal_habits") {
+                    hubSelectedTab = 2
+                    navController.navigate(Screen.Journal.route) { launchSingleTop = true }
+                } else {
+                    navController.navigate(promoRoute) { launchSingleTop = true }
                 }
             }
         }
@@ -385,9 +406,6 @@ fun App(
         val slideOffset: (Int) -> Int = { fullWidth -> fullWidth / 4 }
 
         val showBottomNav = currentRoute in mainRoutes
-
-        // Track which tab is selected inside the Hub screen (Journal screen)
-        var hubSelectedTab by remember { mutableStateOf(0) }
 
         // Contextual circle button action — changes per screen and hub tab
         val navContextAction: NavContextAction? = when (currentRoute) {

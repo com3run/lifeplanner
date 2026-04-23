@@ -1,0 +1,112 @@
+{
+  "info": {
+    "name": "AI Proxy",
+    "description": "Multi-provider AI orchestration with RAG context enrichment and streaming"
+  },
+  "requests": [
+    {
+      "id": "gemini-basic",
+      "name": "Basic Prompt — Gemini",
+      "description": "Simple prompt using Gemini 2.0 Flash with context enrichment",
+      "method": "POST",
+      "path": "/functions/v1/ai-proxy",
+      "auth": "user-jwt",
+      "body": {
+        "prompt": "Give me a brief summary of my current goals and habits.",
+        "provider": "GEMINI",
+        "enrichContext": true
+      }
+    },
+    {
+      "id": "gemini-streaming",
+      "name": "Streaming Prompt — Gemini",
+      "description": "Streaming SSE response with live text chunks",
+      "method": "POST",
+      "path": "/functions/v1/ai-proxy",
+      "auth": "user-jwt",
+      "body": {
+        "prompt": "Give me a motivational coaching message based on my current progress.",
+        "provider": "GEMINI",
+        "stream": true,
+        "enrichContext": true
+      }
+    },
+    {
+      "id": "structured-output",
+      "name": "Structured JSON Output",
+      "description": "Forces response to match a JSON schema using responseSchema",
+      "method": "POST",
+      "path": "/functions/v1/ai-proxy",
+      "auth": "user-jwt",
+      "body": {
+        "prompt": "Analyze my habits and return structured insights.",
+        "provider": "GEMINI",
+        "enrichContext": true,
+        "responseSchema": {
+          "type": "object",
+          "properties": {
+            "insights": { "type": "array", "items": { "type": "string" } },
+            "recommendations": { "type": "array", "items": { "type": "string" } },
+            "overall_score": { "type": "number" }
+          },
+          "required": ["insights", "recommendations", "overall_score"]
+        }
+      }
+    },
+    {
+      "id": "openai-provider",
+      "name": "Basic Prompt — OpenAI",
+      "description": "Uses GPT-4o Mini provider, no context enrichment",
+      "method": "POST",
+      "path": "/functions/v1/ai-proxy",
+      "auth": "user-jwt",
+      "body": {
+        "prompt": "Hello! What can you help me with?",
+        "provider": "OPENAI",
+        "enrichContext": false
+      }
+    },
+    {
+      "id": "grok-provider",
+      "name": "Basic Prompt — Grok",
+      "description": "Uses Grok-4-1-Fast provider, no context enrichment",
+      "method": "POST",
+      "path": "/functions/v1/ai-proxy",
+      "auth": "user-jwt",
+      "body": {
+        "prompt": "Hello! What can you help me with?",
+        "provider": "GROK",
+        "enrichContext": false
+      }
+    },
+    {
+      "id": "custom-messages",
+      "name": "Custom Messages Array",
+      "description": "Passes a messages array and custom systemPrompt",
+      "method": "POST",
+      "path": "/functions/v1/ai-proxy",
+      "auth": "user-jwt",
+      "body": {
+        "messages": [
+          { "role": "user", "content": "What is my current XP level and streak?" }
+        ],
+        "systemPrompt": "You are a concise life planning assistant. Answer in 2 sentences max.",
+        "provider": "GEMINI",
+        "enrichContext": true
+      }
+    },
+    {
+      "id": "no-context",
+      "name": "No Context Enrichment",
+      "description": "Plain prompt with no user data fetched — faster, cheaper",
+      "method": "POST",
+      "path": "/functions/v1/ai-proxy",
+      "auth": "user-jwt",
+      "body": {
+        "prompt": "What is the SMART goal framework?",
+        "provider": "GEMINI",
+        "enrichContext": false
+      }
+    }
+  ]
+}

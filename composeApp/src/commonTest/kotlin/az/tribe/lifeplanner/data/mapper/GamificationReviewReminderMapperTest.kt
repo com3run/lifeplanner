@@ -42,6 +42,7 @@ import az.tribe.lifeplanner.testutil.testReviewStats
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
+import kotlinx.datetime.number
 import kotlin.test.*
 
 class GamificationReviewReminderMapperTest {
@@ -1386,7 +1387,7 @@ class GamificationReviewReminderMapperTest {
         val data = GoalAnalyticsData(
             totalGoals = 5L, activeGoals = 3L, completedGoals = 2L,
             completionRate = 40.0,
-            goalsByCategory = mapOf("CAREER" to 3L, "PHYSICAL" to 2L),
+            goalsByCategory = mapOf("CAREER" to 3L, "BODY" to 2L),
             goalsByTimeline = emptyMap(),
             goalsByStatus = emptyMap(),
             averageProgressByCategory = emptyMap()
@@ -1394,7 +1395,7 @@ class GamificationReviewReminderMapperTest {
 
         val analytics = data.toDomainAnalytics()
         assertEquals(3, analytics.goalsByCategory[GoalCategory.CAREER])
-        assertEquals(2, analytics.goalsByCategory[GoalCategory.PHYSICAL])
+        assertEquals(2, analytics.goalsByCategory[GoalCategory.BODY])
     }
 
     @Test
@@ -1421,12 +1422,12 @@ class GamificationReviewReminderMapperTest {
             goalsByCategory = emptyMap(),
             goalsByTimeline = emptyMap(),
             goalsByStatus = emptyMap(),
-            averageProgressByCategory = mapOf("CAREER" to 75.0, "PHYSICAL" to 50.0)
+            averageProgressByCategory = mapOf("CAREER" to 75.0, "BODY" to 50.0)
         )
 
         val analytics = data.toDomainAnalytics()
         assertEquals(75f, analytics.averageProgressPerCategory[GoalCategory.CAREER]!!, 0.01f)
-        assertEquals(50f, analytics.averageProgressPerCategory[GoalCategory.PHYSICAL]!!, 0.01f)
+        assertEquals(50f, analytics.averageProgressPerCategory[GoalCategory.BODY]!!, 0.01f)
     }
 
     @Test
@@ -1460,7 +1461,7 @@ class GamificationReviewReminderMapperTest {
     fun `parseLocalDateTime parses LocalDateTime with fractional seconds`() {
         val result = parseLocalDateTime("2026-03-06T10:00:00.429")
         assertEquals(2026, result.year)
-        assertEquals(3, result.month.number)
+        assertEquals(3, result.monthNumber)
         assertEquals(6, result.day)
         assertEquals(10, result.hour)
     }
@@ -1481,7 +1482,7 @@ class GamificationReviewReminderMapperTest {
     fun `parseLocalDateTime parses Instant with fractional seconds and Z`() {
         val result = parseLocalDateTime("2026-03-06T13:06:35.429Z")
         assertEquals(2026, result.year)
-        assertEquals(3, result.month.number)
+        assertEquals(3, result.monthNumber)
         assertEquals(6, result.day)
         assertEquals(13, result.hour)
         assertEquals(6, result.minute)

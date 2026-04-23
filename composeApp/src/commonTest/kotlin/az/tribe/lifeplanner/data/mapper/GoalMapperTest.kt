@@ -35,6 +35,7 @@ class GoalMapperTest {
             createdAt = "2026-03-06T10:00:00",
             completionRate = 0.6,
             isArchived = 0L,
+            aiReasoning = null,
             sync_updated_at = null,
             is_deleted = 0L,
             sync_version = 0L,
@@ -61,7 +62,7 @@ class GoalMapperTest {
     fun `GoalEntity toDomain maps isArchived 1 to true`() {
         val entity = GoalEntity(
             id = "goal-2",
-            category = "FINANCIAL",
+            category = "MONEY",
             title = "Save",
             description = "Desc",
             status = "COMPLETED",
@@ -72,6 +73,7 @@ class GoalMapperTest {
             createdAt = "2026-01-01T00:00:00",
             completionRate = 100.0,
             isArchived = 1L,
+            aiReasoning = null,
             sync_updated_at = null,
             is_deleted = 0L,
             sync_version = 0L,
@@ -85,7 +87,7 @@ class GoalMapperTest {
     fun `GoalEntity toDomain maps null notes to empty string`() {
         val entity = GoalEntity(
             id = "goal-3",
-            category = "PHYSICAL",
+            category = "BODY",
             title = "Run",
             description = "Run 5k",
             status = "NOT_STARTED",
@@ -96,6 +98,7 @@ class GoalMapperTest {
             createdAt = "2026-03-06T10:00:00",
             completionRate = 0.0,
             isArchived = 0L,
+            aiReasoning = null,
             sync_updated_at = null,
             is_deleted = 0L,
             sync_version = 0L,
@@ -120,6 +123,7 @@ class GoalMapperTest {
             createdAt = "2026-03-06T10:00:00",
             completionRate = 0.0,
             isArchived = 0L,
+            aiReasoning = null,
             sync_updated_at = null,
             is_deleted = 0L,
             sync_version = 0L,
@@ -138,7 +142,7 @@ class GoalMapperTest {
     fun `GoalEntity toDomain defaults milestones to empty list`() {
         val entity = GoalEntity(
             id = "goal-5",
-            category = "SOCIAL",
+            category = "PEOPLE",
             title = "Test",
             description = "Desc",
             status = "NOT_STARTED",
@@ -149,6 +153,7 @@ class GoalMapperTest {
             createdAt = "2026-03-06T10:00:00",
             completionRate = 0.0,
             isArchived = 0L,
+            aiReasoning = null,
             sync_updated_at = null,
             is_deleted = 0L,
             sync_version = 0L,
@@ -173,6 +178,7 @@ class GoalMapperTest {
             createdAt = "2026-03-06T10:00:00Z",
             completionRate = 0.0,
             isArchived = 0L,
+            aiReasoning = null,
             sync_updated_at = null,
             is_deleted = 0L,
             sync_version = 0L,
@@ -198,6 +204,7 @@ class GoalMapperTest {
             createdAt = "2026-03-06T10:00:00+00:00",
             completionRate = 0.0,
             isArchived = 0L,
+            aiReasoning = null,
             sync_updated_at = null,
             is_deleted = 0L,
             sync_version = 0L,
@@ -224,6 +231,7 @@ class GoalMapperTest {
                 createdAt = "2026-01-01T00:00:00",
                 completionRate = 0.0,
                 isArchived = 0L,
+                aiReasoning = null,
                 sync_updated_at = null,
                 is_deleted = 0L,
                 sync_version = 0L,
@@ -249,6 +257,7 @@ class GoalMapperTest {
                 createdAt = "2026-01-01T00:00:00",
                 completionRate = 0.0,
                 isArchived = 0L,
+                aiReasoning = null,
                 sync_updated_at = null,
                 is_deleted = 0L,
                 sync_version = 0L,
@@ -274,6 +283,7 @@ class GoalMapperTest {
                 createdAt = "2026-01-01T00:00:00",
                 completionRate = 0.0,
                 isArchived = 0L,
+                aiReasoning = null,
                 sync_updated_at = null,
                 is_deleted = 0L,
                 sync_version = 0L,
@@ -289,7 +299,7 @@ class GoalMapperTest {
     fun `Goal toEntity maps all fields correctly`() {
         val goal = testGoal(
             id = "goal-1",
-            category = GoalCategory.FINANCIAL,
+            category = GoalCategory.MONEY,
             title = "Save money",
             description = "Save 10k",
             status = GoalStatus.IN_PROGRESS,
@@ -305,7 +315,7 @@ class GoalMapperTest {
         val entity = goal.toEntity()
 
         assertEquals("goal-1", entity.id)
-        assertEquals("FINANCIAL", entity.category)
+        assertEquals("MONEY", entity.category)
         assertEquals("Save money", entity.title)
         assertEquals("Save 10k", entity.description)
         assertEquals("IN_PROGRESS", entity.status)
@@ -356,7 +366,7 @@ class GoalMapperTest {
 
     @Test
     fun `GoalEntity round trip preserves category`() {
-        val original = testGoal(category = GoalCategory.SPIRITUAL)
+        val original = testGoal(category = GoalCategory.PURPOSE)
         val restored = original.toEntity().toDomain()
         assertEquals(original.category, restored.category)
     }
@@ -761,13 +771,15 @@ class GoalMapperTest {
                 status = "NOT_STARTED", timeline = "SHORT_TERM", dueDate = "2026-06-01",
                 progress = 0, notes = "", createdAt = "2026-01-01T00:00:00",
                 completionRate = 0.0, isArchived = 0L,
+                aiReasoning = null,
                 sync_updated_at = null, is_deleted = 0L, sync_version = 0L, last_synced_at = null
             ),
             GoalEntity(
-                id = "g2", category = "FINANCIAL", title = "B", description = "D",
+                id = "g2", category = "MONEY", title = "B", description = "D",
                 status = "IN_PROGRESS", timeline = "MID_TERM", dueDate = "2026-09-01",
                 progress = 50, notes = "", createdAt = "2026-01-01T00:00:00",
                 completionRate = 50.0, isArchived = 0L,
+                aiReasoning = null,
                 sync_updated_at = null, is_deleted = 0L, sync_version = 0L, last_synced_at = null
             )
         )
@@ -786,6 +798,7 @@ class GoalMapperTest {
                 status = "NOT_STARTED", timeline = "SHORT_TERM", dueDate = "2026-06-01",
                 progress = 0, notes = "", createdAt = "2026-01-01T00:00:00",
                 completionRate = 0.0, isArchived = 0L,
+                aiReasoning = null,
                 sync_updated_at = null, is_deleted = 0L, sync_version = 0L, last_synced_at = null
             )
         )

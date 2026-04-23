@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import az.tribe.lifeplanner.domain.model.CoachPersona
 import az.tribe.lifeplanner.domain.model.LifeArea
 import az.tribe.lifeplanner.domain.model.ObjectiveType
+import az.tribe.lifeplanner.ui.components.StoriesCarousel
 import az.tribe.lifeplanner.ui.objectives.BeginnerObjectiveViewModel
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
@@ -50,10 +51,12 @@ fun LifeBalanceScreen(
     onNavigateBack: () -> Unit = {},
     showBackButton: Boolean = false,
     onCreateHabit: (LifeArea) -> Unit = {},
-    onNavigateToCoach: (coachId: String, autoMessage: String) -> Unit = { _, _ -> }
+    onNavigateToCoach: (coachId: String, autoMessage: String) -> Unit = { _, _ -> },
+    onNavigateToStoryReader: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val coachStories = remember { getCoachTipStories() }
 
     val objectiveViewModel: BeginnerObjectiveViewModel = koinViewModel()
     LaunchedEffect(Unit) {
@@ -138,12 +141,13 @@ fun LifeBalanceScreen(
             }
 
             else -> {
-                uiState.report?.let { report ->
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize().padding(padding),
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 20.dp),
-                        verticalArrangement = Arrangement.spacedBy(20.dp)
-                    ) {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize().padding(padding),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 20.dp),
+                    verticalArrangement = Arrangement.spacedBy(20.dp)
+                ) {
+                    val report = uiState.report
+                    if (report != null) {
                         // Hero score card
                         item { HeroScoreCard(report) }
 
@@ -175,9 +179,24 @@ fun LifeBalanceScreen(
                                 )
                             }
                         }
-
-                        item { Spacer(Modifier.height(32.dp)) }
                     }
+
+                    // Coach tips stories — always visible
+                    item { SectionHeader("From Your Coaches") }
+                    item {
+                        StoriesCarousel(
+                            stories = coachStories,
+                            onStoryAction = { action ->
+                                if (action?.startsWith("coach_") == true) {
+                                    val coachId = action.removePrefix("coach_")
+                                    onNavigateToCoach(coachId, "")
+                                }
+                            },
+                            onOpenReader = { onNavigateToStoryReader() }
+                        )
+                    }
+
+                    item { Spacer(Modifier.height(32.dp)) }
                 }
             }
         }

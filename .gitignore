@@ -26,3 +26,4 @@ supabase/.temp/
 .env*
 composeApp/google-services.json
 iosApp/iosApp/GoogleService-Info.plist
+.vercel

@@ -13,11 +13,14 @@ import az.tribe.lifeplanner.domain.model.JournalEntry
 import az.tribe.lifeplanner.domain.model.MessageRole
 import az.tribe.lifeplanner.domain.model.Milestone
 import az.tribe.lifeplanner.domain.model.UserContext
+import az.tribe.lifeplanner.data.network.AiProxyService
+import az.tribe.lifeplanner.domain.enum.AiProvider
 import az.tribe.lifeplanner.domain.repository.ChatRepository
 import az.tribe.lifeplanner.domain.repository.GoalRepository
 import az.tribe.lifeplanner.domain.repository.HabitRepository
 import az.tribe.lifeplanner.domain.repository.JournalRepository
 import az.tribe.lifeplanner.domain.repository.StreamingChatEvent
+import kotlinx.serialization.json.JsonObject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -86,6 +89,7 @@ class ChatViewModelStreamingTest {
             goalRepository = StubGoalRepository(),
             habitRepository = StubHabitRepository(),
             journalRepository = StubJournalRepository(),
+            aiProxy = StubAiProxyService(),
             coachRepository = null
         )
 
@@ -229,6 +233,7 @@ class StubGoalRepository : GoalRepository {
     override suspend fun updateMilestone(milestone: Milestone) {}
     override suspend fun deleteMilestone(milestoneId: String) {}
     override suspend fun toggleMilestoneCompletion(milestoneId: String, isCompleted: Boolean) {}
+    override suspend fun getGoalById(id: String): Goal? = null
 }
 
 class StubHabitRepository : HabitRepository {
@@ -252,6 +257,7 @@ class StubHabitRepository : HabitRepository {
     override suspend fun getHabitsWithTodayStatus(today: LocalDate) = emptyList<Pair<Habit, Boolean>>()
     override suspend fun getHabitCompletionRate(habitId: String, days: Int) = 0f
     override suspend fun invalidateCache() {}
+    override suspend fun getAllCheckInsInRange(startDate: LocalDate, endDate: LocalDate) = emptyList<HabitCheckIn>()
 }
 
 class StubJournalRepository : JournalRepository {
@@ -269,4 +275,11 @@ class StubJournalRepository : JournalRepository {
     override suspend fun deleteEntry(id: String) {}
     override suspend fun searchEntries(query: String) = emptyList<JournalEntry>()
     override suspend fun getMoodStats(startDate: LocalDate, endDate: LocalDate) = emptyMap<Mood, Int>()
+}
+
+class StubAiProxyService : AiProxyService {
+    override suspend fun generateText(prompt: String, systemPrompt: String?, provider: AiProvider?) = ""
+    override suspend fun generateStructuredJson(prompt: String, responseSchema: JsonObject, systemPrompt: String?, provider: AiProvider?) = "{}"
+    override suspend fun chat(messages: List<AiProxyService.ChatMessage>, systemPrompt: String?, responseSchema: JsonObject?, provider: AiProvider?) = ""
+    override fun chatStream(messages: List<AiProxyService.ChatMessage>, systemPrompt: String?, provider: AiProvider?) = emptyFlow<AiProxyService.StreamEvent>()
 }

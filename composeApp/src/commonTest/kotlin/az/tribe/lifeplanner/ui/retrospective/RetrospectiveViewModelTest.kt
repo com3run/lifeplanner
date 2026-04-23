@@ -1,6 +1,7 @@
 package az.tribe.lifeplanner.ui.retrospective
 
 import app.cash.turbine.test
+import az.tribe.lifeplanner.testutil.FakeAiProxyService
 import az.tribe.lifeplanner.testutil.FakeRetrospectiveRepository
 import az.tribe.lifeplanner.testutil.testDaySnapshot
 import az.tribe.lifeplanner.testutil.testFocusSession
@@ -16,6 +17,7 @@ class RetrospectiveViewModelTest {
 
     private lateinit var viewModel: RetrospectiveViewModel
     private lateinit var fakeRepository: FakeRetrospectiveRepository
+    private lateinit var fakeAiProxy: FakeAiProxyService
     private val testDispatcher = StandardTestDispatcher()
 
     private val today: LocalDate
@@ -25,6 +27,7 @@ class RetrospectiveViewModelTest {
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         fakeRepository = FakeRetrospectiveRepository()
+        fakeAiProxy = FakeAiProxyService()
     }
 
     @AfterTest
@@ -33,7 +36,7 @@ class RetrospectiveViewModelTest {
     }
 
     private fun createViewModel(): RetrospectiveViewModel {
-        return RetrospectiveViewModel(repository = fakeRepository)
+        return RetrospectiveViewModel(repository = fakeRepository, aiProxy = fakeAiProxy)
     }
 
     // ─── Initial State ───────────────────────────────────────────────────────
@@ -61,6 +64,24 @@ class RetrospectiveViewModelTest {
         viewModel.uiState.test {
             val state = awaitItem()
             assertNotNull(state.snapshot)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `today snapshot is loaded eagerly on init`() = runTest(testDispatcher) {
+        val todaySnapshot = testDaySnapshot(
+            date = today,
+            focusSessions = listOf(testFocusSession())
+        )
+        fakeRepository.snapshotToReturn = todaySnapshot
+
+        viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.uiState.test {
+            val state = awaitItem()
+            assertNotNull(state.todaySnapshot)
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -136,7 +157,6 @@ class RetrospectiveViewModelTest {
 
     @Test
     fun `goToNextDay does not exceed today`() = runTest(testDispatcher) {
-        // Start with selected date as yesterday (the default)
         viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -149,57 +169,6 @@ class RetrospectiveViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertTrue(viewModel.uiState.value.selectedDate <= today)
-    }
-
-    // ─── toggleCompareMode ───────────────────────────────────────────────────
-
-    @Test
-    fun `toggleCompareMode enables compare mode`() = runTest(testDispatcher) {
-        viewModel = createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        assertFalse(viewModel.uiState.value.compareMode)
-
-        viewModel.toggleCompareMode()
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        assertTrue(viewModel.uiState.value.compareMode)
-    }
-
-    @Test
-    fun `toggleCompareMode disables compare mode when already enabled`() = runTest(testDispatcher) {
-        viewModel = createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        viewModel.toggleCompareMode()
-        testDispatcher.scheduler.advanceUntilIdle()
-        assertTrue(viewModel.uiState.value.compareMode)
-
-        viewModel.toggleCompareMode()
-        testDispatcher.scheduler.advanceUntilIdle()
-        assertFalse(viewModel.uiState.value.compareMode)
-    }
-
-    @Test
-    fun `toggleCompareMode loads today snapshot when enabling`() = runTest(testDispatcher) {
-        val todaySnapshot = testDaySnapshot(
-            date = today,
-            focusSessions = listOf(testFocusSession())
-        )
-        fakeRepository.snapshotToReturn = todaySnapshot
-
-        viewModel = createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        viewModel.toggleCompareMode()
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        viewModel.uiState.test {
-            val state = awaitItem()
-            assertTrue(state.compareMode)
-            assertNotNull(state.todaySnapshot)
-            cancelAndIgnoreRemainingEvents()
-        }
     }
 
     // ─── loadActiveDatesForMonth ─────────────────────────────────────────────

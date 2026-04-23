@@ -11,6 +11,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import az.tribe.lifeplanner.ui.goal.GoalViewModel
+import az.tribe.lifeplanner.util.ShortcutHelper
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.mmk.kmpnotifier.extensions.onCreateOrOnNewIntent
 import com.mmk.kmpnotifier.notification.NotifierManager
@@ -36,10 +37,12 @@ class MainActivity : ComponentActivity() {
         // Prevent video background from stealing audio focus (e.g. pausing Spotify)
         volumeControlStream = AudioManager.STREAM_NOTIFICATION
 
+        ShortcutHelper.register(this)
         NotifierManager.onCreateOrOnNewIntent(intent)
         handleAuthDeeplink(intent)
         handlePromoDeeplink(intent)
         handleGoalDeeplink(intent)
+        handleShortcutDeeplink(intent)
 
         setContent {
             val systemUiController = rememberSystemUiController()
@@ -70,14 +73,21 @@ class MainActivity : ComponentActivity() {
         handleAuthDeeplink(intent)
         handlePromoDeeplink(intent)
         handleGoalDeeplink(intent)
+        handleShortcutDeeplink(intent)
     }
 
-    /**
-     * Handle auth deep links from both custom scheme (lifeplanner://auth)
-     * and HTTPS universal links (https://tribe.az/lifeplanner/auth/callback).
-     * Supabase's handleDeeplinks only recognizes the custom scheme,
-     * so rewrite HTTPS URLs to the custom scheme before passing them.
-     */
+    private fun handleShortcutDeeplink(intent: Intent) {
+        val uri = intent.data ?: return
+        if (uri.scheme != "lifeplanner") return
+        pendingPromoRoute = when (uri.host) {
+            "focus"       -> "focus_setup"
+            "habits"      -> "journal_habits"
+            "goal_wizard" -> "goal_wizard"
+            "ai_chat"     -> "ai_chat"
+            else          -> return
+        }
+    }
+
     private fun handlePromoDeeplink(intent: Intent) {
         val uri = intent.data ?: return
         if (uri.scheme == "lifeplanner" && uri.host == "promo") {
@@ -98,6 +108,12 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    /**
+     * Handle auth deep links from both custom scheme (lifeplanner://auth)
+     * and HTTPS universal links (https://tribe.az/lifeplanner/auth/callback).
+     * Supabase's handleDeeplinks only recognizes the custom scheme,
+     * so rewrite HTTPS URLs to the custom scheme before passing them.
+     */
     private fun handleAuthDeeplink(intent: Intent) {
         val uri = intent.data ?: return // No deep link — skip entirely
         Logger.d("MainActivity") { "handleAuthDeeplink: $uri" }

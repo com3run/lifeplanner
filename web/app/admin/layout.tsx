@@ -11,6 +11,7 @@ const NAV = [
   { href: '/admin', label: 'Overview' },
   { href: '/admin/coaches', label: 'Coaches' },
   { href: '/admin/prompts', label: 'Prompts' },
+  { href: '/admin/api-tester', label: 'API Tester' },
 ];
 
 type AuthState = 'checking' | 'unauthenticated' | 'wrong_user' | 'authorized';

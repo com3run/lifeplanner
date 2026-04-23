@@ -1,7 +1,9 @@
 package az.tribe.lifeplanner.ui.profile
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -10,7 +12,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import az.tribe.lifeplanner.BuildKonfig
+import kotlinx.coroutines.launch
 import az.tribe.lifeplanner.data.sync.SyncState
 import az.tribe.lifeplanner.domain.enum.AiProvider
 import az.tribe.lifeplanner.domain.enum.BadgeType
@@ -50,7 +55,8 @@ fun ProfileScreen(
     onNavigateToRetrospective: () -> Unit = {},
     onNavigateToAICoach: () -> Unit,
     onNavigateToSignIn: () -> Unit = {},
-    onNavigateToFeedback: () -> Unit = {}
+    onNavigateToFeedback: () -> Unit = {},
+    onResetOnboarding: () -> Unit = {}
 ) {
     val settings: Settings = koinInject()
     val authState by authViewModel.authState.collectAsState()
@@ -64,6 +70,8 @@ fun ProfileScreen(
     var showAiProviderDialog by remember { mutableStateOf(false) }
     var showSignOutConfirm by remember { mutableStateOf(false) }
     var showEditNameDialog by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
     var selectedAiProvider by remember {
         val saved = settings.getStringOrNull("ai_provider")
         mutableStateOf(saved?.let {
@@ -82,7 +90,7 @@ fun ProfileScreen(
         weeklyEngagementViewModel.load()
     }
 
-    Scaffold { padding ->
+    Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { padding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(
@@ -159,6 +167,28 @@ fun ProfileScreen(
             if (authState is AuthState.Authenticated && currentUser?.email != null) {
                 item { ProfileSectionHeader("Account") }
                 item { ProfileMenuItem(icon = PhosphorIcons.Regular.SignOut, title = "Sign Out", subtitle = currentUser?.email ?: "", onClick = { showSignOutConfirm = true }) }
+            }
+
+            item {
+                @OptIn(ExperimentalFoundationApi::class)
+                Text(
+                    text = "v${BuildKonfig.APP_VERSION}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
+                        .combinedClickable(
+                            onClick = {},
+                            onLongClick = {
+                                onResetOnboarding()
+                                scope.launch {
+                                    snackbarHostState.showSnackbar("Onboarding reset")
+                                }
+                            }
+                        )
+                )
             }
         }
     }

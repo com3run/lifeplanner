@@ -459,7 +459,7 @@ internal fun MilestonesStep(
     customInput: String,
     onCustomInputChange: (String) -> Unit,
     onAddCustom: () -> Unit,
-    onCreateGoal: () -> Unit
+    onNext: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -547,13 +547,11 @@ internal fun MilestonesStep(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        Button(onClick = onCreateGoal, modifier = Modifier.fillMaxWidth().height(52.dp), shape = RoundedCornerShape(14.dp)) {
-            Icon(PhosphorIcons.Regular.CheckCircle, null, modifier = Modifier.size(18.dp))
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Create Goal", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+        Button(onClick = onNext, modifier = Modifier.fillMaxWidth().height(52.dp), shape = RoundedCornerShape(14.dp)) {
+            Text("Next \u2192", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
         }
 
-        TextButton(onClick = onCreateGoal, modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
+        TextButton(onClick = onNext, modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
             Text("Skip milestones \u2192", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
 
@@ -591,16 +589,3 @@ private fun MilestoneToggleItem(title: String, selected: Boolean, onClick: () ->
     }
 }
 
-internal fun detectCategoryFromText(text: String): GoalCategory {
-    val lower = text.lowercase()
-    return when {
-        Regex("\\b(job|career|work|promotion|salary|professional|skills?|coding|programming|developer|business|startup|freelance|resume|interview|linkedin)\\b").containsMatchIn(lower) -> GoalCategory.CAREER
-        Regex("\\b(money|invest|save|saving|debt|budget|financial|income|wealth|crypto|stock|fund|retire|afford|expensive|house|mortgage)\\b").containsMatchIn(lower) -> GoalCategory.MONEY
-        Regex("\\b(run|gym|workout|exercise|weight|health|fitness|sport|marathon|diet|nutrition|body|muscle|swim|cycling|fat|sleep|calories)\\b").containsMatchIn(lower) -> GoalCategory.BODY
-        Regex("\\b(friend|social|network|relationship|meet|community|connect|dating|shy|introvert|people|talk|communication)\\b").containsMatchIn(lower) -> GoalCategory.PEOPLE
-        Regex("\\b(mental|emotional|anxiety|stress|mindset|happiness|confident|therapy|wellbeing|mood|feelings?|heal|trauma|self.esteem)\\b").containsMatchIn(lower) -> GoalCategory.WELLBEING
-        Regex("\\b(meditat|spiritual|mindful|peace|gratitude|purpose|meaning|soul|prayer|faith|church|mosque|zen|inner)\\b").containsMatchIn(lower) -> GoalCategory.PURPOSE
-        Regex("\\b(family|parent|child|kids?|spouse|partner|husband|wife|marriage|home|sibling|mom|dad|grandp)\\b").containsMatchIn(lower) -> GoalCategory.PEOPLE
-        else -> GoalCategory.WELLBEING
-    }
-}

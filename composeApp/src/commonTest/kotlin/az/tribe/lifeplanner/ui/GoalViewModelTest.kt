@@ -1,4 +1,4 @@
-package az.tribe.lifeplanner.ui
+package az.tribe.lifeplanner.ui.goal
 
 import app.cash.turbine.test
 import az.tribe.lifeplanner.data.model.DataError
@@ -10,8 +10,11 @@ import az.tribe.lifeplanner.domain.enum.GoalFilter
 import az.tribe.lifeplanner.domain.enum.GoalStatus
 import az.tribe.lifeplanner.domain.model.Goal
 import az.tribe.lifeplanner.domain.repository.GeminiRepository
+import az.tribe.lifeplanner.domain.service.SmartReminderManager
+import az.tribe.lifeplanner.testutil.FakeGamificationRepository
 import az.tribe.lifeplanner.testutil.FakeGoalHistoryRepository
 import az.tribe.lifeplanner.testutil.FakeGoalRepository
+import az.tribe.lifeplanner.testutil.FakeReminderRepository
 import az.tribe.lifeplanner.testutil.testGoal
 import az.tribe.lifeplanner.testutil.testGoalAnalytics
 import az.tribe.lifeplanner.testutil.testGoalChange
@@ -67,7 +70,9 @@ class GoalViewModelTest {
             logGoalChangeUseCase = LogGoalChangeUseCase(fakeGoalHistoryRepository),
             generateAiQuestionnaireUseCase = GenerateAiQuestionnaireUseCase(fakeGeminiRepository),
             generateAiGoalsUseCase = GenerateAiGoalsUseCase(fakeGeminiRepository),
-            geminiRepository = fakeGeminiRepository
+            geminiRepository = fakeGeminiRepository,
+            smartReminderManager = SmartReminderManager(FakeReminderRepository()),
+            gamificationRepository = FakeGamificationRepository()
         )
     }
 

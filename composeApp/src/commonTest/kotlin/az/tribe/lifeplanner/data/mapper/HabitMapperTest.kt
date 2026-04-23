@@ -20,7 +20,7 @@ class HabitMapperTest {
             id = "habit-1",
             title = "Morning Run",
             description = "Run 5k",
-            category = "PHYSICAL",
+            category = "BODY",
             frequency = "DAILY",
             targetCount = 1L,
             currentStreak = 5L,
@@ -35,7 +35,8 @@ class HabitMapperTest {
             sync_updated_at = null,
             is_deleted = 0L,
             sync_version = 0L,
-            last_synced_at = null
+            last_synced_at = null,
+            type = "BUILD"
         )
 
         val habit = entity.toDomain()
@@ -43,7 +44,7 @@ class HabitMapperTest {
         assertEquals("habit-1", habit.id)
         assertEquals("Morning Run", habit.title)
         assertEquals("Run 5k", habit.description)
-        assertEquals(GoalCategory.PHYSICAL, habit.category)
+        assertEquals(GoalCategory.BODY, habit.category)
         assertEquals(HabitFrequency.DAILY, habit.frequency)
         assertEquals(1, habit.targetCount)
         assertEquals(5, habit.currentStreak)
@@ -78,7 +79,8 @@ class HabitMapperTest {
             sync_updated_at = null,
             is_deleted = 0L,
             sync_version = 0L,
-            last_synced_at = null
+            last_synced_at = null,
+            type = "BUILD"
         )
 
         assertFalse(entity.toDomain().isActive)
@@ -105,7 +107,8 @@ class HabitMapperTest {
             sync_updated_at = null,
             is_deleted = 0L,
             sync_version = 0L,
-            last_synced_at = null
+            last_synced_at = null,
+            type = "BUILD"
         )
 
         assertNull(entity.toDomain().lastCompletedDate)
@@ -132,7 +135,8 @@ class HabitMapperTest {
             sync_updated_at = null,
             is_deleted = 0L,
             sync_version = 0L,
-            last_synced_at = null
+            last_synced_at = null,
+            type = "BUILD"
         )
 
         assertNull(entity.toDomain().linkedGoalId)
@@ -159,7 +163,8 @@ class HabitMapperTest {
             sync_updated_at = null,
             is_deleted = 0L,
             sync_version = 0L,
-            last_synced_at = null
+            last_synced_at = null,
+            type = "BUILD"
         )
 
         assertNull(entity.toDomain().reminderTime)
@@ -187,7 +192,8 @@ class HabitMapperTest {
                 sync_updated_at = null,
                 is_deleted = 0L,
                 sync_version = 0L,
-                last_synced_at = null
+                last_synced_at = null,
+                type = "BUILD"
             )
             assertEquals(freq, entity.toDomain().frequency, "Failed for frequency $freq")
         }
@@ -214,7 +220,8 @@ class HabitMapperTest {
             sync_updated_at = null,
             is_deleted = 0L,
             sync_version = 0L,
-            last_synced_at = null
+            last_synced_at = null,
+            type = "BUILD"
         )
 
         assertEquals(HabitFrequency.DAILY, entity.toDomain().frequency)
@@ -242,7 +249,8 @@ class HabitMapperTest {
                 sync_updated_at = null,
                 is_deleted = 0L,
                 sync_version = 0L,
-                last_synced_at = null
+                last_synced_at = null,
+                type = "BUILD"
             )
             assertEquals(category, entity.toDomain().category, "Failed for category $category")
         }
@@ -269,7 +277,8 @@ class HabitMapperTest {
             sync_updated_at = null,
             is_deleted = 0L,
             sync_version = 0L,
-            last_synced_at = null
+            last_synced_at = null,
+            type = "BUILD"
         )
 
         assertEquals(LocalDateTime(2026, 3, 6, 10, 0, 0), entity.toDomain().createdAt)
@@ -283,7 +292,7 @@ class HabitMapperTest {
             id = "habit-1",
             title = "Meditate",
             description = "10 min daily",
-            category = GoalCategory.EMOTIONAL,
+            category = GoalCategory.WELLBEING,
             frequency = HabitFrequency.WEEKDAYS,
             targetCount = 1,
             currentStreak = 3,
@@ -302,7 +311,7 @@ class HabitMapperTest {
         assertEquals("habit-1", entity.id)
         assertEquals("Meditate", entity.title)
         assertEquals("10 min daily", entity.description)
-        assertEquals("EMOTIONAL", entity.category)
+        assertEquals("WELLBEING", entity.category)
         assertEquals("WEEKDAYS", entity.frequency)
         assertEquals(1L, entity.targetCount)
         assertEquals(3L, entity.currentStreak)
@@ -373,7 +382,7 @@ class HabitMapperTest {
 
     @Test
     fun `Habit round trip preserves category and frequency`() {
-        val original = testHabit(category = GoalCategory.FAMILY, frequency = HabitFrequency.WEEKENDS)
+        val original = testHabit(category = GoalCategory.PEOPLE, frequency = HabitFrequency.WEEKENDS)
         val restored = original.toEntity().toDomain()
         assertEquals(original.category, restored.category)
         assertEquals(original.frequency, restored.frequency)
@@ -560,15 +569,17 @@ class HabitMapperTest {
                 longestStreak = 0L, totalCompletions = 0L, lastCompletedDate = null,
                 linkedGoalId = null, correlationScore = 0.0, isActive = 1L,
                 createdAt = "2026-01-01T00:00:00", reminderTime = null,
-                sync_updated_at = null, is_deleted = 0L, sync_version = 0L, last_synced_at = null
+                sync_updated_at = null, is_deleted = 0L, sync_version = 0L, last_synced_at = null,
+                type = "BUILD"
             ),
             HabitEntity(
-                id = "h2", title = "B", description = "", category = "PHYSICAL",
+                id = "h2", title = "B", description = "", category = "BODY",
                 frequency = "WEEKLY", targetCount = 3L, currentStreak = 5L,
                 longestStreak = 10L, totalCompletions = 20L, lastCompletedDate = "2026-03-01",
                 linkedGoalId = "g1", correlationScore = 0.5, isActive = 0L,
                 createdAt = "2026-01-01T00:00:00", reminderTime = "09:00",
-                sync_updated_at = null, is_deleted = 0L, sync_version = 0L, last_synced_at = null
+                sync_updated_at = null, is_deleted = 0L, sync_version = 0L, last_synced_at = null,
+                type = "BUILD"
             )
         )
 
@@ -603,13 +614,13 @@ class HabitMapperTest {
     fun `createNewHabit sets defaults correctly`() {
         val habit = createNewHabit(
             title = "Exercise",
-            category = GoalCategory.PHYSICAL,
+            category = GoalCategory.BODY,
             frequency = HabitFrequency.DAILY
         )
 
         assertEquals("Exercise", habit.title)
         assertEquals("", habit.description)
-        assertEquals(GoalCategory.PHYSICAL, habit.category)
+        assertEquals(GoalCategory.BODY, habit.category)
         assertEquals(HabitFrequency.DAILY, habit.frequency)
         assertEquals(1, habit.targetCount)
         assertEquals(0, habit.currentStreak)

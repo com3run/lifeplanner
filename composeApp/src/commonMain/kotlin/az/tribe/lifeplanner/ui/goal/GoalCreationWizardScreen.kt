@@ -30,13 +30,17 @@ import az.tribe.lifeplanner.data.repository.CoachOrchestrator
 import az.tribe.lifeplanner.domain.enum.GoalCategory
 import az.tribe.lifeplanner.domain.enum.GoalStatus
 import az.tribe.lifeplanner.domain.enum.GoalTimeline
+import az.tribe.lifeplanner.domain.enum.HabitFrequency
+import az.tribe.lifeplanner.domain.enum.HabitType
 import az.tribe.lifeplanner.domain.model.CoachPersona
 import az.tribe.lifeplanner.domain.model.Goal
 import az.tribe.lifeplanner.domain.model.Milestone
 import az.tribe.lifeplanner.domain.model.UserSituation
 import az.tribe.lifeplanner.domain.repository.UserRepository
 import az.tribe.lifeplanner.domain.repository.UserSituationRepository
+import az.tribe.lifeplanner.ui.habit.HabitViewModel
 import az.tribe.lifeplanner.util.PlatformBackHandler
+import org.koin.compose.viewmodel.koinViewModel
 import kotlin.time.Clock
 import kotlin.time.Instant
 import kotlinx.coroutines.Dispatchers
@@ -65,7 +69,7 @@ import kotlin.uuid.Uuid
 
 // ─── Step enum ────────────────────────────────────────────────────────────────
 
-enum class GoalWizardStep { INTENT, QUESTIONS, GENERATING, SELECTION, DETAILS, TIMELINE, MILESTONES }
+enum class GoalWizardStep { INTENT, QUESTIONS, GENERATING, SELECTION, DETAILS, TIMELINE, MILESTONES, HABITS }
 
 // ─── Data classes ─────────────────────────────────────────────────────────────
 
@@ -107,7 +111,8 @@ fun GoalCreationWizardScreen(
     aiProxy: AiProxyService = koinInject(),
     userSituationRepo: UserSituationRepository = koinInject(),
     userRepo: UserRepository = koinInject(),
-    orchestrator: CoachOrchestrator = koinInject()
+    orchestrator: CoachOrchestrator = koinInject(),
+    habitViewModel: HabitViewModel = koinViewModel()
 ) {
     val scope = rememberCoroutineScope()
 
@@ -149,6 +154,7 @@ fun GoalCreationWizardScreen(
     val customMilestones = remember { mutableStateListOf<String>() }
     var customMilestoneInput by remember { mutableStateOf("") }
     var councilNotes by remember { mutableStateOf<List<Pair<String, String>>>(emptyList()) }
+    val aiSuggestedHabits = remember { mutableStateListOf<Pair<SuggestedHabit, Boolean>>() }
 
     LaunchedEffect(intentText) {
         detectedCategory = detectCategoryFromText(intentText)
@@ -176,6 +182,7 @@ fun GoalCreationWizardScreen(
             GoalWizardStep.DETAILS -> if (isAiPath) GoalWizardStep.SELECTION else GoalWizardStep.INTENT
             GoalWizardStep.TIMELINE -> GoalWizardStep.DETAILS
             GoalWizardStep.MILESTONES -> GoalWizardStep.TIMELINE
+            GoalWizardStep.HABITS -> GoalWizardStep.MILESTONES
             else -> GoalWizardStep.INTENT
         }
     }
@@ -282,6 +289,7 @@ fun GoalCreationWizardScreen(
             GoalWizardStep.DETAILS -> step = if (isAiPath) GoalWizardStep.SELECTION else GoalWizardStep.INTENT
             GoalWizardStep.TIMELINE -> step = GoalWizardStep.DETAILS
             GoalWizardStep.MILESTONES -> step = GoalWizardStep.TIMELINE
+            GoalWizardStep.HABITS -> step = GoalWizardStep.MILESTONES
             else -> step = GoalWizardStep.INTENT
         }
     }
@@ -316,6 +324,10 @@ fun GoalCreationWizardScreen(
                     - Be deeply personalised to the user's answers above
                     - Include 4-5 concrete, measurable milestones in chronological order
                     - Choose the GoalCategory that best fits
+
+                    Also generate 3-4 supporting habits that will build momentum toward any of these goals.
+                    Each habit must have: a clear title (max 50 chars), a one-sentence description,
+                    frequency (DAILY or WEEKLY), and a relevant emoji.
                 """.trimIndent()
 
                 val optionSchema = buildJsonObject {
@@ -343,6 +355,21 @@ fun GoalCreationWizardScreen(
                             .forEach { add(JsonPrimitive(it)) }
                     }
                 }
+                val habitSchema = buildJsonObject {
+                    put("type", "object")
+                    putJsonObject("properties") {
+                        putJsonObject("title") { put("type", "string") }
+                        putJsonObject("description") { put("type", "string") }
+                        putJsonObject("frequency") {
+                            put("type", "string")
+                            putJsonArray("enum") { add(JsonPrimitive("DAILY")); add(JsonPrimitive("WEEKLY")) }
+                        }
+                        putJsonObject("emoji") { put("type", "string") }
+                    }
+                    putJsonArray("required") {
+                        listOf("title", "description", "frequency", "emoji").forEach { add(JsonPrimitive(it)) }
+                    }
+                }
                 val schema = buildJsonObject {
                     put("type", "object")
                     putJsonObject("properties") {
@@ -350,8 +377,12 @@ fun GoalCreationWizardScreen(
                             put("type", "array")
                             put("items", optionSchema)
                         }
+                        putJsonObject("suggestedHabits") {
+                            put("type", "array")
+                            put("items", habitSchema)
+                        }
                     }
-                    putJsonArray("required") { add(JsonPrimitive("options")) }
+                    putJsonArray("required") { add(JsonPrimitive("options")); add(JsonPrimitive("suggestedHabits")) }
                 }
 
                 val responseText = withContext(Dispatchers.IO) {
@@ -376,6 +407,19 @@ fun GoalCreationWizardScreen(
                 } ?: emptyList()
 
                 aiGoalOptions = parsed.take(3)
+
+                val parsedHabits = obj["suggestedHabits"]?.jsonArray?.mapNotNull { el ->
+                    val h = el.jsonObject
+                    val title = h["title"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
+                    val description = h["description"]?.jsonPrimitive?.contentOrNull ?: ""
+                    val freq = h["frequency"]?.jsonPrimitive?.contentOrNull
+                        ?.let { HabitFrequency.entries.find { e -> e.name == it } } ?: HabitFrequency.DAILY
+                    val emoji = h["emoji"]?.jsonPrimitive?.contentOrNull ?: "✅"
+                    SuggestedHabit(title, description, freq, emoji)
+                } ?: emptyList()
+                aiSuggestedHabits.clear()
+                parsedHabits.forEach { aiSuggestedHabits.add(it to true) }
+
                 step = GoalWizardStep.SELECTION
             } catch (_: Exception) {
                 generationError = "Couldn't generate goal. Check your connection and try again."
@@ -394,6 +438,11 @@ fun GoalCreationWizardScreen(
         option.milestones.forEach { aiMilestones.add(it to true) }
         councilNotes = buildCouncilNotes(userSituation, option, option.category)
         step = GoalWizardStep.DETAILS
+        val sit = userSituation ?: return
+        scope.launch {
+            val uid = userRepo.getCurrentUser()?.id ?: return@launch
+            userSituation = persistGoalSelectionMemory(option, uid, sit, userSituationRepo)
+        }
     }
 
     @Suppress("NAME_SHADOWING")
@@ -426,6 +475,16 @@ fun GoalCreationWizardScreen(
             aiReasoning = if (isAiPath) aiReasoning else null
         )
         viewModel.createGoal(goal)
+        aiSuggestedHabits.filter { it.second }.forEach { (habit, _) ->
+            habitViewModel.createHabit(
+                title = habit.title,
+                description = habit.description,
+                category = goalCategory,
+                frequency = habit.frequency,
+                linkedGoalId = goalId,
+                type = HabitType.BUILD
+            )
+        }
         onGoalCreated(goalId)
     }
 
@@ -434,9 +493,10 @@ fun GoalCreationWizardScreen(
         GoalWizardStep.QUESTIONS -> 0.25f
         GoalWizardStep.GENERATING -> 0.45f
         GoalWizardStep.SELECTION -> 0.55f
-        GoalWizardStep.DETAILS -> 0.68f
-        GoalWizardStep.TIMELINE -> 0.82f
-        GoalWizardStep.MILESTONES -> 1f
+        GoalWizardStep.DETAILS -> 0.65f
+        GoalWizardStep.TIMELINE -> 0.78f
+        GoalWizardStep.MILESTONES -> 0.90f
+        GoalWizardStep.HABITS -> 1f
     }
     val stepLabel = when (step) {
         GoalWizardStep.INTENT -> "New Goal"
@@ -446,6 +506,7 @@ fun GoalCreationWizardScreen(
         GoalWizardStep.DETAILS -> "Details"
         GoalWizardStep.TIMELINE -> "Timeline"
         GoalWizardStep.MILESTONES -> "Milestones"
+        GoalWizardStep.HABITS -> "Daily habits"
     }
 
     Scaffold(
@@ -541,7 +602,21 @@ fun GoalCreationWizardScreen(
                             customMilestoneInput = ""
                         }
                     },
-                    onCreateGoal = { createGoal() }
+                    onNext = { step = GoalWizardStep.HABITS }
+                )
+
+                GoalWizardStep.HABITS -> HabitsStep(
+                    habits = aiSuggestedHabits,
+                    onToggle = { idx ->
+                        aiSuggestedHabits[idx] = aiSuggestedHabits[idx].copy(second = !aiSuggestedHabits[idx].second)
+                    },
+                    onCreateWithHabits = { createGoal() },
+                    onSkip = {
+                        for (i in aiSuggestedHabits.indices) {
+                            aiSuggestedHabits[i] = aiSuggestedHabits[i].copy(second = false)
+                        }
+                        createGoal()
+                    }
                 )
             }
         }
@@ -571,31 +646,3 @@ fun GoalCreationWizardScreen(
     }
 }
 
-internal fun buildCouncilNotes(
-    situation: UserSituation?,
-    option: GoalOption,
-    category: GoalCategory
-): List<Pair<String, String>> {
-    if (situation == null) return emptyList()
-    val notes = mutableListOf<Pair<String, String>>()
-    val body = situation.body
-    val meta = situation.meta
-    val lowerTitle = option.title.lowercase()
-
-    if ((body.sleepHours != null && body.sleepHours < 6f) || (body.energyRating != null && body.energyRating < 5)) {
-        notes.add("Kai 💪" to "Your energy and sleep are limited right now. I'd start at 60% of whatever pace feels right — recovery is how you win long-term.")
-    }
-    if (category == GoalCategory.CAREER && (meta.stressLevel != null && meta.stressLevel >= 7)) {
-        notes.add("Luna ✨" to "Your stress is high. Let's pace this goal so it doesn't add to your load — sustainable > aggressive.")
-    }
-    if (category != GoalCategory.MONEY && (lowerTitle.contains("promot") || lowerTitle.contains("job") || lowerTitle.contains("career") || lowerTitle.contains("salary"))) {
-        notes.add("Morgan 💰" to "A career move often comes with a pay jump. Want me to open a parallel money goal to capture that?")
-    }
-    if (lowerTitle.contains("network") || lowerTitle.contains("speak") || lowerTitle.contains("outreach") || lowerTitle.contains("connect")) {
-        notes.add("Sam 🤝" to "This goal needs people. I can help you build a relationship strategy that doesn't feel forced.")
-    }
-    if (situation.purpose.topValues.isNotEmpty() && meta.stressLevel != null && meta.stressLevel >= 8) {
-        notes.add("River 🧘" to "High stress + an ambitious goal is a tricky combo. Check your values: does this goal feed or drain you?")
-    }
-    return notes.take(2)
-}

@@ -79,7 +79,7 @@ fun JournalScreen(
     // Own tab state locally — the NavGraphBuilder closure captures selectedTab once at
     // graph-build time, so the parent parameter is stale after first composition.
     // We call onTabSelected as a side-effect so App.kt's navContextAction FAB stays in sync.
-    var currentTab by remember { mutableStateOf(0) }
+    var currentTab by remember { mutableStateOf(selectedTab) }
 
     var isCalendarExpanded by remember { mutableStateOf(false) }
     var habitToEdit by remember { mutableStateOf<Habit?>(null) }

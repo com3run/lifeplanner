@@ -461,23 +461,31 @@ fun AuthViewModel.updateDisplayName(newName: String) {
 }
 
 /**
- * Sign out — clears all local user records and Supabase session
+ * Sign out — clears all local user records and Supabase session.
+ * Always transitions to Unauthenticated so navigation to Welcome fires even on errors.
  */
 fun AuthViewModel.signOut() {
     viewModelScope.launch {
         try {
             syncManager.onLogout()
             userRepository.clearAllLocalData()
-            authService.signOut()
+            try {
+                authService.signOut()
+            } catch (e: Exception) {
+                Logger.w("AuthViewModel", e) { "Supabase sign-out failed (continuing): ${e.message}" }
+            }
             Analytics.signOutCompleted()
             PostHogAnalytics.reset()
+        } catch (e: Exception) {
+            Logger.e("AuthViewModel", e) { "Sign-out error: ${e.message}" }
+        } finally {
             settings.remove(PENDING_VERIFY_EMAIL_KEY)
+            // Coach onboarding is per-account, not per-device — clear so next login always re-onboards
+            settings.remove("coach_onboarding_complete")
             _isLocalOnlyGuest.value = false
             _hasCompletedOnboarding.value = false
             _authState.value = AuthState.Unauthenticated
-            Logger.d("AuthViewModel") { "Sign out successful" }
-        } catch (e: Exception) {
-            _authState.value = AuthState.Error(e.message ?: "Failed to sign out")
+            Logger.d("AuthViewModel") { "Sign out completed" }
         }
     }
 }

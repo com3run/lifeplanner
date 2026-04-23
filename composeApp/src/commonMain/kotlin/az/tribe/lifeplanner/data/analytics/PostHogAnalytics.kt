@@ -62,6 +62,8 @@ object Analytics {
     fun signUpCompleted(method: String) =
         PostHogAnalytics.capture("signup_completed", mapOf("method" to method))
 
+    fun signInStarted() = PostHogAnalytics.capture("signin_started")
+
     fun signInCompleted(method: String) =
         PostHogAnalytics.capture("signin_completed", mapOf("method" to method))
 

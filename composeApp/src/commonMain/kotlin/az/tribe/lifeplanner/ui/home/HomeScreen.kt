@@ -14,12 +14,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import com.russhwolf.settings.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import kotlinx.coroutines.delay
@@ -117,11 +121,13 @@ fun HomeScreen(
     onNavigateToJournalEntry: (entryId: String) -> Unit = {},
     showUpdateReminder: Boolean = false,
     onUpdateClick: () -> Unit = {},
+    onNavigateToOnboarding: () -> Unit = {},
 ) {
     val snackBarHostState = remember { SnackbarHostState() }
     var showAccountSheet by remember { mutableStateOf(false) }
     var showAddGoalSheet by remember { mutableStateOf(false) }
 
+    val settings: Settings = koinInject()
     val authViewModel: AuthViewModel = koinInject()
     val gamificationViewModel: GamificationViewModel = koinViewModel()
     val habitViewModel: HabitViewModel = koinViewModel()
@@ -131,6 +137,12 @@ fun HomeScreen(
     val healthViewModel: HealthViewModel = koinViewModel()
 
     val authState by authViewModel.authState.collectAsState()
+
+    // Show onboarding prompt once per session for authenticated users who haven't completed it
+    var showOnboardingPrompt by remember(authState is AuthState.Authenticated) {
+        mutableStateOf(authState is AuthState.Authenticated && !settings.getBoolean("coach_onboarding_complete", false))
+    }
+
     val userProgress by gamificationViewModel.userProgress.collectAsState()
     val newBadges by gamificationViewModel.newBadges.collectAsState()
     val goals by viewModel.goals.collectAsState()
@@ -501,13 +513,13 @@ fun HomeScreen(
                 HomeCoachAICard(
                     session = recentSession,
                     coach = recentCoach,
-                    coachUnlocked = level >= 3,
+                    coachUnlocked = true,
                     onClick = {
-                        if (level >= 3) {
+                        if (authState is AuthState.Guest) {
+                            showAccountSheet = true
+                        } else {
                             if (recentSession != null) onContinueChat(recentSession!!.coachId)
                             else onNavigateToChat()
-                        } else {
-                            onNavigateToChat()
                         }
                     },
                     modifier = Modifier.padding(horizontal = LifePlannerDesign.Padding.screenHorizontal)
@@ -544,6 +556,40 @@ fun HomeScreen(
             authState = authState,
             onDismiss = { showAccountSheet = false },
             onSuccess = { showAccountSheet = false }
+        )
+    }
+
+    if (showOnboardingPrompt) {
+        AlertDialog(
+            onDismissRequest = { showOnboardingPrompt = false },
+            title = {
+                Text(
+                    "Meet Your Coaches",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(
+                    "Complete a quick profile setup so Luna and your specialist coach can give you truly personalized guidance.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            },
+            confirmButton = {
+                Button(onClick = {
+                    showOnboardingPrompt = false
+                    onNavigateToOnboarding()
+                }) {
+                    Text("Set Up Now")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showOnboardingPrompt = false }) {
+                    Text("Maybe Later")
+                }
+            },
+            shape = RoundedCornerShape(20.dp)
         )
     }
 }

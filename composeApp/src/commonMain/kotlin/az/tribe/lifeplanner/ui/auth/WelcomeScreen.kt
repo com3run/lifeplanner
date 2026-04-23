@@ -1,6 +1,5 @@
 package az.tribe.lifeplanner.ui.auth
 
-import az.tribe.lifeplanner.BuildKonfig
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -11,14 +10,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -26,7 +22,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -42,7 +37,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import az.tribe.lifeplanner.ui.viewmodel.AuthState
 import az.tribe.lifeplanner.ui.viewmodel.AuthViewModel
-import az.tribe.lifeplanner.ui.viewmodel.*
+import az.tribe.lifeplanner.ui.viewmodel.signInAsGuest
 import az.tribe.lifeplanner.data.analytics.Analytics
 
 @Composable
@@ -57,14 +52,17 @@ fun WelcomeScreen(
     }
 
     var hasNavigated by remember { mutableStateOf(false) }
-    var showAuthSheet by remember { mutableStateOf(false) }
-    var isSignUp by remember { mutableStateOf(true) }
+    var showSignInSheet by remember { mutableStateOf(false) }
+    var isLoadingGuest by remember { mutableStateOf(false) }
 
-    // Navigate when auth completes (guest sign-in or sign-in sheet success)
+    // Navigate when auth completes (guest or full sign-in)
     LaunchedEffect(authState) {
-        if (!hasNavigated && (authState is AuthState.Guest || authState is AuthState.Authenticated)) {
+        if (!hasNavigated && (authState is AuthState.Authenticated || authState is AuthState.Guest)) {
             hasNavigated = true
             onComplete()
+        }
+        if (authState is AuthState.Error || authState is AuthState.Unauthenticated) {
+            isLoadingGuest = false
         }
     }
 
@@ -137,26 +135,44 @@ fun WelcomeScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Primary CTA — Create Account
+            // Primary CTA — Get Started (guest)
             Button(
-                onClick = { isSignUp = true; showAuthSheet = true },
+                onClick = {
+                    if (!isLoadingGuest) {
+                        isLoadingGuest = true
+                        authViewModel.signInAsGuest()
+                    }
+                },
+                enabled = !isLoadingGuest,
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF667EEA)
                 )
             ) {
-                Text(
-                    "Create Account",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.White
-                )
+                if (isLoadingGuest) {
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        strokeWidth = 2.dp,
+                        modifier = Modifier.height(20.dp).padding(horizontal = 4.dp)
+                    )
+                } else {
+                    Text(
+                        "Get Started",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White
+                    )
+                }
             }
 
             // Secondary — Sign In
             OutlinedButton(
-                onClick = { isSignUp = false; showAuthSheet = true },
+                onClick = {
+                    Analytics.signInStarted()
+                    showSignInSheet = true
+                },
+                enabled = !isLoadingGuest,
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(16.dp),
                 border = androidx.compose.foundation.BorderStroke(
@@ -171,37 +187,17 @@ fun WelcomeScreen(
                     color = Color.White
                 )
             }
-
-            // Ghost — Guest mode
-            TextButton(
-                onClick = { authViewModel.signInAsGuest() },
-                enabled = authState !is AuthState.Loading
-            ) {
-                if (authState is AuthState.Loading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(16.dp),
-                        color = Color.White.copy(alpha = 0.6f),
-                        strokeWidth = 2.dp
-                    )
-                    Spacer(Modifier.width(8.dp))
-                }
-                Text(
-                    "Continue without account",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White.copy(alpha = 0.55f)
-                )
-            }
         }
     }
 
-    // Auth bottom sheet (sign-in / sign-up)
-    if (showAuthSheet) {
+    // Sign-in bottom sheet
+    if (showSignInSheet) {
         AuthBottomSheet(
-            isSignUp = isSignUp,
+            isSignUp = false,
             authViewModel = authViewModel,
             authState = authState,
-            onDismiss = { showAuthSheet = false },
-            onSuccess = { showAuthSheet = false }
+            onDismiss = { showSignInSheet = false },
+            onSuccess = { showSignInSheet = false }
         )
     }
 }

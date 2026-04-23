@@ -178,7 +178,10 @@ internal fun NavGraphBuilder.appNavHome(
                 }
             },
             showUpdateReminder = softUpdateDismissed && updateState is UpdateState.UpdateRequired,
-            onUpdateClick = onSoftUpdateDismissed
+            onUpdateClick = onSoftUpdateDismissed,
+            onNavigateToOnboarding = {
+                navController.navigate(Screen.CoachOnboarding.route)
+            }
         )
     }
 }

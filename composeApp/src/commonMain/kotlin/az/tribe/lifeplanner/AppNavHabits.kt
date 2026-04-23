@@ -91,6 +91,11 @@ internal fun NavGraphBuilder.appNavHabits(navController: NavController) {
                 navController.navigate("ai_chat/$coachId") {
                     launchSingleTop = true
                 }
+            },
+            onNavigateToStoryReader = {
+                navController.navigate(Screen.StoryReader.route) {
+                    launchSingleTop = true
+                }
             }
         )
     }

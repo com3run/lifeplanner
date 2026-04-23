@@ -1,0 +1,255 @@
+{
+  "info": {
+    "name": "MCP Server",
+    "description": "JSON-RPC 2.0 Model Context Protocol server — 13 tools for reading user life plan data"
+  },
+  "requests": [
+    {
+      "id": "mcp-initialize",
+      "name": "initialize",
+      "description": "MCP handshake — returns server name, version, and capabilities",
+      "method": "POST",
+      "path": "/functions/v1/mcp-server",
+      "auth": "user-jwt",
+      "body": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "initialize",
+        "params": {
+          "protocolVersion": "2024-11-05",
+          "capabilities": {},
+          "clientInfo": { "name": "api-tester", "version": "1.0.0" }
+        }
+      }
+    },
+    {
+      "id": "mcp-tools-list",
+      "name": "tools/list",
+      "description": "Lists all 13 available MCP tools with their input schemas",
+      "method": "POST",
+      "path": "/functions/v1/mcp-server",
+      "auth": "user-jwt",
+      "body": {
+        "jsonrpc": "2.0",
+        "id": 2,
+        "method": "tools/list",
+        "params": {}
+      }
+    },
+    {
+      "id": "mcp-get-dashboard",
+      "name": "tools/call — get_dashboard",
+      "description": "Returns profile overview: level, XP, streaks, active goals, recent moods",
+      "method": "POST",
+      "path": "/functions/v1/mcp-server",
+      "auth": "user-jwt",
+      "body": {
+        "jsonrpc": "2.0",
+        "id": 3,
+        "method": "tools/call",
+        "params": {
+          "name": "get_dashboard",
+          "arguments": {}
+        }
+      }
+    },
+    {
+      "id": "mcp-list-goals",
+      "name": "tools/call — list_goals",
+      "description": "Lists goals; filter by category, status, timeline",
+      "method": "POST",
+      "path": "/functions/v1/mcp-server",
+      "auth": "user-jwt",
+      "body": {
+        "jsonrpc": "2.0",
+        "id": 4,
+        "method": "tools/call",
+        "params": {
+          "name": "list_goals",
+          "arguments": {}
+        }
+      }
+    },
+    {
+      "id": "mcp-list-goals-filtered",
+      "name": "tools/call — list_goals (filtered)",
+      "description": "Lists only ACTIVE CAREER goals",
+      "method": "POST",
+      "path": "/functions/v1/mcp-server",
+      "auth": "user-jwt",
+      "body": {
+        "jsonrpc": "2.0",
+        "id": 5,
+        "method": "tools/call",
+        "params": {
+          "name": "list_goals",
+          "arguments": {
+            "category": "CAREER",
+            "status": "ACTIVE"
+          }
+        }
+      }
+    },
+    {
+      "id": "mcp-get-goal",
+      "name": "tools/call — get_goal",
+      "description": "Gets a single goal with its milestones. Replace goal_id with a real ID.",
+      "method": "POST",
+      "path": "/functions/v1/mcp-server",
+      "auth": "user-jwt",
+      "body": {
+        "jsonrpc": "2.0",
+        "id": 6,
+        "method": "tools/call",
+        "params": {
+          "name": "get_goal",
+          "arguments": {
+            "goal_id": "REPLACE_WITH_GOAL_ID"
+          }
+        }
+      }
+    },
+    {
+      "id": "mcp-list-habits",
+      "name": "tools/call — list_habits",
+      "description": "Lists all active habits with streak data",
+      "method": "POST",
+      "path": "/functions/v1/mcp-server",
+      "auth": "user-jwt",
+      "body": {
+        "jsonrpc": "2.0",
+        "id": 7,
+        "method": "tools/call",
+        "params": {
+          "name": "list_habits",
+          "arguments": {}
+        }
+      }
+    },
+    {
+      "id": "mcp-get-habit-history",
+      "name": "tools/call — get_habit_history",
+      "description": "Gets check-in history for a habit. Replace habit_id with a real ID.",
+      "method": "POST",
+      "path": "/functions/v1/mcp-server",
+      "auth": "user-jwt",
+      "body": {
+        "jsonrpc": "2.0",
+        "id": 8,
+        "method": "tools/call",
+        "params": {
+          "name": "get_habit_history",
+          "arguments": {
+            "habit_id": "REPLACE_WITH_HABIT_ID",
+            "from_date": "2026-04-01",
+            "to_date": "2026-04-21"
+          }
+        }
+      }
+    },
+    {
+      "id": "mcp-list-journal",
+      "name": "tools/call — list_journal_entries",
+      "description": "Lists journal entries; optionally filter by mood or date range",
+      "method": "POST",
+      "path": "/functions/v1/mcp-server",
+      "auth": "user-jwt",
+      "body": {
+        "jsonrpc": "2.0",
+        "id": 9,
+        "method": "tools/call",
+        "params": {
+          "name": "list_journal_entries",
+          "arguments": {}
+        }
+      }
+    },
+    {
+      "id": "mcp-get-progress",
+      "name": "tools/call — get_progress",
+      "description": "Returns gamification stats: level, XP, streaks, completion counts",
+      "method": "POST",
+      "path": "/functions/v1/mcp-server",
+      "auth": "user-jwt",
+      "body": {
+        "jsonrpc": "2.0",
+        "id": 10,
+        "method": "tools/call",
+        "params": {
+          "name": "get_progress",
+          "arguments": {}
+        }
+      }
+    },
+    {
+      "id": "mcp-list-badges",
+      "name": "tools/call — list_badges",
+      "description": "Lists all earned badges with type and earned_at timestamp",
+      "method": "POST",
+      "path": "/functions/v1/mcp-server",
+      "auth": "user-jwt",
+      "body": {
+        "jsonrpc": "2.0",
+        "id": 11,
+        "method": "tools/call",
+        "params": {
+          "name": "list_badges",
+          "arguments": {}
+        }
+      }
+    },
+    {
+      "id": "mcp-list-focus",
+      "name": "tools/call — list_focus_sessions",
+      "description": "Lists focus sessions with duration, completion, XP, ambient sound info",
+      "method": "POST",
+      "path": "/functions/v1/mcp-server",
+      "auth": "user-jwt",
+      "body": {
+        "jsonrpc": "2.0",
+        "id": 12,
+        "method": "tools/call",
+        "params": {
+          "name": "list_focus_sessions",
+          "arguments": {}
+        }
+      }
+    },
+    {
+      "id": "mcp-search-goals",
+      "name": "tools/call — search_goals",
+      "description": "Full-text search across goal titles and descriptions",
+      "method": "POST",
+      "path": "/functions/v1/mcp-server",
+      "auth": "user-jwt",
+      "body": {
+        "jsonrpc": "2.0",
+        "id": 13,
+        "method": "tools/call",
+        "params": {
+          "name": "search_goals",
+          "arguments": {
+            "query": "fitness"
+          }
+        }
+      }
+    },
+    {
+      "id": "mcp-list-review-reports",
+      "name": "tools/call — list_review_reports",
+      "description": "Lists AI-generated review reports (weekly, monthly)",
+      "method": "POST",
+      "path": "/functions/v1/mcp-server",
+      "auth": "user-jwt",
+      "body": {
+        "jsonrpc": "2.0",
+        "id": 14,
+        "method": "tools/call",
+        "params": {
+          "name": "list_review_reports",
+          "arguments": {}
+        }
+      }
+    }
+  ]
+}

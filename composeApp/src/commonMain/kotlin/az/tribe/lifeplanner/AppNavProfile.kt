@@ -10,6 +10,9 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import az.tribe.lifeplanner.ui.profile.ProfileScreen
 import az.tribe.lifeplanner.ui.navigation.Screen
+import az.tribe.lifeplanner.ui.onboarding.CoachOnboardingViewModel
+import com.russhwolf.settings.Settings
+import org.koin.compose.koinInject
 
 internal fun NavGraphBuilder.appNavProfile(
     navController: NavController,
@@ -55,6 +58,7 @@ internal fun NavGraphBuilder.appNavProfile(
             } else fadeOut(tween(300))
         }
     ) {
+        val settings: Settings = koinInject()
         ProfileScreen(
             onNavigateToAchievements = {
                 navController.navigate(Screen.Achievements.route) {
@@ -94,6 +98,12 @@ internal fun NavGraphBuilder.appNavProfile(
             onNavigateToFeedback = {
                 navController.navigate(Screen.Feedback.route) {
                     launchSingleTop = true
+                }
+            },
+            onResetOnboarding = {
+                settings.remove(CoachOnboardingViewModel.COACH_ONBOARDING_KEY)
+                navController.navigate(Screen.CoachOnboarding.route) {
+                    popUpTo(0) { inclusive = true }
                 }
             }
         )

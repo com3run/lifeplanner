@@ -17,7 +17,7 @@ class GoalTemplateProviderTest {
     @Test
     fun `getAllTemplates returns 28 templates`() {
         val templates = GoalTemplateProvider.getAllTemplates()
-        assertEquals(28, templates.size, "Expected 28 templates (4 per category x 7 categories)")
+        assertEquals(24, templates.size, "Expected 24 templates (4 per category x 6 categories)")
     }
 
     // ── getTemplatesByCategory ────────────────────────────────────────

@@ -11,14 +11,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.Plus
@@ -26,7 +24,6 @@ import com.adamglin.phosphoricons.regular.UsersThree
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -99,9 +96,9 @@ fun CoachListContentExtended(
     onCreateGroup: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // Build unified list and sort by recent activity
+    // Build unified list — council is pinned separately, so exclude it here
+    val councilSession = sessions[CoachPersona.COUNCIL_ID]
     val items = buildList {
-        add(ChatListItem.Council(sessions[CoachPersona.COUNCIL_ID]))
         builtinCoaches.forEach { coach ->
             add(ChatListItem.BuiltinCoach(coach, sessions[coach.id]))
         }
@@ -117,42 +114,58 @@ fun CoachListContentExtended(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(vertical = 8.dp)
     ) {
+        // Pinned first: create your own coach
+        item(key = "create_coach") {
+            CreateCoachRow(onClick = onCreateCoach)
+            HorizontalDivider(
+                modifier = Modifier.padding(start = 76.dp),
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+            )
+        }
+
+        // Pinned second: The Council (always visible regardless of recency)
+        item(key = "council") {
+            val lastMsg = councilSession?.messages?.lastOrNull()
+            ChatListRow(
+                emoji = null,
+                gradient = Brush.linearGradient(
+                    colors = listOf(
+                        MaterialTheme.colorScheme.primary,
+                        MaterialTheme.colorScheme.tertiary,
+                        MaterialTheme.colorScheme.secondary
+                    )
+                ),
+                icon = {
+                    Icon(
+                        PhosphorIcons.Regular.UsersThree,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
+                },
+                name = "The Council",
+                lastMessage = lastMsg?.content,
+                isYourTurn = lastMsg?.role == MessageRole.ASSISTANT,
+                defaultSubtitle = "All coaches united",
+                timestamp = councilSession?.lastMessageAt,
+                onClick = onCouncilClick
+            )
+            HorizontalDivider(
+                modifier = Modifier.padding(start = 76.dp),
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+            )
+        }
+
         items(items, key = { item ->
             when (item) {
                 is ChatListItem.BuiltinCoach -> "builtin_${item.coach.id}"
                 is ChatListItem.Custom -> "custom_${item.coach.id}"
                 is ChatListItem.Group -> "group_${item.group.id}"
-                is ChatListItem.Council -> "council"
+                is ChatListItem.Council -> "council_sorted"
             }
         }) { item ->
             when (item) {
-                is ChatListItem.Council -> {
-                    val lastMsg = item.session?.messages?.lastOrNull()
-                    ChatListRow(
-                        emoji = null,
-                        gradient = Brush.linearGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.primary,
-                                MaterialTheme.colorScheme.tertiary,
-                                MaterialTheme.colorScheme.secondary
-                            )
-                        ),
-                        icon = {
-                            Icon(
-                                PhosphorIcons.Regular.UsersThree,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        },
-                        name = "The Council",
-                        lastMessage = lastMsg?.content,
-                        isYourTurn = lastMsg?.role == MessageRole.ASSISTANT,
-                        defaultSubtitle = "All coaches united",
-                        timestamp = item.session?.lastMessageAt,
-                        onClick = onCouncilClick
-                    )
-                }
+                is ChatListItem.Council -> { /* never reached — council is pinned above */ }
                 is ChatListItem.BuiltinCoach -> {
                     val lastMsg = item.session?.messages?.lastOrNull()
                     val available = item.coach.isAvailableNow()
@@ -212,14 +225,7 @@ fun CoachListContentExtended(
             )
         }
 
-        // Create coach/group buttons at the bottom
-        item {
-            Spacer(modifier = Modifier.height(16.dp))
-            CreateActionsRow(
-                onCreateCoach = onCreateCoach,
-                onCreateGroup = onCreateGroup
-            )
-        }
+        item { Spacer(Modifier.height(24.dp)) }
     }
 }
 
@@ -344,74 +350,42 @@ private fun formatChatTimestamp(dateTime: LocalDateTime): String {
     return "$hour:$minute"
 }
 
-/**
- * Bottom row with create coach and create group buttons
- */
 @Composable
-private fun CreateActionsRow(
-    onCreateCoach: () -> Unit,
-    onCreateGroup: () -> Unit
-) {
+private fun CreateCoachRow(onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Surface(
+        Box(
             modifier = Modifier
-                .weight(1f)
-                .clip(RoundedCornerShape(12.dp))
-                .clickable { onCreateCoach() },
-            shape = RoundedCornerShape(12.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                .size(52.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primaryContainer),
+            contentAlignment = Alignment.Center
         ) {
-            Row(
-                modifier = Modifier.padding(14.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Icon(
-                    PhosphorIcons.Regular.Plus,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "New Coach",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+            Icon(
+                PhosphorIcons.Regular.Plus,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.size(24.dp)
+            )
         }
-
-        Surface(
-            modifier = Modifier
-                .weight(1f)
-                .clip(RoundedCornerShape(12.dp))
-                .clickable { onCreateGroup() },
-            shape = RoundedCornerShape(12.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
-        ) {
-            Row(
-                modifier = Modifier.padding(14.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Icon(
-                    PhosphorIcons.Regular.UsersThree,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "New Group",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                "Create your Coach",
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                "Build a personalised AI coach",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
@@ -420,7 +394,7 @@ private fun CreateActionsRow(
  * Returns a gradient brush for a coach based on their category
  */
 @Composable
-private fun getCoachGradient(coach: CoachPersona): Brush {
+internal fun getCoachGradient(coach: CoachPersona): Brush {
     val colors = when (coach.id) {
         "luna_general" -> listOf(
             MaterialTheme.colorScheme.primary,
@@ -461,7 +435,7 @@ private fun getCoachGradient(coach: CoachPersona): Brush {
 /**
  * Helper function to parse hex color string to Compose Color
  */
-private fun parseHexColor(hexColor: String): Color {
+internal fun parseHexColor(hexColor: String): Color {
     return try {
         val hex = hexColor.removePrefix("#")
         Color(

@@ -2,6 +2,8 @@ package az.tribe.lifeplanner.ui.journal
 
 import app.cash.turbine.test
 import az.tribe.lifeplanner.domain.enum.Mood
+import az.tribe.lifeplanner.testutil.FakeAiProxyService
+import az.tribe.lifeplanner.testutil.FakeGamificationRepository
 import az.tribe.lifeplanner.testutil.FakeJournalRepository
 import az.tribe.lifeplanner.testutil.testJournalEntry
 import az.tribe.lifeplanner.usecases.journal.CreateJournalEntryUseCase
@@ -52,7 +54,9 @@ class JournalViewModelTest {
             journalRepository = fakeRepository,
             createEntryUseCase = CreateJournalEntryUseCase(fakeRepository),
             updateEntryUseCase = UpdateJournalEntryUseCase(fakeRepository),
-            deleteEntryUseCase = DeleteJournalEntryUseCase(fakeRepository)
+            deleteEntryUseCase = DeleteJournalEntryUseCase(fakeRepository),
+            aiProxyService = FakeAiProxyService(),
+            gamificationRepository = FakeGamificationRepository()
         )
     }
 

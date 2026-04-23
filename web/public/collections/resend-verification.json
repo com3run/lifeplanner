@@ -1,0 +1,28 @@
+{
+  "info": {
+    "name": "Auth Functions",
+    "description": "Email verification and auth redirect edge functions"
+  },
+  "requests": [
+    {
+      "id": "resend-verification",
+      "name": "Resend Verification Email",
+      "description": "Resends the email confirmation link. Uses service role key (bypasses auth).",
+      "method": "POST",
+      "path": "/functions/v1/resend-verification",
+      "auth": "service-role",
+      "body": {
+        "email": "user@example.com"
+      }
+    },
+    {
+      "id": "auth-redirect-get",
+      "name": "Auth Redirect Page (GET)",
+      "description": "Returns the HTML verification UI page. No body — opens in browser.",
+      "method": "GET",
+      "path": "/functions/v1/auth-redirect",
+      "auth": "none",
+      "body": null
+    }
+  ]
+}

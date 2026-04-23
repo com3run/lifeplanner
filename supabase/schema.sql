@@ -136,6 +136,8 @@ CREATE TABLE habits (
     is_active         BOOLEAN     NOT NULL DEFAULT TRUE,
     created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
     reminder_time     TEXT,
+    type              TEXT        NOT NULL DEFAULT 'BUILD',
+    unit              TEXT,
     -- sync metadata
     updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
     is_deleted   BOOLEAN     NOT NULL DEFAULT FALSE,

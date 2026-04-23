@@ -45,7 +45,7 @@ class HabitUseCasesTest {
         val habit = testHabit(
             id = "h1",
             title = "Meditate",
-            category = GoalCategory.SPIRITUAL,
+            category = GoalCategory.PURPOSE,
             frequency = HabitFrequency.DAILY,
             linkedGoalId = "g1"
         )
@@ -54,7 +54,7 @@ class HabitUseCasesTest {
 
         val stored = repo.getAllHabits().first()
         assertEquals("Meditate", stored.title)
-        assertEquals(GoalCategory.SPIRITUAL, stored.category)
+        assertEquals(GoalCategory.PURPOSE, stored.category)
         assertEquals(HabitFrequency.DAILY, stored.frequency)
         assertEquals("g1", stored.linkedGoalId)
     }
@@ -96,7 +96,7 @@ class HabitUseCasesTest {
     @Test
     fun `UpdateHabit can change category`() = runTest {
         val useCase = UpdateHabitUseCase(repo)
-        repo.setHabits(listOf(testHabit(id = "h1", category = GoalCategory.PHYSICAL)))
+        repo.setHabits(listOf(testHabit(id = "h1", category = GoalCategory.BODY)))
 
         useCase(testHabit(id = "h1", category = GoalCategory.CAREER))
 

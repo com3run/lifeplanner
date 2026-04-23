@@ -65,14 +65,14 @@ class GoalUseCasesTest {
         val useCase = CreateGoalUseCase(goalRepo)
         val goals = listOf(
             testGoal(id = "g1", category = GoalCategory.CAREER),
-            testGoal(id = "g2", category = GoalCategory.PHYSICAL)
+            testGoal(id = "g2", category = GoalCategory.BODY)
         )
 
         useCase(goals)
 
         val stored = goalRepo.getAllGoals()
         assertEquals(GoalCategory.CAREER, stored[0].category)
-        assertEquals(GoalCategory.PHYSICAL, stored[1].category)
+        assertEquals(GoalCategory.BODY, stored[1].category)
     }
 
     // ── UpdateGoalUseCase ────────────────────────────────────────────
@@ -318,7 +318,7 @@ class GoalUseCasesTest {
         val useCase = GetGoalsByCategoryUseCase(goalRepo)
         goalRepo.setGoals(listOf(
             testGoal(id = "g1", category = GoalCategory.CAREER),
-            testGoal(id = "g2", category = GoalCategory.PHYSICAL),
+            testGoal(id = "g2", category = GoalCategory.BODY),
             testGoal(id = "g3", category = GoalCategory.CAREER)
         ))
 
@@ -333,7 +333,7 @@ class GoalUseCasesTest {
         val useCase = GetGoalsByCategoryUseCase(goalRepo)
         goalRepo.setGoals(listOf(testGoal(category = GoalCategory.CAREER)))
 
-        val result = useCase(GoalCategory.SPIRITUAL)
+        val result = useCase(GoalCategory.PURPOSE)
 
         assertTrue(result.isEmpty())
     }

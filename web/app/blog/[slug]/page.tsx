@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { ArrowLeft, Clock, Calendar } from 'lucide-react';
 import { getAllSlugs, getPostBySlug } from '@/lib/blog';
 import { ThemeToggle } from '@/components/landing/theme-toggle';
+import { PixelBlogView, PixelDownloadButton } from '@/components/pixel-events';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 
@@ -169,6 +170,7 @@ export default async function BlogPostPage({ params }: Props) {
 
       {/* Article */}
       <main className="relative z-10 pt-24 pb-16 px-4">
+        <PixelBlogView title={post.title} slug={post.slug} />
         <article className="max-w-3xl mx-auto">
           {/* Header */}
           <header className="mb-10">
@@ -224,22 +226,20 @@ export default async function BlogPostPage({ params }: Props) {
               Goals, habits, journaling, and AI coaching — all in one app. Free to use.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <a
+              <PixelDownloadButton
                 href="https://apps.apple.com/app/life-planner-ai-coach/id6745726864"
-                target="_blank"
-                rel="noopener noreferrer"
+                platform="ios"
                 className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-semibold text-sm"
               >
                 Download for iOS
-              </a>
-              <a
+              </PixelDownloadButton>
+              <PixelDownloadButton
                 href="https://play.google.com/store/apps/details?id=az.tribe.lifeplanner"
-                target="_blank"
-                rel="noopener noreferrer"
+                platform="android"
                 className="px-6 py-3 dark:bg-white/10 bg-gray-900 text-white rounded-xl font-semibold text-sm border dark:border-white/20 border-transparent"
               >
                 Download for Android
-              </a>
+              </PixelDownloadButton>
             </div>
           </div>
         </article>

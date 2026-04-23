@@ -3,7 +3,12 @@ package az.tribe.lifeplanner.ui.habit
 import app.cash.turbine.test
 import az.tribe.lifeplanner.domain.enum.GoalCategory
 import az.tribe.lifeplanner.domain.enum.HabitFrequency
+import az.tribe.lifeplanner.domain.service.SmartReminderManager
+import az.tribe.lifeplanner.testutil.FakeAbilityRepository
+import az.tribe.lifeplanner.testutil.FakeGamificationRepository
 import az.tribe.lifeplanner.testutil.FakeHabitRepository
+import az.tribe.lifeplanner.testutil.FakeReminderRepository
+import az.tribe.lifeplanner.usecases.ability.AwardAbilityXpUseCase
 import az.tribe.lifeplanner.testutil.testHabit
 import az.tribe.lifeplanner.testutil.testHabitCheckIn
 import az.tribe.lifeplanner.usecases.habit.CheckInHabitUseCase
@@ -55,7 +60,10 @@ class HabitViewModelTest {
             updateHabitUseCase = UpdateHabitUseCase(fakeRepository),
             deleteHabitUseCase = DeleteHabitUseCase(fakeRepository),
             checkInHabitUseCase = CheckInHabitUseCase(fakeRepository),
-            uncheckHabitUseCase = UncheckHabitUseCase(fakeRepository)
+            uncheckHabitUseCase = UncheckHabitUseCase(fakeRepository),
+            smartReminderManager = SmartReminderManager(FakeReminderRepository()),
+            awardAbilityXpUseCase = AwardAbilityXpUseCase(FakeAbilityRepository()),
+            gamificationRepository = FakeGamificationRepository()
         )
     }
 
@@ -139,7 +147,7 @@ class HabitViewModelTest {
         viewModel.createHabit(
             title = "New Habit",
             description = "Description",
-            category = GoalCategory.PHYSICAL,
+            category = GoalCategory.BODY,
             frequency = HabitFrequency.DAILY
         )
         testDispatcher.scheduler.advanceUntilIdle()
@@ -165,7 +173,7 @@ class HabitViewModelTest {
         viewModel.createHabit(
             title = "Exercise",
             description = "Duplicate",
-            category = GoalCategory.PHYSICAL,
+            category = GoalCategory.BODY,
             frequency = HabitFrequency.DAILY
         )
         testDispatcher.scheduler.advanceUntilIdle()

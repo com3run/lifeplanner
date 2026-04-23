@@ -86,12 +86,12 @@ class ReviewModelTest {
     @Test
     fun `getByCategory returns correct coach for each mapped category`() {
         assertEquals("alex_career", CoachPersona.getByCategory(GoalCategory.CAREER).id)
-        assertEquals("morgan_finance", CoachPersona.getByCategory(GoalCategory.FINANCIAL).id)
-        assertEquals("kai_fitness", CoachPersona.getByCategory(GoalCategory.PHYSICAL).id)
-        assertEquals("sam_social", CoachPersona.getByCategory(GoalCategory.SOCIAL).id)
-        assertEquals("luna_general", CoachPersona.getByCategory(GoalCategory.EMOTIONAL).id)
-        assertEquals("river_wellness", CoachPersona.getByCategory(GoalCategory.SPIRITUAL).id)
-        assertEquals("jamie_family", CoachPersona.getByCategory(GoalCategory.FAMILY).id)
+        assertEquals("morgan_finance", CoachPersona.getByCategory(GoalCategory.MONEY).id)
+        assertEquals("kai_fitness", CoachPersona.getByCategory(GoalCategory.BODY).id)
+        assertEquals("sam_social", CoachPersona.getByCategory(GoalCategory.PEOPLE).id)
+        assertEquals("luna_general", CoachPersona.getByCategory(GoalCategory.WELLBEING).id)
+        assertEquals("river_wellness", CoachPersona.getByCategory(GoalCategory.PURPOSE).id)
+        assertEquals("jamie_family", CoachPersona.getByCategory(GoalCategory.PEOPLE).id)
     }
 
     // ── CoachPersona.getById ─────────────────────────────────────────
@@ -100,7 +100,7 @@ class ReviewModelTest {
     fun `getById returns correct coach for valid id`() {
         val coach = CoachPersona.getById("kai_fitness")
         assertEquals("Kai", coach.name)
-        assertEquals(GoalCategory.PHYSICAL, coach.category)
+        assertEquals(GoalCategory.BODY, coach.category)
     }
 
     @Test

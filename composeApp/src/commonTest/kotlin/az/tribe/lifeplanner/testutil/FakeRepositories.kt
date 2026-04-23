@@ -2,11 +2,14 @@
 
 package az.tribe.lifeplanner.testutil
 
+import az.tribe.lifeplanner.data.network.AiProxyService
 import az.tribe.lifeplanner.domain.enum.*
 import az.tribe.lifeplanner.domain.model.*
 import az.tribe.lifeplanner.domain.repository.*
+import az.tribe.lifeplanner.domain.enum.AiProvider
 import kotlinx.coroutines.flow.*
 import kotlinx.datetime.*
+import kotlinx.serialization.json.JsonObject
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -26,6 +29,7 @@ class FakeGoalRepository : GoalRepository {
 
     override fun observeAllGoals(): Flow<List<Goal>> = _flow
     override suspend fun getAllGoals(): List<Goal> = goals.toList()
+    override suspend fun getGoalById(id: String): Goal? = goals.find { it.id == id }
     override suspend fun insertGoal(goal: Goal) { goals.add(goal); emit() }
     override suspend fun insertGoals(goals: List<Goal>) { this.goals.addAll(goals); emit() }
     override suspend fun updateGoal(goal: Goal) {
@@ -136,6 +140,8 @@ class FakeHabitRepository : HabitRepository {
     override suspend fun getCheckInByHabitAndDate(habitId: String, date: LocalDate) = checkIns.find { it.habitId == habitId && it.date == date }
     override suspend fun getCheckInsInRange(habitId: String, startDate: LocalDate, endDate: LocalDate) =
         checkIns.filter { it.habitId == habitId && it.date >= startDate && it.date <= endDate }
+    override suspend fun getAllCheckInsInRange(startDate: LocalDate, endDate: LocalDate) =
+        checkIns.filter { it.date >= startDate && it.date <= endDate }
     override suspend fun deleteCheckIn(id: String) { checkIns.removeAll { it.id == id }; emitFlow() }
     override suspend fun calculateStreak(habitId: String) = habits.find { it.id == habitId }?.currentStreak ?: 0
     override suspend fun updateStreakAfterCheckIn(habitId: String) {}
@@ -245,6 +251,8 @@ class FakeGamificationRepository : GamificationRepository {
     override suspend fun cleanupExpiredChallenges() {}
     override suspend fun getAvailableChallenges(): List<ChallengeType> = ChallengeType.entries.toList()
     override suspend fun updateDailyStreakRemote() = streakResult
+    override suspend fun awardXp(amount: Long) {}
+    override suspend fun awardBadge(type: BadgeType) {}
 }
 
 // ─── CoachRepository ─────────────────────────────────────────────────────────
@@ -286,6 +294,9 @@ class FakeCoachRepository : CoachRepository {
         members.removeAll { it.first == groupId }
         membersList.forEach { members.add(groupId to it) }
     }
+    override suspend fun getPersonaOverride(coachId: String): String? = null
+    override suspend fun savePersonaOverride(coachId: String, userPersona: String) {}
+    override suspend fun deletePersonaOverride(coachId: String) {}
 }
 
 // ─── ReminderRepository ──────────────────────────────────────────────────────
@@ -338,6 +349,7 @@ class FakeReminderRepository : ReminderRepository {
         globalEnabled = false
     }
     override suspend fun rescheduleAllReminders() {}
+    override suspend fun findAvailableTimeSlot(preferredTime: LocalTime, excludeReminderId: String?): LocalTime = preferredTime
 }
 
 // ─── BackupRepository ────────────────────────────────────────────────────────
@@ -363,9 +375,14 @@ class FakeBackupRepository : BackupRepository {
 class FakeRetrospectiveRepository : RetrospectiveRepository {
     var snapshotToReturn: DaySnapshot = testDaySnapshot()
     var activeDates: Set<LocalDate> = emptySet()
+    private val recaps = mutableMapOf<LocalDate, String>()
 
     override suspend fun getDaySnapshot(date: LocalDate) = snapshotToReturn
+    override fun observeWeeklySnapshots(): kotlinx.coroutines.flow.Flow<List<DaySnapshot>> =
+        kotlinx.coroutines.flow.flowOf(emptyList())
     override suspend fun getDatesWithActivity(start: LocalDate, end: LocalDate) = activeDates
+    override suspend fun getDayRecap(date: LocalDate) = recaps[date]
+    override suspend fun saveDayRecap(date: LocalDate, recap: String) { recaps[date] = recap }
 }
 
 // ─── LifeBalanceRepository ───────────────────────────────────────────────────
@@ -376,7 +393,7 @@ class FakeLifeBalanceRepository : LifeBalanceRepository {
     private val assessments = mutableListOf<ManualAssessment>()
     private val reports = mutableListOf<LifeBalanceReport>()
 
-    override suspend fun calculateCurrentBalance() = report
+    override suspend fun calculateCurrentBalance(forceRefresh: Boolean) = report
     override suspend fun getAreaScore(area: LifeArea) = areaScores.find { it.area == area } ?: testLifeAreaScore(area = area)
     override suspend fun getAllAreaScores() = areaScores
     override suspend fun generateAIInsights(areaScores: List<LifeAreaScore>) = report
@@ -426,6 +443,35 @@ class FakeGoalDependencyRepository : GoalDependencyRepository {
     override suspend fun buildDependencyGraphForGoal(goalId: String) = graphToReturn
     override suspend fun getSuggestedDependencies(goalId: String) = suggestedDeps
     override suspend fun wouldCreateCycle(sourceGoalId: String, targetGoalId: String) = false
+}
+
+// ─── AiProxyService ──────────────────────────────────────────────────────────
+
+class FakeAiProxyService : AiProxyService {
+    var responseToReturn = "Great day!"
+    override suspend fun generateText(prompt: String, systemPrompt: String?, provider: AiProvider?) = responseToReturn
+    override suspend fun generateStructuredJson(prompt: String, responseSchema: JsonObject, systemPrompt: String?, provider: AiProvider?) = "{}"
+    override suspend fun chat(messages: List<AiProxyService.ChatMessage>, systemPrompt: String?, responseSchema: JsonObject?, provider: AiProvider?) = responseToReturn
+    override fun chatStream(messages: List<AiProxyService.ChatMessage>, systemPrompt: String?, provider: AiProvider?) = flow<AiProxyService.StreamEvent> {}
+}
+
+// ─── AbilityRepository ───────────────────────────────────────────────────────
+
+class FakeAbilityRepository : az.tribe.lifeplanner.domain.repository.AbilityRepository {
+    override fun observeAllAbilities(): Flow<List<az.tribe.lifeplanner.domain.model.Ability>> = kotlinx.coroutines.flow.flowOf(emptyList())
+    override suspend fun getAbilityById(id: String): az.tribe.lifeplanner.domain.model.Ability? = null
+    override suspend fun createAbility(ability: az.tribe.lifeplanner.domain.model.Ability) {}
+    override suspend fun updateAbility(ability: az.tribe.lifeplanner.domain.model.Ability) {}
+    override suspend fun deleteAbility(id: String) {}
+    override suspend fun linkHabit(abilityId: String, habitId: String, xpWeight: Float) {}
+    override suspend fun unlinkHabit(abilityId: String, habitId: String) {}
+    override suspend fun getLinksForAbility(abilityId: String) = emptyList<az.tribe.lifeplanner.domain.model.AbilityHabitLink>()
+    override suspend fun getLinksForHabit(habitId: String) = emptyList<az.tribe.lifeplanner.domain.model.AbilityHabitLink>()
+    override suspend fun awardXpToAbilitiesForHabit(habitId: String, baseXp: Int) {}
+    override suspend fun linkGoal(abilityId: String, goalId: String) {}
+    override suspend fun unlinkGoal(abilityId: String, goalId: String) {}
+    override suspend fun getGoalLinksForAbility(abilityId: String) = emptyList<az.tribe.lifeplanner.domain.model.AbilityGoalLink>()
+    override suspend fun getAbilityLinksForGoal(goalId: String) = emptyList<az.tribe.lifeplanner.domain.model.AbilityGoalLink>()
 }
 
 // ─── GoalHistoryRepository ───────────────────────────────────────────────────

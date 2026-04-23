@@ -34,12 +34,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -50,63 +45,19 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import az.tribe.lifeplanner.ui.theme.modernColors
-import az.tribe.lifeplanner.ui.viewmodel.AuthState
-import az.tribe.lifeplanner.ui.viewmodel.AuthViewModel
-import az.tribe.lifeplanner.ui.viewmodel.*
 import az.tribe.lifeplanner.data.analytics.Analytics
-import co.touchlab.kermit.Logger
 import kotlinx.coroutines.launch
-import org.koin.compose.koinInject
 
 @Composable
 fun OnboardingScreen(
     onOnboardingComplete: () -> Unit = {}
 ) {
-    val authViewModel: AuthViewModel = koinInject()
-    val authState by authViewModel.authState.collectAsState()
     val coroutineScope = rememberCoroutineScope()
-
-    var isLoading by remember { mutableStateOf(false) }
-    var finishRequested by remember { mutableStateOf(false) }
 
     val pagerState = rememberPagerState(
         initialPage = 0,
         pageCount = { 4 }
     )
-
-    // Handle finish: sign in as guest if not authenticated, then mark onboarding complete
-    fun handleFinish() {
-        if (isLoading) return
-        finishRequested = true
-        val state = authState
-        if (state is AuthState.Guest || state is AuthState.Authenticated) {
-            // Already authenticated — just complete onboarding
-            authViewModel.completeOnboarding()
-            onOnboardingComplete()
-        } else {
-            // Need to sign in first
-            isLoading = true
-            authViewModel.signInAsGuest()
-        }
-    }
-
-    // When auth state resolves after sign-in, complete onboarding
-    LaunchedEffect(authState) {
-        if (finishRequested) {
-            when (authState) {
-                is AuthState.Guest, is AuthState.Authenticated -> {
-                    isLoading = false
-                    authViewModel.completeOnboarding()
-                    onOnboardingComplete()
-                }
-                is AuthState.Error -> {
-                    isLoading = false
-                    Logger.e("OnboardingScreen") { "Auth error: ${(authState as AuthState.Error).message}" }
-                }
-                else -> {}
-            }
-        }
-    }
 
     // Track each carousel page view for the onboarding funnel
     val pageNames = listOf("welcome", "offline_promise", "ai_preview", "quick_tour")
@@ -138,14 +89,8 @@ fun OnboardingScreen(
                 horizontalArrangement = Arrangement.End
             ) {
                 if (pagerState.currentPage < 3) {
-                    TextButton(
-                        onClick = { handleFinish() },
-                        enabled = !isLoading
-                    ) {
-                        Text(
-                            if (isLoading) "Loading..." else "Skip",
-                            color = MaterialTheme.colorScheme.primary
-                        )
+                    TextButton(onClick = onOnboardingComplete) {
+                        Text("Skip", color = MaterialTheme.colorScheme.primary)
                     }
                 }
             }
@@ -194,10 +139,9 @@ fun OnboardingScreen(
                             pagerState.animateScrollToPage(pagerState.currentPage + 1)
                         }
                     } else {
-                        handleFinish()
+                        onOnboardingComplete()
                     }
                 },
-                enabled = !isLoading,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF4CAF50)
                 ),
@@ -208,11 +152,10 @@ fun OnboardingScreen(
                     .height(52.dp)
             ) {
                 Text(
-                    text = when {
-                        isLoading -> "Loading..."
-                        pagerState.currentPage == 0 -> "Start"
-                        pagerState.currentPage == 3 -> "Go to Dashboard"
-                        pagerState.currentPage == 2 -> "Get Started"
+                    text = when (pagerState.currentPage) {
+                        0 -> "Start"
+                        3 -> "Continue"
+                        2 -> "Next"
                         else -> "Next"
                     },
                     style = MaterialTheme.typography.titleMedium,

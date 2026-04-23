@@ -117,11 +117,12 @@ private fun StoryCircle(
     val startColor = parseStoryColor(story.gradientStart)
     val endColor = parseStoryColor(story.gradientEnd)
 
-    Box(
+    Column(
         modifier = Modifier
-            .size(68.dp)
+            .width(76.dp)
             .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(5.dp)
     ) {
         Box(
             modifier = Modifier.size(68.dp),
@@ -163,6 +164,15 @@ private fun StoryCircle(
             ) {
                 Text(text = story.emoji, fontSize = 26.sp)
             }
+        }
+        if (story.label != null) {
+            Text(
+                text = story.label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = if (isSeen) 0.4f else 0.85f),
+                maxLines = 1,
+                textAlign = TextAlign.Center
+            )
         }
     }
 }

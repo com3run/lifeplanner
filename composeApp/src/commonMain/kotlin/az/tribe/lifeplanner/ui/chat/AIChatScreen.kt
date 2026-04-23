@@ -5,12 +5,14 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -20,6 +22,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -29,17 +32,19 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import az.tribe.lifeplanner.domain.model.CoachPersona
 import az.tribe.lifeplanner.domain.model.ObjectiveType
 import az.tribe.lifeplanner.ui.balance.InsightMessageHolder
 import az.tribe.lifeplanner.ui.chat.ChatContent
 import az.tribe.lifeplanner.ui.chat.ChatViewModel
-import az.tribe.lifeplanner.ui.chat.CoachLockedScreen
-import az.tribe.lifeplanner.ui.chat.CoachSelectorStrip
 import az.tribe.lifeplanner.ui.components.CoachListContentExtended
-import az.tribe.lifeplanner.ui.gamification.GamificationViewModel
 import az.tribe.lifeplanner.ui.objectives.BeginnerObjectiveViewModel
+import coil3.compose.AsyncImage
 import az.tribe.lifeplanner.util.NetworkConnectivityObserver
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
@@ -59,24 +64,6 @@ fun AIChatScreen(
     onNavigateToCreateGroup: () -> Unit = {},
     onNavigateToCoachProfile: (String) -> Unit = {}
 ) {
-    val gamificationViewModel: GamificationViewModel = koinViewModel()
-    val userProgress by gamificationViewModel.userProgress.collectAsState()
-    val requiredLevel = 3
-    val xpForLevel3 = 450
-    val isUnlocked = (userProgress?.currentLevel ?: 1) >= requiredLevel
-
-    if (!isUnlocked) {
-        CoachLockedScreen(
-            currentLevel = userProgress?.currentLevel ?: 1,
-            currentXp = userProgress?.totalXp ?: 0,
-            xpNeeded = xpForLevel3 - (userProgress?.totalXp ?: 0),
-            requiredLevel = requiredLevel,
-            totalXpRequired = xpForLevel3,
-            onBack = onNavigateBack
-        )
-        return
-    }
-
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val connectivityObserver: NetworkConnectivityObserver = koinInject()
@@ -93,16 +80,6 @@ fun AIChatScreen(
 
     LaunchedEffect(coachId) {
         if (coachId != null) viewModel.selectCoachById(coachId)
-    }
-
-    LaunchedEffect(uiState.showSessionList, uiState.isLoading) {
-        if (uiState.showSessionList && !uiState.isLoading && coachId == null) {
-            val mostRecentId = uiState.sessionsByCoach.entries
-                .filter { it.value != null }
-                .maxByOrNull { it.value!!.lastMessageAt }
-                ?.key ?: "luna_general"
-            viewModel.selectCoachById(mostRecentId)
-        }
     }
 
     LaunchedEffect(uiState.showSessionList, uiState.isLoading, isOffline) {
@@ -164,14 +141,43 @@ fun AIChatScreen(
                 }
 
                 if (!uiState.showSessionList) {
-                    CoachSelectorStrip(
-                        coaches = CoachPersona.ALL_COACHES,
-                        customCoaches = uiState.customCoaches,
-                        selectedCoachId = uiState.currentCoach?.id,
-                        isCouncilMode = uiState.isCouncilMode,
-                        onSelectCoach = { viewModel.selectCoachById(it) },
-                        onSelectCouncil = { viewModel.selectCoachById(CoachPersona.COUNCIL_ID) }
-                    )
+                    val coach = uiState.currentCoach
+                    if (coach != null) {
+                        Spacer(Modifier.width(12.dp))
+                        val bgColor = remember(coach.id) {
+                            try { Color(("FF" + coach.avatar.backgroundColor.removePrefix("#")).toLong(16)) }
+                            catch (_: Exception) { Color(0xFF6366F1) }
+                        }
+                        if (coach.imageUrl != null) {
+                            AsyncImage(
+                                model = coach.imageUrl,
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.size(40.dp).clip(CircleShape)
+                            )
+                        } else {
+                            Box(
+                                modifier = Modifier.size(40.dp).clip(CircleShape).background(bgColor),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(coach.emoji, fontSize = 18.sp)
+                            }
+                        }
+                        Spacer(Modifier.width(10.dp))
+                        Column {
+                            Text(
+                                coach.name,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                coach.title,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
                 }
             }
 
@@ -213,7 +219,6 @@ fun AIChatScreen(
             } else {
                 Box(Modifier.weight(1f).fillMaxWidth()) {
                     CoachListContentExtended(
-                        modifier = Modifier.align(Alignment.TopCenter),
                         builtinCoaches = CoachPersona.ALL_COACHES,
                         customCoaches = uiState.customCoaches,
                         coachGroups = uiState.coachGroups,

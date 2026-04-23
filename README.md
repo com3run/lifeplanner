@@ -123,8 +123,8 @@ supabase/
 
 ## Documentation
 
-- [Terminology](TERMINOLOGY.md) — full glossary of features, domain terms, and shorthand
-- [Implementation Plan](IMPLEMENTATION_PLAN.md) — development phases and progress
+- [Terminology](docs/terminology.md) — full glossary of features, domain terms, and shorthand
+- [Implementation Plan](docs/implementation-plan.md) — development phases and progress
 - [Security](SECURITY.md) — security practices and vulnerability reporting
 
 ---
