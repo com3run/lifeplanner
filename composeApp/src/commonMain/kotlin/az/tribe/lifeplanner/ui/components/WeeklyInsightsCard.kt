@@ -94,6 +94,7 @@ private fun GoalCategory.dotColor(): Color = when (this) {
     GoalCategory.PEOPLE    -> CategoryColors.PEOPLE
     GoalCategory.WELLBEING -> CategoryColors.WELLBEING
     GoalCategory.PURPOSE   -> CategoryColors.PURPOSE
+    GoalCategory.FAMILY    -> CategoryColors.FAMILY
 }
 
 // ── Card ─────────────────────────────────────────────────────────────────────

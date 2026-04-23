@@ -30,4 +30,20 @@ actual object FacebookAnalytics {
     actual fun logSearch(query: String, contentType: String) {
         bridge?.logEvent("fb_mobile_search", mapOf("fb_search_string" to query, "fb_content_type" to contentType))
     }
+
+    actual fun logSessionStart() {
+        bridge?.logEvent("session_start", emptyMap())
+    }
+
+    actual fun logGoalCreated(category: String) {
+        bridge?.logEvent("goal_created", mapOf("category" to category))
+    }
+
+    actual fun logCoachChatStarted(coachId: String) {
+        bridge?.logEvent("coach_chat_started", mapOf("coach_id" to coachId))
+    }
+
+    actual fun logHabitCheckedIn() {
+        bridge?.logEvent("habit_checkin", emptyMap())
+    }
 }

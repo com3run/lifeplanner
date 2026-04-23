@@ -463,6 +463,7 @@ internal fun GoalCategory.emoji() = when (this) {
     GoalCategory.PEOPLE -> "👥"
     GoalCategory.WELLBEING -> "💛"
     GoalCategory.PURPOSE -> "🙏"
+    GoalCategory.FAMILY -> "🏡"
 }
 
 internal fun GoalStatus.label() = when (this) {

@@ -13,7 +13,7 @@ internal fun detectCategoryFromText(text: String): GoalCategory {
         Regex("\\b(friend|social|network|relationship|meet|community|connect|dating|shy|introvert|people|talk|communication)\\b").containsMatchIn(lower) -> GoalCategory.PEOPLE
         Regex("\\b(mental|emotional|anxiety|stress|mindset|happiness|confident|therapy|wellbeing|mood|feelings?|heal|trauma|self.esteem)\\b").containsMatchIn(lower) -> GoalCategory.WELLBEING
         Regex("\\b(meditat|spiritual|mindful|peace|gratitude|purpose|meaning|soul|prayer|faith|church|mosque|zen|inner)\\b").containsMatchIn(lower) -> GoalCategory.PURPOSE
-        Regex("\\b(family|parent|child|kids?|spouse|partner|husband|wife|marriage|home|sibling|mom|dad|grandp)\\b").containsMatchIn(lower) -> GoalCategory.PEOPLE
+        Regex("\\b(family|parent|child|kids?|spouse|partner|husband|wife|marriage|home|sibling|mom|dad|grandp)\\b").containsMatchIn(lower) -> GoalCategory.FAMILY
         else -> GoalCategory.WELLBEING
     }
 }

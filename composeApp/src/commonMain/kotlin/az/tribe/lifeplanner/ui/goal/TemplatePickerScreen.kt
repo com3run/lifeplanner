@@ -344,5 +344,6 @@ private fun getCategoryEmoji(category: GoalCategory): String {
         GoalCategory.PEOPLE -> "👥"
         GoalCategory.WELLBEING -> "💚"
         GoalCategory.PURPOSE -> "🕊️"
+        GoalCategory.FAMILY -> "🏡"
     }
 }

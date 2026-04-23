@@ -53,4 +53,22 @@ actual object FacebookAnalytics {
         }
         logger.logEvent(AppEventsConstants.EVENT_NAME_SEARCHED, params)
     }
+
+    actual fun logSessionStart() {
+        logger.logEvent("session_start")
+    }
+
+    actual fun logGoalCreated(category: String) {
+        val params = Bundle().apply { putString("category", category) }
+        logger.logEvent("goal_created", params)
+    }
+
+    actual fun logCoachChatStarted(coachId: String) {
+        val params = Bundle().apply { putString("coach_id", coachId) }
+        logger.logEvent("coach_chat_started", params)
+    }
+
+    actual fun logHabitCheckedIn() {
+        logger.logEvent("habit_checkin")
+    }
 }

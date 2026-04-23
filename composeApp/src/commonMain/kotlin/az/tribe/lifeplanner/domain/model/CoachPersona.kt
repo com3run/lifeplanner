@@ -234,6 +234,31 @@ data class CoachPersona(
                 countryFlag = "🇯🇵",
                 imageUrl = "https://rkdggdfabwgukspylybu.supabase.co/storage/v1/object/public/assets/coaches/river.png"
             ),
+            CoachPersona(
+                id = "jamie_family",
+                name = "Jamie",
+                title = "Family Coach",
+                category = GoalCategory.FAMILY,
+                emoji = "🏡",
+                greeting = "Hi! I'm Jamie, your family coach. Let's work on what matters most at home.",
+                specialties = listOf("Family dynamics", "Parenting", "Relationships", "Home harmony"),
+                personality = "warm, patient, deeply empathetic",
+                avatar = CoachAvatar(
+                    backgroundColor = "#F57C00",
+                    accentColor = "#FFB74D",
+                    iconName = "home"
+                ),
+                profile = CoachProfile(
+                    bio = "Every family is different — I help you find the approach that actually works for yours.",
+                    funFact = "I believe the best family meetings happen over a meal!",
+                    xpToUnlock = 350,
+                    isDefaultUnlocked = true
+                ),
+                timezone = "Europe/London",
+                city = "London",
+                countryFlag = "🇬🇧",
+                imageUrl = "https://rkdggdfabwgukspylybu.supabase.co/storage/v1/object/public/assets/coaches/jamie.png"
+            ),
         )
 
         fun getByCategory(category: GoalCategory): CoachPersona =

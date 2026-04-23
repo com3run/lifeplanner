@@ -331,6 +331,7 @@ fun GoalCategory.backgroundColor(): Color {
         GoalCategory.PEOPLE -> Color(0xFF9C27B0)
         GoalCategory.WELLBEING -> Color(0xFF009688)
         GoalCategory.PURPOSE -> Color(0xFFE91E63)
+        GoalCategory.FAMILY -> Color(0xFFF57C00)
     }
 }
 

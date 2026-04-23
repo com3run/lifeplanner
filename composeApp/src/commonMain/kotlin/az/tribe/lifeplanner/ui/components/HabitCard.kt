@@ -383,5 +383,6 @@ fun GoalCategory.getIcon(): ImageVector {
         GoalCategory.PEOPLE -> PhosphorIcons.Regular.Users
         GoalCategory.WELLBEING -> PhosphorIcons.Regular.Heart
         GoalCategory.PURPOSE -> PhosphorIcons.Regular.Flower
+        GoalCategory.FAMILY -> PhosphorIcons.Regular.House
     }
 }

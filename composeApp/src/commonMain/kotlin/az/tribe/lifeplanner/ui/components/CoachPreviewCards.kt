@@ -271,6 +271,7 @@ private fun GoalCategory.getPreviewColor(): Color = when (this) {
     GoalCategory.PEOPLE -> CategoryColors.PEOPLE
     GoalCategory.WELLBEING -> CategoryColors.WELLBEING
     GoalCategory.PURPOSE -> CategoryColors.PURPOSE
+    GoalCategory.FAMILY -> CategoryColors.FAMILY
 }
 
 private fun GoalCategory.getGradient(): Brush {
@@ -281,6 +282,7 @@ private fun GoalCategory.getGradient(): Brush {
         GoalCategory.PEOPLE -> CategoryColors.PEOPLE_GRADIENT
         GoalCategory.WELLBEING -> CategoryColors.WELLBEING_GRADIENT
         GoalCategory.PURPOSE -> CategoryColors.PURPOSE_GRADIENT
+        GoalCategory.FAMILY -> CategoryColors.FAMILY_GRADIENT
     }
     return Brush.horizontalGradient(colors)
 }
@@ -293,4 +295,5 @@ private val GoalCategory.displayName: String
         GoalCategory.PEOPLE -> "People"
         GoalCategory.WELLBEING -> "Wellbeing"
         GoalCategory.PURPOSE -> "Purpose"
+        GoalCategory.FAMILY -> "Family"
     }

@@ -40,7 +40,10 @@ expect object PostHogAnalytics {
 object Analytics {
 
     // ── Onboarding funnel ────────────────────────────────────────────
-    fun appOpened() = PostHogAnalytics.capture("app_opened")
+    fun appOpened() {
+        PostHogAnalytics.capture("app_opened")
+        FacebookAnalytics.logSessionStart()
+    }
 
     fun onboardingStarted() = PostHogAnalytics.capture("onboarding_started")
 
@@ -72,12 +75,14 @@ object Analytics {
     fun accountSecured() = PostHogAnalytics.capture("account_secured")
 
     // ── Goal funnel ──────────────────────────────────────────────────
-    fun goalCreated(category: String, source: String, hasAiGenerated: Boolean = false) =
+    fun goalCreated(category: String, source: String, hasAiGenerated: Boolean = false) {
         PostHogAnalytics.capture("goal_created", mapOf(
             "category" to category,
             "source" to source,
             "ai_generated" to hasAiGenerated
         ))
+        FacebookAnalytics.logGoalCreated(category)
+    }
 
     fun goalViewed(goalId: String, category: String) =
         PostHogAnalytics.capture("goal_viewed", mapOf(
@@ -118,11 +123,13 @@ object Analytics {
             "linked_to_goal" to linkedToGoal
         ))
 
-    fun habitCheckedIn(habitId: String, streak: Int) =
+    fun habitCheckedIn(habitId: String, streak: Int) {
         PostHogAnalytics.capture("habit_checked_in", mapOf(
             "habit_id" to habitId,
             "streak" to streak
         ))
+        FacebookAnalytics.logHabitCheckedIn()
+    }
 
     fun habitStreakBroken(habitId: String, previousStreak: Int) =
         PostHogAnalytics.capture("habit_streak_broken", mapOf(
@@ -168,11 +175,13 @@ object Analytics {
         ))
 
     // ── AI / Coach funnel ────────────────────────────────────────────
-    fun chatMessageSent(coachId: String, isFirstMessage: Boolean) =
+    fun chatMessageSent(coachId: String, isFirstMessage: Boolean) {
         PostHogAnalytics.capture("chat_message_sent", mapOf(
             "coach_id" to coachId,
             "is_first_message" to isFirstMessage
         ))
+        if (isFirstMessage) FacebookAnalytics.logCoachChatStarted(coachId)
+    }
 
     fun coachProfileViewed(coachId: String) =
         PostHogAnalytics.capture("coach_profile_viewed", mapOf("coach_id" to coachId))

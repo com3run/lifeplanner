@@ -500,6 +500,7 @@ private fun GoalCategory.emoji() = when (this) {
     GoalCategory.PEOPLE -> "👥"
     GoalCategory.WELLBEING -> "💛"
     GoalCategory.PURPOSE -> "🙏"
+    GoalCategory.FAMILY -> "🏡"
 }
 
 private fun GoalCategory.chipColor() = when (this) {
@@ -509,4 +510,5 @@ private fun GoalCategory.chipColor() = when (this) {
     GoalCategory.PEOPLE -> Color(0xFF9C27B0)
     GoalCategory.WELLBEING -> Color(0xFF009688)
     GoalCategory.PURPOSE -> Color(0xFFE91E63)
+    GoalCategory.FAMILY -> Color(0xFFF57C00)
 }

@@ -15,6 +15,7 @@ object CategoryColors {
     val PEOPLE = Color(0xFF7A5AF8)
     val WELLBEING = Color(0xFF00CFE8)
     val PURPOSE = Color(0xFFEA5455)
+    val FAMILY = Color(0xFFF57C00)
     val LEARNING = Color(0xFF28C3D7)
     val OTHER = Color(0xFF9E9FA3)
 
@@ -25,6 +26,7 @@ object CategoryColors {
     val PEOPLE_GRADIENT = listOf(Color(0xFF7A5AF8), Color(0xFF6346E0))
     val WELLBEING_GRADIENT = listOf(Color(0xFF00CFE8), Color(0xFF00A1B5))
     val PURPOSE_GRADIENT = listOf(Color(0xFFEA5455), Color(0xFFD03A3B))
+    val FAMILY_GRADIENT = listOf(Color(0xFFF57C00), Color(0xFFE65100))
     val LEARNING_GRADIENT = listOf(Color(0xFF28C3D7), Color(0xFF1A9AAB))
     val OTHER_GRADIENT = listOf(Color(0xFF9E9FA3), Color(0xFF75767A))
 
@@ -35,6 +37,7 @@ object CategoryColors {
     val PEOPLE_CONTAINER = Color(0xFFF1ECFF)
     val WELLBEING_CONTAINER = Color(0xFFE0F9FC)
     val PURPOSE_CONTAINER = Color(0xFFFFEDED)
+    val FAMILY_CONTAINER = Color(0xFFFFF3E0)
     val LEARNING_CONTAINER = Color(0xFFDFF7FB)
     val OTHER_CONTAINER = Color(0xFFF0F0F0)
 }
@@ -48,6 +51,7 @@ fun GoalCategory.gradientColors(): List<Color> {
         GoalCategory.PEOPLE -> CategoryColors.PEOPLE_GRADIENT
         GoalCategory.WELLBEING -> CategoryColors.WELLBEING_GRADIENT
         GoalCategory.PURPOSE -> CategoryColors.PURPOSE_GRADIENT
+        GoalCategory.FAMILY -> CategoryColors.FAMILY_GRADIENT
     }
 }
 
@@ -60,6 +64,7 @@ fun GoalCategory.containerColor(): Color {
         GoalCategory.PEOPLE -> CategoryColors.PEOPLE_CONTAINER
         GoalCategory.WELLBEING -> CategoryColors.WELLBEING_CONTAINER
         GoalCategory.PURPOSE -> CategoryColors.PURPOSE_CONTAINER
+        GoalCategory.FAMILY -> CategoryColors.FAMILY_CONTAINER
     }
 }
 
@@ -72,6 +77,7 @@ fun GoalCategory.backgroundColor(): Color {
         GoalCategory.PEOPLE -> CategoryColors.PEOPLE
         GoalCategory.WELLBEING -> CategoryColors.WELLBEING
         GoalCategory.PURPOSE -> CategoryColors.PURPOSE
+        GoalCategory.FAMILY -> CategoryColors.FAMILY
     }
 }
 

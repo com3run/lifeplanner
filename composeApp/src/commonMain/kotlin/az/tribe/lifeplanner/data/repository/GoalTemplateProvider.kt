@@ -24,6 +24,7 @@ object GoalTemplateProvider {
             GoalCategory.PEOPLE -> peopleTemplates
             GoalCategory.WELLBEING -> wellbeingTemplates
             GoalCategory.PURPOSE -> purposeTemplates
+            GoalCategory.FAMILY -> emptyList()
         }
     }
 

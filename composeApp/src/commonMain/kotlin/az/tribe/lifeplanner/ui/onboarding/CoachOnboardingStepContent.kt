@@ -246,7 +246,8 @@ private fun PriorityStep(
         GoalCategory.BODY to ("💪" to "Body"),
         GoalCategory.PEOPLE to ("🤝" to "People"),
         GoalCategory.WELLBEING to ("✨" to "Wellbeing"),
-        GoalCategory.PURPOSE to ("🧘" to "Purpose")
+        GoalCategory.PURPOSE to ("🧘" to "Purpose"),
+        GoalCategory.FAMILY to ("🏡" to "Family")
     )
     FlowRow(
         modifier = Modifier.fillMaxWidth(),
@@ -409,6 +410,16 @@ private fun SpecialistQ1(vm: CoachOnboardingViewModel, onAdvance: () -> Unit) {
             onDone = { vm.topValues = it; onAdvance() },
             onSkip = onAdvance
         )
+        "jamie_family" -> ChipQuestion(
+            options = listOf(
+                "Parent of young kids", "Parent of teens", "Empty nester",
+                "Caring for parents", "Single, no kids yet", "Other"
+            ),
+            selected = vm.familyRole.takeIf { it.isNotBlank() },
+            onSelect = { vm.familyRole = it },
+            onContinue = onAdvance,
+            onSkip = onAdvance
+        )
         else -> TextInputStep(
             label = "Your main goal",
             value = vm.careerGoal,
@@ -478,6 +489,13 @@ private fun SpecialistQ2(vm: CoachOnboardingViewModel, onAdvance: () -> Unit) {
             onContinue = onAdvance,
             onSkip = onAdvance
         )
+        "jamie_family" -> TextInputStep(
+            label = "Main family challenge",
+            value = vm.familyChallenge,
+            onChange = { vm.familyChallenge = it },
+            onContinue = onAdvance,
+            optional = true
+        )
         else -> onAdvance()
     }
 }
@@ -534,6 +552,13 @@ private fun SpecialistQ3(vm: CoachOnboardingViewModel, onAdvance: () -> Unit) {
             label = "Your long-term vision (optional)",
             value = vm.longTermVision,
             onChange = { vm.longTermVision = it },
+            onContinue = onAdvance,
+            optional = true
+        )
+        "jamie_family" -> TextInputStep(
+            label = "What success looks like (optional)",
+            value = vm.familyVision,
+            onChange = { vm.familyVision = it },
             onContinue = onAdvance,
             optional = true
         )

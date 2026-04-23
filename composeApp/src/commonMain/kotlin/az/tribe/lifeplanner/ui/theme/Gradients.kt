@@ -171,6 +171,17 @@ object LifePlannerGradients {
             )
         )
 
+    /**
+     * Family gradient - Warm amber/orange
+     */
+    val family: Brush
+        @Composable get() = Brush.linearGradient(
+            colors = listOf(
+                Color(0xFFF57C00),
+                Color(0xFFFFB74D)
+            )
+        )
+
     // ==================== UTILITY FUNCTIONS ====================
 
     /**
@@ -185,6 +196,7 @@ object LifePlannerGradients {
             GoalCategory.PEOPLE -> people
             GoalCategory.WELLBEING -> wellbeing
             GoalCategory.PURPOSE -> purpose
+            GoalCategory.FAMILY -> family
         }
     }
 
@@ -199,6 +211,7 @@ object LifePlannerGradients {
             GoalCategory.PEOPLE -> listOf(Color(0xFF9C27B0), Color(0xFFE040FB))
             GoalCategory.WELLBEING -> listOf(Color(0xFF009688), Color(0xFF4DB6AC))
             GoalCategory.PURPOSE -> listOf(Color(0xFFE91E63), Color(0xFFFF6090))
+            GoalCategory.FAMILY -> listOf(Color(0xFFF57C00), Color(0xFFFFB74D))
         }
     }
 

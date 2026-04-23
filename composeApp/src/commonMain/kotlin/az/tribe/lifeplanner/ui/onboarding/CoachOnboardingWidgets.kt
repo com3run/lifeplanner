@@ -214,6 +214,7 @@ private fun specialistQ1Message(vm: CoachOnboardingViewModel) = when (vm.special
     "kai_fitness" -> "How active are you day-to-day?"
     "sam_social" -> "Are you more of an introvert, ambivert, or extrovert? No right answer — just helps me understand how you recharge."
     "river_wellness" -> "What are your top values? Pick up to 3. These are the compass for all your goals."
+    "jamie_family" -> "What best describes your family situation right now?"
     else -> "What's on your mind?"
 }
 
@@ -223,6 +224,7 @@ private fun specialistQ2Message(vm: CoachOnboardingViewModel) = when (vm.special
     "kai_fitness" -> "How many hours do you sleep on a typical night?"
     "sam_social" -> "How big is your close social circle — people you'd actually call in a tough moment?"
     "river_wellness" -> "Do you have any mindfulness or meditation practice?"
+    "jamie_family" -> "What's your biggest family challenge at the moment? Be as specific as you like."
     else -> ""
 }
 
@@ -232,6 +234,7 @@ private fun specialistQ3Message(vm: CoachOnboardingViewModel) = when (vm.special
     "kai_fitness" -> "On a scale of 1–10, how's your energy level on a typical day?"
     "sam_social" -> "What's your relationship status? Helps me understand your support structure."
     "river_wellness" -> "In one sentence, what's your long-term vision for your life?"
+    "jamie_family" -> "What would a calmer, happier home life look like for you in 3 months?"
     else -> ""
 }
 

@@ -393,4 +393,5 @@ internal fun GoalCategory.toHabitColor(): Color = when (this) {
     GoalCategory.PEOPLE -> Color(0xFF4776E6)
     GoalCategory.WELLBEING -> Color(0xFF11998E)
     GoalCategory.PURPOSE -> Color(0xFF8E54E9)
+    GoalCategory.FAMILY -> Color(0xFFF57C00)
 }

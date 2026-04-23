@@ -120,6 +120,12 @@ class CoachOnboardingViewModel(
     var mindfulnessPractice by mutableStateOf<Boolean?>(null)
     var longTermVision by mutableStateOf("")
 
+    // ── Family answers (Jamie) ────────────────────────────────────────────────
+
+    var familyRole by mutableStateOf("")
+    var familyChallenge by mutableStateOf("")
+    var familyVision by mutableStateOf("")
+
     // ── Mind dump — free-text first goal seed ─────────────────────────────────
 
     var mindDump by mutableStateOf("")
@@ -133,6 +139,7 @@ class CoachOnboardingViewModel(
             GoalCategory.BODY -> "kai_fitness"
             GoalCategory.PEOPLE -> "sam_social"
             GoalCategory.PURPOSE -> "river_wellness"
+            GoalCategory.FAMILY -> "jamie_family"
             else -> "luna_general"
         }
 
@@ -143,6 +150,7 @@ class CoachOnboardingViewModel(
             "kai_fitness" -> 3
             "sam_social" -> 3
             "river_wellness" -> 3
+            "jamie_family" -> 3
             else -> 0
         }
 
@@ -162,6 +170,7 @@ class CoachOnboardingViewModel(
             "kai_fitness" -> { total += 2; if (activityLevel != null) filled++; if (energyRating > 0) filled++ }
             "sam_social" -> { total += 2; if (socialEnergy != null) filled++; if (closeCircleSize != null) filled++ }
             "river_wellness" -> { total += 2; if (topValues.isNotEmpty()) filled++; if (longTermVision.isNotBlank()) filled++ }
+            "jamie_family" -> { total += 2; if (familyRole.isNotBlank()) filled++; if (familyChallenge.isNotBlank()) filled++ }
         }
         return (filled.toFloat() / total).coerceIn(0f, 1f)
     }
@@ -236,6 +245,9 @@ class CoachOnboardingViewModel(
         mindfulnessPractice?.let { settings.putBoolean(KEY_MINDFULNESS, it) } ?: settings.remove(KEY_MINDFULNESS)
         settings.putString(KEY_VISION, longTermVision)
         settings.putString(KEY_MIND_DUMP, mindDump)
+        settings.putString(KEY_FAMILY_ROLE, familyRole)
+        settings.putString(KEY_FAMILY_CHALLENGE, familyChallenge)
+        settings.putString(KEY_FAMILY_VISION, familyVision)
     }
 
     private fun restoreFromSettings() {
@@ -264,6 +276,9 @@ class CoachOnboardingViewModel(
         mindfulnessPractice = settings.getBooleanOrNull(KEY_MINDFULNESS)
         longTermVision = settings.getString(KEY_VISION, "")
         mindDump = settings.getString(KEY_MIND_DUMP, "")
+        familyRole = settings.getString(KEY_FAMILY_ROLE, "")
+        familyChallenge = settings.getString(KEY_FAMILY_CHALLENGE, "")
+        familyVision = settings.getString(KEY_FAMILY_VISION, "")
     }
 
     private fun clearInProgressState() {
@@ -280,6 +295,7 @@ class CoachOnboardingViewModel(
         activityLevel = null; sleepHours = 7f; energyRating = 6
         socialEnergy = null; closeCircleSize = null; relationshipStatus = null
         topValues = emptyList(); mindfulnessPractice = null; longTermVision = ""
+        familyRole = ""; familyChallenge = ""; familyVision = ""
         mindDump = ""
     }
 
@@ -317,7 +333,7 @@ class CoachOnboardingViewModel(
                 Generate a single specific, achievable goal directly based on what they shared.
                 The title should be concise and motivating (max 60 chars).
                 The description should be 1–2 sentences explaining the goal clearly.
-                The category must be one of: CAREER, MONEY, BODY, PEOPLE, WELLBEING, PURPOSE
+                The category must be one of: CAREER, MONEY, BODY, PEOPLE, WELLBEING, PURPOSE, FAMILY
             """.trimIndent()
 
             val schema = buildJsonObject {
@@ -401,12 +417,23 @@ class CoachOnboardingViewModel(
             energyRating = energyRating,
             confidence = if (activityLevel != null) 0.7f else 0f
         ) else BodySlice()
-        val people = if (specialistCoachId == "sam_social") PeopleSlice(
-            socialEnergy = socialEnergy,
-            closeCircleSize = closeCircleSize,
-            relationshipStatus = relationshipStatus,
-            confidence = if (socialEnergy != null) 0.7f else 0f
-        ) else PeopleSlice()
+        val people = when (specialistCoachId) {
+            "sam_social" -> PeopleSlice(
+                socialEnergy = socialEnergy,
+                closeCircleSize = closeCircleSize,
+                relationshipStatus = relationshipStatus,
+                confidence = if (socialEnergy != null) 0.7f else 0f
+            )
+            "jamie_family" -> PeopleSlice(
+                familyContext = buildString {
+                    if (familyRole.isNotBlank()) append("Role: $familyRole. ")
+                    if (familyChallenge.isNotBlank()) append("Challenge: $familyChallenge. ")
+                    if (familyVision.isNotBlank()) append("Vision: $familyVision")
+                }.trim().takeIf { it.isNotBlank() },
+                confidence = if (familyRole.isNotBlank() || familyChallenge.isNotBlank()) 0.7f else 0f
+            )
+            else -> PeopleSlice()
+        }
         val purpose = if (specialistCoachId == "river_wellness") PurposeSlice(
             topValues = topValues,
             mindfulnessPractice = mindfulnessPractice,
@@ -447,13 +474,17 @@ class CoachOnboardingViewModel(
         private const val KEY_MINDFULNESS = "ob_mindfulness"
         private const val KEY_VISION = "ob_vision"
         private const val KEY_MIND_DUMP = "ob_mind_dump"
+        private const val KEY_FAMILY_ROLE = "ob_family_role"
+        private const val KEY_FAMILY_CHALLENGE = "ob_family_challenge"
+        private const val KEY_FAMILY_VISION = "ob_family_vision"
 
         private val inProgressKeys = listOf(
             KEY_PHASE, KEY_USER_NAME, KEY_USER_AGE, KEY_TOP_PRIORITY, KEY_STRESS, KEY_SLEEP_QUALITY,
             KEY_EMPLOYMENT, KEY_JOB_ROLE, KEY_YEARS_EXP, KEY_CAREER_GOAL, KEY_INCOME_BAND,
             KEY_SAVINGS_HABIT, KEY_HAS_DEBT, KEY_FINANCIAL_GOAL, KEY_ACTIVITY, KEY_SLEEP_HOURS,
             KEY_ENERGY, KEY_SOCIAL_ENERGY, KEY_CIRCLE_SIZE, KEY_RELATIONSHIP, KEY_TOP_VALUES,
-            KEY_MINDFULNESS, KEY_VISION, KEY_MIND_DUMP
+            KEY_MINDFULNESS, KEY_VISION, KEY_MIND_DUMP, KEY_FAMILY_ROLE, KEY_FAMILY_CHALLENGE,
+            KEY_FAMILY_VISION
         )
 
         fun isComplete(settings: Settings) = settings.getBoolean(COACH_ONBOARDING_KEY, false)

@@ -7,4 +7,9 @@ expect object FacebookAnalytics {
     fun logAchieveLevel(level: Int)
     fun logUnlockAchievement(description: String)
     fun logSearch(query: String, contentType: String)
+
+    fun logSessionStart()
+    fun logGoalCreated(category: String)
+    fun logCoachChatStarted(coachId: String)
+    fun logHabitCheckedIn()
 }

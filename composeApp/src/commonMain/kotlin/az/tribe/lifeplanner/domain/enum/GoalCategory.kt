@@ -6,7 +6,8 @@ enum class GoalCategory(val order: Int) {
     BODY(3),
     PEOPLE(4),
     WELLBEING(5),
-    PURPOSE(6);
+    PURPOSE(6),
+    FAMILY(7);
 
     companion object {
         fun getAllSorted(): List<GoalCategory> {
