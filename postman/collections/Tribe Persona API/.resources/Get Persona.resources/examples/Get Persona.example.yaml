@@ -1,0 +1,445 @@
+$kind: http-example
+description: Fetch a single public persona by mascotId. By default includes the public media library with engagement stats.
+request:
+  url: https://jimiwruckhlxkmnduhrn.supabase.co/functions/v1/persona-api?includeMedia=true&mediaLimit=24&sort=recent
+  method: GET
+  headers:
+    x-api-key: "{{PERSONA_API_SECRET}}"
+  queryParams:
+    - key: mascotId
+      value: <uuid>
+      disabled: true
+      description: Fetch a single public persona by id
+    - key: includeMedia
+      value: "true"
+      description: '"true" (default) | "false" — include public media library with engagement stats'
+    - key: mediaLimit
+      value: "24"
+      description: 1–100 (default 24) — number of media items to return
+    - key: sort
+      value: recent
+      description: '"recent" (default) | "engagement" | "likes" | "views"'
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    date: Fri, 24 Apr 2026 09:10:46 GMT
+    content-type: application/json
+    content-length: "8281"
+    connection: keep-alive
+    cf-ray: 9f13fa06dca60c5d-YVR
+    cf-cache-status: DYNAMIC
+    access-control-allow-origin: "*"
+    content-encoding: gzip
+    server: cloudflare
+    strict-transport-security: max-age=31536000; includeSubDomains; preload
+    vary: Accept-Encoding
+    x-content-type-options: nosniff
+    access-control-allow-headers: authorization, x-client-info, apikey, content-type, x-api-key
+    access-control-allow-methods: GET, OPTIONS
+    endpoint-load-metrics: application_utilization:12,named_metrics.queue_depth:12
+    sb-gateway-version: "1"
+    sb-project-ref: jimiwruckhlxkmnduhrn
+    sb-request-id: 019dbec1-8047-7ba6-961b-614e2cc885cd
+    x-deno-execution-id: fba59716-4d44-41d8-8de7-cd47e9022ada
+    x-sb-edge-region: us-west-2
+    x-served-by: supabase-edge-runtime
+    set-cookie: __cf_bm=0JYqtoMat1fE6hrMICOmj4he49.1VCCqQpTl7823oaI-1777021845.5721202-1.0.1.1-tww15yKl1miCuIUheiPhC0VgAYeQ5YXecRG8DuJqntys5h0Ha4_jof5KH7ugpPH5tgHrpKCPS9DXPDcSzMCUuT.7KQjsV4HdRCEEYwUpsM.mau_zIrQw295hJVVLpbTw; HttpOnly; Secure; Path=/; Domain=supabase.co; Expires=Fri, 24 Apr 2026 09:40:46 GMT
+    alt-svc: h3=":443"; ma=86400
+  body:
+    type: json
+    content: |-
+      {
+        "personas": [
+          {
+            "id": "bfcd4017-3ffc-49d8-b339-f89b36a370c7",
+            "slug": "jamie-bfcd4017",
+            "name": "Jamie",
+            "description": "A 36-year-old woman with warm Northern European features, grounded and deeply present — the archetype of a thoughtful family strategist, not a self-help trope. Balanced face with a soft defined jawline, warm grey-green eyes with a steady empathetic gaze and a gentle smile, straight natural nose, clear even skin. Warm dark blonde hair with fine natural highlights, collarbone length, worn in a clean loose wave with a natural side parting. Healthy lean-soft build, 5'7 relaxed confident posture with a settled ease. Wearing a premium oatmeal wool-blend coat over a fine-rib dark navy turtleneck, tailored charcoal trousers, a refined gold signet ring, understated leather tote visible at side — no logos. Warm London home study interior with floor-to-ceiling bookshelves, a weathered oak writing desk, and soft afternoon light through a tall sash window. Diffused natural light, warm incandescent fill. 85mm portrait lens, shallow depth of field, sharp focus on the eyes, editorial magazine photography, quiet-luxury brand aesthetic, photorealistic 8k, real skin texture with visible pores, subtle asymmetry, no plastic, no CGI.",
+            "style": "realistic",
+            "image_url": "https://jimiwruckhlxkmnduhrn.supabase.co/storage/v1/object/public/brand-assets/14b7a54e-c3fa-4fba-8664-7b5b4c5849f0/mascot-1777007910460.png",
+            "avatar_url": "https://jimiwruckhlxkmnduhrn.supabase.co/storage/v1/object/public/brand-assets/14b7a54e-c3fa-4fba-8664-7b5b4c5849f0/mascot-1777007910460.png",
+            "poster_url": "https://jimiwruckhlxkmnduhrn.supabase.co/storage/v1/object/public/brand-assets/14b7a54e-c3fa-4fba-8664-7b5b4c5849f0/mascot-1777007910460.png",
+            "clip_url": null,
+            "video_url": null,
+            "is_public": true,
+            "created_at": "2026-04-24T05:18:31.983611+00:00",
+            "updated_at": "2026-04-24T08:38:16.349638+00:00",
+            "media": []
+          },
+          {
+            "id": "5e189b27-2ca0-4b3c-9be5-95f78819355b",
+            "slug": "river-5e189b27",
+            "name": "River",
+            "description": "A 33-year-old person with calm refined East Asian features, serene and quietly magnetic — the archetype of a grounded mindfulness guide, not a spiritual performer. Clean symmetrical bone structure with a refined jaw, deep dark brown eyes with a still composed gaze and subtle inner peace, straight elegant nose, soft natural expression. Black hair with a subtle natural sheen, medium length, worn in a clean loose half-up style with gentle texture. Lean balanced build, 5'9 natural upright posture with an effortless stillness. Wearing a premium sage-green linen overshirt over a fine ivory jersey, wide-leg natural cotton trousers, minimalist matte clay-coloured watch — no logos. Minimalist Tokyo apartment interior with white shoji-panel light diffusion, a single sculptural bonsai and smooth concrete accent wall in soft background. Even cool natural daylight, warm neutral fill. 85mm portrait lens, shallow depth of field, sharp focus on the eyes, editorial magazine photography, quiet-luxury brand aesthetic, photorealistic 8k, real skin texture with visible pores, subtle natural asymmetry, no plastic, no CGI.",
+            "style": "realistic",
+            "image_url": "https://jimiwruckhlxkmnduhrn.supabase.co/storage/v1/object/public/brand-assets/14b7a54e-c3fa-4fba-8664-7b5b4c5849f0/mascot-1777007211807.png",
+            "avatar_url": "https://jimiwruckhlxkmnduhrn.supabase.co/storage/v1/object/public/brand-assets/14b7a54e-c3fa-4fba-8664-7b5b4c5849f0/mascot-1777007211807.png",
+            "poster_url": "https://jimiwruckhlxkmnduhrn.supabase.co/storage/v1/object/public/brand-assets/14b7a54e-c3fa-4fba-8664-7b5b4c5849f0/mascot-1777007211807.png",
+            "clip_url": null,
+            "video_url": null,
+            "is_public": true,
+            "created_at": "2026-04-24T05:06:53.04183+00:00",
+            "updated_at": "2026-04-24T08:38:16.349638+00:00",
+            "media": []
+          },
+          {
+            "id": "33cac3b1-d939-45f2-bf41-8172269cfb8d",
+            "slug": "sam-33cac3b1",
+            "name": "Sam",
+            "description": "A 29-year-old woman with warm mixed-European or light Mediterranean features, naturally radiant and emotionally open — the archetype of a genuine connection coach, not a motivational performer. Soft rounded face with gentle cheekbones, warm hazel-brown eyes with an open inviting gaze and natural warmth, soft straight nose, easy authentic smile. Rich chestnut hair with natural highlights, shoulder-length with soft loose waves, effortlessly styled. Slender graceful build, 5'6 relaxed feminine proportions, approachable open body language. Wearing a tailored dusty-rose knit blazer over a cream fine-rib turtleneck, straight camel trousers, small gold hoop earrings, delicate chain bracelet — no logos. Parisian apartment interior with warm plaster walls, a tall arched window with soft white curtains and a blurred courtyard behind. Warm golden natural daylight, subtle warm fill. 85mm portrait lens, shallow depth of field, sharp focus on the eyes, editorial magazine photography, quiet-luxury brand aesthetic, photorealistic 8k, real skin texture with visible pores, subtle asymmetry, no plastic, no CGI.",
+            "style": "realistic",
+            "image_url": "https://jimiwruckhlxkmnduhrn.supabase.co/storage/v1/object/public/brand-assets/14b7a54e-c3fa-4fba-8664-7b5b4c5849f0/mascot-1777006799088.png",
+            "avatar_url": "https://jimiwruckhlxkmnduhrn.supabase.co/storage/v1/object/public/brand-assets/14b7a54e-c3fa-4fba-8664-7b5b4c5849f0/mascot-1777006799088.png",
+            "poster_url": "https://jimiwruckhlxkmnduhrn.supabase.co/storage/v1/object/public/brand-assets/14b7a54e-c3fa-4fba-8664-7b5b4c5849f0/mascot-1777006799088.png",
+            "clip_url": null,
+            "video_url": null,
+            "is_public": true,
+            "created_at": "2026-04-24T05:00:00.740661+00:00",
+            "updated_at": "2026-04-24T08:38:16.349638+00:00",
+            "media": []
+          },
+          {
+            "id": "f6ef0b66-d8ea-464c-9b0f-bcbbf8c3e1fb",
+            "slug": "kai-f6ef0b66",
+            "name": "Kai",
+            "description": "A 31-year-old man, warm mid-tone Mediterranean features, calm and athletic. Clean defined jaw, warm brown eyes with a slight smile, short dark textured hair. Wearing a premium oatmeal knit sweater. Neutral light grey background.",
+            "style": "realistic",
+            "image_url": "https://jimiwruckhlxkmnduhrn.supabase.co/storage/v1/object/public/brand-assets/14b7a54e-c3fa-4fba-8664-7b5b4c5849f0/mascot-1777013308595.png",
+            "avatar_url": "https://jimiwruckhlxkmnduhrn.supabase.co/storage/v1/object/public/brand-assets/14b7a54e-c3fa-4fba-8664-7b5b4c5849f0/mascot-1777013308595.png",
+            "poster_url": "https://jimiwruckhlxkmnduhrn.supabase.co/storage/v1/object/public/brand-assets/14b7a54e-c3fa-4fba-8664-7b5b4c5849f0/mascot-1777013308595.png",
+            "clip_url": null,
+            "video_url": null,
+            "is_public": true,
+            "created_at": "2026-04-23T07:34:34.494101+00:00",
+            "updated_at": "2026-04-24T08:38:16.349638+00:00",
+            "media": []
+          },
+          {
+            "id": "9ba9d04b-d50c-47f2-ada6-0c3abce5f86e",
+            "slug": "morgan-9ba9d04b",
+            "name": "Morgan",
+            "description": "A 35-year-old woman with calm composed Caucasian or mixed features, warm but professional — the archetype of a sharp financial architect. Refined jawline with gentle definition, straight balanced nose, clear blue-grey eyes with a steady analytical gaze, well-defined natural brows, clear even skin with minimal makeup. Warm blonde or light chestnut hair with subtle highlights, chin-to-shoulder length, sleek with subtle natural waves, tucked behind one ear with clean centre parting. Lean upright build, 5'7 impression, confident stillness in posture. Wearing a tailored camel wool coat over an ivory fine-knit jumper, tailored navy trousers, elegant steel bracelet watch. Light-filled home office with minimalist desk, a single large fiddle-leaf plant, stacked books and a folded leather notebook. Cool natural daylight through a tall window, soft neutral key light. 85mm portrait lens, shallow depth of field, sharp focus on the eyes, editorial magazine photography, quiet-luxury brand aesthetic, photorealistic 8k, real skin texture, no plastic, no CGI.",
+            "style": "realistic",
+            "image_url": "https://jimiwruckhlxkmnduhrn.supabase.co/storage/v1/object/public/brand-assets/14b7a54e-c3fa-4fba-8664-7b5b4c5849f0/mascot-1776929137342.png",
+            "avatar_url": "https://jimiwruckhlxkmnduhrn.supabase.co/storage/v1/object/public/brand-assets/14b7a54e-c3fa-4fba-8664-7b5b4c5849f0/mascot-1776929137342.png",
+            "poster_url": "https://jimiwruckhlxkmnduhrn.supabase.co/storage/v1/object/public/brand-assets/14b7a54e-c3fa-4fba-8664-7b5b4c5849f0/mascot-1776929137342.png",
+            "clip_url": null,
+            "video_url": null,
+            "is_public": true,
+            "created_at": "2026-04-23T07:25:40.080481+00:00",
+            "updated_at": "2026-04-24T08:38:16.349638+00:00",
+            "media": [
+              {
+                "id": "084bcc8e-931d-4c0a-9ed2-dc9774773bcd",
+                "kind": "video",
+                "format": "reels",
+                "url": "https://jimiwruckhlxkmnduhrn.supabase.co/storage/v1/object/public/generated-media/14b7a54e-c3fa-4fba-8664-7b5b4c5849f0/2aba11f8-ab88-4c59-9292-5630ead02f17/reel-1776931416351.mp4",
+                "thumbnail_url": "https://jimiwruckhlxkmnduhrn.supabase.co/storage/v1/object/public/generated-media/14b7a54e-c3fa-4fba-8664-7b5b4c5849f0/2aba11f8-ab88-4c59-9292-5630ead02f17/slide-1-1776931326821.png",
+                "topic": "Financial architect Morgan's morning routine",
+                "idea": "Morgan, a 35-year-old woman with a refined jawline, clear blue-grey eyes, and warm blonde hair, is seated at her minimalist home office desk. She’s wearing a tailored camel wool coat over an ivory fine-knit jumper. Her elegant steel bracelet watch is visible as she sips from a ceramic mug, gazing thoughtfully at a financial report on her laptop. The scene is bathed in cool natural daylight from a tall window, with a fiddle-leaf plant and stacked books in the soft-focus background. Her expression is calm and analytical, embodying quiet confidence.",
+                "caption": "Elevate your mornings for an elevated life. ✨ Morgan's routine isn't just about productivity, it's about intentional living and setting the tone for success, one focused moment at a time. What’s one small thing you do each morning to prime your day for greatness? 👇",
+                "hashtags": [
+                  "MorningRoutine",
+                  "FinancialArchitect",
+                  "ProductivityTips",
+                  "IntentionalLiving",
+                  "SuccessMindset",
+                  "QuietLuxury",
+                  "WorkLifeBalance",
+                  "Motivation",
+                  "DailyHabits",
+                  "CareerGoals",
+                  "EmpoweredWomen",
+                  "MindfulMornings"
+                ],
+                "engagement": {
+                  "likes": 0,
+                  "comments": 0,
+                  "views": 0,
+                  "synced_at": null
+                },
+                "published_at": null,
+                "created_at": "2026-04-23T08:03:39.497812+00:00",
+                "external_post_id": null,
+                "permalink": null,
+                "platform": null,
+                "account": null
+              },
+              {
+                "id": "88634ed1-89db-42a4-ba55-c64cd6173fe5",
+                "kind": "image",
+                "format": "reels",
+                "url": "https://jimiwruckhlxkmnduhrn.supabase.co/storage/v1/object/public/generated-media/14b7a54e-c3fa-4fba-8664-7b5b4c5849f0/2aba11f8-ab88-4c59-9292-5630ead02f17/slide-1-1776931326821.png",
+                "thumbnail_url": null,
+                "topic": "Financial architect Morgan's morning routine",
+                "idea": "Morgan, a 35-year-old woman with a refined jawline, clear blue-grey eyes, and warm blonde hair, is seated at her minimalist home office desk. She’s wearing a tailored camel wool coat over an ivory fine-knit jumper. Her elegant steel bracelet watch is visible as she sips from a ceramic mug, gazing thoughtfully at a financial report on her laptop. The scene is bathed in cool natural daylight from a tall window, with a fiddle-leaf plant and stacked books in the soft-focus background. Her expression is calm and analytical, embodying quiet confidence.",
+                "caption": "Elevate your mornings for an elevated life. ✨ Morgan's routine isn't just about productivity, it's about intentional living and setting the tone for success, one focused moment at a time. What’s one small thing you do each morning to prime your day for greatness? 👇",
+                "hashtags": [
+                  "MorningRoutine",
+                  "FinancialArchitect",
+                  "ProductivityTips",
+                  "IntentionalLiving",
+                  "SuccessMindset",
+                  "QuietLuxury",
+                  "WorkLifeBalance",
+                  "Motivation",
+                  "DailyHabits",
+                  "CareerGoals",
+                  "EmpoweredWomen",
+                  "MindfulMornings"
+                ],
+                "engagement": {
+                  "likes": 0,
+                  "comments": 0,
+                  "views": 0,
+                  "synced_at": null
+                },
+                "published_at": null,
+                "created_at": "2026-04-23T08:02:08.823692+00:00",
+                "external_post_id": null,
+                "permalink": null,
+                "platform": null,
+                "account": null
+              }
+            ]
+          },
+          {
+            "id": "0ca72bd2-16d3-4bcb-8ff4-f60de5a0705b",
+            "slug": "alex-0ca72bd2",
+            "name": "Alex",
+            "description": "A 37-year-old man, mixed-European, calm and confident. Defined jawline, light stubble, steel-grey-blue eyes. Dark brown hair with subtle silver at the temples, short neat cut. Navy blazer over a white shirt. Soft office interior behind him.",
+            "style": "realistic",
+            "image_url": "https://jimiwruckhlxkmnduhrn.supabase.co/storage/v1/object/public/brand-assets/14b7a54e-c3fa-4fba-8664-7b5b4c5849f0/mascot-1777015993984.png",
+            "avatar_url": "https://jimiwruckhlxkmnduhrn.supabase.co/storage/v1/object/public/brand-assets/14b7a54e-c3fa-4fba-8664-7b5b4c5849f0/mascot-1777015993984.png",
+            "poster_url": "https://jimiwruckhlxkmnduhrn.supabase.co/storage/v1/object/public/brand-assets/14b7a54e-c3fa-4fba-8664-7b5b4c5849f0/mascot-1777015993984.png",
+            "clip_url": null,
+            "video_url": null,
+            "is_public": true,
+            "created_at": "2026-04-23T07:22:38.349358+00:00",
+            "updated_at": "2026-04-24T08:38:16.349638+00:00",
+            "media": []
+          },
+          {
+            "id": "45e7d725-e547-4caf-8288-fe257bf5955f",
+            "slug": "luna-45e7d725",
+            "name": "Luna",
+            "description": "A 33-year-old woman with warm Mediterranean features, polished and quietly magnetic — the archetype of a thoughtful life coach, not a self-help cliché. Balanced oval face with defined cheekbones, warm hazel eyes with a calm direct gaze and natural warmth, softly defined lips, smooth even skin. Rich dark brown hair, collarbone length, worn in a clean loose wave with a natural center parting. Lean elegant build, 5'8 confident grounded posture. Wearing a premium ivory tailored blazer over a cream silk blouse, refined slim trousers, a delicate gold pendant necklace — quiet luxury, no logos. Bright minimal studio interior with soft natural window light, warm white wall backdrop. Diffused natural light, soft fill. 85mm portrait lens, shallow depth of field, sharp focus on the eyes, editorial magazine photography, photorealistic 8k, real skin texture with visible pores, subtle asymmetry, no plastic, no CGI.",
+            "style": "realistic",
+            "image_url": "https://jimiwruckhlxkmnduhrn.supabase.co/storage/v1/object/public/brand-assets/14b7a54e-c3fa-4fba-8664-7b5b4c5849f0/mascot-1777010969939.png",
+            "avatar_url": "https://jimiwruckhlxkmnduhrn.supabase.co/storage/v1/object/public/brand-assets/14b7a54e-c3fa-4fba-8664-7b5b4c5849f0/mascot-1777010969939.png",
+            "poster_url": "https://jimiwruckhlxkmnduhrn.supabase.co/storage/v1/object/public/brand-assets/14b7a54e-c3fa-4fba-8664-7b5b4c5849f0/mascot-1777010969939.png",
+            "clip_url": "https://rkdggdfabwgukspylybu.supabase.co/storage/v1/object/public/assets/videos/luna-clip.mp4",
+            "video_url": "https://rkdggdfabwgukspylybu.supabase.co/storage/v1/object/public/assets/videos/luna-clip.mp4",
+            "is_public": true,
+            "created_at": "2026-04-22T08:48:13.976664+00:00",
+            "updated_at": "2026-04-24T08:38:17.160476+00:00",
+            "media": [
+              {
+                "id": "b71d9b66-5235-4b51-80c0-298b0df3cd37",
+                "kind": "video",
+                "format": "reels",
+                "url": "https://jimiwruckhlxkmnduhrn.supabase.co/storage/v1/object/public/generated-media/14b7a54e-c3fa-4fba-8664-7b5b4c5849f0/14e5b62c-27b1-44d9-b26f-b61bfbf82e12/reel-1776917141983.mp4",
+                "thumbnail_url": "https://jimiwruckhlxkmnduhrn.supabase.co/storage/v1/object/public/generated-media/14b7a54e-c3fa-4fba-8664-7b5b4c5849f0/14e5b62c-27b1-44d9-b26f-b61bfbf82e12/slide-1-1776917057462.png",
+                "topic": "Luna’s private sanctuary for internal reflection",
+                "idea": "Luna, a wise feminine leader age 34-39, with racially ambiguous globally relatable beauty, is seated peacefully in a luxurious, minimalist, serene hotel lobby. Her thick, dark brown hair is elegantly styled. She wears a tailored sage-green blazer over an ivory silk blouse, with delicate gold hoop earrings visible. Her expression conveys peaceful confidence and subtle wisdom, a slight knowing smile plays on her lips. Her bright, expressive hazel eyes gaze thoughtfully at a premium tablet she holds in her elegant hands. The natural light from large windows illuminates her face, highlighting her healthy glow and realistic skin texture. The background is softly blurred to keep focus on Luna, showing hints of modern architectural details and soft, neutral furnishings. The overall image exudes 8k realism, editorial magazine quality, and a premium aesthetic.",
+                "caption": "Step into Luna's world of quiet contemplation. 🧘‍♀️ Even powerful mentors need moments of pause to reflect and strategize. What helps you find your inner sanctuary? Share below! 👇",
+                "hashtags": [
+                  "InnerPeace",
+                  "Reflection",
+                  "MindsetMentor",
+                  "LunaWisdom",
+                  "StrategicThinking",
+                  "SelfMastery",
+                  "FeminineLeadership",
+                  "QuietMoments",
+                  "WellnessJourney",
+                  "GroundedAchiever"
+                ],
+                "engagement": {
+                  "likes": 0,
+                  "comments": 0,
+                  "views": 0,
+                  "synced_at": null
+                },
+                "published_at": null,
+                "created_at": "2026-04-23T04:05:44.272054+00:00",
+                "external_post_id": null,
+                "permalink": null,
+                "platform": null,
+                "account": null
+              },
+              {
+                "id": "2e237d01-a043-400a-9150-fd4c0bcf7d1f",
+                "kind": "image",
+                "format": "reels",
+                "url": "https://jimiwruckhlxkmnduhrn.supabase.co/storage/v1/object/public/generated-media/14b7a54e-c3fa-4fba-8664-7b5b4c5849f0/14e5b62c-27b1-44d9-b26f-b61bfbf82e12/slide-1-1776917057462.png",
+                "thumbnail_url": null,
+                "topic": "Luna’s private sanctuary for internal reflection",
+                "idea": "Luna, a wise feminine leader age 34-39, with racially ambiguous globally relatable beauty, is seated peacefully in a luxurious, minimalist, serene hotel lobby. Her thick, dark brown hair is elegantly styled. She wears a tailored sage-green blazer over an ivory silk blouse, with delicate gold hoop earrings visible. Her expression conveys peaceful confidence and subtle wisdom, a slight knowing smile plays on her lips. Her bright, expressive hazel eyes gaze thoughtfully at a premium tablet she holds in her elegant hands. The natural light from large windows illuminates her face, highlighting her healthy glow and realistic skin texture. The background is softly blurred to keep focus on Luna, showing hints of modern architectural details and soft, neutral furnishings. The overall image exudes 8k realism, editorial magazine quality, and a premium aesthetic.",
+                "caption": "Step into Luna's world of quiet contemplation. 🧘‍♀️ Even powerful mentors need moments of pause to reflect and strategize. What helps you find your inner sanctuary? Share below! 👇",
+                "hashtags": [
+                  "InnerPeace",
+                  "Reflection",
+                  "MindsetMentor",
+                  "LunaWisdom",
+                  "StrategicThinking",
+                  "SelfMastery",
+                  "FeminineLeadership",
+                  "QuietMoments",
+                  "WellnessJourney",
+                  "GroundedAchiever"
+                ],
+                "engagement": {
+                  "likes": 0,
+                  "comments": 0,
+                  "views": 0,
+                  "synced_at": null
+                },
+                "published_at": null,
+                "created_at": "2026-04-23T04:04:19.881098+00:00",
+                "external_post_id": null,
+                "permalink": null,
+                "platform": null,
+                "account": null
+              },
+              {
+                "id": "48225e47-663c-4875-907e-25313f769ab9",
+                "kind": "image",
+                "format": "image",
+                "url": "https://jimiwruckhlxkmnduhrn.supabase.co/storage/v1/object/public/generated-media/14b7a54e-c3fa-4fba-8664-7b5b4c5849f0/9cf492d4-dacb-41d8-a572-28d390b87c36/slide-1-1776914536410.png",
+                "thumbnail_url": null,
+                "topic": "Luna’s strategy for elegant digital detoxing",
+                "idea": "A full body shot of Luna, elegant and calm, sitting in a luxurious, minimalist living room. She is holding a sleek, premium tablet in one hand and a delicate cup of herbal tea in the other, gazing thoughtfully out of a large window at a serene city skyline. Her expression is one of peaceful confidence and subtle wisdom. Natural light bathes the scene, highlighting her healthy glow and the sophisticated textures of her cashmere sweater and linen trousers. The overall aesthetic is one of quiet luxury and digital wellness, with a single, tasteful gold bracelet as her only accessory. She embodies disciplined peace in a digital world.",
+                "caption": "Even Luna needs a moment to unplug and recharge ✨. Her secret? Intentional digital detoxes that truly nourish the soul. What's your favorite way to reconnect with yourself? Share below! 👇",
+                "hashtags": [
+                  "DigitalDetox",
+                  "MindfulLiving",
+                  "LunaWisdom",
+                  "SelfCare",
+                  "UnplugAndRecharge",
+                  "WellnessJourney",
+                  "InnerPeace",
+                  "StrategicBreak",
+                  "BalancedLife",
+                  "LuxuryLifestyle",
+                  "EmotionalIntelligence",
+                  "DigitalWellness"
+                ],
+                "engagement": {
+                  "likes": 0,
+                  "comments": 0,
+                  "views": 0,
+                  "synced_at": null
+                },
+                "published_at": null,
+                "created_at": "2026-04-23T03:22:18.623077+00:00",
+                "external_post_id": null,
+                "permalink": null,
+                "platform": null,
+                "account": null
+              },
+              {
+                "id": "85f92aaa-29f9-457c-b1f1-adfdde2816ac",
+                "kind": "image",
+                "format": "image",
+                "url": "https://jimiwruckhlxkmnduhrn.supabase.co/storage/v1/object/public/generated-media/14b7a54e-c3fa-4fba-8664-7b5b4c5849f0/4f418660-eb63-4ce6-a0ab-23e2b97af70a/slide-1-1776914215852.png",
+                "thumbnail_url": null,
+                "topic": "Luna reviews a CEO’s vision board",
+                "idea": "A full body shot of Luna, a hyper-realistic, emotionally magnetic female mentor character. She is 34-39, racially ambiguous, with a calm, elite, nurturing, and wise presence. Her face is symmetrical with high cheekbones, soft jawline, and bright, expressive hazel eyes, showing a slight knowing smile. Her thick, dark brown hair is elegantly styled. She wears a tailored charcoal blazer over a silk ivory blouse, refined black trousers, and delicate gold jewelry. Luna is standing gracefully next to a large, sophisticated vision board, gently pointing to a section with one elegant hand. Her posture is strong and poised, conveying wisdom and strategic thinking. The background is a clean, modern executive office with subtle city skyline views. The image has 8k realism, editorial magazine quality, and cinematic lighting, with sharp focus on Luna and the vision board.",
+                "caption": "Luna, the visionary strategist, demonstrating how to align executive vision with achievable steps. Her gentle guidance helps clarify ambition into a roadmap for success. What’s on your vision board for this year? ✨ #VisionaryLeadership #StrategicPlanning #ExecutiveCoaching #SuccessMindset #WomensEmpowerment #GoalSetting #BusinessStrategy #PersonalTransformation #LeadershipDevelopment #FutureFocused",
+                "hashtags": [
+                  "VisionaryLeadership",
+                  "StrategicPlanning",
+                  "ExecutiveCoaching",
+                  "SuccessMindset",
+                  "WomensEmpowerment",
+                  "GoalSetting",
+                  "BusinessStrategy",
+                  "PersonalTransformation",
+                  "LeadershipDevelopment",
+                  "FutureFocused"
+                ],
+                "engagement": {
+                  "likes": 0,
+                  "comments": 0,
+                  "views": 0,
+                  "synced_at": null
+                },
+                "published_at": null,
+                "created_at": "2026-04-23T03:16:58.0468+00:00",
+                "external_post_id": null,
+                "permalink": null,
+                "platform": null,
+                "account": null
+              },
+              {
+                "id": "933b9922-7764-4d01-98b5-79745610cce6",
+                "kind": "video",
+                "format": "reels",
+                "url": "https://jimiwruckhlxkmnduhrn.supabase.co/storage/v1/object/public/generated-media/14b7a54e-c3fa-4fba-8664-7b5b4c5849f0/73802bc2-8332-4258-87f0-120056e5a1a0/reel-1776913826096.mp4",
+                "thumbnail_url": "https://jimiwruckhlxkmnduhrn.supabase.co/storage/v1/object/public/generated-media/14b7a54e-c3fa-4fba-8664-7b5b4c5849f0/73802bc2-8332-4258-87f0-120056e5a1a0/slide-1-1776913741164.png",
+                "topic": "Luna navigating a high-stakes negotiations room",
+                "idea": "The brand mascot, Luna, in a sharp miniature business suit, stands on the head of the main negotiator. She is whispering advice into his ear, looking very serious and focused. The room is a sleek, modern boardroom with a large table and several intense-looking executives.",
+                "caption": "Even in the most serious of rooms, Luna’s got your back (and your ear!). 😉 She’s all about strategizing for success. What’s the toughest negotiation you’ve ever aced?",
+                "hashtags": [
+                  "NegotiationSkills",
+                  "BusinessStrategy",
+                  "MascotLife",
+                  "CorporateHumor",
+                  "MascotAdventures",
+                  "TeamworkMakesTheDreamWork",
+                  "UnderPressure",
+                  "WinningMindset"
+                ],
+                "engagement": {
+                  "likes": 0,
+                  "comments": 0,
+                  "views": 0,
+                  "synced_at": null
+                },
+                "published_at": null,
+                "created_at": "2026-04-23T03:10:28.752704+00:00",
+                "external_post_id": null,
+                "permalink": null,
+                "platform": null,
+                "account": null
+              },
+              {
+                "id": "32dd8ca3-92c3-41b7-bc6d-2f51d4106489",
+                "kind": "image",
+                "format": "reels",
+                "url": "https://jimiwruckhlxkmnduhrn.supabase.co/storage/v1/object/public/generated-media/14b7a54e-c3fa-4fba-8664-7b5b4c5849f0/73802bc2-8332-4258-87f0-120056e5a1a0/slide-1-1776913741164.png",
+                "thumbnail_url": null,
+                "topic": "Luna navigating a high-stakes negotiations room",
+                "idea": "The brand mascot, Luna, in a sharp miniature business suit, stands on the head of the main negotiator. She is whispering advice into his ear, looking very serious and focused. The room is a sleek, modern boardroom with a large table and several intense-looking executives.",
+                "caption": "Even in the most serious of rooms, Luna’s got your back (and your ear!). 😉 She’s all about strategizing for success. What’s the toughest negotiation you’ve ever aced?",
+                "hashtags": [
+                  "NegotiationSkills",
+                  "BusinessStrategy",
+                  "MascotLife",
+                  "CorporateHumor",
+                  "MascotAdventures",
+                  "TeamworkMakesTheDreamWork",
+                  "UnderPressure",
+                  "WinningMindset"
+                ],
+                "engagement": {
+                  "likes": 0,
+                  "comments": 0,
+                  "views": 0,
+                  "synced_at": null
+                },
+                "published_at": null,
+                "created_at": "2026-04-23T03:09:03.200264+00:00",
+                "external_post_id": null,
+                "permalink": null,
+                "platform": null,
+                "account": null
+              }
+            ]
+          }
+        ],
+        "count": 7
+      }
+order: 1777021851535

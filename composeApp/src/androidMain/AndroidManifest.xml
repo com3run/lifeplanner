@@ -7,6 +7,10 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
 
+    <!-- Calendar -->
+    <uses-permission android:name="android.permission.READ_CALENDAR" />
+    <uses-permission android:name="android.permission.WRITE_CALENDAR" />
+
     <!-- Health Connect -->
     <uses-permission android:name="android.permission.health.READ_STEPS" />
     <uses-permission android:name="android.permission.health.READ_WEIGHT" />
@@ -106,6 +110,43 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/habit_checkin_widget_info" />
         </receiver>
+
+        <!-- Quick Actions Widget -->
+        <receiver
+            android:name=".widget.QuickActionsWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_quick_actions_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/quick_actions_widget_info" />
+        </receiver>
+
+        <!-- Add Goal Quick Settings Tile -->
+        <service
+            android:name=".tile.AddGoalTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_shortcut_goals"
+            android:label="@string/tile_add_goal_label"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
+        <!-- Ask Coach Quick Settings Tile -->
+        <service
+            android:name=".tile.AskCoachTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_shortcut_coach"
+            android:label="@string/tile_ask_coach_label"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
 
         <!-- Reminder Alarm Receiver -->
         <receiver

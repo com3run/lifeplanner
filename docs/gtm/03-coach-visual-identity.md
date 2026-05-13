@@ -21,10 +21,13 @@ Reference: the original Luna visual brief Kamran authored sets the tone (premium
 
 The grammar is what makes the seven feel like **one Tribe**.
 
+> **v1.1 — Canonical portrait pattern (locked 2026-04-23).**
+> All seven coaches are rendered **head-and-shoulders** on a **clean seamless soft off-white studio backdrop** with **soft beauty-dish key light and warm fill**, 85mm editorial. Environmental settings from v1.0 (training studio, home office, café, porch, kitchen) are retired for the canonical portraits — they introduced too much variance and made the roster feel inconsistent across ads and UI. Domain colour coding moves **out of the image** and into the **app / UI chrome** (the card, gradient, or ring around the portrait carries the domain colour). Wardrobe still carries a subtle hue hint (Luna=ivory, Alex=navy, Morgan=camel, Kai=stone, Sam=dusty-rose, River=sage-green, Jamie=rust). The finalised 7 prompts that produced the v1.1 roster are in §11 below.
+
 ### Photography direction
 - **Medium**: photorealistic 8k editorial. Natural skin, real pores, subtle asymmetry. No CGI, no anime, no plastic skin.
-- **Lens**: 85mm (default portrait) or 50mm (full body / environmental). Shallow depth of field. Sharp focus on eyes.
-- **Lighting**: natural daylight as the hero, soft key + warm fill. Golden hour for warmer coaches (Luna, Sam, River, Jamie); crisp morning daylight for sharper coaches (Alex, Morgan, Kai).
+- **Lens**: 85mm portrait. Shallow depth of field. Sharp focus on eyes.
+- **Lighting**: **soft beauty-dish key light with warm fill**, flattering high key-to-fill ratio. Consistent across all 7 coaches for comparability.
 - **Colour grading**: editorial, slightly warm, natural contrast. Avoid heavy stylisation, no Instagram filters, no HDR glow.
 
 ### Wardrobe direction
@@ -468,4 +471,73 @@ This document is v1. Changes to any coach's parameter sheet should:
 
 ---
 
-*End of coach visual identity v1.*
+## 11. Canonical v1.1 — The 7 ready-to-paste prompts
+
+These are the exact prompts that produced the v1.1 roster on meta.ai (free tier, default Instant quality, head-and-shoulders, off-white backdrop). Paste as-is to regenerate or tweak per coach. They use the same sentence-structure skeleton so changes are directly comparable across the 7.
+
+> **Skeleton (for reference)**:
+> `Photorealistic editorial portrait of {NAME}, a {AGE} {ETHNICITY} {GENDER} with {FACE_KEYWORDS} — the archetype of {ARCHETYPE}. Head-and-shoulders framing, centered, subject isolated with soft negative space. {EYES}, {LIPS}, {BROWS}, {SKIN}, {EXPRESSION}. {HAIR}. Wearing {WARDROBE}, {SIGNATURE_ACCESSORY}. Clean seamless soft off-white studio backdrop, no visible props or clutter. Soft beauty-dish key light with warm fill, flattering high key-to-fill ratio. 85mm portrait lens, shallow depth of field, sharp focus on the eyes. Editorial magazine photography, quiet-luxury aesthetic, photorealistic 8k, natural skin texture with visible pores, subtle asymmetry, no plastic, no CGI, no logos, no busy background, no environmental props.`
+
+### 11.1 Luna — "Your Guide" (Wellbeing + Orchestrator)
+```
+Photorealistic editorial portrait of Luna, a 37-year-old racially ambiguous Mediterranean-Eurasian woman with high cheekbones, soft jawline, straight elegant nose — the archetype of a calm wise mentor. Head-and-shoulders framing, centered, subject isolated with soft negative space. Bright expressive hazel eyes with emotional depth and a warm direct gaze, full healthy lips with a subtle knowing smile, intelligent relaxed eyebrows, light-olive skin with realistic pores and a healthy mature glow, peaceful confident expression. Espresso-chestnut brown hair, medium-long, thick healthy natural shine with soft flowing movement. Wearing an ivory tailored blazer over a silk cream blouse, delicate gold chain with a small pendant. Clean seamless soft off-white studio backdrop, no visible props or clutter. Soft beauty-dish key light with warm fill, flattering high key-to-fill ratio. 85mm portrait lens, shallow depth of field, sharp focus on the eyes. Editorial magazine photography, quiet-luxury aesthetic, photorealistic 8k, natural skin texture with visible pores, subtle asymmetry, no plastic, no CGI, no logos, no busy background, no environmental props.
+```
+
+### 11.2 Alex — "Your Strategist" (Career)
+```
+Photorealistic editorial portrait of Alex, a 38-year-old mixed-European man with a defined jawline, straight angular nose, light stubble — the archetype of a calm career strategist. Head-and-shoulders framing, centered, subject isolated with soft negative space. Steel-grey-blue eyes with a direct focused gaze and subtle warmth, medium natural mouth with a slight half-smile, intelligent arched brows, healthy mature skin with subtle lines. Dark brown hair with subtle silver at the temples, short sharp sides and slightly longer on top, polished natural side-parting. Wearing a tailored navy wool blazer over a crisp open-collar white shirt, understated steel watch. Clean seamless soft off-white studio backdrop, no visible props or clutter. Soft beauty-dish key light with warm fill, flattering high key-to-fill ratio. 85mm portrait lens, shallow depth of field, sharp focus on the eyes. Editorial magazine photography, quiet-luxury aesthetic, photorealistic 8k, natural skin texture with visible pores, subtle asymmetry, no plastic, no CGI, no logos, no busy background, no environmental props.
+```
+
+### 11.3 Morgan — "Your Architect" (Money)
+```
+Photorealistic editorial portrait of Morgan, a 35-year-old mixed-Caucasian cool-toned woman with refined jawline, straight narrow nose — the archetype of a sharp financial architect. Head-and-shoulders framing, centered, subject isolated with soft negative space. Clear blue-grey eyes with a steady analytical gaze, natural medium lips with a slight closed smile, well-defined natural brows, clear even-tone skin with minimal makeup, composed intelligent expression. Warm blonde to light chestnut hair with subtle highlights, chin-to-shoulder length, sleek with subtle waves, tucked behind one ear, clean centre parting. Wearing a tailored camel wool coat over an ivory fine-knit jumper, elegant steel bracelet watch. Clean seamless soft off-white studio backdrop, no visible props or clutter. Soft beauty-dish key light with warm fill, flattering high key-to-fill ratio. 85mm portrait lens, shallow depth of field, sharp focus on the eyes. Editorial magazine photography, quiet-luxury aesthetic, photorealistic 8k, natural skin texture with visible pores, subtle asymmetry, no plastic, no CGI, no logos, no busy background, no environmental props.
+```
+
+### 11.4 Kai — "Your Performance Coach" (Body)
+```
+Photorealistic editorial portrait of Kai, a 31-year-old warm mid-tone Mediterranean man with a clean defined jaw, broad-straight nose, open face — the archetype of a thoughtful performance coach. Head-and-shoulders framing, centered, subject isolated with soft negative space. Warm brown eyes with a direct engaged gaze and a slight smile in the eyes, natural relaxed smile, strong natural brows, healthy mid-tone skin with real texture. Dark brown near-black hair in a textured short crop with natural wave, slightly messy but intentional. Wearing a premium stone-coloured fine technical knit sweater over a cotton tee, minimalist black sport watch. Clean seamless soft off-white studio backdrop, no visible props or clutter. Soft beauty-dish key light with warm fill, flattering high key-to-fill ratio. 85mm portrait lens, shallow depth of field, sharp focus on the eyes. Editorial magazine photography, quiet-luxury aesthetic, photorealistic 8k, natural skin texture with visible pores, subtle asymmetry, no plastic, no CGI, no logos, no busy background, no environmental props.
+```
+
+### 11.5 Sam — "Your Confidant" (Social)
+```
+Photorealistic editorial portrait of Sam, a 33-year-old warm mixed-heritage mid-tone woman with a round-to-oval face, softly rounded nose, gentle bone structure — the archetype of a curious warm confidant. Head-and-shoulders framing, centered, subject isolated with soft negative space. Warm dark brown eyes with a curious attentive gaze, full expressive lips caught mid-smile, natural arched brows, radiant natural skin with real texture. Dark brown hair in soft natural curls or waves, medium length, loose and partially tucked behind one ear. Wearing a dusty-rose linen button-down under a warm ivory knit cardigan draped over her shoulders, small gold hoop earrings. Clean seamless soft off-white studio backdrop, no visible props or clutter. Soft beauty-dish key light with warm fill, flattering high key-to-fill ratio. 85mm portrait lens, shallow depth of field, sharp focus on the eyes. Editorial magazine photography, quiet-luxury aesthetic, photorealistic 8k, natural skin texture with visible pores, subtle asymmetry, no plastic, no CGI, no logos, no busy background, no environmental props.
+```
+
+### 11.6 River — "Your Compass" (Purpose)
+```
+Photorealistic editorial portrait of River, a 42-year-old Scandinavian-Celtic-leaning man with a lean expressive face, slight character asymmetry, long straight characterful nose — the archetype of a grounded reflective purpose-guide. Head-and-shoulders framing, centered, subject isolated with soft negative space. Soft blue-grey or green eyes with a thoughtful quiet gaze, calm medium mouth with a faint natural smile, thoughtful natural brows, weathered-in-a-good-way skin with subtle lines. Dark ash-brown hair with salt-and-pepper at the temples, medium-length and softly swept back, slightly tousled. Wearing a relaxed sage-green linen shirt under a soft off-white merino cardigan, a small simple leather bracelet. Clean seamless soft off-white studio backdrop, no visible props or clutter. Soft beauty-dish key light with warm fill, flattering high key-to-fill ratio. 85mm portrait lens, shallow depth of field, sharp focus on the eyes. Editorial magazine photography, quiet-luxury aesthetic, photorealistic 8k, natural skin texture with subtle natural lines, no plastic, no CGI, no logos, no busy background, no environmental props.
+```
+
+### 11.7 Jamie — "Your Anchor" (Family)
+```
+Photorealistic editorial portrait of Jamie, a 44-year-old warm mixed-European mature woman with gentle cheekbones, softly rounded nose, soft mature bone structure — the archetype of a wise patient family anchor. Head-and-shoulders framing, centered, subject isolated with soft negative space. Warm deep-brown or hazel eyes with a patient attentive gaze, natural lips in a gentle smile, relaxed natural brows, soft mature skin with subtle natural lines and warmth. Warm mid-brown hair with occasional natural silver strands, shoulder-length in soft natural waves, effortless loose styling. Wearing a soft rust cable-knit cardigan over an ivory tee, small gold stud earrings. Clean seamless soft off-white studio backdrop, no visible props or clutter. Soft beauty-dish key light with warm fill, flattering high key-to-fill ratio. 85mm portrait lens, shallow depth of field, sharp focus on the eyes. Editorial magazine photography, warm quiet-luxury aesthetic, photorealistic 8k, natural skin texture with subtle natural lines, no plastic, no CGI, no logos, no busy background, no environmental props.
+```
+
+### 11.8 Variant picks (first roster)
+
+For the first v1.1 roster, these variants were selected from each 4-image generation:
+
+| Coach | Variant picked | Why |
+|---|---|---|
+| Luna | image 2 | Most direct confident gaze — iconic wise-mentor |
+| Alex | image 2 | Balanced, direct warm gaze, silver temples visible |
+| Morgan | image 2 | Analytical composed expression, camel coat |
+| Kai | image 3 | Warm natural smile — best "thoughtful coach not drill sergeant" |
+| Sam | image 2 | Warm direct gaze, full dusty-rose + cardigan visible |
+| River | image 3 | Cleanest linen, grounded modern (not retreat-host) |
+| Jamie | image 1 | Best match to "mid-brown hair with occasional silver" |
+
+Downloaded to `~/Downloads/` awaiting upload to TribeBot via the **Upload** flow (not regenerate).
+
+---
+
+## 12. Next steps
+
+1. **Upload the 7 photoreal portraits to TribeBot** as mascots (use the Upload button in `/app/studio`, not Generate). This populates the persona API source of truth.
+2. **Update `coach-avatars/` in the repo** — add a `photoreal/` subfolder and save the 7 downloaded files there for marketing/app-store use. The existing illustrated avatars stay as in-app UI assets (Path C hybrid from §04 audit doc).
+3. **Phase 2 — age variants**: per the user's idea, generate 3 additional age bands per coach (Young 26–30 / Mature 42–48 / Senior 54–60) once the canonical mid-band roster is validated.
+4. **Phase 3 — identity-locked scenes**: once v1.1 portraits are approved, use them as `--cref` inputs for scene-variation generation (workout, boardroom, couch conversation, etc.) for ad creative rotation.
+
+---
+
+*End of coach visual identity v1.1.*

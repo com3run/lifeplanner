@@ -50,7 +50,13 @@ data class CoachPersona(
     /** Country flag emoji */
     val countryFlag: String = "",
     /** Supabase Storage public URL for the coach portrait image */
-    val imageUrl: String? = null
+    val imageUrl: String? = null,
+    /** Static thumbnail / video poster frame — coaches/{slug}-poster.jpg */
+    val posterUrl: String? = null,
+    /** Short intro clip — coaches/{slug}-clip.mp4 */
+    val clipUrl: String? = null,
+    /** TribeBot-generated media (reels + images) shown as highlights */
+    val media: List<CoachMedia> = emptyList(),
 ) {
     /** True when the local time in this coach's timezone is between 6 AM and 10 PM */
     fun isAvailableNow(): Boolean = try {
@@ -107,7 +113,6 @@ data class CoachPersona(
                 timezone = "America/Los_Angeles",
                 city = "Los Angeles",
                 countryFlag = "🇺🇸",
-                imageUrl = "https://rkdggdfabwgukspylybu.supabase.co/storage/v1/object/public/assets/coaches/luna.png"
             ),
             CoachPersona(
                 id = "alex_career",
@@ -132,7 +137,6 @@ data class CoachPersona(
                 timezone = "America/New_York",
                 city = "New York",
                 countryFlag = "🇺🇸",
-                imageUrl = "https://rkdggdfabwgukspylybu.supabase.co/storage/v1/object/public/assets/coaches/alex.png"
             ),
             CoachPersona(
                 id = "morgan_finance",
@@ -157,7 +161,6 @@ data class CoachPersona(
                 timezone = "Europe/London",
                 city = "London",
                 countryFlag = "🇬🇧",
-                imageUrl = "https://rkdggdfabwgukspylybu.supabase.co/storage/v1/object/public/assets/coaches/morgan.png"
             ),
             CoachPersona(
                 id = "kai_fitness",
@@ -182,7 +185,6 @@ data class CoachPersona(
                 timezone = "Australia/Sydney",
                 city = "Sydney",
                 countryFlag = "🇦🇺",
-                imageUrl = "https://rkdggdfabwgukspylybu.supabase.co/storage/v1/object/public/assets/coaches/kai.png"
             ),
             CoachPersona(
                 id = "sam_social",
@@ -207,7 +209,6 @@ data class CoachPersona(
                 timezone = "Europe/Paris",
                 city = "Paris",
                 countryFlag = "🇫🇷",
-                imageUrl = "https://rkdggdfabwgukspylybu.supabase.co/storage/v1/object/public/assets/coaches/sam.png"
             ),
             CoachPersona(
                 id = "river_wellness",
@@ -232,7 +233,6 @@ data class CoachPersona(
                 timezone = "Asia/Tokyo",
                 city = "Tokyo",
                 countryFlag = "🇯🇵",
-                imageUrl = "https://rkdggdfabwgukspylybu.supabase.co/storage/v1/object/public/assets/coaches/river.png"
             ),
             CoachPersona(
                 id = "jamie_family",
@@ -257,7 +257,6 @@ data class CoachPersona(
                 timezone = "Europe/London",
                 city = "London",
                 countryFlag = "🇬🇧",
-                imageUrl = "https://rkdggdfabwgukspylybu.supabase.co/storage/v1/object/public/assets/coaches/jamie.png"
             ),
         )
 

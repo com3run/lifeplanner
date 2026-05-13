@@ -14,15 +14,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
+
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+
 import com.russhwolf.settings.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -33,13 +32,17 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+
 import androidx.compose.ui.unit.dp
 import az.tribe.lifeplanner.domain.enum.GoalStatus
 import az.tribe.lifeplanner.domain.model.Goal
 import az.tribe.lifeplanner.domain.model.ObjectiveType
 import az.tribe.lifeplanner.ui.ability.AbilityViewModel
+import az.tribe.lifeplanner.ui.balance.DiscoveryGoal
+import az.tribe.lifeplanner.ui.balance.DiscoverySection
+import az.tribe.lifeplanner.ui.balance.LifeBalanceViewModel
+import az.tribe.lifeplanner.ui.balance.generateWeeklyInsight
+import az.tribe.lifeplanner.ui.balance.lifeBalanceItems
 import az.tribe.lifeplanner.ui.components.AddGoalBottomSheet
 import az.tribe.lifeplanner.ui.components.GlassCard
 import az.tribe.lifeplanner.ui.components.GoalDependencyWidget
@@ -52,17 +55,19 @@ import az.tribe.lifeplanner.ui.components.VerifyEmailBanner
 import az.tribe.lifeplanner.ui.components.WeeklyInsightsCard
 import az.tribe.lifeplanner.ui.gamification.GamificationViewModel
 import az.tribe.lifeplanner.ui.habit.HabitViewModel
+import az.tribe.lifeplanner.ui.components.StoryReaderStore
 import az.tribe.lifeplanner.ui.health.HealthPermissionState
 import az.tribe.lifeplanner.ui.health.HealthViewModel
+import az.tribe.lifeplanner.ui.health.ManualWeightDialog
+import az.tribe.lifeplanner.ui.health.generateHealthStories
+import az.tribe.lifeplanner.ui.health.rememberHealthPermissionLauncher
 import az.tribe.lifeplanner.ui.home.CompactAbilityRow
-import az.tribe.lifeplanner.ui.home.CompactHomeHabitRow
-import az.tribe.lifeplanner.ui.home.ConnectHealthCard
-import az.tribe.lifeplanner.ui.home.HealthMetricCard
 import az.tribe.lifeplanner.ui.home.HeroBanner
 import az.tribe.lifeplanner.ui.home.HomeCoachAICard
-import az.tribe.lifeplanner.ui.home.HomeNavCard
 import az.tribe.lifeplanner.ui.home.HomeSectionHeader
 import az.tribe.lifeplanner.ui.home.HomeViewModel
+import az.tribe.lifeplanner.ui.home.TodayPulseCard
+import az.tribe.lifeplanner.ui.home.exploreItems
 import az.tribe.lifeplanner.ui.home.generateDailyIntentionStory
 import az.tribe.lifeplanner.ui.home.generateDailyRecapStory
 import az.tribe.lifeplanner.ui.home.getCuratedTipStories
@@ -79,14 +84,7 @@ import az.tribe.lifeplanner.ui.auth.AuthBottomSheet
 import az.tribe.lifeplanner.ui.profile.SecureAccountCTABanner
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
-import com.adamglin.phosphoricons.regular.Barbell
-import com.adamglin.phosphoricons.regular.Footprints
-import com.adamglin.phosphoricons.regular.Heart
 import com.adamglin.phosphoricons.regular.Lightning
-import com.adamglin.phosphoricons.regular.Moon
-import com.adamglin.phosphoricons.regular.ClockCounterClockwise
-import com.adamglin.phosphoricons.regular.Play
-import com.adamglin.phosphoricons.regular.Plus
 import kotlin.time.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -135,6 +133,7 @@ fun HomeScreen(
     val abilityViewModel: AbilityViewModel = koinViewModel()
     val homeViewModel: HomeViewModel = koinViewModel()
     val healthViewModel: HealthViewModel = koinViewModel()
+    val balanceViewModel: LifeBalanceViewModel = koinViewModel()
 
     val authState by authViewModel.authState.collectAsState()
 
@@ -152,11 +151,18 @@ fun HomeScreen(
     val goalDependencies by homeViewModel.goalDependencies.collectAsState()
     val healthPermissionState by healthViewModel.permissionState.collectAsState()
     val todaySteps by healthViewModel.todaySteps.collectAsState()
-    val latestSleep by healthViewModel.latestSleep.collectAsState()
-    val latestHeartRate by healthViewModel.latestHeartRate.collectAsState()
+    val stepsHistory by healthViewModel.stepsHistory.collectAsState()
+    val weightHistory by healthViewModel.weightHistory.collectAsState()
     val latestWeight by healthViewModel.latestWeight.collectAsState()
-    val recentSession by homeViewModel.recentSession.collectAsState()
-    val recentCoach by homeViewModel.recentCoach.collectAsState()
+    val heartRateHistory by healthViewModel.heartRateHistory.collectAsState()
+    val latestHeartRate by healthViewModel.latestHeartRate.collectAsState()
+    val sleepHistory by healthViewModel.sleepHistory.collectAsState()
+    val latestSleep by healthViewModel.latestSleep.collectAsState()
+    val showWeightDialog by healthViewModel.showWeightDialog.collectAsState()
+    val balanceUiState by balanceViewModel.uiState.collectAsState()
+    val requestHealthPermissions = rememberHealthPermissionLauncher { granted ->
+        if (granted) healthViewModel.onPermissionsGranted()
+    }
     val beginnerObjectives by objectiveViewModel.objectives.collectAsState()
     val objectivesExpanded by objectiveViewModel.isExpanded.collectAsState()
     val objectivesDismissed by objectiveViewModel.isDismissed.collectAsState()
@@ -180,6 +186,7 @@ fun HomeScreen(
 
     val habitsCompleted = habits.count { it.isCompletedToday }
     val totalHabits = habits.size
+    val todayFocusMinutes = weeklySnapshots.find { it.date == today }?.totalFocusMinutes ?: 0
 
     val nextAction = remember(goalsDueToday, habits, upcomingGoals) {
         val firstGoalDueToday = goalsDueToday.firstOrNull()
@@ -279,6 +286,7 @@ fun HomeScreen(
             ),
             verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm)
         ) {
+            // ── 1. Hero banner ─────────────────────────────────────────────────────
             if (authState is AuthState.Authenticated) {
                 item(key = "hero_banner") {
                     Box(Modifier.padding(horizontal = LifePlannerDesign.Padding.screenHorizontal)) {
@@ -288,6 +296,7 @@ fun HomeScreen(
                             level = level,
                             streak = streak,
                             levelTitle = userProgress?.title ?: "Novice",
+                            levelProgress = userProgress?.levelProgress ?: 0f,
                             isSignedIn = currentUser?.email != null,
                             onProfileClick = onNavigateToProfile
                         )
@@ -295,12 +304,7 @@ fun HomeScreen(
                 }
             }
 
-            if (allStories.isNotEmpty()) {
-                item(key = "stories_carousel") {
-                    StoriesCarousel(stories = allStories, onStoryAction = { handleStoryAction(it) }, onOpenReader = { onNavigateToStoryReader() })
-                }
-            }
-
+            // ── 2. Ephemeral alerts (update, email, account) ────────────────────
             if (showUpdateReminder) {
                 item(key = "update_reminder") {
                     Box(Modifier.padding(horizontal = LifePlannerDesign.Padding.screenHorizontal)) {
@@ -309,6 +313,43 @@ fun HomeScreen(
                 }
             }
 
+            if (pendingVerifyEmail != null) {
+                item(key = "verify_email_banner") {
+                    Box(Modifier.padding(horizontal = LifePlannerDesign.Padding.screenHorizontal)) {
+                        VerifyEmailBanner(email = pendingVerifyEmail!!, onResend = { authViewModel.resendVerificationEmail(pendingVerifyEmail!!) })
+                    }
+                }
+            } else if (currentUser?.email == null) {
+                item(key = "secure_account_banner") {
+                    Box(Modifier.padding(horizontal = LifePlannerDesign.Padding.screenHorizontal)) {
+                        SecureAccountCTABanner(onClick = { showAccountSheet = true })
+                    }
+                }
+            }
+
+            // ── 3. Celebration ──────────────────────────────────────────────────
+            if (newBadges.isNotEmpty()) {
+                item(key = "new_badges") {
+                    Box(Modifier.padding(horizontal = LifePlannerDesign.Padding.screenHorizontal)) {
+                        NewBadgesCard(badges = newBadges, onClick = onNavigateToAchievements)
+                    }
+                }
+            }
+
+            // ── 3b. Life Discovery (primary entry — always visible at top) ─────
+            item(key = "life_discovery") {
+                DiscoverySection(
+                    state = balanceUiState.discovery,
+                    onStart = { balanceViewModel.startDiscovery() },
+                    onSubmitAnswer = { balanceViewModel.submitDiscoveryAnswer(it) },
+                    onAddGoal = { balanceViewModel.addDiscoveryGoal(it) },
+                    onCreateHabit = { onNavigateToAddHabit() },
+                    onReset = { balanceViewModel.resetDiscovery() },
+                    modifier = Modifier.padding(horizontal = LifePlannerDesign.Padding.screenHorizontal)
+                )
+            }
+
+            // ── 4. Onboarding ───────────────────────────────────────────────────
             if (!objectivesDismissed && beginnerObjectives.isNotEmpty()) {
                 item(key = "beginner_objectives") {
                     Box(Modifier.padding(horizontal = LifePlannerDesign.Padding.screenHorizontal)) {
@@ -337,105 +378,109 @@ fun HomeScreen(
                 }
             }
 
-            if (newBadges.isNotEmpty()) {
-                item(key = "new_badges") {
+            // ── 5. Next action (most actionable — high up) ──────────────────────
+            if (displayedNextAction !is NextAction.AllCaughtUp || goals.isNotEmpty() || habits.isNotEmpty()) {
+                item(key = "next_action") {
                     Box(Modifier.padding(horizontal = LifePlannerDesign.Padding.screenHorizontal)) {
-                        NewBadgesCard(badges = newBadges, onClick = onNavigateToAchievements)
+                        NextActionCard(
+                            nextAction = displayedNextAction,
+                            onGoalClick = onGoalClick,
+                            onHabitCheckIn = { habitId -> habitViewModel.toggleCheckIn(habitId) }
+                        )
                     }
                 }
             }
 
-            if (pendingVerifyEmail != null) {
-                item(key = "verify_email_banner") {
-                    Box(Modifier.padding(horizontal = LifePlannerDesign.Padding.screenHorizontal)) {
-                        VerifyEmailBanner(email = pendingVerifyEmail!!, onResend = { authViewModel.resendVerificationEmail(pendingVerifyEmail!!) })
-                    }
-                }
-            } else if (currentUser?.email == null) {
-                item {
-                    Box(Modifier.padding(horizontal = LifePlannerDesign.Padding.screenHorizontal)) {
-                        SecureAccountCTABanner(onClick = { showAccountSheet = true })
-                    }
+            // ── 6. Today's pulse (habits + focus + steps in one card) ───────────
+            item(key = "today_pulse") {
+                TodayPulseCard(
+                    today = today,
+                    habitsCompleted = habitsCompleted,
+                    totalHabits = totalHabits,
+                    todayFocusMinutes = todayFocusMinutes,
+                    todaySteps = if (healthPermissionState == HealthPermissionState.GRANTED) todaySteps else null,
+                    healthConnected = healthPermissionState == HealthPermissionState.GRANTED,
+                    onHabitsClick = onNavigateToHabits,
+                    onFocusClick = onNavigateToFocus,
+                    onStepsClick = onNavigateToHealth,
+                    modifier = Modifier.padding(horizontal = LifePlannerDesign.Padding.screenHorizontal)
+                )
+            }
+
+            // ── 7. Stories (discovery / inspiration) ────────────────────────────
+            if (allStories.isNotEmpty()) {
+                item(key = "stories_carousel") {
+                    StoriesCarousel(stories = allStories, onStoryAction = { handleStoryAction(it) }, onOpenReader = { onNavigateToStoryReader() })
                 }
             }
 
+            // ── 8. Goal progress (current vs ideal) ─────────────────────────────
+            if (goals.any { it.status != GoalStatus.COMPLETED && !it.isArchived }) {
+                item(key = "goal_progress") {
+                    HomeGoalProgressCard(
+                        goals = goals,
+                        weeklySnapshots = weeklySnapshots,
+                        today = today,
+                        onGoalsClick = onNavigateToGoals,
+                        modifier = Modifier.padding(horizontal = LifePlannerDesign.Padding.screenHorizontal)
+                    )
+                }
+            }
+
+            // ── 9. Life balance + health (inline) ───────────────────────────────
+            lifeBalanceItems(
+                uiState = balanceUiState,
+                habitsCompleted = habitsCompleted,
+                totalHabits = totalHabits,
+                onOpenStoryReader = onNavigateToStoryReader,
+                onOpenHealthStories = {
+                    val healthStories = generateHealthStories(
+                        todaySteps = todaySteps,
+                        latestHeartRate = latestHeartRate,
+                        latestSleep = latestSleep,
+                        latestWeight = latestWeight,
+                    )
+                    if (healthStories.isNotEmpty()) {
+                        StoryReaderStore.stories = healthStories
+                        StoryReaderStore.initialIndex = 0
+                        StoryReaderStore.seenIds = emptySet()
+                        StoryReaderStore.onMarkSeen = {}
+                        StoryReaderStore.onStoryAction = { action -> if (action == "health") onNavigateToHealth() }
+                        onNavigateToStoryReader()
+                    }
+                },
+                onCoachAction = { action ->
+                    if (action?.startsWith("coach_") == true) {
+                        onNavigateToChat()
+                    }
+                },
+                healthPermissionState = healthPermissionState,
+                todaySteps = todaySteps,
+                stepsHistory = stepsHistory,
+                heartRateHistory = heartRateHistory,
+                latestHeartRate = latestHeartRate,
+                sleepHistory = sleepHistory,
+                latestSleep = latestSleep,
+                weightHistory = weightHistory,
+                latestWeight = latestWeight,
+                onRequestHealthPermissions = requestHealthPermissions,
+                onAddWeight = { healthViewModel.showAddWeightDialog() }
+            )
+
+            // ── 10. Weekly activity chart (trend view) ───────────────────────────
             if (weeklySnapshots.isNotEmpty()) {
                 item(key = "weekly_insights") {
                     WeeklyInsightsCard(
                         snapshots = weeklySnapshots,
                         onDayClick = { onNavigateToRetrospective() },
+                        stepsHistory = if (healthPermissionState == HealthPermissionState.GRANTED) stepsHistory else emptyList(),
+                        personalizedInsight = generateWeeklyInsight(balanceUiState.report),
                         modifier = Modifier.padding(horizontal = LifePlannerDesign.Padding.screenHorizontal)
                     )
                 }
             }
 
-            item(key = "life_balance_summary") {
-                LifeBalanceSummaryCard(
-                    onViewFullReport = onNavigateToLifeBalance,
-                    modifier = Modifier.padding(horizontal = LifePlannerDesign.Padding.screenHorizontal)
-                )
-            }
-
-            when (healthPermissionState) {
-                HealthPermissionState.GRANTED -> {
-                    item(key = "health_widgets") {
-                        Column(modifier = Modifier.padding(horizontal = LifePlannerDesign.Padding.screenHorizontal)) {
-                            HomeSectionHeader("Health", onSeeAll = onNavigateToHealth)
-                            Spacer(Modifier.height(8.dp))
-                            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                    HealthMetricCard(
-                                        icon = PhosphorIcons.Regular.Footprints,
-                                        value = todaySteps?.let { s ->
-                                            if (s >= 1000) "${s / 1000}.${(s % 1000) / 100}K" else s.toString()
-                                        } ?: "—",
-                                        label = "Steps", color = Color(0xFF28C76F), modifier = Modifier.weight(1f)
-                                    )
-                                    HealthMetricCard(
-                                        icon = PhosphorIcons.Regular.Heart,
-                                        value = latestHeartRate?.let { "${it.toInt()} bpm" } ?: "—",
-                                        label = "Heart Rate", color = Color(0xFFEA5455), modifier = Modifier.weight(1f)
-                                    )
-                                }
-                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                    HealthMetricCard(
-                                        icon = PhosphorIcons.Regular.Moon,
-                                        value = latestSleep?.let { h -> "${h.toLong()}.${((h % 1) * 10).toLong()}h" } ?: "—",
-                                        label = "Sleep", color = Color(0xFF7A5AF8), modifier = Modifier.weight(1f)
-                                    )
-                                    HealthMetricCard(
-                                        icon = PhosphorIcons.Regular.Barbell,
-                                        value = latestWeight?.let { w -> "${w.toLong()}.${((w % 1) * 10).toLong()} kg" } ?: "—",
-                                        label = "Weight", color = Color(0xFFF59E0B), modifier = Modifier.weight(1f)
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-                HealthPermissionState.DENIED -> {
-                    item(key = "health_cta") {
-                        ConnectHealthCard(
-                            modifier = Modifier.padding(horizontal = LifePlannerDesign.Padding.screenHorizontal),
-                            onClick = onNavigateToHealth
-                        )
-                    }
-                }
-                else -> {}
-            }
-
-            if (goalDependencies.isNotEmpty()) {
-                item(key = "goal_dependencies") {
-                    GoalDependencyWidget(
-                        dependencies = goalDependencies,
-                        goals = goals,
-                        onGoalClick = { onGoalClick(it) },
-                        modifier = Modifier.padding(horizontal = LifePlannerDesign.Padding.screenHorizontal)
-                    )
-                }
-            }
-
-            // Skill Progression (Abilities) — hidden when feature is disabled
+            // ── 12. Skill progression ────────────────────────────────────────────
             if (FeatureFlags.ABILITIES_ENABLED) run {
                 val topAbilities = abilities.take(3)
 
@@ -477,67 +522,50 @@ fun HomeScreen(
                 }
             }
 
-            // Explore section
-            item(key = "explore_header") {
-                Text(
-                    "Explore",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = LifePlannerDesign.Padding.screenHorizontal)
-                )
-            }
-
-            item(key = "retrospective_card") {
-                HomeNavCard(
-                    icon = PhosphorIcons.Regular.ClockCounterClockwise,
-                    iconColor = Color(0xFF7C4DFF),
-                    title = "Yesterday's Recap",
-                    subtitle = "Review what you accomplished",
-                    onClick = onNavigateToRetrospective,
-                    modifier = Modifier.padding(horizontal = LifePlannerDesign.Padding.screenHorizontal)
-                )
-            }
-
-            item(key = "flow_focus_card") {
-                HomeNavCard(
-                    icon = PhosphorIcons.Regular.Play,
-                    iconColor = Color(0xFFFF6B35),
-                    title = "Flow Focus",
-                    subtitle = "Start a free-flow focus session",
-                    onClick = onNavigateToFocus,
-                    modifier = Modifier.padding(horizontal = LifePlannerDesign.Padding.screenHorizontal)
-                )
-            }
-
-            item(key = "coach_ai_card") {
-                HomeCoachAICard(
-                    session = recentSession,
-                    coach = recentCoach,
-                    coachUnlocked = true,
-                    onClick = {
-                        if (authState is AuthState.Guest) {
-                            showAccountSheet = true
-                        } else {
-                            if (recentSession != null) onContinueChat(recentSession!!.coachId)
-                            else onNavigateToChat()
-                        }
-                    },
-                    modifier = Modifier.padding(horizontal = LifePlannerDesign.Padding.screenHorizontal)
-                )
-            }
-
-            if (displayedNextAction !is NextAction.AllCaughtUp || goals.isNotEmpty() || habits.isNotEmpty()) {
-                item {
-                    Box(Modifier.padding(horizontal = LifePlannerDesign.Padding.screenHorizontal)) {
-                        NextActionCard(
-                            nextAction = displayedNextAction,
-                            onGoalClick = onGoalClick,
-                            onHabitCheckIn = { habitId -> habitViewModel.toggleCheckIn(habitId) }
-                        )
-                    }
+            // ── 13. Goal dependencies (if any) ───────────────────────────────────
+            if (goalDependencies.isNotEmpty()) {
+                item(key = "goal_dependencies") {
+                    GoalDependencyWidget(
+                        dependencies = goalDependencies,
+                        goals = goals,
+                        onGoalClick = { onGoalClick(it) },
+                        modifier = Modifier.padding(horizontal = LifePlannerDesign.Padding.screenHorizontal)
+                    )
                 }
             }
+
+            // ── 14. Explore shortcuts (compact icon grid) ────────────────────────
+            exploreItems(
+                onNavigateToFocus = onNavigateToFocus,
+                onNavigateToRetrospective = onNavigateToRetrospective,
+                onAddGoalClick = onAddGoalClick,
+                onNavigateToHealth = onNavigateToHealth
+            )
         }
+    }
+
+    if (showWeightDialog) {
+        ManualWeightDialog(
+            onDismiss = { healthViewModel.dismissWeightDialog() },
+            onConfirm = { weight -> healthViewModel.addManualWeight(weight) }
+        )
+    }
+
+    val currentInsight = balanceUiState.selectedInsight
+    if (balanceUiState.showCoachSheet && currentInsight != null) {
+        az.tribe.lifeplanner.ui.balance.CoachSelectionSheet(
+            insight = currentInsight,
+            relevantCoaches = balanceUiState.relevantCoaches,
+            onCoachSelected = { coachId ->
+                balanceViewModel.hideCoachSheet()
+                onNavigateToChat()
+            },
+            onCouncilSelected = {
+                balanceViewModel.hideCoachSheet()
+                onNavigateToChat()
+            },
+            onDismiss = { balanceViewModel.hideCoachSheet() }
+        )
     }
 
     if (showAddGoalSheet) {
@@ -560,36 +588,9 @@ fun HomeScreen(
     }
 
     if (showOnboardingPrompt) {
-        AlertDialog(
-            onDismissRequest = { showOnboardingPrompt = false },
-            title = {
-                Text(
-                    "Meet Your Coaches",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
-            },
-            text = {
-                Text(
-                    "Complete a quick profile setup so Luna and your specialist coach can give you truly personalized guidance.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            },
-            confirmButton = {
-                Button(onClick = {
-                    showOnboardingPrompt = false
-                    onNavigateToOnboarding()
-                }) {
-                    Text("Set Up Now")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showOnboardingPrompt = false }) {
-                    Text("Maybe Later")
-                }
-            },
-            shape = RoundedCornerShape(20.dp)
+        CoachOnboardingDialog(
+            onDismiss = { showOnboardingPrompt = false },
+            onSetUpNow = { showOnboardingPrompt = false; onNavigateToOnboarding() }
         )
     }
 }

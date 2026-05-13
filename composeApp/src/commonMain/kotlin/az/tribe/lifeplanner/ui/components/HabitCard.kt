@@ -67,6 +67,7 @@ fun SwipeableHabitCard(
     onDelete: () -> Unit,
     onEdit: () -> Unit = {},
     onFocusClick: (() -> Unit)? = null,
+    onIncrement: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -169,7 +170,8 @@ fun SwipeableHabitCard(
             HabitCard(
                 habitWithStatus = habitWithStatus,
                 onCheckIn = onCheckIn,
-                onFocusClick = onFocusClick
+                onFocusClick = onFocusClick,
+                onIncrement = onIncrement
             )
         }
     }
@@ -215,10 +217,14 @@ fun HabitCard(
     habitWithStatus: HabitWithStatus,
     onCheckIn: (() -> Unit)? = null,
     onFocusClick: (() -> Unit)? = null,
+    onIncrement: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val habit = habitWithStatus.habit
     val isCompletedToday = habitWithStatus.isCompletedToday
+    val isCountBased = habit.targetCount > 1
+    val todayCount = habitWithStatus.todayCount
+    val categoryColor = habit.category.backgroundColor()
 
     val haptic = rememberHapticManager()
     val soundPlayer = rememberCelebrationSoundPlayer()
@@ -292,7 +298,14 @@ fun HabitCard(
                         overflow = TextOverflow.Ellipsis
                     )
 
-                    if (habit.description.isNotBlank() && !isCompletedToday) {
+                    if (isCountBased && !isCompletedToday) {
+                        val unitLabel = habit.unit?.takeIf { it.isNotBlank() } ?: "times"
+                        Text(
+                            text = "$todayCount / ${habit.targetCount} $unitLabel",
+                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                            color = categoryColor
+                        )
+                    } else if (habit.description.isNotBlank() && !isCompletedToday) {
                         Text(
                             text = habit.description,
                             style = MaterialTheme.typography.bodySmall,
@@ -318,6 +331,22 @@ fun HabitCard(
                             contentDescription = "Focus",
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+
+                // +1 increment button for count-based habits
+                if (isCountBased && !isCompletedToday && onIncrement != null) {
+                    Surface(
+                        onClick = onIncrement,
+                        shape = RoundedCornerShape(8.dp),
+                        color = categoryColor.copy(alpha = 0.15f)
+                    ) {
+                        Text(
+                            text = "+1",
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            color = categoryColor,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                         )
                     }
                 }
@@ -359,6 +388,21 @@ fun HabitCard(
 
                     FrequencyChip(frequency = habit.frequency)
                 }
+            }
+
+            // Count progress bar for count-based habits
+            if (isCountBased && !isCompletedToday && habit.targetCount > 0) {
+                val progress = (todayCount.toFloat() / habit.targetCount).coerceIn(0f, 1f)
+                Spacer(modifier = Modifier.height(6.dp))
+                LinearProgressIndicator(
+                    progress = { progress },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(3.dp)
+                        .clip(RoundedCornerShape(2.dp)),
+                    color = categoryColor,
+                    trackColor = categoryColor.copy(alpha = 0.15f)
+                )
             }
         }
     }

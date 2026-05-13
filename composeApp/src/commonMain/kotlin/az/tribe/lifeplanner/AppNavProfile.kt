@@ -85,6 +85,11 @@ internal fun NavGraphBuilder.appNavProfile(
                     launchSingleTop = true
                 }
             },
+            onNavigateToScreenTimeInsight = {
+                navController.navigate(Screen.ScreenTimeInsight.route) {
+                    launchSingleTop = true
+                }
+            },
             onNavigateToAICoach = {
                 navController.navigate(Screen.AIChat.route) {
                     launchSingleTop = true

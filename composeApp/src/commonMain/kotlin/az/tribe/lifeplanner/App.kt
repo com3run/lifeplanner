@@ -1,8 +1,17 @@
 package az.tribe.lifeplanner
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -18,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -37,6 +47,7 @@ import az.tribe.lifeplanner.ui.ForceUpdateScreen
 import az.tribe.lifeplanner.ui.goal.GoalViewModel
 import az.tribe.lifeplanner.ui.onboarding.CoachOnboardingViewModel
 import az.tribe.lifeplanner.ui.components.BottomNavigationBar
+import az.tribe.lifeplanner.ui.components.NavigationRailBar
 import az.tribe.lifeplanner.ui.components.CelebrationOverlay
 import az.tribe.lifeplanner.ui.components.CelebrationType
 import az.tribe.lifeplanner.ui.components.NavContextAction
@@ -112,9 +123,12 @@ fun App(
         }
 
         val builtinCoachFetcher: az.tribe.lifeplanner.data.network.BuiltinCoachFetcher = koinInject()
+        val personaApiFetcher: az.tribe.lifeplanner.data.network.PersonaApiFetcher = koinInject()
         val systemPromptFetcher: az.tribe.lifeplanner.data.network.SystemPromptFetcher = koinInject()
         LaunchedEffect(Unit) {
             builtinCoachFetcher.fetch()
+            personaApiFetcher.loadCache()  // instant local load before network
+            personaApiFetcher.fetch()       // refresh + persist to local DB and Supabase
             systemPromptFetcher.fetch()
         }
 
@@ -278,6 +292,21 @@ fun App(
         val navController = rememberNavController()
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         val currentRoute = navBackStackEntry?.destination?.route
+
+        // Behavioral tracking — record screen enter/exit on every nav change
+        val behaviorTracker: az.tribe.lifeplanner.data.behavior.BehaviorTracker = koinInject()
+        LaunchedEffect(currentRoute) {
+            behaviorTracker.onScreenChanged(currentRoute)
+        }
+        DisposableEffect(lifecycleOwner) {
+            val observer = LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_PAUSE) {
+                    behaviorTracker.onAppBackground()
+                }
+            }
+            lifecycleOwner.lifecycle.addObserver(observer)
+            onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+        }
 
         // Track app opened once per composition
         LaunchedEffect(Unit) { Analytics.appOpened() }
@@ -450,10 +479,8 @@ fun App(
             else -> null
         }
 
-        // Use Box layout to prevent jumping when bottom nav hides
-        // NavHost fills entire space, bottom bar overlays at bottom
         val focusManager = LocalFocusManager.current
-        Box(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
@@ -461,66 +488,96 @@ fun App(
                     detectTapGestures(onTap = { focusManager.clearFocus() })
                 }
         ) {
-            NavHost(
-                navController = navController,
-                startDestination = startDestination,
-                modifier = Modifier.fillMaxSize()
-            ) {
-                appNavHome(
-                    navController = navController,
-                    viewModel = viewModel,
-                    tabIndex = tabIndex,
-                    slideOffset = slideOffset,
-                    softUpdateDismissed = softUpdateDismissed,
-                    updateState = updateState,
-                    onHubTabSelected = { hubSelectedTab = it },
-                    onSoftUpdateDismissed = { softUpdateDismissed = false }
-                )
-                appNavJournal(
-                    navController = navController,
-                    tabIndex = tabIndex,
-                    slideOffset = slideOffset,
-                    hubSelectedTab = hubSelectedTab,
-                    onTabSelected = { hubSelectedTab = it }
-                )
-                appNavProfile(
-                    navController = navController,
-                    tabIndex = tabIndex,
-                    slideOffset = slideOffset
-                )
-                appNavAbilities(
-                    navController = navController,
-                    tabIndex = tabIndex,
-                    slideOffset = slideOffset
-                )
-                appNavGoals(
-                    navController = navController,
-                    viewModel = viewModel,
-                    onHubTabSelected = { hubSelectedTab = it }
-                )
-                appNavHabits(navController = navController)
-                appNavCoach(navController = navController)
-                appNavAuth(navController = navController)
-            }
+            val useRail = maxWidth >= 600.dp
 
-            // Bottom nav at the bottom, overlays content
-            Box(
-                modifier = Modifier.align(Alignment.BottomCenter)
-            ) {
-                BottomNavigationBar(
-                    navController = navController,
-                    isVisible = showBottomNav,
-                    contextAction = navContextAction
-                )
-            }
+            Row(Modifier.fillMaxSize()) {
+                if (useRail) {
+                    NavigationRailBar(
+                        navController = navController,
+                        isVisible = showBottomNav,
+                        contextAction = navContextAction
+                    )
+                }
 
-            // Global celebration overlay (on top of everything)
-            CelebrationOverlay(
-                type = globalCelebrationType,
-                isVisible = showGlobalCelebration,
-                message = globalCelebrationMessage,
-                onDismiss = { showGlobalCelebration = false }
-            )
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                ) {
+                    NavHost(
+                        navController = navController,
+                        startDestination = startDestination,
+                        modifier = Modifier.fillMaxSize(),
+                        enterTransition = {
+                            slideInVertically(tween(380, easing = FastOutSlowInEasing)) { it } +
+                                fadeIn(tween(280))
+                        },
+                        exitTransition = {
+                            fadeOut(tween(200))
+                        },
+                        popEnterTransition = {
+                            fadeIn(tween(200))
+                        },
+                        popExitTransition = {
+                            slideOutVertically(tween(350, easing = FastOutSlowInEasing)) { it } +
+                                fadeOut(tween(250))
+                        }
+                    ) {
+                        appNavHome(
+                            navController = navController,
+                            viewModel = viewModel,
+                            tabIndex = tabIndex,
+                            slideOffset = slideOffset,
+                            softUpdateDismissed = softUpdateDismissed,
+                            updateState = updateState,
+                            onHubTabSelected = { hubSelectedTab = it },
+                            onSoftUpdateDismissed = { softUpdateDismissed = false }
+                        )
+                        appNavJournal(
+                            navController = navController,
+                            tabIndex = tabIndex,
+                            slideOffset = slideOffset,
+                            hubSelectedTab = hubSelectedTab,
+                            onTabSelected = { hubSelectedTab = it }
+                        )
+                        appNavProfile(
+                            navController = navController,
+                            tabIndex = tabIndex,
+                            slideOffset = slideOffset
+                        )
+                        appNavAbilities(
+                            navController = navController,
+                            tabIndex = tabIndex,
+                            slideOffset = slideOffset
+                        )
+                        appNavGoals(
+                            navController = navController,
+                            viewModel = viewModel,
+                            onHubTabSelected = { hubSelectedTab = it }
+                        )
+                        appNavHabits(navController = navController)
+                        appNavCoach(navController = navController)
+                        appNavAuth(navController = navController)
+                    }
+
+                    if (!useRail) {
+                        Box(Modifier.align(Alignment.BottomCenter)) {
+                            BottomNavigationBar(
+                                navController = navController,
+                                isVisible = showBottomNav,
+                                contextAction = navContextAction
+                            )
+                        }
+                    }
+
+                    CelebrationOverlay(
+                        type = globalCelebrationType,
+                        isVisible = showGlobalCelebration,
+                        message = globalCelebrationMessage,
+                        onDismiss = { showGlobalCelebration = false }
+                    )
+                }
+            }
         }
     }
 }

@@ -166,17 +166,17 @@ fun GoalDetailHeroHeader(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Description
-            if (goal.description.isNotBlank()) {
-                Text(
-                    text = goal.description,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = Color.White.copy(alpha = 0.9f),
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-            }
+            // Goal title
+            Text(
+                text = goal.title,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Stats row
             Row(

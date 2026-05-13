@@ -1,6 +1,5 @@
 package az.tribe.lifeplanner.ui.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
@@ -73,7 +72,7 @@ val LocalModernColors = staticCompositionLocalOf {
 
 @Composable
 fun LifePlannerTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = true,
     content: @Composable () -> Unit
 ) {
     // Create Material3 color scheme from our modern colors

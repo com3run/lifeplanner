@@ -4,7 +4,6 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,7 +27,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -45,9 +47,9 @@ import com.adamglin.phosphoricons.regular.Flag
 // ─── Area Grid ────────────────────────────────────────────────────────────────
 
 @Composable
-internal fun AreaGrid(areaScores: List<LifeAreaScore>) {
+internal fun AreaGrid(areaScores: List<LifeAreaScore>, modifier: Modifier = Modifier) {
     val sorted = areaScores.sortedByDescending { it.score }
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
         sorted.chunked(2).forEach { pair ->
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 pair.forEach { areaScore ->
@@ -63,7 +65,7 @@ internal fun AreaGrid(areaScores: List<LifeAreaScore>) {
 
 @Composable
 internal fun AreaGridCard(areaScore: LifeAreaScore, modifier: Modifier = Modifier) {
-    val isDark = isSystemInDarkTheme()
+    val isDark = true
     val color = getAreaColor(areaScore.area, isDark)
 
     Card(
@@ -86,7 +88,7 @@ internal fun AreaGridCard(areaScore: LifeAreaScore, modifier: Modifier = Modifie
 
             Box(modifier = Modifier.fillMaxWidth().padding(14.dp)) {
                 // Mini arc ring — top-right
-                MiniArcProgress(
+                HeartProgress(
                     score = areaScore.score,
                     color = color,
                     modifier = Modifier
@@ -169,47 +171,36 @@ internal fun AreaGridCard(areaScore: LifeAreaScore, modifier: Modifier = Modifie
 }
 
 @Composable
-internal fun MiniArcProgress(score: Int, color: Color, modifier: Modifier = Modifier) {
-    val sweepAngle by animateFloatAsState(
-        targetValue = (score / 100f) * 270f,
+internal fun HeartProgress(score: Int, color: Color, modifier: Modifier = Modifier) {
+    val fillLevel by animateFloatAsState(
+        targetValue = score / 100f,
         animationSpec = tween(durationMillis = 900),
-        label = "arc"
+        label = "heart_fill"
     )
-    val bgColor = color.copy(alpha = 0.15f)
-
     Canvas(modifier = modifier) {
-        val strokeWidth = size.minDimension * 0.14f
-        val inset = strokeWidth / 2f
-        val arcSize = Size(size.width - strokeWidth, size.height - strokeWidth)
-        val topLeft = Offset(inset, inset)
-
-        // Background arc
-        drawArc(
-            color = bgColor,
-            startAngle = 135f,
-            sweepAngle = 270f,
-            useCenter = false,
-            topLeft = topLeft,
-            size = arcSize,
-            style = Stroke(
-                width = strokeWidth,
-                cap = androidx.compose.ui.graphics.StrokeCap.Round
-            )
-        )
-        // Progress arc
-        if (sweepAngle > 0f) {
-            drawArc(
+        val path = heartPath(size)
+        drawPath(path, color.copy(alpha = 0.13f))
+        clipPath(path) {
+            val fillTop = size.height * (1f - fillLevel)
+            drawRect(
                 color = color,
-                startAngle = 135f,
-                sweepAngle = sweepAngle,
-                useCenter = false,
-                topLeft = topLeft,
-                size = arcSize,
-                style = Stroke(
-                    width = strokeWidth,
-                    cap = androidx.compose.ui.graphics.StrokeCap.Round
-                )
+                topLeft = Offset(0f, fillTop),
+                size = Size(size.width, size.height - fillTop)
             )
         }
+        drawPath(path, color, style = Stroke(width = size.minDimension * 0.08f, cap = StrokeCap.Round))
+    }
+}
+
+private fun heartPath(size: Size): Path {
+    val w = size.width
+    val h = size.height
+    return Path().apply {
+        moveTo(w / 2f, h * 0.27f)
+        cubicTo(w / 2f - w * 0.15f, 0f, 0f, h * 0.08f, 0f, h * 0.38f)
+        cubicTo(0f, h * 0.65f, w / 2f - w * 0.1f, h * 0.82f, w / 2f, h)
+        cubicTo(w / 2f + w * 0.1f, h * 0.82f, w, h * 0.65f, w, h * 0.38f)
+        cubicTo(w, h * 0.08f, w / 2f + w * 0.15f, 0f, w / 2f, h * 0.27f)
+        close()
     }
 }

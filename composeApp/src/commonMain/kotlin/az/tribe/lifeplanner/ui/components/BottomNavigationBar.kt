@@ -2,7 +2,6 @@ package az.tribe.lifeplanner.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
@@ -70,7 +69,7 @@ fun BottomNavigationBar(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     val pillShape = RoundedCornerShape(50)
-    val isDark = isSystemInDarkTheme()
+    val isDark = true
     val pillBackground = if (isDark) LifePlannerGradients.glassNavDark else LifePlannerGradients.glassOverlayHigh
     val pillBorder = if (isDark) LifePlannerGradients.glassBorderDark else LifePlannerGradients.glassBorder
 

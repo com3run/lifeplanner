@@ -37,6 +37,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import az.tribe.lifeplanner.data.repository.BuiltinCoachStore
 import az.tribe.lifeplanner.domain.model.CoachPersona
 import az.tribe.lifeplanner.domain.model.ObjectiveType
 import az.tribe.lifeplanner.ui.balance.InsightMessageHolder
@@ -65,6 +66,7 @@ fun AIChatScreen(
     onNavigateToCoachProfile: (String) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val builtinCoaches by BuiltinCoachStore.coaches.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val connectivityObserver: NetworkConnectivityObserver = koinInject()
     val isConnected by connectivityObserver.isConnected.collectAsState()
@@ -148,34 +150,39 @@ fun AIChatScreen(
                             try { Color(("FF" + coach.avatar.backgroundColor.removePrefix("#")).toLong(16)) }
                             catch (_: Exception) { Color(0xFF6366F1) }
                         }
-                        if (coach.imageUrl != null) {
-                            AsyncImage(
-                                model = coach.imageUrl,
-                                contentDescription = null,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.size(40.dp).clip(CircleShape)
-                            )
-                        } else {
-                            Box(
-                                modifier = Modifier.size(40.dp).clip(CircleShape).background(bgColor),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(coach.emoji, fontSize = 18.sp)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.clickable { onNavigateToCoachProfile(coach.id) }
+                        ) {
+                            if (coach.imageUrl != null) {
+                                AsyncImage(
+                                    model = coach.imageUrl,
+                                    contentDescription = null,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.size(40.dp).clip(CircleShape)
+                                )
+                            } else {
+                                Box(
+                                    modifier = Modifier.size(40.dp).clip(CircleShape).background(bgColor),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(coach.emoji, fontSize = 18.sp)
+                                }
                             }
-                        }
-                        Spacer(Modifier.width(10.dp))
-                        Column {
-                            Text(
-                                coach.name,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                coach.title,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            Spacer(Modifier.width(10.dp))
+                            Column {
+                                Text(
+                                    coach.name,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    coach.title,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                     }
                 }
@@ -219,7 +226,7 @@ fun AIChatScreen(
             } else {
                 Box(Modifier.weight(1f).fillMaxWidth()) {
                     CoachListContentExtended(
-                        builtinCoaches = CoachPersona.ALL_COACHES,
+                        builtinCoaches = builtinCoaches.ifEmpty { CoachPersona.ALL_COACHES },
                         customCoaches = uiState.customCoaches,
                         coachGroups = uiState.coachGroups,
                         sessions = uiState.sessionsByCoach,

@@ -31,11 +31,13 @@ kotlin {
         }
     }
 
-    listOf(
-        iosX64(),
-        iosArm64(),
-        iosSimulatorArm64()
-    ).forEach { iosTarget ->
+    jvm("desktop")
+
+    // On CI compile all 3 iOS targets. Locally compile arm64 (device) + simulator arm64.
+    // iosX64 (Intel simulator) is skipped locally to avoid unnecessary compile time.
+    val isCI = System.getenv("CI") != null
+    val iosTargets = if (isCI) listOf(iosX64(), iosArm64(), iosSimulatorArm64()) else listOf(iosArm64(), iosSimulatorArm64())
+    iosTargets.forEach { iosTarget ->
         iosTarget.binaries.framework {
             baseName = "ComposeApp"
             isStatic = true
@@ -48,6 +50,28 @@ kotlin {
     }
 
     sourceSets {
+
+        // Intermediate source set for Android only — libs that have no JVM artifact
+        // (firebase-crashlytics, cmpcharts, compose-mediaplayer).
+        // iOS gets the same libs added directly to iosMain.dependencies below.
+        val mobileMain by creating {
+            dependsOn(commonMain.get())
+            dependencies {
+                implementation(libs.firebase.crashlytics)
+                implementation(libs.cmpcharts)
+                implementation(libs.compose.mediaplayer)
+            }
+        }
+        androidMain { dependsOn(mobileMain) }
+
+        // Explicitly wire iOS hierarchy — the androidMain.dependsOn() above prevents
+        // the default hierarchy template from running, so iosMain must be connected manually.
+        iosMain {
+            dependsOn(commonMain.get())
+        }
+        iosTargets.forEach { iosTarget ->
+            getByName("${iosTarget.name}Main").dependsOn(iosMain.get())
+        }
 
         androidMain.dependencies {
             implementation(compose.preview)
@@ -98,8 +122,6 @@ kotlin {
 
             implementation(libs.sqldelight.coroutines)
 
-            implementation(libs.compose.mediaplayer)
-
             //Ktor
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.content.negotiation)
@@ -118,7 +140,6 @@ kotlin {
 
             implementation(libs.firebase.common)
             implementation(libs.gitlive.firebase.config)
-            implementation(libs.firebase.crashlytics)
             implementation(libs.firebase.perf)
             implementation(libs.gitlive.firebase.analytics)
 
@@ -139,6 +160,19 @@ kotlin {
             implementation(libs.ktor.client.darwin)
             // HealthKit wrapper
             implementation(libs.health.kmp)
+            // libs with no JVM artifact — also in mobileMain for Android
+            implementation(libs.firebase.crashlytics)
+            implementation(libs.cmpcharts)
+            implementation(libs.compose.mediaplayer)
+        }
+
+        val desktopMain by getting {
+            dependencies {
+                implementation(compose.desktop.currentOs)
+                implementation(libs.sqldelight.jvm)
+                implementation(libs.ktor.client.cio)
+                implementation(libs.kotlinx.coroutines.swing)
+            }
         }
 
         commonTest.dependencies {
@@ -161,7 +195,7 @@ sqldelight {
         create("LifePlannerDB") {
             packageName.set("az.tribe.lifeplanner.database")
             schemaOutputDirectory = file("src/commonMain/sqldelight/databases")
-            version = 21 // v2.5: DayRecapEntity (20), category rename 7→6 (21)
+            version = 28 // 22: HabitEntity.unit, 23: CachedPersonaEntity, 24: HabitCheckInEntity.count, 26: CachedPersonaEntity.slug+avatar_url, 27: UserSituationEntity, 28: ScreenTimeEventEntity + UserActivityPattern behavioral columns
             generateAsync.set(true)
         }
     }
@@ -259,6 +293,12 @@ dependencies {
 }
 
 
+compose.desktop {
+    application {
+        mainClass = "az.tribe.lifeplanner.MainKt"
+    }
+}
+
 buildkonfig {
     packageName = "az.tribe.lifeplanner"
 
@@ -297,8 +337,18 @@ buildkonfig {
         )
         buildConfigField(
             FieldSpec.Type.STRING,
+            "PERSONA_API_SECRET",
+            localProperties["PERSONA_API_SECRET"]?.toString() ?: "",
+        )
+        buildConfigField(
+            FieldSpec.Type.STRING,
             "APP_VERSION",
             "2.3",
+        )
+        buildConfigField(
+            FieldSpec.Type.STRING,
+            "HORIZON_APP_ID",
+            localProperties["HORIZON_APP_ID"]?.toString() ?: "",
         )
     }
 
@@ -320,6 +370,10 @@ buildkonfig {
 
 
 kover {
+    // Disable instrumentation during normal builds — only runs when you invoke koverXmlReport etc.
+    if (System.getenv("KOVER_ENABLED") == null) {
+        disable()
+    }
     reports {
         filters {
             includes {

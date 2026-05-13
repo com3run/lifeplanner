@@ -189,6 +189,9 @@ fun HabitTrackerScreen(
                             onDelete = { viewModel.deleteHabit(habitWithStatus.habit.id) },
                             onEdit = { habitToEdit = habitWithStatus.habit },
                             onFocusClick = { onNavigateToFocus() },
+                            onIncrement = if (habitWithStatus.habit.targetCount > 1) {
+                                { viewModel.incrementCheckIn(habitWithStatus.habit.id) }
+                            } else null,
                             modifier = Modifier.animateItem()
                         )
                     }

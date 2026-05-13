@@ -35,6 +35,7 @@ class HabitCheckInTableSyncer(
         date = local.date,
         completed = local.completed != 0L,
         notes = local.notes,
+        count = local.count,
         updatedAt = local.sync_updated_at ?: Clock.System.now().toString(),
         isDeleted = local.is_deleted != 0L,
         syncVersion = local.sync_version
@@ -46,6 +47,7 @@ class HabitCheckInTableSyncer(
         date = remote.date,
         completed = if (remote.completed) 1L else 0L,
         notes = remote.notes,
+        count = remote.count,
         sync_updated_at = remote.updatedAt,
         is_deleted = if (remote.isDeleted) 1L else 0L,
         sync_version = remote.syncVersion,
@@ -60,6 +62,7 @@ class HabitCheckInTableSyncer(
                 date = entity.date,
                 completed = entity.completed,
                 notes = entity.notes,
+                count = entity.count,
                 sync_updated_at = entity.sync_updated_at,
                 is_deleted = entity.is_deleted,
                 sync_version = entity.sync_version,

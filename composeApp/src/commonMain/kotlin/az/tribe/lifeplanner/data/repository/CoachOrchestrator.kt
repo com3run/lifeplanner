@@ -49,6 +49,7 @@ class CoachOrchestrator {
             "kai_fitness" -> situation.body.toPromptLine()?.let { lines.add("Body: $it") }
             "sam_social" -> situation.people.toPromptLine()?.let { lines.add("People: $it") }
             "river_wellness" -> situation.purpose.toPromptLine()?.let { lines.add("Purpose: $it") }
+            "jamie_family"   -> situation.people.toPromptLine()?.let { lines.add("People: $it") }
             else -> {
                 // Luna or unknown — show highest-confidence slices
                 listOfNotNull(
@@ -100,6 +101,13 @@ class CoachOrchestrator {
                 with(situation.purpose) {
                     if (topValues.isEmpty()) add("core values")
                     if (longTermVision == null) add("long-term vision")
+                }
+            }
+            "jamie_family" -> buildList {
+                with(situation.people) {
+                    if (familyContext == null) add("family situation")
+                    if (relationshipStatus == null) add("relationship status")
+                    if (closeCircleSize == null) add("close social circle size")
                 }
             }
             else -> buildList {

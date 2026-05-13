@@ -2,7 +2,6 @@ package az.tribe.lifeplanner.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -47,7 +46,7 @@ fun GlassCard(
     cornerRadius: Dp = LifePlannerDesign.CornerRadius.large,
     content: @Composable () -> Unit
 ) {
-    val isDark = isSystemInDarkTheme()
+    val isDark = true
 
     if (isDark) {
         Surface(

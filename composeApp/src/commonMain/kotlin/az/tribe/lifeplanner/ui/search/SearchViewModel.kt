@@ -2,6 +2,7 @@ package az.tribe.lifeplanner.ui.search
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import az.tribe.lifeplanner.data.repository.BuiltinCoachStore
 import az.tribe.lifeplanner.domain.model.CoachPersona
 import az.tribe.lifeplanner.domain.model.Goal
 import az.tribe.lifeplanner.domain.model.JournalEntry
@@ -162,8 +163,8 @@ class SearchViewModel(
                     },
                     coaches = when {
                         filters.isNotEmpty() && SearchFilter.COACHES !in filters -> emptyList()
-                        q.isBlank() -> CoachPersona.ALL_COACHES
-                        else -> CoachPersona.ALL_COACHES.filter {
+                        q.isBlank() -> BuiltinCoachStore.getAll()
+                        else -> BuiltinCoachStore.getAll().filter {
                             it.name.lowercase().contains(lower) ||
                                     it.title.lowercase().contains(lower)
                         }

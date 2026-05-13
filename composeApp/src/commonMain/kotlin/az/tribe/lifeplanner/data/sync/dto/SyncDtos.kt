@@ -123,6 +123,7 @@ data class HabitCheckInSyncDto(
     val date: String,
     val completed: Boolean = true,
     val notes: String = "",
+    val count: Long = 0,
     @SerialName("updated_at") val updatedAt: String? = null,
     @SerialName("is_deleted") val isDeleted: Boolean = false,
     @SerialName("sync_version") val syncVersion: Long = 0
@@ -351,6 +352,18 @@ data class UserSituationSyncDto(
     @SerialName("updated_at") val updatedAt: String,
     @SerialName("is_deleted") val isDeleted: Boolean = false,
     @SerialName("sync_version") val syncVersion: Long = 0
+)
+
+@Serializable
+data class PersonaCacheSyncDto(
+    @SerialName("user_id") val userId: String,
+    @SerialName("persona_id") val personaId: String,
+    val name: String,
+    val description: String? = null,
+    val style: String? = null,
+    @SerialName("image_url") val imageUrl: String? = null,
+    @SerialName("is_active") val isActive: Boolean = true,
+    @SerialName("fetched_at") val fetchedAt: String,
 )
 
 @Serializable

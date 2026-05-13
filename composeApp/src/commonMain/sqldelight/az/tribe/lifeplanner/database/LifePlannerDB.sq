@@ -379,6 +379,7 @@ CREATE TABLE IF NOT EXISTS HabitCheckInEntity (
     is_deleted INTEGER NOT NULL DEFAULT 0,
     sync_version INTEGER NOT NULL DEFAULT 0,
     last_synced_at TEXT,
+    count INTEGER NOT NULL DEFAULT 0,
     FOREIGN KEY (habitId) REFERENCES HabitEntity(id) ON DELETE CASCADE
 );
 
@@ -422,12 +423,17 @@ DELETE FROM HabitEntity WHERE id = ?;
 
 -- Habit check-in queries
 insertHabitCheckIn:
-INSERT OR REPLACE INTO HabitCheckInEntity(id, habitId, date, completed, notes, sync_updated_at, is_deleted, sync_version, last_synced_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT OR REPLACE INTO HabitCheckInEntity(id, habitId, date, completed, notes, count, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 insertHabitCheckInOrIgnore:
-INSERT OR IGNORE INTO HabitCheckInEntity(id, habitId, date, completed, notes, sync_updated_at, is_deleted, sync_version, last_synced_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT OR IGNORE INTO HabitCheckInEntity(id, habitId, date, completed, notes, count, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+updateHabitCheckInCount:
+UPDATE HabitCheckInEntity
+SET count = ?, completed = ?, sync_updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+WHERE habitId = ? AND date = ? AND is_deleted = 0;
 
 getCheckInsByHabitId:
 SELECT * FROM HabitCheckInEntity WHERE habitId = ? AND is_deleted = 0 ORDER BY date DESC;
@@ -958,7 +964,19 @@ CREATE TABLE IF NOT EXISTS UserActivityPatternEntity (
     mostActiveDays TEXT NOT NULL DEFAULT '',
     averageResponseTime INTEGER NOT NULL DEFAULT 0,
     bestCheckInTimes TEXT NOT NULL DEFAULT '',
+    featureEngagementJson TEXT NOT NULL DEFAULT '{}',
+    sessionAvgMinutes REAL NOT NULL DEFAULT 0.0,
+    sessionsPerWeek REAL NOT NULL DEFAULT 0.0,
     lastUpdated TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS ScreenTimeEventEntity (
+    id TEXT PRIMARY KEY NOT NULL,
+    screen TEXT NOT NULL,
+    eventType TEXT NOT NULL,
+    timestamp TEXT NOT NULL,
+    durationMs INTEGER NOT NULL DEFAULT 0,
+    date TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS ScheduledNotificationEntity (
@@ -1060,14 +1078,33 @@ SELECT * FROM UserActivityPatternEntity WHERE id = 'default';
 
 insertUserActivityPattern:
 INSERT OR REPLACE INTO UserActivityPatternEntity(
-    id, mostActiveHours, mostActiveDays, averageResponseTime, bestCheckInTimes, lastUpdated
-) VALUES (?, ?, ?, ?, ?, ?);
+    id, mostActiveHours, mostActiveDays, averageResponseTime, bestCheckInTimes,
+    featureEngagementJson, sessionAvgMinutes, sessionsPerWeek, lastUpdated
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 updateUserActivityPattern:
 UPDATE UserActivityPatternEntity
 SET mostActiveHours = ?, mostActiveDays = ?, averageResponseTime = ?,
-    bestCheckInTimes = ?, lastUpdated = ?
+    bestCheckInTimes = ?, featureEngagementJson = ?, sessionAvgMinutes = ?,
+    sessionsPerWeek = ?, lastUpdated = ?
 WHERE id = 'default';
+
+-- Screen Time Event queries
+insertScreenTimeEvent:
+INSERT INTO ScreenTimeEventEntity(id, screen, eventType, timestamp, durationMs, date)
+VALUES (?, ?, ?, ?, ?, ?);
+
+getScreenTimeEventsForDateRange:
+SELECT * FROM ScreenTimeEventEntity WHERE date >= ? AND date <= ? ORDER BY timestamp ASC;
+
+getScreenTimeEventCount:
+SELECT COUNT(*) FROM ScreenTimeEventEntity;
+
+deleteOldScreenTimeEvents:
+DELETE FROM ScreenTimeEventEntity WHERE date < ?;
+
+deleteAllScreenTimeEvents:
+DELETE FROM ScreenTimeEventEntity;
 
 -- Scheduled Notification queries
 insertScheduledNotification:
@@ -1724,8 +1761,8 @@ INSERT OR REPLACE INTO HabitEntity(id, title, description, category, frequency, 
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 upsertHabitCheckInFromSync:
-INSERT OR REPLACE INTO HabitCheckInEntity(id, habitId, date, completed, notes, sync_updated_at, is_deleted, sync_version, last_synced_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT OR REPLACE INTO HabitCheckInEntity(id, habitId, date, completed, notes, count, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 upsertJournalEntryFromSync:
 INSERT OR REPLACE INTO JournalEntryEntity(id, title, content, mood, linkedGoalId, linkedHabitId, promptUsed, tags, date, createdAt, updatedAt, sync_updated_at, is_deleted, sync_version, last_synced_at)
@@ -2137,3 +2174,48 @@ DELETE FROM UserSituationEntity;
 
 observeUserSituation:
 SELECT * FROM UserSituationEntity WHERE is_deleted = 0 LIMIT 1;
+
+-- CachedPersona (bridge from TribeBot personas_cache)
+CREATE TABLE IF NOT EXISTS CachedPersonaEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT,
+    style TEXT,
+    image_url TEXT,
+    is_active INTEGER NOT NULL DEFAULT 1,
+    fetched_at TEXT NOT NULL,
+    title TEXT NOT NULL DEFAULT 'Coach',
+    category TEXT NOT NULL DEFAULT 'WELLBEING',
+    emoji TEXT NOT NULL DEFAULT '✨',
+    greeting TEXT,
+    specialties TEXT,
+    personality TEXT,
+    avatar_bg_color TEXT NOT NULL DEFAULT '#6366F1',
+    avatar_accent_color TEXT NOT NULL DEFAULT '#818CF8',
+    avatar_icon_name TEXT NOT NULL DEFAULT 'star',
+    bio TEXT,
+    fun_fact TEXT,
+    xp_to_unlock INTEGER NOT NULL DEFAULT 0,
+    is_default_unlocked INTEGER NOT NULL DEFAULT 1,
+    timezone TEXT,
+    city TEXT,
+    country_flag TEXT,
+    slug TEXT,
+    avatar_url TEXT
+);
+
+upsertCachedPersona:
+INSERT OR REPLACE INTO CachedPersonaEntity(
+    id, name, description, style, image_url, is_active, fetched_at,
+    title, category, emoji, greeting, specialties, personality,
+    avatar_bg_color, avatar_accent_color, avatar_icon_name,
+    bio, fun_fact, xp_to_unlock, is_default_unlocked,
+    timezone, city, country_flag, slug, avatar_url
+)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+getAllCachedPersonas:
+SELECT * FROM CachedPersonaEntity WHERE is_active = 1;
+
+deleteAllCachedPersonas:
+DELETE FROM CachedPersonaEntity;

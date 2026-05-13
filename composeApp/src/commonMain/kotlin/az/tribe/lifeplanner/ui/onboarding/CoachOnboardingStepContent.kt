@@ -1,21 +1,14 @@
 package az.tribe.lifeplanner.ui.onboarding
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
@@ -32,10 +25,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -43,92 +32,9 @@ import androidx.compose.ui.unit.dp
 import az.tribe.lifeplanner.domain.enum.GoalCategory
 import az.tribe.lifeplanner.domain.model.ActivityLevel
 import az.tribe.lifeplanner.domain.model.CircleSize
-import az.tribe.lifeplanner.domain.model.CoachPersona
 import az.tribe.lifeplanner.domain.model.RelationshipStatus
 import az.tribe.lifeplanner.domain.model.SavingsHabit
 import az.tribe.lifeplanner.domain.model.SocialEnergy
-import coil3.compose.AsyncImage
-
-// ─── Coach bubble ─────────────────────────────────────────────────────────────
-
-@Composable
-internal fun CoachBubble(coach: CoachPersona, message: String) {
-    val bgColor = try {
-        Color(("FF" + coach.avatar.backgroundColor.removePrefix("#")).toLong(16))
-    } catch (_: Exception) { Color(0xFF6366F1) }
-
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        if (coach.imageUrl != null) {
-            // Full-width portrait card with gradient name overlay
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(240.dp)
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(bgColor)
-            ) {
-                AsyncImage(
-                    model = coach.imageUrl,
-                    contentDescription = coach.name,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.BottomStart)
-                        .background(
-                            Brush.verticalGradient(
-                                colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.55f))
-                            )
-                        )
-                        .padding(horizontal = 16.dp, vertical = 12.dp)
-                ) {
-                    Text(
-                        text = coach.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                }
-            }
-        } else {
-            Box(
-                modifier = Modifier
-                    .size(100.dp)
-                    .clip(CircleShape)
-                    .background(bgColor)
-            ) {
-                Text(
-                    text = coach.emoji,
-                    style = MaterialTheme.typography.headlineLarge,
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = coach.name,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        }
-        Spacer(modifier = Modifier.height(12.dp))
-        Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(
-                text = message,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(16.dp),
-                textAlign = TextAlign.Start
-            )
-        }
-    }
-}
 
 // ─── Phase routing ────────────────────────────────────────────────────────────
 
@@ -137,6 +43,9 @@ internal fun PhaseContent(
     phase: OnboardingPhase,
     viewModel: CoachOnboardingViewModel,
     onAdvance: () -> Unit,
+    onSkipToHome: () -> Unit = {},
+    onConfirmInterpretation: () -> Unit = {},
+    isAnalyzing: Boolean = false,
     isSaving: Boolean
 ) {
     when (phase) {
@@ -151,8 +60,8 @@ internal fun PhaseContent(
         )
 
         OnboardingPhase.LUNA_PRIORITY -> PriorityStep(
-            selected = viewModel.topPriority,
-            onSelect = { viewModel.topPriority = it },
+            selected = viewModel.topPriorities,
+            onToggle = { viewModel.togglePriority(it) },
             onContinue = onAdvance
         )
 
@@ -178,12 +87,44 @@ internal fun PhaseContent(
         OnboardingPhase.MIND_DUMP -> MindDumpStep(
             value = viewModel.mindDump,
             onChange = { viewModel.mindDump = it },
-            onContinue = onAdvance
+            onContinue = { viewModel.startMindAnalysis() },
+            onSkip = { viewModel.skipMindDump() },
+            isLoading = isAnalyzing
+        )
+
+        OnboardingPhase.MIND_QUESTIONS -> MindQuestionsStep(
+            questions = viewModel.analysisQuestions,
+            answers = viewModel.analysisAnswers,
+            currentIndex = viewModel.currentQuestionIndex,
+            isProcessing = isAnalyzing,
+            onAnswer = { viewModel.answerCurrentQuestion(it) }
+        )
+
+        OnboardingPhase.MIND_VALIDATION -> MindValidationStep(
+            interpretation = viewModel.goalInterpretation,
+            qaContext = viewModel.analysisQuestions.zip(viewModel.analysisAnswers)
+                .filter { (_, a) -> a.isNotBlank() },
+            isProcessing = isSaving,
+            onConfirm = onConfirmInterpretation,
+            onReject = { viewModel.rejectInterpretation() }
         )
 
         OnboardingPhase.COMPLETE -> CompleteStep(
             completeness = viewModel.overallCompleteness(),
             onDone = onAdvance,
+            isSaving = isSaving
+        )
+
+        OnboardingPhase.GOAL_PREVIEW -> GoalPreviewStep(
+            goal = viewModel.generatedGoal,
+            onContinue = { viewModel.advance() },
+            onSkip = onSkipToHome
+        )
+
+        OnboardingPhase.HABIT_SUGGEST -> HabitSuggestStep(
+            habits = viewModel.habitSuggestions,
+            onToggle = { viewModel.toggleHabitSuggestion(it) },
+            onContinue = onAdvance,
             isSaving = isSaving
         )
     }
@@ -233,57 +174,83 @@ private fun NameAgeStep(
     TextButton(onClick = onContinue) { Text("Skip for now") }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun PriorityStep(
-    selected: GoalCategory?,
-    onSelect: (GoalCategory) -> Unit,
+    selected: List<GoalCategory>,
+    onToggle: (GoalCategory) -> Unit,
     onContinue: () -> Unit
 ) {
     val options = listOf(
         GoalCategory.CAREER to ("💼" to "Career"),
         GoalCategory.MONEY to ("💰" to "Money"),
         GoalCategory.BODY to ("💪" to "Body"),
-        GoalCategory.PEOPLE to ("🤝" to "People"),
-        GoalCategory.WELLBEING to ("✨" to "Wellbeing"),
-        GoalCategory.PURPOSE to ("🧘" to "Purpose"),
+        GoalCategory.PEOPLE to ("👥" to "People"),
+        GoalCategory.WELLBEING to ("🧘" to "Wellbeing"),
+        GoalCategory.PURPOSE to ("🎯" to "Purpose"),
         GoalCategory.FAMILY to ("🏡" to "Family")
     )
-    FlowRow(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-        maxItemsInEachRow = 2
-    ) {
-        options.forEach { (category, pair) ->
-            val (emoji, label) = pair
-            val isSelected = selected == category
-            Surface(
-                modifier = Modifier.weight(1f).clickable { onSelect(category) },
-                shape = RoundedCornerShape(12.dp),
-                color = if (isSelected) MaterialTheme.colorScheme.primaryContainer
-                        else MaterialTheme.colorScheme.surfaceVariant,
-                tonalElevation = if (isSelected) 4.dp else 0.dp
+
+    @Composable
+    fun CategoryTile(category: GoalCategory, emoji: String, label: String, modifier: Modifier) {
+        val isSelected = category in selected
+        Surface(
+            modifier = modifier.clickable { onToggle(category) },
+            shape = RoundedCornerShape(16.dp),
+            color = if (isSelected) MaterialTheme.colorScheme.primaryContainer
+                    else MaterialTheme.colorScheme.surfaceVariant,
+            tonalElevation = if (isSelected) 4.dp else 0.dp
+        ) {
+            Column(
+                modifier = Modifier.padding(vertical = 14.dp, horizontal = 8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(text = emoji, style = MaterialTheme.typography.titleLarge)
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = label,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                        color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer
-                                else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                Text(text = emoji, style = MaterialTheme.typography.titleLarge)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                    color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
             }
         }
     }
-    Spacer(modifier = Modifier.height(24.dp))
-    PrimaryButton(text = "Continue", onClick = onContinue, enabled = selected != null)
+
+    // Row 1: 4 items
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        options.take(4).forEach { (category, pair) ->
+            CategoryTile(category = category, emoji = pair.first, label = pair.second, modifier = Modifier.weight(1f))
+        }
+    }
+    Spacer(modifier = Modifier.height(8.dp))
+    // Row 2: 3 items — center them by adding spacers
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Spacer(modifier = Modifier.weight(0.5f))
+        options.drop(4).forEach { (category, pair) ->
+            CategoryTile(category = category, emoji = pair.first, label = pair.second, modifier = Modifier.weight(1f))
+        }
+        Spacer(modifier = Modifier.weight(0.5f))
+    }
+
+    Spacer(modifier = Modifier.height(12.dp))
+    Text(
+        text = "${selected.size} of 7 selected · 3 minimum",
+        style = MaterialTheme.typography.labelMedium,
+        color = if (selected.size >= 3) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+        fontWeight = FontWeight.Medium,
+        modifier = Modifier.fillMaxWidth(),
+        textAlign = TextAlign.Center
+    )
+    Spacer(modifier = Modifier.height(16.dp))
+    PrimaryButton(text = "Continue", onClick = onContinue, enabled = selected.size >= 3)
 }
 
 @Composable
@@ -319,7 +286,9 @@ private fun SpecialistIntroStep(coachId: String, priority: GoalCategory?, onCont
 private fun MindDumpStep(
     value: String,
     onChange: (String) -> Unit,
-    onContinue: () -> Unit
+    onContinue: () -> Unit,
+    onSkip: () -> Unit = onContinue,
+    isLoading: Boolean = false
 ) {
     OutlinedTextField(
         value = value,
@@ -332,8 +301,12 @@ private fun MindDumpStep(
         maxLines = 6
     )
     Spacer(Modifier.height(24.dp))
-    PrimaryButton(text = "Let's build it!", onClick = onContinue, enabled = value.isNotBlank())
-    TextButton(onClick = onContinue) { Text("Skip for now") }
+    PrimaryButton(
+        text = if (isLoading) "Thinking…" else "Let's build it!",
+        onClick = onContinue,
+        enabled = value.isNotBlank() && !isLoading
+    )
+    TextButton(onClick = onSkip, enabled = !isLoading) { Text("Skip for now") }
 }
 
 @Composable
@@ -586,3 +559,4 @@ private fun SpecialistQ4(vm: CoachOnboardingViewModel, onAdvance: () -> Unit) {
         else -> onAdvance()
     }
 }
+

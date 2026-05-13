@@ -152,7 +152,7 @@ fun SmartHabitGeneratorScreen(
                 HabitGeneratorStep.RESULTS -> HabitResultsStep(
                     habits = generatedHabits,
                     addedTitles = addedTitles,
-                    onAddHabit = { viewModel.addHabit(it) },
+                    onAddHabit = { habit, time -> viewModel.addHabit(habit, time) },
                     onAddAll = { viewModel.addAllHabits() },
                     onComplete = onComplete
                 )

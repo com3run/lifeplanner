@@ -1,0 +1,16 @@
+ALTER TABLE CachedPersonaEntity ADD COLUMN title TEXT NOT NULL DEFAULT 'Coach';
+ALTER TABLE CachedPersonaEntity ADD COLUMN category TEXT NOT NULL DEFAULT 'WELLBEING';
+ALTER TABLE CachedPersonaEntity ADD COLUMN emoji TEXT NOT NULL DEFAULT '✨';
+ALTER TABLE CachedPersonaEntity ADD COLUMN greeting TEXT;
+ALTER TABLE CachedPersonaEntity ADD COLUMN specialties TEXT;
+ALTER TABLE CachedPersonaEntity ADD COLUMN personality TEXT;
+ALTER TABLE CachedPersonaEntity ADD COLUMN avatar_bg_color TEXT NOT NULL DEFAULT '#6366F1';
+ALTER TABLE CachedPersonaEntity ADD COLUMN avatar_accent_color TEXT NOT NULL DEFAULT '#818CF8';
+ALTER TABLE CachedPersonaEntity ADD COLUMN avatar_icon_name TEXT NOT NULL DEFAULT 'star';
+ALTER TABLE CachedPersonaEntity ADD COLUMN bio TEXT;
+ALTER TABLE CachedPersonaEntity ADD COLUMN fun_fact TEXT;
+ALTER TABLE CachedPersonaEntity ADD COLUMN xp_to_unlock INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE CachedPersonaEntity ADD COLUMN is_default_unlocked INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE CachedPersonaEntity ADD COLUMN timezone TEXT;
+ALTER TABLE CachedPersonaEntity ADD COLUMN city TEXT;
+ALTER TABLE CachedPersonaEntity ADD COLUMN country_flag TEXT;

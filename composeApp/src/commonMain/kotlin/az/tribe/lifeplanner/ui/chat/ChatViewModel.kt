@@ -8,6 +8,7 @@ import az.tribe.lifeplanner.data.repository.ChatRepositoryImpl
 import az.tribe.lifeplanner.domain.model.ChatMessage
 import az.tribe.lifeplanner.domain.model.ChatSession
 import az.tribe.lifeplanner.domain.model.CoachGroup
+import az.tribe.lifeplanner.data.repository.BuiltinCoachStore
 import az.tribe.lifeplanner.domain.model.CoachPersona
 import az.tribe.lifeplanner.domain.model.CoachSuggestion
 import az.tribe.lifeplanner.domain.model.CustomCoach
@@ -93,7 +94,7 @@ class ChatViewModel(
 
                 // Build sessions by coach map
                 val sessionsByCoach = mutableMapOf<String, ChatSession?>()
-                CoachPersona.ALL_COACHES.forEach { coach ->
+                BuiltinCoachStore.getAll().forEach { coach ->
                     sessionsByCoach[coach.id] = sessions.find { it.coachId == coach.id }
                 }
                 // Add council session

@@ -189,12 +189,14 @@ internal fun phaseMessage(phase: OnboardingPhase, vm: CoachOnboardingViewModel):
         OnboardingPhase.LUNA_NAME ->
             "Let's start with the basics. What's your name, and how old are you? (You can skip either if you prefer.)"
         OnboardingPhase.LUNA_PRIORITY ->
-            "$name Which area of life feels most important to you right now?"
+            "$name Great! Which areas of life matter most to you right now? Select at least 3."
         OnboardingPhase.LUNA_WELLBEING ->
             "Got it. How are you feeling lately? Be honest — this helps me calibrate your goals."
         OnboardingPhase.SPECIALIST_INTRO -> {
             val specialistName = runCatching { CoachPersona.getById(vm.specialistCoachId).name }.getOrElse { "Your coach" }
-            val area = vm.topPriority?.name?.lowercase()?.replaceFirstChar { it.uppercase() } ?: "your goals"
+            val area = vm.topPriorities.firstOrNull()?.name?.lowercase()?.replaceFirstChar { it.uppercase() }
+                ?: vm.topPriority?.name?.lowercase()?.replaceFirstChar { it.uppercase() }
+                ?: "your goals"
             "Great choices! I'm bringing in $specialistName — our $area specialist. They'll do a quick check-in so your $area goals are actually built for you."
         }
         OnboardingPhase.SPECIALIST_Q1 -> specialistQ1Message(vm)
@@ -202,9 +204,17 @@ internal fun phaseMessage(phase: OnboardingPhase, vm: CoachOnboardingViewModel):
         OnboardingPhase.SPECIALIST_Q3 -> specialistQ3Message(vm)
         OnboardingPhase.SPECIALIST_Q4 -> specialistQ4Message(vm)
         OnboardingPhase.MIND_DUMP ->
-            "Last one — and my favourite. What's actually on your mind right now? Just say it naturally. I'll turn it into your first goal."
+            "Last one — and my favourite. What do you actually want to change or achieve right now? Say it in your own words, no polish needed."
+        OnboardingPhase.MIND_QUESTIONS ->
+            "I want to make sure I understand what's really driving you. A couple of quick questions."
+        OnboardingPhase.MIND_VALIDATION ->
+            "Here's what I'm taking away from everything you said. Does this feel true to what you want?"
         OnboardingPhase.COMPLETE ->
-            "You're all set! I've built your initial profile. Let's make some goals."
+            "You're all set. I know where you are and where you want to go. Let's start making it happen."
+        OnboardingPhase.GOAL_PREVIEW ->
+            "Here's the direction I'd like to take you in, based on everything you shared. Does this feel like the right target?"
+        OnboardingPhase.HABIT_SUGGEST ->
+            "Small daily actions are what move you forward. Pick the ones that feel achievable right now."
     }
 }
 

@@ -6,7 +6,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.SideEffect
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
@@ -47,7 +46,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             val systemUiController = rememberSystemUiController()
 
-            val isDark = isSystemInDarkTheme()
+            val isDark = true
 
 
             SideEffect {

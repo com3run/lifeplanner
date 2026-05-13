@@ -36,7 +36,10 @@ import androidx.compose.ui.unit.dp
 import az.tribe.lifeplanner.domain.model.CoachPersona
 import az.tribe.lifeplanner.domain.model.LifeArea
 import az.tribe.lifeplanner.domain.model.ObjectiveType
-import az.tribe.lifeplanner.ui.components.StoriesCarousel
+import az.tribe.lifeplanner.ui.health.HealthSection
+import az.tribe.lifeplanner.ui.health.HealthViewModel
+import az.tribe.lifeplanner.ui.health.ManualWeightDialog
+import az.tribe.lifeplanner.ui.health.rememberHealthPermissionLauncher
 import az.tribe.lifeplanner.ui.objectives.BeginnerObjectiveViewModel
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
@@ -52,11 +55,27 @@ fun LifeBalanceScreen(
     showBackButton: Boolean = false,
     onCreateHabit: (LifeArea) -> Unit = {},
     onNavigateToCoach: (coachId: String, autoMessage: String) -> Unit = { _, _ -> },
-    onNavigateToStoryReader: () -> Unit = {}
+    onNavigateToStoryReader: () -> Unit = {},
+    onNavigateToHabitCreation: (LifeArea) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val coachStories = remember { getCoachTipStories() }
+
+    val healthViewModel: HealthViewModel = koinViewModel()
+    val healthPermissionState by healthViewModel.permissionState.collectAsState()
+    val todaySteps by healthViewModel.todaySteps.collectAsState()
+    val stepsHistory by healthViewModel.stepsHistory.collectAsState()
+    val weightHistory by healthViewModel.weightHistory.collectAsState()
+    val latestWeight by healthViewModel.latestWeight.collectAsState()
+    val heartRateHistory by healthViewModel.heartRateHistory.collectAsState()
+    val latestHeartRate by healthViewModel.latestHeartRate.collectAsState()
+    val sleepHistory by healthViewModel.sleepHistory.collectAsState()
+    val latestSleep by healthViewModel.latestSleep.collectAsState()
+    val showWeightDialog by healthViewModel.showWeightDialog.collectAsState()
+    val requestPermissions = rememberHealthPermissionLauncher { granted ->
+        if (granted) healthViewModel.onPermissionsGranted()
+    }
 
     val objectiveViewModel: BeginnerObjectiveViewModel = koinViewModel()
     LaunchedEffect(Unit) {
@@ -148,51 +167,60 @@ fun LifeBalanceScreen(
                 ) {
                     val report = uiState.report
                     if (report != null) {
-                        // Hero score card
-                        item { HeroScoreCard(report) }
+                        // Life Constellation — score + animated web + AI cross-area insight
+                        item { LifeWebCard(report = report) }
+
+                        // Life Spectrum — proportional segment bar, focused areas in center
+                        item { LifeBalanceSegmentBar(areaScores = report.areaScores) }
 
                         // Life areas grid
                         item { SectionHeader("Life Areas") }
                         item { AreaGrid(areaScores = report.areaScores) }
 
-                        // AI Insights
-                        if (report.aiInsights.isNotEmpty()) {
-                            item { SectionHeader("Key Insights") }
-                            items(report.aiInsights) { insight ->
-                                InsightCard(
-                                    insight = insight,
-                                    onGetAdvice = { viewModel.showCoachSheetForInsight(it) }
-                                )
-                            }
-                        }
-
-                        // Action plan
-                        if (report.recommendations.isNotEmpty()) {
-                            item { SectionHeader("Your Action Plan") }
-                            items(report.recommendations) { recommendation ->
-                                RecommendationCard(
-                                    recommendation = recommendation,
-                                    isPreGenerating = uiState.isPreGenerating,
-                                    isCreated = uiState.createdGoalIds.contains(recommendation.targetArea.name),
-                                    onCreateGoal = { viewModel.createGoalFromRecommendation(recommendation) },
-                                    onCreateHabit = { onCreateHabit(recommendation.targetArea) }
-                                )
-                            }
+                        // Life Discovery — AI question flow → personalized goals
+                        item { SectionHeader("Life Discovery") }
+                        item {
+                            DiscoverySection(
+                                state = uiState.discovery,
+                                onStart = { viewModel.startDiscovery() },
+                                onSubmitAnswer = { viewModel.submitDiscoveryAnswer(it) },
+                                onAddGoal = { viewModel.addDiscoveryGoal(it) },
+                                onCreateHabit = { area -> onNavigateToHabitCreation(area) },
+                                onReset = { viewModel.resetDiscovery() }
+                            )
                         }
                     }
 
-                    // Coach tips stories — always visible
+                    // Coach tips feed — with seen tracking and "all caught up"
                     item { SectionHeader("From Your Coaches") }
                     item {
-                        StoriesCarousel(
+                        CoachPostFeed(
                             stories = coachStories,
+                            onOpenReader = { onNavigateToStoryReader() },
                             onStoryAction = { action ->
                                 if (action?.startsWith("coach_") == true) {
                                     val coachId = action.removePrefix("coach_")
                                     onNavigateToCoach(coachId, "")
                                 }
-                            },
-                            onOpenReader = { onNavigateToStoryReader() }
+                            }
+                        )
+                    }
+
+                    // Body & Health — embedded health dashboard
+                    item { SectionHeader("Body & Health") }
+                    item {
+                        HealthSection(
+                            permissionState = healthPermissionState,
+                            todaySteps = todaySteps,
+                            stepsHistory = stepsHistory,
+                            heartRateHistory = heartRateHistory,
+                            latestHeartRate = latestHeartRate,
+                            sleepHistory = sleepHistory,
+                            latestSleep = latestSleep,
+                            weightHistory = weightHistory,
+                            latestWeight = latestWeight,
+                            onRequestPermissions = requestPermissions,
+                            onAddWeight = { healthViewModel.showAddWeightDialog() }
                         )
                     }
 
@@ -200,6 +228,13 @@ fun LifeBalanceScreen(
                 }
             }
         }
+    }
+
+    if (showWeightDialog) {
+        ManualWeightDialog(
+            onDismiss = { healthViewModel.dismissWeightDialog() },
+            onConfirm = { weight -> healthViewModel.addManualWeight(weight) }
+        )
     }
 
     // Coach bottom sheet

@@ -36,6 +36,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -48,6 +49,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import az.tribe.lifeplanner.domain.model.CoachGroup
 import az.tribe.lifeplanner.domain.model.CoachGroupMember
+import az.tribe.lifeplanner.data.repository.BuiltinCoachStore
 import az.tribe.lifeplanner.domain.model.CoachPersona
 import az.tribe.lifeplanner.domain.model.CoachType
 import az.tribe.lifeplanner.domain.model.CustomCoach
@@ -67,6 +69,8 @@ fun CreateGroupScreen(
     onGroupSaved: (CoachGroup) -> Unit
 ) {
     val isEditing = groupToEdit != null
+    val builtinCoaches by BuiltinCoachStore.coaches.collectAsState()
+    val allBuiltinCoaches = builtinCoaches.ifEmpty { CoachPersona.ALL_COACHES }
 
     // Form state
     var name by remember { mutableStateOf(groupToEdit?.name ?: "") }
@@ -126,7 +130,7 @@ fun CreateGroupScreen(
                 name = name.ifBlank { "Your Group" },
                 icon = selectedIcon,
                 selectedBuiltinCoaches = selectedBuiltinCoaches.mapNotNull { id ->
-                    CoachPersona.ALL_COACHES.find { it.id == id }
+                    allBuiltinCoaches.find { it.id == id }
                 },
                 selectedCustomCoaches = customCoaches.filter { it.id in selectedCustomCoaches }
             )
@@ -248,7 +252,7 @@ fun CreateGroupScreen(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 // Built-in coaches section
-                if (CoachPersona.ALL_COACHES.isNotEmpty()) {
+                if (allBuiltinCoaches.isNotEmpty()) {
                     Text(
                         text = "Built-in Coaches",
                         style = MaterialTheme.typography.labelMedium,
@@ -257,7 +261,7 @@ fun CreateGroupScreen(
                     )
 
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        CoachPersona.ALL_COACHES.forEach { coach ->
+                        allBuiltinCoaches.forEach { coach ->
                             val isSelected = selectedBuiltinCoaches.contains(coach.id)
                             CoachSelectionItem(
                                 name = coach.name,

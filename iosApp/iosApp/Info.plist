@@ -36,6 +36,10 @@
 	<array>
 		<string>az.tribe.lifeplanner.dailyBackup</string>
 	</array>
+	<key>NSCalendarsUsageDescription</key>
+	<string>Life Planner reads your calendar to surface upcoming events alongside your goals and habits.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Life Planner reads your calendar to surface upcoming events alongside your goals and habits, and can create events for your goal milestones.</string>
 	<key>NSHealthShareUsageDescription</key>
 	<string>Life Planner reads your steps, heart rate, sleep and weight to show your health trends alongside your goals and habits.</string>
 	<key>NSHealthUpdateUsageDescription</key>
@@ -67,6 +71,8 @@
 			</array>
 		</dict>
 	</array>
+	<key>UIUserInterfaceStyle</key>
+	<string>Dark</string>
 	<key>UILaunchScreen</key>
 	<dict/>
 	<key>UILaunchStoryboardName</key>

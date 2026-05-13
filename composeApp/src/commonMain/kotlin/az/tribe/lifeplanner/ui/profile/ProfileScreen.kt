@@ -20,10 +20,13 @@ import az.tribe.lifeplanner.data.sync.SyncState
 import az.tribe.lifeplanner.domain.enum.AiProvider
 import az.tribe.lifeplanner.domain.enum.BadgeType
 import az.tribe.lifeplanner.ui.components.AchievementsCard
-import az.tribe.lifeplanner.ui.components.PersonalCoachCard
 import az.tribe.lifeplanner.ui.gamification.GamificationViewModel
+import az.tribe.lifeplanner.ui.home.HomeCoachAICard
+import az.tribe.lifeplanner.ui.home.HomeViewModel
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
 import az.tribe.lifeplanner.ui.auth.AuthBottomSheet
+import az.tribe.lifeplanner.ui.calendar.rememberCalendarPermission
+import az.tribe.lifeplanner.ui.health.HealthViewModel
 import az.tribe.lifeplanner.ui.viewmodel.AuthState
 import az.tribe.lifeplanner.ui.viewmodel.AuthViewModel
 import az.tribe.lifeplanner.ui.viewmodel.*
@@ -36,7 +39,7 @@ import com.adamglin.phosphoricons.regular.ChatCircleText
 import com.adamglin.phosphoricons.regular.ClockCounterClockwise
 import com.adamglin.phosphoricons.regular.CloudArrowUp
 import com.adamglin.phosphoricons.regular.CloudSlash
-import com.adamglin.phosphoricons.regular.Heartbeat
+import com.adamglin.phosphoricons.regular.ChartBar
 import com.adamglin.phosphoricons.regular.SignOut
 import com.russhwolf.settings.Settings
 import org.koin.compose.koinInject
@@ -48,11 +51,14 @@ fun ProfileScreen(
     authViewModel: AuthViewModel = koinInject(),
     gamificationViewModel: GamificationViewModel = koinViewModel(),
     weeklyEngagementViewModel: WeeklyEngagementViewModel = koinViewModel(),
+    healthViewModel: HealthViewModel = koinViewModel(),
+    homeViewModel: HomeViewModel = koinViewModel(),
     onNavigateToAchievements: () -> Unit,
     onNavigateToHealth: () -> Unit = {},
     onNavigateToReminders: () -> Unit,
     onNavigateToBackup: () -> Unit,
     onNavigateToRetrospective: () -> Unit = {},
+    onNavigateToScreenTimeInsight: () -> Unit = {},
     onNavigateToAICoach: () -> Unit,
     onNavigateToSignIn: () -> Unit = {},
     onNavigateToFeedback: () -> Unit = {},
@@ -65,6 +71,10 @@ fun ProfileScreen(
     val userProgress by gamificationViewModel.userProgress.collectAsState()
     val badges by gamificationViewModel.badges.collectAsState()
     val weeklyEngagement by weeklyEngagementViewModel.engagement.collectAsState()
+    val healthPermissionState by healthViewModel.permissionState.collectAsState()
+    val recentSession by homeViewModel.recentSession.collectAsState()
+    val recentCoach by homeViewModel.recentCoach.collectAsState()
+    val calendarPermission = rememberCalendarPermission()
 
     var showAccountSheet by remember { mutableStateOf(false) }
     var showAiProviderDialog by remember { mutableStateOf(false) }
@@ -97,7 +107,7 @@ fun ProfileScreen(
                 start = LifePlannerDesign.Padding.screenHorizontal,
                 end = LifePlannerDesign.Padding.screenHorizontal,
                 bottom = padding.calculateBottomPadding() + 84.dp,
-                top = padding.calculateTopPadding()
+                top = padding.calculateTopPadding()+16.dp
             ),
             verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.md)
         ) {
@@ -144,7 +154,15 @@ fun ProfileScreen(
             item { userProgress?.let { progress -> ProfileStatsCard(progress, weeklyEngagement) } }
 
             item { ProfileSectionHeader("AI Coach & Achievements") }
-            item { PersonalCoachCard(lastMessage = null, onChatClick = onNavigateToAICoach) }
+            item {
+                HomeCoachAICard(
+                    session = recentSession,
+                    coach = recentCoach,
+                    coachUnlocked = true,
+                    onClick = onNavigateToAICoach,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
             item {
                 AchievementsCard(
                     earnedBadges = badges.size,
@@ -154,14 +172,34 @@ fun ProfileScreen(
                 )
             }
 
-            item { ProfileSectionHeader("Insights & Analytics") }
-            item { ProfileMenuItem(icon = PhosphorIcons.Regular.Heartbeat, title = "Health", subtitle = "Steps, sleep, heart rate & weight", onClick = onNavigateToHealth) }
+            item { ProfileSectionHeader("Integrations") }
+            item {
+                ProfileMenuItem(
+                    icon = PhosphorIcons.Regular.Brain,
+                    title = "AI Provider",
+                    subtitle = selectedAiProvider.displayName,
+                    onClick = { showAiProviderDialog = true }
+                )
+            }
+            item {
+                HealthConnectionCard(
+                    permissionState = healthPermissionState,
+                    onConnect = onNavigateToHealth,
+                    onSync = { healthViewModel.syncHealth() }
+                )
+            }
+            item {
+                CalendarIntegrationCard(
+                    permissionState = calendarPermission.state,
+                    onConnect = calendarPermission.request
+                )
+            }
 
             item { ProfileSectionHeader("Settings") }
-            item { ProfileMenuItem(icon = PhosphorIcons.Regular.Brain, title = "AI Provider", subtitle = selectedAiProvider.displayName, onClick = { showAiProviderDialog = true }) }
             item { ProfileMenuItem(icon = PhosphorIcons.Regular.Bell, title = "Reminders", subtitle = "Notification preferences", onClick = onNavigateToReminders) }
             item { ProfileMenuItem(icon = PhosphorIcons.Regular.CloudArrowUp, title = "Backup & Sync", subtitle = "Export and restore your data", onClick = onNavigateToBackup) }
             item { ProfileMenuItem(icon = PhosphorIcons.Regular.ClockCounterClockwise, title = "Day Retrospective", subtitle = "Browse past days and activity", onClick = onNavigateToRetrospective) }
+            item { ProfileMenuItem(icon = PhosphorIcons.Regular.ChartBar, title = "My Patterns", subtitle = "See how you use the app + personalized tips", onClick = onNavigateToScreenTimeInsight) }
             item { ProfileMenuItem(icon = PhosphorIcons.Regular.ChatCircleText, title = "Send Feedback", subtitle = "Report bugs, request features", onClick = onNavigateToFeedback) }
 
             if (authState is AuthState.Authenticated && currentUser?.email != null) {

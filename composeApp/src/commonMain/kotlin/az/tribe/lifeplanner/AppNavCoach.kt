@@ -8,7 +8,10 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import androidx.savedstate.read
+import az.tribe.lifeplanner.data.repository.BuiltinCoachStore
 import az.tribe.lifeplanner.ui.chat.AIChatScreen
+import az.tribe.lifeplanner.ui.coach.CoachIntroConfig
+import az.tribe.lifeplanner.ui.coach.CoachIntroScreen
 import az.tribe.lifeplanner.ui.coach.CoachProfileScreen
 import az.tribe.lifeplanner.ui.coach.CoachViewModel
 import az.tribe.lifeplanner.ui.coach.CreateCoachScreen
@@ -87,7 +90,35 @@ internal fun NavGraphBuilder.appNavCoach(navController: NavController) {
                 navController.navigate("ai_chat/$chatCoachId") {
                     popUpTo(Screen.CoachProfile.route) { inclusive = true }
                 }
+            },
+            onPlayIntro = { introCoachId ->
+                navController.navigate("coach_intro/$introCoachId") {
+                    launchSingleTop = true
+                }
             }
+        )
+    }
+
+    // Coach Intro Screen — full-screen video + mascot + typewriter text
+    composable(
+        Screen.CoachIntro.route,
+        arguments = listOf(navArgument("coachId") { type = NavType.StringType })
+    ) { backStackEntry ->
+        val introCoachId = backStackEntry.arguments?.read { getStringOrNull("coachId") }
+            ?: return@composable
+        val coach = BuiltinCoachStore.getAll().firstOrNull { it.id == introCoachId }
+            ?: return@composable
+        // Derive mascot URL from the coach's avatar URL (coaches/{slug}-mascot.png pattern)
+        val mascotUrl = coach.imageUrl?.replace(Regex("\\.png$"), "-mascot.png")
+        val config = CoachIntroConfig(
+            videoUrl = coach.clipUrl ?: "",
+            mascotImageUrl = mascotUrl,
+            coachLabel = "${coach.emoji}  ${coach.name}",
+            introText = coach.greeting,
+        )
+        CoachIntroScreen(
+            config = config,
+            onAction = { navController.popBackStack() }
         )
     }
 

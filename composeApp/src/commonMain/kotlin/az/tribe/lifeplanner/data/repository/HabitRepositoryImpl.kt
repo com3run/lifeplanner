@@ -106,6 +106,38 @@ class HabitRepositoryImpl(
         syncManager.requestSync()
     }
 
+    override suspend fun incrementCount(habitId: String, date: LocalDate): HabitCheckIn {
+        val habit = getHabitById(habitId)
+        val existing = getCheckInByHabitAndDate(habitId, date)
+        val newCount = (existing?.count ?: 0) + 1
+        val completed = habit != null && newCount >= habit.targetCount
+
+        if (existing == null) {
+            // Create new check-in with count=1
+            val checkIn = createNewCheckIn(
+                habitId = habitId,
+                date = date,
+                completed = completed,
+                count = newCount
+            )
+            database.insertHabitCheckInOrIgnore(checkIn.toEntity())
+        } else {
+            database.updateHabitCheckInCount(
+                habitId = habitId,
+                date = date.toString(),
+                count = newCount.toLong(),
+                completed = if (completed) 1L else 0L
+            )
+        }
+        if (completed) {
+            updateStreakAfterCheckIn(habitId)
+        }
+        notifyWidgets()
+        syncManager.requestSync()
+        return getCheckInByHabitAndDate(habitId, date)
+            ?: createNewCheckIn(habitId = habitId, date = date, completed = completed, count = newCount)
+    }
+
     override suspend fun checkIn(habitId: String, date: LocalDate, notes: String): HabitCheckIn {
         // A UNIQUE INDEX on (habitId, date) means INSERT OR IGNORE silently fails when a
         // soft-deleted row already occupies that slot (e.g. after undo). Restore the existing

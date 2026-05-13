@@ -64,6 +64,8 @@ class SharedDatabase(
             q.deleteAllCoachGroups()
             q.deleteAllUserSituations()
             q.deleteAllUsers()
+            q.deleteAllCachedPersonas()
+            q.deleteAllScreenTimeEvents()
         }
     }
 }

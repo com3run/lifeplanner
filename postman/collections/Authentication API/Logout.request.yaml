@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{base_url}}/api/auth/logout"
+method: POST
+headers:
+  Authorization: Bearer {{firebase_token}}
+  Content-Type: application/json
+body:
+  type: text
+  content: "{}"
+order: 9000

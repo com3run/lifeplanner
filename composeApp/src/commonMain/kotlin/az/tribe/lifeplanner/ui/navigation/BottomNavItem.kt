@@ -5,7 +5,6 @@ import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Fill
 import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.fill.ArrowsClockwise
-import com.adamglin.phosphoricons.fill.Feather
 import com.adamglin.phosphoricons.fill.Flag
 import com.adamglin.phosphoricons.fill.Flower
 import com.adamglin.phosphoricons.fill.House
@@ -14,7 +13,6 @@ import com.adamglin.phosphoricons.fill.SquaresFour
 import com.adamglin.phosphoricons.fill.Star
 import com.adamglin.phosphoricons.fill.User
 import com.adamglin.phosphoricons.regular.ArrowsClockwise
-import com.adamglin.phosphoricons.regular.Feather
 import com.adamglin.phosphoricons.regular.Flag
 import com.adamglin.phosphoricons.regular.Flower
 import com.adamglin.phosphoricons.regular.House
@@ -32,7 +30,7 @@ sealed class BottomNavItem(
     data object Home : BottomNavItem(
         route = Screen.Home.route,
         title = "Life",
-        selectedIcon = PhosphorIcons.Fill.Flower,
+        selectedIcon = PhosphorIcons.Regular.Flower,
         unselectedIcon = PhosphorIcons.Regular.Flower
     )
 
@@ -52,9 +50,9 @@ sealed class BottomNavItem(
 
     data object Hub : BottomNavItem(
         route = Screen.Journal.route,
-        title = "Planner",
-        selectedIcon = PhosphorIcons.Fill.Feather,
-        unselectedIcon = PhosphorIcons.Regular.Feather
+        title = "My Units",
+        selectedIcon = PhosphorIcons.Fill.SquaresFour,
+        unselectedIcon = PhosphorIcons.Regular.SquaresFour
     )
 
     data object Abilities : BottomNavItem(

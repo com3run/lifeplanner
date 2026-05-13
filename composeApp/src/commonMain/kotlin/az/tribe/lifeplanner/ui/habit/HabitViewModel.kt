@@ -43,7 +43,8 @@ import kotlinx.datetime.toLocalDateTime
 data class HabitWithStatus(
     val habit: Habit,
     val isCompletedToday: Boolean,
-    val weeklyCompletions: List<Boolean> = emptyList() // Mon-Sun, true if completed
+    val weeklyCompletions: List<Boolean> = emptyList(),
+    val todayCount: Int = 0
 )
 
 /**
@@ -98,6 +99,10 @@ class HabitViewModel(
                 .filter { it.completed }
                 .groupBy { it.habitId }
 
+            val todayCheckInByHabitId = allWeeklyCheckIns
+                .filter { it.date == today }
+                .associateBy { it.habitId }
+
             pairs.map { (habit, isCompleted) ->
                 val completedDates = weeklyCheckInsByHabitId[habit.id]
                     ?.map { it.date }
@@ -107,7 +112,8 @@ class HabitViewModel(
                     val day = monday.plus(dayOffset, DateTimeUnit.DAY)
                     if (day <= today) completedDates.contains(day) else false
                 }
-                HabitWithStatus(habit, isCompleted, weeklyCompletions)
+                val todayCount = todayCheckInByHabitId[habit.id]?.count ?: 0
+                HabitWithStatus(habit, isCompleted, weeklyCompletions, todayCount)
             }.sortedWith(timeAwareHabitComparator(nowMinutes))
         }
         .onEach { _isLoading.value = false }
@@ -205,6 +211,35 @@ class HabitViewModel(
                 }
             } catch (e: Exception) {
                 _error.value = "Failed to check in: ${e.message}"
+            }
+        }
+    }
+
+    fun incrementCheckIn(habitId: String) {
+        viewModelScope.launch {
+            try {
+                val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+                val checkIn = habitRepository.incrementCount(habitId, today)
+                if (checkIn.completed) {
+                    gamificationRepository.awardXp(XpRewards.HABIT_CHECK_IN.toLong())
+                    if (FeatureFlags.ABILITIES_ENABLED) {
+                        awardAbilityXpUseCase(habitId)
+                    }
+                    val allCheckIns = habitRepository.getAllCheckInsInRange(today, today)
+                    val completedTodayIds = allCheckIns.filter { it.completed }.map { it.habitId }.toSet()
+                    val allHabitIds = habits.value.map { it.habit.id }.toSet()
+                    val todayStr = today.toString()
+                    if (allHabitIds.isNotEmpty() &&
+                        allHabitIds == completedTodayIds &&
+                        settings.getStringOrNull(PREF_PERFECT_DAY_DATE) != todayStr
+                    ) {
+                        gamificationRepository.awardXp(XpRewards.PERFECT_DAY_BONUS.toLong())
+                        settings.putString(PREF_PERFECT_DAY_DATE, todayStr)
+                    }
+                    habitRepository.getHabitById(habitId)?.let { _recentCheckIn.value = RecentCheckIn(it) }
+                }
+            } catch (e: Exception) {
+                _error.value = "Failed to increment: ${e.message}"
             }
         }
     }

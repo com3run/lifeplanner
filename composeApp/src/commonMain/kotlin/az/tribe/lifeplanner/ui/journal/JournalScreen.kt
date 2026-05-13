@@ -41,6 +41,7 @@ import az.tribe.lifeplanner.ui.ability.AbilityCard
 import az.tribe.lifeplanner.ui.ability.AbilityViewModel
 import az.tribe.lifeplanner.ui.habit.HabitViewModel
 import az.tribe.lifeplanner.ui.habit.*
+import az.tribe.lifeplanner.ui.planner.WeeklyPlannerContent
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -116,8 +117,8 @@ fun JournalScreen(
     val bannerTitle = when (currentTab) {
         1 -> "Goals"
         2 -> "Habits"
-        3 -> if (FeatureFlags.ABILITIES_ENABLED) "Abilities" else "Journal"
-        else -> "Journal"
+        3 -> if (FeatureFlags.ABILITIES_ENABLED) "Abilities" else "Planner"
+        else -> "Planner"
     }
     val bannerSubtitle = when (currentTab) {
         1 -> if (activeGoalCount == 0) "No active goals" else "$activeGoalCount active"
@@ -125,9 +126,9 @@ fun JournalScreen(
         3 -> if (FeatureFlags.ABILITIES_ENABLED) {
             if (abilities.isEmpty()) "No abilities yet" else "${abilities.size} abilities"
         } else {
-            if (entries.isEmpty()) "Start reflecting" else "${entries.size} entries"
+            "Weekly view"
         }
-        else -> if (entries.isEmpty()) "Start reflecting" else "${entries.size} entries"
+        else -> "Weekly view"
     }
 
     val snackbarHostState = remember { SnackbarHostState() }
@@ -159,47 +160,15 @@ fun JournalScreen(
                 )
             }
 
-            // ── Tab 0: Journal ──────────────────────────────────────────────
+            // ── Tab 0: Weekly Planner ───────────────────────────────────────
             if (currentTab == 0) {
-                item(key = "mood_calendar") {
-                    MoodCalendar(
-                        entries = entries,
-                        selectedMonth = selectedMonth,
-                        isExpanded = isCalendarExpanded,
-                        onToggleExpand = { isCalendarExpanded = !isCalendarExpanded },
-                        onMonthChange = { viewModel.setSelectedMonth(it) },
-                        onDayClick = { date ->
-                            if (viewModel.getEntriesForDay(date).isNotEmpty()) viewModel.selectDay(date)
-                        }
+                item(key = "weekly_planner") {
+                    WeeklyPlannerContent(
+                        habitsWithStatus = habitsWithStatus,
+                        onCheckIn = { habitViewModel.toggleCheckIn(it) },
+                        activeGoalCount = activeGoalCount,
+                        modifier = Modifier.padding(horizontal = 16.dp)
                     )
-                }
-
-                if (isLoading) {
-                    item(key = "loading") {
-                        Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
-                    }
-                } else if (entries.isEmpty()) {
-                    item(key = "journal_empty") {
-                        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 48.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("Your story starts here", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
-                            Spacer(Modifier.height(6.dp))
-                            Text("Tap Write to capture your first thought", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
-                        }
-                    }
-                } else {
-                    items(items = entries, key = { it.id }) { entry ->
-                        val linkedGoalName = entry.linkedGoalId?.let { goalId -> goals.find { it.id == goalId }?.title }
-                        val linkedHabitName = entry.linkedHabitId?.let { habitId -> habits.find { it.id == habitId }?.title }
-                        SwipeableJournalEntryCard(
-                            entry = entry,
-                            onClick = { onEntryClick(entry.id) },
-                            onDelete = { viewModel.deleteEntry(entry.id) },
-                            linkedGoalName = linkedGoalName,
-                            linkedHabitName = linkedHabitName,
-                            listState = listState,
-                            modifier = Modifier.padding(horizontal = 16.dp).animateItem()
-                        )
-                    }
                 }
             }
 
@@ -321,29 +290,27 @@ fun JournalScreen(
             }
         }
 
-        // Journal-specific bottom sheets — only when on Journal tab
-        if (currentTab == 0) {
-            if (showNewEntryDialog) {
-                NewJournalEntryBottomSheet(
-                    onDismiss = { viewModel.hideNewEntryDialog() },
-                    onConfirm = { title, content, mood, tags, linkedGoalId, linkedHabitId, promptUsed ->
-                        viewModel.createEntry(title = title, content = content, mood = mood, linkedGoalId = linkedGoalId, linkedHabitId = linkedHabitId, tags = tags, promptUsed = promptUsed)
-                    },
-                    goals = goals,
-                    habits = habits,
-                    viewModel = viewModel,
-                )
-            }
+        // Journal entry sheet — accessible from any tab via FAB
+        if (showNewEntryDialog) {
+            NewJournalEntryBottomSheet(
+                onDismiss = { viewModel.hideNewEntryDialog() },
+                onConfirm = { title, content, mood, tags, linkedGoalId, linkedHabitId, promptUsed ->
+                    viewModel.createEntry(title = title, content = content, mood = mood, linkedGoalId = linkedGoalId, linkedHabitId = linkedHabitId, tags = tags, promptUsed = promptUsed)
+                },
+                goals = goals,
+                habits = habits,
+                viewModel = viewModel,
+            )
+        }
 
-            selectedDay?.let { date ->
-                DayEntriesBottomSheet(
-                    date = date,
-                    entries = viewModel.getEntriesForDay(date),
-                    onDismiss = { viewModel.clearSelectedDay() },
-                    onEntryClick = { entryId -> viewModel.clearSelectedDay(); onEntryClick(entryId) },
-                    onAddEntry = { viewModel.clearSelectedDay(); viewModel.showNewEntryDialog() }
-                )
-            }
+        selectedDay?.let { date ->
+            DayEntriesBottomSheet(
+                date = date,
+                entries = viewModel.getEntriesForDay(date),
+                onDismiss = { viewModel.clearSelectedDay() },
+                onEntryClick = { entryId -> viewModel.clearSelectedDay(); onEntryClick(entryId) },
+                onAddEntry = { viewModel.clearSelectedDay(); viewModel.showNewEntryDialog() }
+            )
         }
 
         habitToEdit?.let { habit ->
@@ -359,9 +326,9 @@ fun JournalScreen(
 @Composable
 private fun HubTabRow(selectedTab: Int, onTabSelected: (Int) -> Unit, modifier: Modifier = Modifier) {
     val tabs = if (FeatureFlags.ABILITIES_ENABLED)
-        listOf("Journal", "Goals", "Habits", "Abilities")
+        listOf("Planner", "Goals", "Habits", "Abilities")
     else
-        listOf("Journal", "Goals", "Habits")
+        listOf("Planner", "Goals", "Habits")
     Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         tabs.forEachIndexed { index, label ->
             val isSelected = selectedTab == index

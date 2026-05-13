@@ -31,5 +31,6 @@ data class HabitCheckIn(
     val habitId: String,
     val date: LocalDate,
     val completed: Boolean,
-    val notes: String = ""
+    val notes: String = "",
+    val count: Int = 0
 )

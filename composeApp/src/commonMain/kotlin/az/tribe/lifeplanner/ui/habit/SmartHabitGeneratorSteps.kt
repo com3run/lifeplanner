@@ -28,6 +28,7 @@ import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.ArrowLeft
 import com.adamglin.phosphoricons.regular.ArrowRight
 import com.adamglin.phosphoricons.regular.Check
+import com.adamglin.phosphoricons.regular.Clock
 import com.adamglin.phosphoricons.regular.PencilSimple
 import com.adamglin.phosphoricons.regular.Plus
 import com.adamglin.phosphoricons.regular.PlusCircle
@@ -279,7 +280,7 @@ internal fun HabitGeneratingStep() {
 internal fun HabitResultsStep(
     habits: List<GeneratedHabit>,
     addedTitles: Set<String>,
-    onAddHabit: (GeneratedHabit) -> Unit,
+    onAddHabit: (GeneratedHabit, String) -> Unit,
     onAddAll: () -> Unit,
     onComplete: () -> Unit
 ) {
@@ -297,13 +298,17 @@ internal fun HabitResultsStep(
                     Icon(PhosphorIcons.Regular.Sparkle, contentDescription = null, modifier = Modifier.size(44.dp), tint = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.height(10.dp))
                     Text("${habits.size} Habits Ready!", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
-                    Text("Pick which ones to add to your tracker", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.modernColors.textSecondary)
+                    Text("Set the time for each habit so reminders fire at the right moment", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.modernColors.textSecondary, textAlign = TextAlign.Center)
                 }
             }
         }
 
         items(habits) { habit ->
-            GeneratedHabitCard(habit = habit, isAdded = habit.title in addedTitles, onAdd = { onAddHabit(habit) })
+            GeneratedHabitCard(
+                habit = habit,
+                isAdded = habit.title in addedTitles,
+                onAdd = { confirmedTime -> onAddHabit(habit, confirmedTime) }
+            )
         }
 
         item {
@@ -318,7 +323,7 @@ internal fun HabitResultsStep(
                     ) {
                         Icon(PhosphorIcons.Regular.PlusCircle, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Add All $unadded Habits", fontWeight = FontWeight.SemiBold)
+                        Text("Add All $unadded Habits (AI times)", fontWeight = FontWeight.SemiBold)
                     }
                 }
                 OutlinedButton(
@@ -334,9 +339,38 @@ internal fun HabitResultsStep(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun GeneratedHabitCard(habit: GeneratedHabit, isAdded: Boolean, onAdd: () -> Unit) {
+private fun GeneratedHabitCard(habit: GeneratedHabit, isAdded: Boolean, onAdd: (String) -> Unit) {
     val color = habit.category.toHabitColor()
+
+    val initialHour = habit.suggestedTime.split(":").getOrNull(0)?.toIntOrNull() ?: 8
+    val initialMinute = habit.suggestedTime.split(":").getOrNull(1)?.toIntOrNull() ?: 0
+    val timePickerState = rememberTimePickerState(initialHour = initialHour, initialMinute = initialMinute, is24Hour = false)
+    var selectedTime by remember { mutableStateOf(habit.suggestedTime) }
+    var showTimePicker by remember { mutableStateOf(false) }
+
+    if (showTimePicker) {
+        AlertDialog(
+            onDismissRequest = { showTimePicker = false },
+            title = { Text("When will you do this?") },
+            text = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                    TimePicker(state = timePickerState)
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    selectedTime = "${timePickerState.hour.toString().padStart(2, '0')}:${timePickerState.minute.toString().padStart(2, '0')}"
+                    showTimePicker = false
+                }) { Text("Set") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showTimePicker = false }) { Text("Cancel") }
+            }
+        )
+    }
+
     Surface(
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surface,
@@ -367,23 +401,49 @@ private fun GeneratedHabitCard(habit: GeneratedHabit, isAdded: Boolean, onAdd: (
                 }
             }
             Text(habit.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.modernColors.textSecondary)
-            Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.surfaceVariant) {
-                Text(habit.frequency.displayName, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.surfaceVariant) {
+                    Text(habit.frequency.displayName, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
+                }
+                Surface(
+                    shape = RoundedCornerShape(50),
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
+                    onClick = { if (!isAdded) showTimePicker = true }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(PhosphorIcons.Regular.Clock, contentDescription = null, modifier = Modifier.size(11.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer)
+                        Text(formatTime(selectedTime), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                    }
+                }
             }
             if (!isAdded) {
                 Button(
-                    onClick = onAdd,
+                    onClick = { onAdd(selectedTime) },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = color)
                 ) {
                     Icon(PhosphorIcons.Regular.Plus, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("Add This Habit")
+                    Text("Add at ${formatTime(selectedTime)}")
                 }
             }
         }
     }
+}
+
+private fun formatTime(time: String): String {
+    val parts = time.split(":")
+    val h = parts.getOrNull(0)?.toIntOrNull() ?: 8
+    val m = parts.getOrNull(1)?.toIntOrNull() ?: 0
+    val period = if (h < 12) "AM" else "PM"
+    val dh = when { h == 0 -> 12; h > 12 -> h - 12; else -> h }
+    val slot = when (h) { in 5..11 -> "Morning"; in 12..16 -> "Afternoon"; else -> "Evening" }
+    return "$slot · $dh:${m.toString().padStart(2, '0')} $period"
 }
 
 internal fun GoalCategory.toHabitColor(): Color = when (this) {

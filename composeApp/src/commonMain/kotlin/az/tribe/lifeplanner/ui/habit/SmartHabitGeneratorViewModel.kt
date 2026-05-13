@@ -23,7 +23,8 @@ data class GeneratedHabit(
     val category: GoalCategory,
     val frequency: HabitFrequency,
     val type: HabitType,
-    val emoji: String
+    val emoji: String,
+    val suggestedTime: String = "08:00"
 )
 
 enum class HabitGeneratorStep {
@@ -65,10 +66,12 @@ class SmartHabitGeneratorViewModel(
                         "category": "BODY|CAREER|MONEY|PEOPLE|WELLBEING|PURPOSE",
                         "frequency": "DAILY|WEEKDAYS|WEEKLY",
                         "type": "BUILD|BREAK_BAD_HABIT",
-                        "emoji": "single emoji"
+                        "emoji": "single emoji",
+                        "suggestedTime": "HH:MM in 24h format — the ideal time of day for this habit (e.g. 07:00 for morning exercise, 12:30 for a lunchtime walk, 21:00 for evening reading)"
                       }
                     ]
                     Make habits specific, achievable, and directly tied to the goal.
+                    Choose suggestedTime thoughtfully: morning habits 06:00-09:00, midday habits 11:00-13:00, afternoon habits 15:00-17:00, evening habits 19:00-22:00.
                 """.trimIndent()
 
                 val response = aiProxyService.generateText(
@@ -92,7 +95,7 @@ class SmartHabitGeneratorViewModel(
         }
     }
 
-    fun addHabit(habit: GeneratedHabit) {
+    fun addHabit(habit: GeneratedHabit, reminderTime: String) {
         viewModelScope.launch {
             try {
                 val numeric = HabitNumericParser.parse(habit.title)
@@ -104,7 +107,8 @@ class SmartHabitGeneratorViewModel(
                     frequency = habit.frequency,
                     type = habit.type,
                     targetCount = numeric?.first ?: 1,
-                    unit = numeric?.second
+                    unit = numeric?.second,
+                    reminderTime = reminderTime
                 )
                 createHabitUseCase(newHabit)
                 smartReminderManager.syncRemindersForHabit(newHabit)
@@ -119,7 +123,7 @@ class SmartHabitGeneratorViewModel(
         viewModelScope.launch {
             _generatedHabits.value
                 .filter { it.title !in _addedTitles.value }
-                .forEach { addHabit(it) }
+                .forEach { addHabit(it, it.suggestedTime) }
         }
     }
 
@@ -148,7 +152,8 @@ class SmartHabitGeneratorViewModel(
                     category = runCatching { GoalCategory.valueOf(dto.category.uppercase()) }.getOrDefault(GoalCategory.WELLBEING),
                     frequency = runCatching { HabitFrequency.valueOf(dto.frequency.uppercase()) }.getOrDefault(HabitFrequency.DAILY),
                     type = runCatching { HabitType.valueOf(dto.type.uppercase()) }.getOrDefault(HabitType.BUILD),
-                    emoji = dto.emoji
+                    emoji = dto.emoji,
+                    suggestedTime = dto.suggestedTime.takeIf { it.matches(Regex("""\d{2}:\d{2}""")) } ?: "08:00"
                 )
             }
         } catch (e: Exception) {
@@ -165,5 +170,6 @@ private data class GeneratedHabitDto(
     val category: String,
     val frequency: String,
     val type: String,
-    val emoji: String
+    val emoji: String,
+    val suggestedTime: String = "08:00"
 )

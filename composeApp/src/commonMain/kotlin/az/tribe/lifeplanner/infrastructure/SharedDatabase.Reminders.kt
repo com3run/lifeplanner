@@ -175,7 +175,15 @@ suspend fun SharedDatabase.insertUserActivityPattern(
 ) {
     this { db ->
         db.lifePlannerDBQueries.insertUserActivityPattern(
-            id, mostActiveHours, mostActiveDays, averageResponseTime, bestCheckInTimes, lastUpdated
+            id = id,
+            mostActiveHours = mostActiveHours,
+            mostActiveDays = mostActiveDays,
+            averageResponseTime = averageResponseTime,
+            bestCheckInTimes = bestCheckInTimes,
+            featureEngagementJson = "{}",
+            sessionAvgMinutes = 0.0,
+            sessionsPerWeek = 0.0,
+            lastUpdated = lastUpdated
         )
     }
 }
@@ -189,7 +197,14 @@ suspend fun SharedDatabase.updateUserActivityPattern(
 ) {
     this { db ->
         db.lifePlannerDBQueries.updateUserActivityPattern(
-            mostActiveHours, mostActiveDays, averageResponseTime, bestCheckInTimes, lastUpdated
+            mostActiveHours = mostActiveHours,
+            mostActiveDays = mostActiveDays,
+            averageResponseTime = averageResponseTime,
+            bestCheckInTimes = bestCheckInTimes,
+            featureEngagementJson = "{}",
+            sessionAvgMinutes = 0.0,
+            sessionsPerWeek = 0.0,
+            lastUpdated = lastUpdated
         )
     }
 }

@@ -129,6 +129,7 @@ suspend fun SharedDatabase.insertHabitCheckIn(checkIn: HabitCheckInEntity) {
             date = checkIn.date,
             completed = checkIn.completed,
             notes = checkIn.notes,
+            count = checkIn.count,
             sync_updated_at = nowTimestamp(),
             is_deleted = 0L,
             sync_version = 0L,
@@ -145,10 +146,22 @@ suspend fun SharedDatabase.insertHabitCheckInOrIgnore(checkIn: HabitCheckInEntit
             date = checkIn.date,
             completed = checkIn.completed,
             notes = checkIn.notes,
+            count = checkIn.count,
             sync_updated_at = nowTimestamp(),
             is_deleted = 0L,
             sync_version = 0L,
             last_synced_at = null
+        )
+    }
+}
+
+suspend fun SharedDatabase.updateHabitCheckInCount(habitId: String, date: String, count: Long, completed: Long) {
+    this { db ->
+        db.lifePlannerDBQueries.updateHabitCheckInCount(
+            count = count,
+            completed = completed,
+            habitId = habitId,
+            date = date
         )
     }
 }

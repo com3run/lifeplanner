@@ -21,7 +21,7 @@ import dev.gitlive.firebase.perf.performance
 import az.tribe.lifeplanner.data.analytics.PostHogAnalytics
 import org.koin.android.ext.koin.androidContext
 
-class MainApplication : Application(), KoinComponent {
+open class MainApplication : Application(), KoinComponent {
     companion object {
         lateinit var appContext: Context
     }

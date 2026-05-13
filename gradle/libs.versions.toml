@@ -45,6 +45,7 @@ healthConnect = "1.1.0"
 healthKmp = "1.0.1"
 phosphorIcons = "1.0.0"
 coil3 = "3.0.4"
+cmpcharts = "2.0.6"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activityCompose" }
@@ -71,6 +72,8 @@ firebase-common-ktx = { module = "com.google.firebase:firebase-common-ktx", vers
 sqldelight-android = { module = "app.cash.sqldelight:android-driver", version.ref = "sqldelight" }
 sqldelight-ios = { module = "app.cash.sqldelight:native-driver", version.ref = "sqldelight" }
 sqldelight-coroutines = { module = "app.cash.sqldelight:coroutines-extensions", version.ref = "sqldelight" }
+sqldelight-jvm = { module = "app.cash.sqldelight:sqlite-driver", version.ref = "sqldelight" }
+kotlinx-coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "coroutines" }
 
 ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
 ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
@@ -127,6 +130,9 @@ phosphor-icons = { module = "com.adamglin:phosphor-icon", version.ref = "phospho
 # Coil3 — multiplatform async image loading
 coil3-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil3" }
 coil3-network-ktor = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref = "coil3" }
+
+# CMPCharts — Compose Multiplatform charts
+cmpcharts = { module = "network.chaintech:cmpcharts", version.ref = "cmpcharts" }
 
 # Test dependencies
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlinTest" }

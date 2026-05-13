@@ -1,0 +1,12 @@
+$kind: http-request
+url: "{{base_url}}/api/auth/guest"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "firebaseToken": "YOUR_GUEST_FIREBASE_TOKEN"
+    }
+order: 4000

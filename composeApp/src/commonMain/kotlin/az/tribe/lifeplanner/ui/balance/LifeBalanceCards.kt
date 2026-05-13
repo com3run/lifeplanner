@@ -1,7 +1,6 @@
 package az.tribe.lifeplanner.ui.balance
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -123,7 +122,32 @@ internal fun HeroScoreCard(report: LifeBalanceReport) {
                     modifier = Modifier.padding(bottom = 10.dp)
                 )
             }
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(16.dp))
+            val isDark = true
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                report.areaScores.forEach { areaScore ->
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(3.dp)
+                    ) {
+                        HeartProgress(
+                            score = areaScore.score,
+                            color = getAreaColor(areaScore.area, isDark = false),
+                            modifier = Modifier.size(34.dp)
+                        )
+                        Text(
+                            areaScore.area.displayName.take(3),
+                            fontSize = 9.sp,
+                            color = Color.White.copy(alpha = 0.65f),
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+            }
+            Spacer(Modifier.height(16.dp))
             Surface(
                 shape = RoundedCornerShape(20.dp),
                 color = ratingColor.copy(alpha = 0.25f)
@@ -154,7 +178,7 @@ internal fun InsightCard(
     insight: BalanceInsight,
     onGetAdvice: (BalanceInsight) -> Unit
 ) {
-    val isDark = isSystemInDarkTheme()
+    val isDark = true
 
     // Vivid accent colors for the left bar — always punchy regardless of theme
     val priorityBarColor = when (insight.priority) {
@@ -287,7 +311,7 @@ internal fun RecommendationCard(
     onCreateGoal: () -> Unit,
     onCreateHabit: () -> Unit
 ) {
-    val isDark = isSystemInDarkTheme()
+    val isDark = true
     val areaColor = getAreaColor(recommendation.targetArea, isDark)
 
     Card(

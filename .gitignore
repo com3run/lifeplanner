@@ -27,3 +27,9 @@ supabase/.temp/
 composeApp/google-services.json
 iosApp/iosApp/GoogleService-Info.plist
 .vercel
+.claude/
+.postman/
+composeApp/playStore/
+CLAUDE.md
+*.aab
+**/.DS_Store

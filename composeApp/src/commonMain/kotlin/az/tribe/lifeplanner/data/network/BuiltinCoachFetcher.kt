@@ -11,6 +11,9 @@ import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+private const val ASSET_BASE =
+    "https://rkdggdfabwgukspylybu.supabase.co/storage/v1/object/public/assets/"
+
 @Serializable
 private data class BuiltinCoachDto(
     val id: String,
@@ -18,24 +21,31 @@ private data class BuiltinCoachDto(
     val title: String,
     val category: String,
     val emoji: String,
-    @SerialName("image_url")         val imageUrl: String? = null,
+    val slug: String? = null,
+    @SerialName("image_url")           val imageUrl: String? = null,
+    @SerialName("avatar_url")          val avatarUrl: String? = null,
+    @SerialName("clip_url")            val clipUrl: String? = null,
     val greeting: String,
     val bio: String,
-    @SerialName("fun_fact")          val funFact: String? = null,
+    @SerialName("fun_fact")            val funFact: String? = null,
     val specialties: List<String> = emptyList(),
     val personality: String? = null,
     val city: String? = null,
     val timezone: String = "UTC",
-    @SerialName("country_flag")      val countryFlag: String? = null,
-    @SerialName("avatar_bg_color")   val avatarBgColor: String = "#6366F1",
+    @SerialName("country_flag")        val countryFlag: String? = null,
+    @SerialName("avatar_bg_color")     val avatarBgColor: String = "#6366F1",
     @SerialName("avatar_accent_color") val avatarAccentColor: String = "#818CF8",
-    @SerialName("avatar_icon_name")  val avatarIconName: String = "star",
-    @SerialName("xp_to_unlock")      val xpToUnlock: Int = 0,
+    @SerialName("avatar_icon_name")    val avatarIconName: String = "star",
+    @SerialName("xp_to_unlock")        val xpToUnlock: Int = 0,
     @SerialName("is_default_unlocked") val isDefaultUnlocked: Boolean = true,
 )
 
 private fun BuiltinCoachDto.toCoachPersona(): CoachPersona? {
     val cat = try { GoalCategory.valueOf(category) } catch (_: Exception) { return null }
+    val effectiveSlug = slug ?: id
+    val resolvedAvatarUrl = avatarUrl ?: imageUrl ?: "${ASSET_BASE}coaches/$effectiveSlug.png"
+    // Only use clip_url from the DB row — don't auto-generate a URL that may not exist in storage
+    val resolvedPosterUrl = "${ASSET_BASE}coaches/$effectiveSlug-poster.jpg"
     return CoachPersona(
         id = id,
         name = name,
@@ -59,7 +69,9 @@ private fun BuiltinCoachDto.toCoachPersona(): CoachPersona? {
         timezone = timezone,
         city = city ?: "",
         countryFlag = countryFlag ?: "",
-        imageUrl = imageUrl
+        imageUrl = resolvedAvatarUrl,
+        posterUrl = resolvedPosterUrl,
+        clipUrl = clipUrl,
     )
 }
 

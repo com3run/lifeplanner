@@ -69,7 +69,8 @@ fun HabitCheckInEntity.toDomain(): HabitCheckIn {
         habitId = habitId,
         date = LocalDate.parse(date),
         completed = completed == 1L,
-        notes = notes
+        notes = notes,
+        count = count.toInt()
     )
 }
 
@@ -80,6 +81,7 @@ fun HabitCheckIn.toEntity(): HabitCheckInEntity {
         date = date.toString(),
         completed = if (completed) 1L else 0L,
         notes = notes,
+        count = count.toLong(),
         sync_updated_at = Clock.System.now().toString(),
         is_deleted = 0L,
         sync_version = 0L,
@@ -133,13 +135,15 @@ fun createNewCheckIn(
     habitId: String,
     date: LocalDate,
     completed: Boolean = true,
-    notes: String = ""
+    notes: String = "",
+    count: Int = 0
 ): HabitCheckIn {
     return HabitCheckIn(
         id = Uuid.random().toString(),
         habitId = habitId,
         date = date,
         completed = completed,
-        notes = notes
+        notes = notes,
+        count = count
     )
 }

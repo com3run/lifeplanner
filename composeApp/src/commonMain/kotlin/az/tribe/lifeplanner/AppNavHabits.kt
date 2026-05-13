@@ -16,6 +16,7 @@ import az.tribe.lifeplanner.ui.reminder.ReminderSettingsScreen
 import az.tribe.lifeplanner.ui.focus.FocusScreen
 import az.tribe.lifeplanner.ui.navigation.Screen
 import az.tribe.lifeplanner.ui.retrospective.RetrospectiveScreen
+import az.tribe.lifeplanner.ui.screentime.ScreenTimeInsightScreen
 
 internal fun NavGraphBuilder.appNavHabits(navController: NavController) {
     // Habits Screen
@@ -96,6 +97,9 @@ internal fun NavGraphBuilder.appNavHabits(navController: NavController) {
                 navController.navigate(Screen.StoryReader.route) {
                     launchSingleTop = true
                 }
+            },
+            onNavigateToHabitCreation = { _ ->
+                navController.navigate(Screen.HabitTracker.route)
             }
         )
     }
@@ -125,6 +129,16 @@ internal fun NavGraphBuilder.appNavHabits(navController: NavController) {
     composable(Screen.BackupSettings.route) {
         BackupSettingsScreen(
             onNavigateBack = { navController.popBackStack() }
+        )
+    }
+
+    // Screen Time Insight Screen
+    composable(Screen.ScreenTimeInsight.route) {
+        ScreenTimeInsightScreen(
+            onNavigateBack = { navController.popBackStack() },
+            onNavigateTo = { route ->
+                navController.navigate(route) { launchSingleTop = true }
+            }
         )
     }
 

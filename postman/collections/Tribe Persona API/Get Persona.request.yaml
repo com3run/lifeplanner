@@ -1,0 +1,21 @@
+$kind: http-request
+name: Get Persona
+url: https://jimiwruckhlxkmnduhrn.supabase.co/functions/v1/persona-api?mascotId={{default_mascot_id}}&includeMedia=true&mediaLimit=24&sort=recent
+method: GET
+headers:
+  x-api-key: "{{PERSONA_API_SECRET}}"
+queryParams:
+  - key: mascotId
+    value: "{{default_mascot_id}}"
+    description: Fetch a single public persona by id
+  - key: includeMedia
+    value: "true"
+    description: '"true" (default) | "false" — include public media library with engagement stats'
+  - key: mediaLimit
+    value: "24"
+    description: 1–100 (default 24) — number of media items to return
+  - key: sort
+    value: recent
+    description: '"recent" (default) | "engagement" | "likes" | "views"'
+examples: .resources/Get Persona.resources/examples
+order: 1000

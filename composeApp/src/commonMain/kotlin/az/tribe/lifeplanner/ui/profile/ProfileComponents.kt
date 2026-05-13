@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import az.tribe.lifeplanner.ui.calendar.CalendarPermissionState
 import az.tribe.lifeplanner.ui.health.HealthPermissionState
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
 import com.adamglin.PhosphorIcons
@@ -22,6 +23,7 @@ import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.ArrowsClockwise
 import com.adamglin.phosphoricons.regular.CaretRight
 import com.adamglin.phosphoricons.regular.DeviceMobile
+import com.adamglin.phosphoricons.regular.CalendarBlank
 import com.adamglin.phosphoricons.regular.Footprints
 import com.adamglin.phosphoricons.regular.ShieldCheck
 import com.adamglin.phosphoricons.Fill
@@ -173,6 +175,64 @@ internal fun HealthConnectionCard(
                 }
                 HealthPermissionState.DENIED -> TextButton(onClick = onConnect) {
                     Text("Connect", style = MaterialTheme.typography.labelMedium)
+                }
+                else -> {}
+            }
+        }
+    }
+}
+
+// ── Calendar Integration Card ───────────────────────────────────────
+
+@Composable
+internal fun CalendarIntegrationCard(
+    permissionState: CalendarPermissionState,
+    onConnect: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(LifePlannerDesign.Padding.standard),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            val (iconTint, bgColor) = when (permissionState) {
+                CalendarPermissionState.GRANTED -> Color(0xFF6366F1) to Color(0xFF6366F1).copy(alpha = 0.12f)
+                else -> MaterialTheme.colorScheme.onSurfaceVariant to MaterialTheme.colorScheme.surfaceVariant
+            }
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.size(44.dp).clip(RoundedCornerShape(12.dp)).background(bgColor)
+            ) {
+                Icon(
+                    imageVector = PhosphorIcons.Regular.CalendarBlank,
+                    contentDescription = null,
+                    tint = iconTint,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text("Calendar", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                Text(
+                    when (permissionState) {
+                        CalendarPermissionState.GRANTED -> "Connected — events syncing with your goals"
+                        CalendarPermissionState.DENIED -> "Connect to surface upcoming events in your plan"
+                        CalendarPermissionState.NOT_AVAILABLE -> "Calendar not available on this device"
+                        CalendarPermissionState.UNKNOWN -> "Checking calendar access..."
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            when (permissionState) {
+                CalendarPermissionState.DENIED, CalendarPermissionState.UNKNOWN -> {
+                    TextButton(onClick = onConnect) {
+                        Text("Connect", style = MaterialTheme.typography.labelMedium)
+                    }
                 }
                 else -> {}
             }

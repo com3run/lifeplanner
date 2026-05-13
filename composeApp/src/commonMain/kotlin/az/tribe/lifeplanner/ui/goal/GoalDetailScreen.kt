@@ -37,8 +37,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import az.tribe.lifeplanner.data.analytics.Analytics
 import az.tribe.lifeplanner.domain.enum.GoalStatus
@@ -62,7 +60,7 @@ import az.tribe.lifeplanner.ui.goal.CompletedGoalBanner
 import az.tribe.lifeplanner.ui.goal.EmptyMilestonesCard
 import az.tribe.lifeplanner.ui.goal.GoalNotFoundState
 import az.tribe.lifeplanner.ui.goal.ModernMilestonesCard
-import az.tribe.lifeplanner.ui.goal.ModernNotesCard
+import az.tribe.lifeplanner.ui.goal.GoalDescriptionCard
 import az.tribe.lifeplanner.ui.goal.PoweredByAbilitiesCard
 import az.tribe.lifeplanner.ui.goal.ReflectionsCard
 import az.tribe.lifeplanner.ui.theme.gradientColors
@@ -146,14 +144,7 @@ fun GoalDetailScreen(
             TopAppBar(
                 scrollBehavior = scrollBehavior,
                 title = {
-                    Text(
-                        text = goal.title,
-                        color = Color.White,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    Box {}
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
@@ -263,7 +254,8 @@ fun GoalDetailScreen(
             }
 
             item {
-                ModernNotesCard(
+                GoalDescriptionCard(
+                    description = goal.description,
                     notes = goal.notes,
                     isReadOnly = isCompleted,
                     onNotesClick = { showNotesDialog = true }
@@ -275,6 +267,7 @@ fun GoalDetailScreen(
                     AiReasoningCard(reasoning = goal.aiReasoning!!)
                 }
             }
+
 
             if (goal.milestones.isNotEmpty()) {
                 item {

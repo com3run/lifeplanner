@@ -6,6 +6,7 @@ import az.tribe.lifeplanner.data.network.AiProxyService
 import az.tribe.lifeplanner.data.network.AiProxyServiceImpl
 import az.tribe.lifeplanner.data.network.AuthTokenProvider
 import az.tribe.lifeplanner.data.network.BuiltinCoachFetcher
+import az.tribe.lifeplanner.data.network.PersonaApiFetcher
 import az.tribe.lifeplanner.data.network.SystemPromptFetcher
 import az.tribe.lifeplanner.data.network.GeminiService
 import az.tribe.lifeplanner.data.network.GeminiServiceImpl
@@ -29,6 +30,10 @@ import az.tribe.lifeplanner.data.repository.AbilityRepositoryImpl
 import az.tribe.lifeplanner.data.repository.CoachOrchestrator
 import az.tribe.lifeplanner.data.repository.UserSituationRepositoryImpl
 import az.tribe.lifeplanner.data.repository.HealthRepositoryImpl
+import az.tribe.lifeplanner.data.behavior.BehaviorTracker
+import az.tribe.lifeplanner.data.repository.BehaviorRepositoryImpl
+import az.tribe.lifeplanner.domain.repository.BehaviorRepository
+import az.tribe.lifeplanner.ui.screentime.ScreenTimeInsightViewModel
 import az.tribe.lifeplanner.data.repository.HabitRepositoryImpl
 import az.tribe.lifeplanner.data.repository.JournalRepositoryImpl
 import az.tribe.lifeplanner.data.repository.LifeBalanceRepositoryImpl
@@ -131,6 +136,7 @@ import az.tribe.lifeplanner.usecases.UpdateGoalStatusUseCase
 import az.tribe.lifeplanner.usecases.UpdateGoalUseCase
 import az.tribe.lifeplanner.usecases.UpdateMilestoneUseCase
 import com.russhwolf.settings.Settings
+import az.tribe.lifeplanner.ui.planner.WeeklyPlannerViewModel
 import io.github.jan.supabase.auth.auth
 import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
@@ -209,6 +215,7 @@ val appModule = module {
     // AI Proxy Service
     single<AiProxyService> { AiProxyServiceImpl(get(), get(), get()) }
     single { BuiltinCoachFetcher(get()) }
+    single { PersonaApiFetcher(get(), get()) }
     single { SystemPromptFetcher(get()) }
 
     // Repositories
@@ -237,6 +244,10 @@ val appModule = module {
     single<UserSituationRepository> { UserSituationRepositoryImpl(get(), get()) }
     single { HealthDataManager() }
     single<HealthRepository> { HealthRepositoryImpl(get(), get(), get()) }
+
+    // Behavior tracking
+    single<BehaviorRepository> { BehaviorRepositoryImpl(get()) }
+    single { BehaviorTracker(get()) }
 
     // Existing Use Cases
     factory { GetAllGoalsUseCase(get()) }
@@ -333,4 +344,6 @@ val appModule = module {
     viewModelOf(::SearchViewModel)
     viewModelOf(::SmartHabitGeneratorViewModel)
     viewModelOf(::CoachOnboardingViewModel)
+    viewModelOf(::WeeklyPlannerViewModel)
+    viewModelOf(::ScreenTimeInsightViewModel)
 }

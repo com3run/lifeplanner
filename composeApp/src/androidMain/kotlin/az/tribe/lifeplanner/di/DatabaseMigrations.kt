@@ -589,3 +589,96 @@ internal fun migrateToVersion20(db: SupportSQLiteDatabase) {
     // Add unit column to HabitEntity for storing numeric target units (e.g. "L", "min", "times")
     addColumnSafe(db, "HabitEntity", "unit", "TEXT")
 }
+
+internal fun migrateToVersion21(db: SupportSQLiteDatabase) {
+    // Create CachedPersonaEntity table (matches migration 23.sqm)
+    db.execSQL(
+        """
+        CREATE TABLE IF NOT EXISTS CachedPersonaEntity (
+            id TEXT NOT NULL PRIMARY KEY,
+            name TEXT NOT NULL,
+            description TEXT,
+            style TEXT,
+            image_url TEXT,
+            is_active INTEGER NOT NULL DEFAULT 1,
+            fetched_at TEXT NOT NULL
+        )
+        """.trimIndent()
+    )
+}
+
+internal fun migrateToVersion22(db: SupportSQLiteDatabase) {
+    // Add count column to HabitCheckInEntity for multi-count habits (matches migration 24.sqm)
+    addColumnSafe(db, "HabitCheckInEntity", "count", "INTEGER NOT NULL DEFAULT 0")
+}
+
+internal fun migrateToVersion23(db: SupportSQLiteDatabase) {
+    // Extend CachedPersonaEntity with rich TribeBot persona fields (matches migration 25.sqm)
+    addColumnSafe(db, "CachedPersonaEntity", "title", "TEXT NOT NULL DEFAULT 'Coach'")
+    addColumnSafe(db, "CachedPersonaEntity", "category", "TEXT NOT NULL DEFAULT 'WELLBEING'")
+    addColumnSafe(db, "CachedPersonaEntity", "emoji", "TEXT NOT NULL DEFAULT '✨'")
+    addColumnSafe(db, "CachedPersonaEntity", "greeting", "TEXT")
+    addColumnSafe(db, "CachedPersonaEntity", "specialties", "TEXT")
+    addColumnSafe(db, "CachedPersonaEntity", "personality", "TEXT")
+    addColumnSafe(db, "CachedPersonaEntity", "avatar_bg_color", "TEXT NOT NULL DEFAULT '#6366F1'")
+    addColumnSafe(db, "CachedPersonaEntity", "avatar_accent_color", "TEXT NOT NULL DEFAULT '#818CF8'")
+    addColumnSafe(db, "CachedPersonaEntity", "avatar_icon_name", "TEXT NOT NULL DEFAULT 'star'")
+    addColumnSafe(db, "CachedPersonaEntity", "bio", "TEXT")
+    addColumnSafe(db, "CachedPersonaEntity", "fun_fact", "TEXT")
+    addColumnSafe(db, "CachedPersonaEntity", "xp_to_unlock", "INTEGER NOT NULL DEFAULT 0")
+    addColumnSafe(db, "CachedPersonaEntity", "is_default_unlocked", "INTEGER NOT NULL DEFAULT 1")
+    addColumnSafe(db, "CachedPersonaEntity", "timezone", "TEXT")
+    addColumnSafe(db, "CachedPersonaEntity", "city", "TEXT")
+    addColumnSafe(db, "CachedPersonaEntity", "country_flag", "TEXT")
+}
+
+internal fun migrateToVersion24(db: SupportSQLiteDatabase) {
+    // Add slug and avatar_url to CachedPersonaEntity (matches migration 26.sqm)
+    addColumnSafe(db, "CachedPersonaEntity", "slug", "TEXT")
+    addColumnSafe(db, "CachedPersonaEntity", "avatar_url", "TEXT")
+}
+
+internal fun migrateToVersion26(db: SupportSQLiteDatabase) {
+    // Add new columns to UserActivityPatternEntity for richer behavioral tracking
+    addColumnSafe(db, "UserActivityPatternEntity", "featureEngagementJson", "TEXT NOT NULL DEFAULT '{}'")
+    addColumnSafe(db, "UserActivityPatternEntity", "sessionAvgMinutes", "REAL NOT NULL DEFAULT 0.0")
+    addColumnSafe(db, "UserActivityPatternEntity", "sessionsPerWeek", "REAL NOT NULL DEFAULT 0.0")
+
+    // Create ScreenTimeEventEntity for raw behavioral event log
+    db.execSQL(
+        """
+        CREATE TABLE IF NOT EXISTS ScreenTimeEventEntity (
+            id TEXT PRIMARY KEY NOT NULL,
+            screen TEXT NOT NULL,
+            eventType TEXT NOT NULL,
+            timestamp TEXT NOT NULL,
+            durationMs INTEGER NOT NULL DEFAULT 0,
+            date TEXT NOT NULL
+        )
+        """.trimIndent()
+    )
+    db.execSQL("CREATE INDEX IF NOT EXISTS idx_screen_event_date ON ScreenTimeEventEntity(date)")
+    db.execSQL("CREATE INDEX IF NOT EXISTS idx_screen_event_screen ON ScreenTimeEventEntity(screen)")
+}
+
+internal fun migrateToVersion25(db: SupportSQLiteDatabase) {
+    // Create UserSituationEntity table (matches migration 27.sqm)
+    db.execSQL(
+        """
+        CREATE TABLE IF NOT EXISTS UserSituationEntity (
+            id TEXT PRIMARY KEY NOT NULL,
+            meta_json TEXT NOT NULL DEFAULT '{}',
+            career_json TEXT NOT NULL DEFAULT '{}',
+            money_json TEXT NOT NULL DEFAULT '{}',
+            body_json TEXT NOT NULL DEFAULT '{}',
+            people_json TEXT NOT NULL DEFAULT '{}',
+            purpose_json TEXT NOT NULL DEFAULT '{}',
+            last_updated_by TEXT NOT NULL DEFAULT '',
+            sync_updated_at TEXT,
+            is_deleted INTEGER NOT NULL DEFAULT 0,
+            sync_version INTEGER NOT NULL DEFAULT 0,
+            last_synced_at TEXT
+        )
+        """.trimIndent()
+    )
+}

@@ -6,6 +6,7 @@ import az.tribe.lifeplanner.domain.model.BalanceRecommendation
 import az.tribe.lifeplanner.domain.model.BalanceRecommendationAction
 import az.tribe.lifeplanner.domain.model.InsightPriority
 import az.tribe.lifeplanner.domain.model.LifeArea
+import az.tribe.lifeplanner.testutil.FakeAiProxyService
 import az.tribe.lifeplanner.testutil.FakeGoalRepository
 import az.tribe.lifeplanner.testutil.FakeLifeBalanceRepository
 import az.tribe.lifeplanner.testutil.testGoal
@@ -39,7 +40,8 @@ class LifeBalanceViewModelTest {
     private fun createViewModel(): LifeBalanceViewModel {
         return LifeBalanceViewModel(
             repository = fakeRepository,
-            goalRepository = fakeGoalRepository
+            goalRepository = fakeGoalRepository,
+            aiProxy = FakeAiProxyService()
         )
     }
 

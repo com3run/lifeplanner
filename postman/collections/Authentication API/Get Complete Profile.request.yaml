@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{base_url}}/api/auth/profile/complete"
+method: GET
+headers:
+  Authorization: Bearer {{firebase_token}}
+order: 7000

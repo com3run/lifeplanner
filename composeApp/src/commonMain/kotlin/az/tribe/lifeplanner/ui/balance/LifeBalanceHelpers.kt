@@ -42,9 +42,10 @@ import com.adamglin.phosphoricons.regular.UsersThree
 // ─── Section Header ───────────────────────────────────────────────────────────
 
 @Composable
-internal fun SectionHeader(title: String) {
+internal fun SectionHeader(title: String, modifier: Modifier = Modifier) {
     Text(
         title,
+        modifier = modifier,
         style = MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.Bold,
         color = MaterialTheme.colorScheme.onBackground
