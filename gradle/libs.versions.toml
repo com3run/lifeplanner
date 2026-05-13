@@ -1,13 +1,14 @@
 [versions]
-agp = "9.1.1"
-android-compileSdk = "36"
+agp = "9.2.1"
+android-compileSdk = "37"
 android-minSdk = "26"
 android-targetSdk = "35"
 androidx-activityCompose = "1.10.1"
 androidx-lifecycle = "2.10.0-alpha06"
 compose-multiplatform = "1.10.3"
 desugar_jdk_libs = "2.1.5"
-firebaseCommon = "2.1.0"
+firebaseBom = "34.13.0"
+firebaseCommon = "2.4.0"
 supabase = "3.1.1"
 kotlin = "2.3.0"
 sqldelight = "2.0.2"
@@ -32,6 +33,7 @@ firebase-performance-plugin = "2.0.0"
 
 composeMediaPlayer = "1.0.50"
 kmpnotifier = "1.6.1"
+uiTooling = "1.10.3"
 workmanager = "2.10.0"
 glance = "1.1.1"
 kotlinTest = "2.3.0"
@@ -53,6 +55,7 @@ androidx-lifecycle-viewmodel = { group = "org.jetbrains.androidx.lifecycle", nam
 androidx-lifecycle-runtime-compose = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "androidx-lifecycle" }
 desugar_jdk_libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugar_jdk_libs" }
 
+firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
 firebase-common = { module = "dev.gitlive:firebase-common", version.ref = "firebaseCommon" }
 firebase-crashlytics = { module = "dev.gitlive:firebase-crashlytics", version.ref = "firebaseCommon" }
 firebase-perf = { module = "dev.gitlive:firebase-perf", version.ref = "firebaseCommon" }
@@ -142,6 +145,7 @@ turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
 multiplatform-settings-test = { module = "com.russhwolf:multiplatform-settings-test", version.ref = "settings" }
 sqldelight-test = { module = "app.cash.sqldelight:sqlite-driver", version.ref = "sqldelight" }
+ui-tooling = { module = "org.jetbrains.compose.ui:ui-tooling", version.ref = "uiTooling" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

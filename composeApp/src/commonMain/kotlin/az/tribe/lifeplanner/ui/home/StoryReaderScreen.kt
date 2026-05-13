@@ -20,8 +20,8 @@ fun StoryReaderScreen(
         seenIds = store.seenIds,
         onMarkSeen = store.onMarkSeen,
         onStoryAction = { action ->
-            onNavigateBack()
             store.onStoryAction(action)
+            onNavigateBack()
         },
         onDismiss = onNavigateBack
     )

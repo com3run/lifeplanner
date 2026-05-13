@@ -275,11 +275,11 @@ android {
 }
 
 dependencies {
-    debugImplementation(compose.uiTooling)
+    debugImplementation(libs.ui.tooling)
     coreLibraryDesugaring(libs.desugar.jdk.libs)
 
     // Firebase BOM
-    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
+    implementation(platform(libs.firebase.bom))
 
     // Play Store only — not available on Meta Quest
     "playStoreImplementation"(libs.play.app.update)
