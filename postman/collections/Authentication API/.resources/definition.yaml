@@ -1,5 +1,0 @@
-$kind: collection
-description: Postman collection for /api/auth routes
-variables:
-  base_url: http://localhost:8080
-  firebase_token: YOUR_FIREBASE_AUTH_TOKEN

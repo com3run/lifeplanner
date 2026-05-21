@@ -29,10 +29,10 @@ jobs:
 
 #      - name: Execute Gradle command - assembleDebug
 #        run: ./gradlew assembleDebug
-#      composeApp/build/outputs/bundle/release/composeApp-release.aab \
+#      app/androidApp/build/outputs/bundle/release/androidApp-release.aab \
 
       - name: Build Release AAB
-        run: ./gradlew :composeApp:bundleRelease
+        run: ./gradlew :app:androidApp:bundleRelease
 
       - name: Upload Artifact to Firebase App Distribution
         uses: wzieba/Firebase-Distribution-Github-Action@v1
@@ -40,5 +40,5 @@ jobs:
           appId: ${{ secrets.FIREBASE_APP_ID }}
           serviceCredentialsFileContent: ${{ secrets.CREDENTIAL_FILE_CONTENT }}
           groups: testers
-          file: composeApp/build/outputs/apk/debug/composeApp-debug.apk
+          file: app/androidApp/build/outputs/apk/debug/androidApp-debug.apk
           releaseNotes: ${{ inputs.release_notes }}

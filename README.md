@@ -100,7 +100,7 @@ cd lifeplanner
 Run on Android:
 
 ```bash
-./gradlew :composeApp:installDebug
+./gradlew :app:androidApp:installDebug
 ```
 
 ---
@@ -108,23 +108,25 @@ Run on Android:
 ## Project Structure
 
 ```
-composeApp/
-  src/
-    commonMain/     Shared logic, UI, domain, data, DI
-    androidMain/    Android-specific implementations
-    iosMain/        iOS-specific implementations
-iosApp/             iOS app entry point (SwiftUI host)
+app/
+  shared/             KMP library (Android + iOS) — all UI, domain, data, DI
+    src/
+      commonMain/     Shared logic, UI, domain, data, DI
+      androidMain/    Android-specific implementations + widgets + MainActivity/MainApplication
+      iosMain/        iOS-specific implementations
+  androidApp/         Thin Android application — manifest, signing, Firebase plugins
+  iosApp/             iOS app entry point (SwiftUI host)
 supabase/
-  functions/        Edge Functions (ai-proxy, etc.)
-  migrations/       Database migrations
+  functions/          Edge Functions (ai-proxy, etc.)
+  migrations/         Database migrations
 ```
 
 ---
 
 ## Documentation
 
-- [Terminology](docs/terminology.md) — full glossary of features, domain terms, and shorthand
-- [Implementation Plan](docs/implementation-plan.md) — development phases and progress
+- [Terminology](../lifeplanner-assets/docs/terminology.md) — full glossary of features, domain terms, and shorthand
+- [Implementation Plan](../lifeplanner-assets/docs/implementation-plan.md) — development phases and progress
 - [Security](SECURITY.md) — security practices and vulnerability reporting
 
 ---

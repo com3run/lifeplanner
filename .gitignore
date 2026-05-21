@@ -24,12 +24,13 @@ firebase-debug.log
 .mcp.json
 supabase/.temp/
 .env*
-composeApp/google-services.json
+app/androidApp/google-services.json
 iosApp/iosApp/GoogleService-Info.plist
 .vercel
 .claude/
 .postman/
-composeApp/playStore/
 CLAUDE.md
 *.aab
+*.ipa
+*.xcarchive
 **/.DS_Store

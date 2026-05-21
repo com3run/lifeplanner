@@ -25,7 +25,7 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Build Release AAB
-        run: ./gradlew :composeApp:bundleRelease
+        run: ./gradlew :app:androidApp:bundleRelease
 
       - name: Upload Artifact to Firebase App Distribution
         uses: wzieba/Firebase-Distribution-Github-Action@v1
@@ -33,5 +33,5 @@ jobs:
           appId: ${{ secrets.FIREBASE_APP_ID }}
           serviceCredentialsFileContent: ${{ secrets.CREDENTIAL_FILE_CONTENT }}
           groups: internal
-          file: composeApp/build/outputs/bundle/release/composeApp-release.aab
+          file: app/androidApp/build/outputs/bundle/release/androidApp-release.aab
           releaseNotes: "GitHub Action Build: $(git log -1 --pretty=%B)"

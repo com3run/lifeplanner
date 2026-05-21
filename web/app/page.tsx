@@ -35,11 +35,14 @@ const features = [
   },
 ];
 
+// NOTE: keep these in sync with docs/terminology.md and the live app build.
+// Last verified against code: 19 May 2026 (BadgeType.kt = 30 badges across 8 badge-categories;
+// GoalCategory = 7; Life Balance adds an 8th "Personal Growth"; 28 templates).
 const highlights = [
   "AI-powered SMART goal generation",
-  "7 life categories (Career, Financial, Physical, Social, Emotional, Spiritual, Family)",
-  "29 badges across 7 categories with XP & leveling",
-  "Weekly, monthly & quarterly AI reviews",
+  "7 life categories (Career, Financial, Physical, Social, Emotional, Spiritual, Family) + Life Balance overlay",
+  "30 badges across 8 categories with XP & leveling",
+  "Goal dependency graph — visualize what blocks what",
   "Life Balance analyzer with trend tracking",
   "Offline-first with optional cloud sync",
   "28 goal templates to get started fast",
@@ -162,6 +165,27 @@ export default function LifePlannerPage() {
                   </div>
                 </motion.a>
               </div>
+
+              {/* Trust strip — swap placeholders for real review numbers once you have them.
+                  TODO(marketing): replace "Loved by early users" with rating once App Store
+                  ratings stabilise (e.g. "4.8★ · 200+ ratings"). */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+                className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm dark:text-white/60 text-gray-600"
+              >
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="text-amber-400">★★★★★</span>
+                  <span>Loved by early users</span>
+                </span>
+                <span aria-hidden className="dark:text-white/20 text-gray-300">·</span>
+                <span>Available on iOS &amp; Android</span>
+                <span aria-hidden className="dark:text-white/20 text-gray-300">·</span>
+                <span>Offline-first, your data stays yours</span>
+                <span aria-hidden className="dark:text-white/20 text-gray-300">·</span>
+                <span>Free to start</span>
+              </motion.div>
             </motion.div>
 
             {/* Right - App Screenshot */}

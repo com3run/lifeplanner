@@ -15,7 +15,7 @@ pluginManagement {
     }
 }
 plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention") version "0.10.0"
+    id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
 }
 
 dependencyResolutionManagement {
@@ -28,14 +28,8 @@ dependencyResolutionManagement {
             }
         }
         mavenCentral()
-        maven {
-            url = uri("https://dl.meta.com/dl/android/maven2/")
-            mavenContent {
-                includeGroupAndSubgroups("com.meta")
-                includeGroupAndSubgroups("com.oculus")
-            }
-        }
     }
 }
 
-include(":composeApp")
+include(":app:shared")
+include(":app:androidApp")
