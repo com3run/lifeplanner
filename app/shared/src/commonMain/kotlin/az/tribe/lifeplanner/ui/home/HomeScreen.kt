@@ -250,6 +250,11 @@ fun HomeScreen(
     }
 
     fun handleStoryAction(action: String?) {
+        if (action == null) return
+        if (action.startsWith("coach_")) {
+            onContinueChat(action.removePrefix("coach_"))
+            return
+        }
         when (action) {
             "habits" -> onNavigateToHabits()
             "add_habit" -> onNavigateToAddHabit()
@@ -260,6 +265,11 @@ fun HomeScreen(
             "ai_chat" -> onNavigateToChat()
             "life_balance" -> onNavigateToLifeBalance()
             "health" -> onNavigateToHealth()
+            "reminders" -> onNavigateToReminders()
+            "abilities" -> onNavigateToAbilities()
+            "templates" -> onNavigateToTemplates()
+            "retrospective" -> onNavigateToRetrospective()
+            "profile" -> onNavigateToProfile()
         }
     }
 
@@ -445,7 +455,7 @@ fun HomeScreen(
                         StoryReaderStore.initialIndex = 0
                         StoryReaderStore.seenIds = emptySet()
                         StoryReaderStore.onMarkSeen = {}
-                        StoryReaderStore.onStoryAction = { action -> if (action == "health") onNavigateToHealth() }
+                        StoryReaderStore.onStoryAction = { action -> handleStoryAction(action) }
                         onNavigateToStoryReader()
                     }
                 },
