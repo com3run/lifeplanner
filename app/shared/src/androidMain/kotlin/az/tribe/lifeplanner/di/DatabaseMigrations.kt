@@ -682,3 +682,28 @@ internal fun migrateToVersion25(db: SupportSQLiteDatabase) {
         """.trimIndent()
     )
 }
+
+internal fun migrateToVersion29(db: SupportSQLiteDatabase) {
+    // Schema v29: LifeValueEntity table (Pillar 1) — matches migration 29.sqm
+    db.execSQL(
+        """
+        CREATE TABLE IF NOT EXISTS LifeValueEntity (
+            id TEXT NOT NULL PRIMARY KEY,
+            title TEXT NOT NULL,
+            description TEXT NOT NULL DEFAULT '',
+            isActive INTEGER NOT NULL DEFAULT 1,
+            sortOrder INTEGER NOT NULL DEFAULT 0,
+            sync_updated_at TEXT,
+            is_deleted INTEGER NOT NULL DEFAULT 0,
+            sync_version INTEGER NOT NULL DEFAULT 0,
+            last_synced_at TEXT
+        )
+        """.trimIndent()
+    )
+    db.execSQL("CREATE INDEX IF NOT EXISTS idx_life_value_active ON LifeValueEntity(isActive, is_deleted)")
+}
+
+internal fun migrateToVersion30(db: SupportSQLiteDatabase) {
+    // Schema v30: GoalEntity.valueId (Pillar 1 Why-Chain) — matches migration 30.sqm
+    addColumnSafe(db, "GoalEntity", "valueId", "TEXT")
+}
