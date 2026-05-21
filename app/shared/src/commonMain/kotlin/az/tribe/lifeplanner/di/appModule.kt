@@ -258,6 +258,7 @@ val appModule = module {
     factory { GetGoalsByCategoryUseCase(get()) }
     factory { CreateGoalUseCase(get()) }
     factory { DeleteGoalUseCase(get()) }
+    factory { az.tribe.lifeplanner.usecases.PromoteTopValuesToLifeValuesUseCase(get(), get(), get()) }
     factory { UpdateGoalUseCase(get()) }
     factory { UpdateGoalProgressUseCase(get()) }
     factory { LogGoalChangeUseCase(get()) }
