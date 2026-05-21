@@ -57,6 +57,7 @@ class SharedDatabase(
             // Tier 1 (no deps)
             q.deleteAllAbilityHabitLinks()
             q.deleteAllAbilities()
+            q.deleteAllLifeValues()
             q.deleteAllGoals()
             q.deleteAllHabits()
             q.deleteAllBadges()

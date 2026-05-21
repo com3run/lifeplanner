@@ -26,6 +26,19 @@ data class GoalSyncDto(
 )
 
 @Serializable
+data class LifeValueSyncDto(
+    val id: String,
+    @SerialName("user_id") val userId: String,
+    val title: String,
+    val description: String = "",
+    @SerialName("is_active") val isActive: Boolean = true,
+    @SerialName("sort_order") val sortOrder: Long = 0,
+    @SerialName("updated_at") val updatedAt: String? = null,
+    @SerialName("is_deleted") val isDeleted: Boolean = false,
+    @SerialName("sync_version") val syncVersion: Long = 0
+)
+
+@Serializable
 data class MilestoneSyncDto(
     val id: String,
     @SerialName("user_id") val userId: String,

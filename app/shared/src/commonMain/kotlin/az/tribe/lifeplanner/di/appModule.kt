@@ -26,6 +26,7 @@ import az.tribe.lifeplanner.data.repository.GoalHistoryRepositoryImpl
 import az.tribe.lifeplanner.data.repository.FocusRepositoryImpl
 import az.tribe.lifeplanner.data.repository.RetrospectiveRepositoryImpl
 import az.tribe.lifeplanner.data.repository.GoalRepositoryImpl
+import az.tribe.lifeplanner.data.repository.LifeValueRepositoryImpl
 import az.tribe.lifeplanner.data.repository.AbilityRepositoryImpl
 import az.tribe.lifeplanner.data.repository.CoachOrchestrator
 import az.tribe.lifeplanner.data.repository.UserSituationRepositoryImpl
@@ -55,6 +56,7 @@ import az.tribe.lifeplanner.domain.repository.GoalHistoryRepository
 import az.tribe.lifeplanner.domain.repository.FocusRepository
 import az.tribe.lifeplanner.domain.repository.RetrospectiveRepository
 import az.tribe.lifeplanner.domain.repository.GoalRepository
+import az.tribe.lifeplanner.domain.repository.LifeValueRepository
 import az.tribe.lifeplanner.domain.repository.AbilityRepository
 import az.tribe.lifeplanner.domain.repository.UserSituationRepository
 import az.tribe.lifeplanner.domain.repository.HealthRepository
@@ -223,6 +225,7 @@ val appModule = module {
     single<GeminiRepository> { GeminiRepositoryImp(get()) }
 
     single<GoalRepository> { GoalRepositoryImpl(get(), get(), get()) }
+    single<LifeValueRepository> { LifeValueRepositoryImpl(get(), get()) }
     single<GoalHistoryRepository> { GoalHistoryRepositoryImpl(get(), get()) }
     single<GamificationRepository> { GamificationRepositoryImpl(get(), get(), get(), get()) }
     single<UserRepository> { UserRepositoryImpl(get(), get()) }

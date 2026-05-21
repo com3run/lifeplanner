@@ -2219,3 +2219,61 @@ SELECT * FROM CachedPersonaEntity WHERE is_active = 1;
 
 deleteAllCachedPersonas:
 DELETE FROM CachedPersonaEntity;
+
+-- ============== LifeValueEntity (Pillar 1: the "reason" layer above Goal) ==============
+-- `order` is a SQL reserved word, so the column is named `sortOrder`.
+CREATE TABLE LifeValueEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    isActive INTEGER NOT NULL DEFAULT 1,
+    sortOrder INTEGER NOT NULL DEFAULT 0,
+    sync_updated_at TEXT,
+    is_deleted INTEGER NOT NULL DEFAULT 0,
+    sync_version INTEGER NOT NULL DEFAULT 0,
+    last_synced_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_life_value_active ON LifeValueEntity(isActive, is_deleted);
+
+selectAllLifeValues:
+SELECT * FROM LifeValueEntity WHERE is_deleted = 0 ORDER BY sortOrder ASC;
+
+selectActiveLifeValues:
+SELECT * FROM LifeValueEntity WHERE is_deleted = 0 AND isActive = 1 ORDER BY sortOrder ASC;
+
+selectLifeValueById:
+SELECT * FROM LifeValueEntity WHERE id = ?;
+
+insertLifeValue:
+INSERT OR REPLACE INTO LifeValueEntity(id, title, description, isActive, sortOrder, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+updateLifeValue:
+UPDATE LifeValueEntity
+SET title = ?, description = ?, isActive = ?, sortOrder = ?,
+    sync_updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+WHERE id = ?;
+
+softDeleteLifeValue:
+UPDATE LifeValueEntity SET is_deleted = 1, sync_updated_at = ? WHERE id = ?;
+
+deleteAllLifeValues:
+DELETE FROM LifeValueEntity;
+
+-- LifeValue sync queries
+getUnsyncedLifeValues:
+SELECT * FROM LifeValueEntity WHERE (last_synced_at IS NULL OR sync_updated_at > last_synced_at) AND is_deleted = 0;
+
+getDeletedLifeValues:
+SELECT * FROM LifeValueEntity WHERE is_deleted = 1;
+
+markLifeValueSynced:
+UPDATE LifeValueEntity SET last_synced_at = ? WHERE id = ?;
+
+purgeDeletedLifeValues:
+DELETE FROM LifeValueEntity WHERE is_deleted = 1 AND last_synced_at IS NOT NULL;
+
+upsertLifeValueFromSync:
+INSERT OR REPLACE INTO LifeValueEntity(id, title, description, isActive, sortOrder, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
