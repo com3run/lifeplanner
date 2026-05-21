@@ -46,6 +46,7 @@ fun EditGoalScreen(
     onBackClick: () -> Unit
 ) {
     val goals by viewModel.goals.collectAsState()
+    val lifeValues by viewModel.lifeValues.collectAsState()
     val existingGoal = goals.find { it.id == goalId }
 
     // If goal not found, show error state
@@ -68,6 +69,8 @@ fun EditGoalScreen(
     var selectedTimeline by remember(existingGoal) { mutableStateOf(existingGoal.timeline) }
     var dueDate by remember(existingGoal) { mutableStateOf(existingGoal.dueDate) }
     var dueDateText by remember(existingGoal) { mutableStateOf(existingGoal.dueDate.toString()) }
+    var selectedValueId by remember(existingGoal) { mutableStateOf(existingGoal.valueId) }
+    var showValueSheet by remember { mutableStateOf(false) }
 
     // Convert existing milestones to editable format
     var milestones by remember(existingGoal) {
@@ -134,6 +137,7 @@ fun EditGoalScreen(
                         timeline = selectedTimeline,
                         dueDate = dueDate,
                         notes = notes.text.trim(),
+                        valueId = selectedValueId,
                         milestones = milestones.map { m ->
                             Milestone(
                                 id = m.id,
@@ -279,6 +283,33 @@ fun EditGoalScreen(
                 )
             }
 
+            // Why this goal? (Pillar 1 — link the goal to a life value)
+            item {
+                FormSectionHeader(title = "Why this goal?", icon = null)
+                Spacer(modifier = Modifier.height(8.dp))
+                val selectedValue = lifeValues.find { it.id == selectedValueId }
+                Surface(
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    onClick = { showValueSheet = true },
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = selectedValue?.title ?: "Link to a life value (optional)",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = if (selectedValue != null) MaterialTheme.modernColors.textPrimary
+                                    else MaterialTheme.modernColors.textSecondary
+                        )
+                    }
+                }
+            }
+
             // Milestones Section
             item {
                 FormSectionHeader(title = "Milestones", icon = PhosphorIcons.Regular.Plus) {
@@ -348,6 +379,15 @@ fun EditGoalScreen(
             ) {
                 DatePicker(state = datePickerState)
             }
+        }
+
+        if (showValueSheet) {
+            WhyThisGoalBottomSheet(
+                values = lifeValues,
+                selectedValueId = selectedValueId,
+                onSelect = { selectedValueId = it },
+                onDismiss = { showValueSheet = false }
+            )
         }
     }
 }

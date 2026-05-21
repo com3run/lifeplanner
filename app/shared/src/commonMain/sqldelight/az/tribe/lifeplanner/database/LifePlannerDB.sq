@@ -13,6 +13,7 @@ CREATE TABLE GoalEntity (
     completionRate REAL NOT NULL DEFAULT 0.0,
     isArchived INTEGER NOT NULL DEFAULT 0,
     aiReasoning TEXT,
+    valueId TEXT,
     sync_updated_at TEXT,
     is_deleted INTEGER NOT NULL DEFAULT 0,
     sync_version INTEGER NOT NULL DEFAULT 0,
@@ -27,8 +28,8 @@ SELECT * FROM GoalEntity WHERE id = ?;
 
 -- Updated insert query with conflict resolution
 insertGoal:
-INSERT OR REPLACE INTO GoalEntity(id, category, title, description, status, timeline, dueDate, progress, notes, createdAt, completionRate, isArchived, aiReasoning, sync_updated_at, is_deleted, sync_version, last_synced_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT OR REPLACE INTO GoalEntity(id, category, title, description, status, timeline, dueDate, progress, notes, createdAt, completionRate, isArchived, aiReasoning, valueId, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 selectGoalsByTimeline:
 SELECT * FROM GoalEntity
@@ -58,6 +59,7 @@ SET
   completionRate = ?,
   isArchived = ?,
   aiReasoning = ?,
+  valueId = ?,
   sync_updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
 WHERE id = ?;
 
@@ -1737,8 +1739,8 @@ DELETE FROM FocusSessionEntity WHERE is_deleted = 1 AND last_synced_at IS NOT NU
 -- ============== Upsert From Sync Queries ==============
 
 upsertGoalFromSync:
-INSERT OR REPLACE INTO GoalEntity(id, category, title, description, status, timeline, dueDate, progress, notes, createdAt, completionRate, isArchived, aiReasoning, sync_updated_at, is_deleted, sync_version, last_synced_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT OR REPLACE INTO GoalEntity(id, category, title, description, status, timeline, dueDate, progress, notes, createdAt, completionRate, isArchived, aiReasoning, valueId, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 upsertMilestoneFromSync:
 INSERT OR REPLACE INTO MilestoneEntity(id, goalId, title, isCompleted, dueDate, createdAt, sync_updated_at, is_deleted, sync_version, last_synced_at)

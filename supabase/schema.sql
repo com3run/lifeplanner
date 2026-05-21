@@ -65,6 +65,7 @@ CREATE TABLE goals (
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
     completion_rate REAL        NOT NULL DEFAULT 0.0,
     is_archived     BOOLEAN     NOT NULL DEFAULT FALSE,
+    value_id        TEXT,
     -- sync metadata
     updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
     is_deleted   BOOLEAN     NOT NULL DEFAULT FALSE,
