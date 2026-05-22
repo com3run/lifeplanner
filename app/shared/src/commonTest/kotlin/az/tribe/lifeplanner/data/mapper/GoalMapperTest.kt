@@ -36,6 +36,7 @@ class GoalMapperTest {
             completionRate = 0.6,
             isArchived = 0L,
             aiReasoning = null,
+            valueId = null,
             sync_updated_at = null,
             is_deleted = 0L,
             sync_version = 0L,
@@ -74,6 +75,7 @@ class GoalMapperTest {
             completionRate = 100.0,
             isArchived = 1L,
             aiReasoning = null,
+            valueId = null,
             sync_updated_at = null,
             is_deleted = 0L,
             sync_version = 0L,
@@ -99,6 +101,7 @@ class GoalMapperTest {
             completionRate = 0.0,
             isArchived = 0L,
             aiReasoning = null,
+            valueId = null,
             sync_updated_at = null,
             is_deleted = 0L,
             sync_version = 0L,
@@ -124,6 +127,7 @@ class GoalMapperTest {
             completionRate = 0.0,
             isArchived = 0L,
             aiReasoning = null,
+            valueId = null,
             sync_updated_at = null,
             is_deleted = 0L,
             sync_version = 0L,
@@ -154,6 +158,7 @@ class GoalMapperTest {
             completionRate = 0.0,
             isArchived = 0L,
             aiReasoning = null,
+            valueId = null,
             sync_updated_at = null,
             is_deleted = 0L,
             sync_version = 0L,
@@ -179,6 +184,7 @@ class GoalMapperTest {
             completionRate = 0.0,
             isArchived = 0L,
             aiReasoning = null,
+            valueId = null,
             sync_updated_at = null,
             is_deleted = 0L,
             sync_version = 0L,
@@ -205,6 +211,7 @@ class GoalMapperTest {
             completionRate = 0.0,
             isArchived = 0L,
             aiReasoning = null,
+            valueId = null,
             sync_updated_at = null,
             is_deleted = 0L,
             sync_version = 0L,
@@ -232,6 +239,7 @@ class GoalMapperTest {
                 completionRate = 0.0,
                 isArchived = 0L,
                 aiReasoning = null,
+                valueId = null,
                 sync_updated_at = null,
                 is_deleted = 0L,
                 sync_version = 0L,
@@ -258,6 +266,7 @@ class GoalMapperTest {
                 completionRate = 0.0,
                 isArchived = 0L,
                 aiReasoning = null,
+                valueId = null,
                 sync_updated_at = null,
                 is_deleted = 0L,
                 sync_version = 0L,
@@ -284,6 +293,7 @@ class GoalMapperTest {
                 completionRate = 0.0,
                 isArchived = 0L,
                 aiReasoning = null,
+                valueId = null,
                 sync_updated_at = null,
                 is_deleted = 0L,
                 sync_version = 0L,
@@ -772,6 +782,7 @@ class GoalMapperTest {
                 progress = 0, notes = "", createdAt = "2026-01-01T00:00:00",
                 completionRate = 0.0, isArchived = 0L,
                 aiReasoning = null,
+                valueId = null,
                 sync_updated_at = null, is_deleted = 0L, sync_version = 0L, last_synced_at = null
             ),
             GoalEntity(
@@ -780,6 +791,7 @@ class GoalMapperTest {
                 progress = 50, notes = "", createdAt = "2026-01-01T00:00:00",
                 completionRate = 50.0, isArchived = 0L,
                 aiReasoning = null,
+                valueId = null,
                 sync_updated_at = null, is_deleted = 0L, sync_version = 0L, last_synced_at = null
             )
         )
@@ -799,6 +811,7 @@ class GoalMapperTest {
                 progress = 0, notes = "", createdAt = "2026-01-01T00:00:00",
                 completionRate = 0.0, isArchived = 0L,
                 aiReasoning = null,
+                valueId = null,
                 sync_updated_at = null, is_deleted = 0L, sync_version = 0L, last_synced_at = null
             )
         )

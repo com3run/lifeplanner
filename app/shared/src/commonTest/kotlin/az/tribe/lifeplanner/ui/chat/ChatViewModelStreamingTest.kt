@@ -247,6 +247,7 @@ class StubHabitRepository : HabitRepository {
     override suspend fun deleteHabit(id: String) {}
     override suspend fun deactivateHabit(id: String) {}
     override suspend fun checkIn(habitId: String, date: LocalDate, notes: String) = HabitCheckIn(id = "ci", habitId = habitId, date = date, completed = true, notes = notes)
+    override suspend fun incrementCount(habitId: String, date: LocalDate) = HabitCheckIn(id = "ci", habitId = habitId, date = date, completed = true, notes = "", count = 1)
     override suspend fun getCheckInsByHabitId(habitId: String) = emptyList<HabitCheckIn>()
     override suspend fun getCheckInsByDate(date: LocalDate) = emptyList<HabitCheckIn>()
     override suspend fun getCheckInByHabitAndDate(habitId: String, date: LocalDate): HabitCheckIn? = null
