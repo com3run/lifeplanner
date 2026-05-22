@@ -36,7 +36,8 @@ class HabitMapperTest {
             is_deleted = 0L,
             sync_version = 0L,
             last_synced_at = null,
-            type = "BUILD"
+            type = "BUILD",
+            unit = null
         )
 
         val habit = entity.toDomain()
@@ -80,7 +81,8 @@ class HabitMapperTest {
             is_deleted = 0L,
             sync_version = 0L,
             last_synced_at = null,
-            type = "BUILD"
+            type = "BUILD",
+            unit = null
         )
 
         assertFalse(entity.toDomain().isActive)
@@ -108,7 +110,8 @@ class HabitMapperTest {
             is_deleted = 0L,
             sync_version = 0L,
             last_synced_at = null,
-            type = "BUILD"
+            type = "BUILD",
+            unit = null
         )
 
         assertNull(entity.toDomain().lastCompletedDate)
@@ -136,7 +139,8 @@ class HabitMapperTest {
             is_deleted = 0L,
             sync_version = 0L,
             last_synced_at = null,
-            type = "BUILD"
+            type = "BUILD",
+            unit = null
         )
 
         assertNull(entity.toDomain().linkedGoalId)
@@ -164,7 +168,8 @@ class HabitMapperTest {
             is_deleted = 0L,
             sync_version = 0L,
             last_synced_at = null,
-            type = "BUILD"
+            type = "BUILD",
+            unit = null
         )
 
         assertNull(entity.toDomain().reminderTime)
@@ -193,7 +198,8 @@ class HabitMapperTest {
                 is_deleted = 0L,
                 sync_version = 0L,
                 last_synced_at = null,
-                type = "BUILD"
+                type = "BUILD",
+                unit = null
             )
             assertEquals(freq, entity.toDomain().frequency, "Failed for frequency $freq")
         }
@@ -221,7 +227,8 @@ class HabitMapperTest {
             is_deleted = 0L,
             sync_version = 0L,
             last_synced_at = null,
-            type = "BUILD"
+            type = "BUILD",
+            unit = null
         )
 
         assertEquals(HabitFrequency.DAILY, entity.toDomain().frequency)
@@ -250,7 +257,8 @@ class HabitMapperTest {
                 is_deleted = 0L,
                 sync_version = 0L,
                 last_synced_at = null,
-                type = "BUILD"
+                type = "BUILD",
+                unit = null
             )
             assertEquals(category, entity.toDomain().category, "Failed for category $category")
         }
@@ -278,7 +286,8 @@ class HabitMapperTest {
             is_deleted = 0L,
             sync_version = 0L,
             last_synced_at = null,
-            type = "BUILD"
+            type = "BUILD",
+            unit = null
         )
 
         assertEquals(LocalDateTime(2026, 3, 6, 10, 0, 0), entity.toDomain().createdAt)
@@ -445,7 +454,8 @@ class HabitMapperTest {
             sync_updated_at = null,
             is_deleted = 0L,
             sync_version = 0L,
-            last_synced_at = null
+            last_synced_at = null,
+            count = 1L
         )
 
         val checkIn = entity.toDomain()
@@ -468,7 +478,8 @@ class HabitMapperTest {
             sync_updated_at = null,
             is_deleted = 0L,
             sync_version = 0L,
-            last_synced_at = null
+            last_synced_at = null,
+            count = 1L
         )
 
         assertFalse(entity.toDomain().completed)
@@ -570,7 +581,7 @@ class HabitMapperTest {
                 linkedGoalId = null, correlationScore = 0.0, isActive = 1L,
                 createdAt = "2026-01-01T00:00:00", reminderTime = null,
                 sync_updated_at = null, is_deleted = 0L, sync_version = 0L, last_synced_at = null,
-                type = "BUILD"
+                type = "BUILD", unit = null
             ),
             HabitEntity(
                 id = "h2", title = "B", description = "", category = "BODY",
@@ -579,7 +590,7 @@ class HabitMapperTest {
                 linkedGoalId = "g1", correlationScore = 0.5, isActive = 0L,
                 createdAt = "2026-01-01T00:00:00", reminderTime = "09:00",
                 sync_updated_at = null, is_deleted = 0L, sync_version = 0L, last_synced_at = null,
-                type = "BUILD"
+                type = "BUILD", unit = null
             )
         )
 
@@ -598,8 +609,8 @@ class HabitMapperTest {
     @Test
     fun `toDomainCheckIns maps multiple entities`() {
         val entities = listOf(
-            HabitCheckInEntity("c1", "h1", "2026-03-01", 1L, "", null, 0L, 0L, null),
-            HabitCheckInEntity("c2", "h1", "2026-03-02", 0L, "skipped", null, 0L, 0L, null)
+            HabitCheckInEntity("c1", "h1", "2026-03-01", 1L, "", null, 0L, 0L, null, 1L),
+            HabitCheckInEntity("c2", "h1", "2026-03-02", 0L, "skipped", null, 0L, 0L, null, 0L)
         )
 
         val result = entities.toDomainCheckIns()

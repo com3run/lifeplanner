@@ -135,6 +135,20 @@ class FakeHabitRepository : HabitRepository {
         emitFlow()
         return ci
     }
+    override suspend fun incrementCount(habitId: String, date: LocalDate): HabitCheckIn {
+        val idx = checkIns.indexOfFirst { it.habitId == habitId && it.date == date }
+        val updated = if (idx >= 0) {
+            val existing = checkIns[idx].copy(count = checkIns[idx].count + 1, completed = true)
+            checkIns[idx] = existing
+            existing
+        } else {
+            val ci = HabitCheckIn(Uuid.random().toString(), habitId, date, completed = true, notes = "", count = 1)
+            checkIns.add(ci)
+            ci
+        }
+        emitFlow()
+        return updated
+    }
     override suspend fun getCheckInsByHabitId(habitId: String) = checkIns.filter { it.habitId == habitId }
     override suspend fun getCheckInsByDate(date: LocalDate) = checkIns.filter { it.date == date }
     override suspend fun getCheckInByHabitAndDate(habitId: String, date: LocalDate) = checkIns.find { it.habitId == habitId && it.date == date }

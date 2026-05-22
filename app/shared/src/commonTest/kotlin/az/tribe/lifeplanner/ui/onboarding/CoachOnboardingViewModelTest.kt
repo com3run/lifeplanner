@@ -16,6 +16,7 @@ import az.tribe.lifeplanner.domain.model.User
 import az.tribe.lifeplanner.domain.model.UserSituation
 import az.tribe.lifeplanner.domain.repository.UserRepository
 import az.tribe.lifeplanner.domain.repository.UserSituationRepository
+import az.tribe.lifeplanner.domain.service.SmartReminderManager
 import az.tribe.lifeplanner.testutil.FakeGoalRepository
 import com.russhwolf.settings.MapSettings
 import kotlinx.coroutines.Dispatchers
@@ -61,7 +62,9 @@ class CoachOnboardingViewModelTest {
         userRepository = FakeUserRepository(),
         goalRepository = goalRepository,
         aiProxyService = FakeAiProxyService(),
-        settings = settings
+        habitRepository = az.tribe.lifeplanner.testutil.FakeHabitRepository(),
+        settings = settings,
+        smartReminderManager = SmartReminderManager(az.tribe.lifeplanner.testutil.FakeReminderRepository())
     )
 
     // ── isComplete ────────────────────────────────────────────────────────────
@@ -276,5 +279,6 @@ private class FakeAiProxyService : AiProxyService {
         messages: List<AiProxyService.ChatMessage>,
         systemPrompt: String?,
         provider: AiProvider?
-    ) = kotlinx.coroutines.flow.emptyFlow()
+    ): kotlinx.coroutines.flow.Flow<AiProxyService.StreamEvent> =
+        kotlinx.coroutines.flow.emptyFlow()
 }

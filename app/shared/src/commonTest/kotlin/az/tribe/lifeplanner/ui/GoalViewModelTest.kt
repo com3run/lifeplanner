@@ -52,7 +52,6 @@ class GoalViewModelTest {
     private fun createViewModel(): GoalViewModel {
         return GoalViewModel(
             goalRepository = fakeGoalRepository,
-            getAllGoalsUseCase = GetAllGoalsUseCase(fakeGoalRepository),
             createGoalUseCase = CreateGoalUseCase(fakeGoalRepository),
             updateGoalUseCase = UpdateGoalUseCase(fakeGoalRepository),
             deleteGoalUseCase = DeleteGoalUseCase(fakeGoalRepository),
@@ -60,9 +59,6 @@ class GoalViewModelTest {
             updateGoalProgressUseCase = UpdateGoalProgressUseCase(fakeGoalRepository),
             updateGoalStatusUseCase = UpdateGoalStatusUseCase(fakeGoalRepository),
             updateGoalNotesUseCase = UpdateGoalNotesUseCase(fakeGoalRepository),
-            searchGoalsUseCase = SearchGoalsUseCase(fakeGoalRepository),
-            getActiveGoalsUseCase = GetActiveGoalsUseCase(fakeGoalRepository),
-            getCompletedGoalsUseCase = GetCompletedGoalsUseCase(fakeGoalRepository),
             addMilestoneUseCase = AddMilestoneUseCase(fakeGoalRepository),
             toggleMilestoneCompletionUseCase = ToggleMilestoneCompletionUseCase(fakeGoalRepository),
             getGoalAnalyticsUseCase = GetGoalAnalyticsUseCase(fakeGoalRepository),

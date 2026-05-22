@@ -42,6 +42,7 @@ fun testHabit(
     category: GoalCategory = GoalCategory.BODY,
     frequency: HabitFrequency = HabitFrequency.DAILY,
     targetCount: Int = 1,
+    unit: String? = null,
     currentStreak: Int = 0,
     longestStreak: Int = 0,
     totalCompletions: Int = 0,
@@ -50,16 +51,43 @@ fun testHabit(
     correlationScore: Float = 0f,
     isActive: Boolean = true,
     createdAt: LocalDateTime = NOW,
-    reminderTime: String? = null
-) = Habit(id, title, description, category, frequency, targetCount, currentStreak, longestStreak, totalCompletions, lastCompletedDate, linkedGoalId, correlationScore, isActive, createdAt, reminderTime)
+    reminderTime: String? = null,
+    type: HabitType = HabitType.BUILD
+) = Habit(
+    id = id,
+    title = title,
+    description = description,
+    category = category,
+    frequency = frequency,
+    targetCount = targetCount,
+    unit = unit,
+    currentStreak = currentStreak,
+    longestStreak = longestStreak,
+    totalCompletions = totalCompletions,
+    lastCompletedDate = lastCompletedDate,
+    linkedGoalId = linkedGoalId,
+    correlationScore = correlationScore,
+    isActive = isActive,
+    createdAt = createdAt,
+    reminderTime = reminderTime,
+    type = type
+)
 
 fun testHabitCheckIn(
     id: String = "checkin-1",
     habitId: String = "habit-1",
     date: LocalDate = TODAY,
     completed: Boolean = true,
-    notes: String = ""
-) = HabitCheckIn(id, habitId, date, completed, notes)
+    notes: String = "",
+    count: Int = 1
+) = HabitCheckIn(
+    id = id,
+    habitId = habitId,
+    date = date,
+    completed = completed,
+    notes = notes,
+    count = count
+)
 
 fun testJournalEntry(
     id: String = "journal-1",

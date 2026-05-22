@@ -1075,6 +1075,9 @@ class GamificationReviewReminderMapperTest {
             mostActiveDays = "MONDAY,TUESDAY,WEDNESDAY",
             averageResponseTime = 15L,
             bestCheckInTimes = "09:00,20:00",
+            featureEngagementJson = "{}",
+            sessionAvgMinutes = 0.0,
+            sessionsPerWeek = 0.0,
             lastUpdated = "2026-03-06T10:00:00"
         )
 
@@ -1093,6 +1096,9 @@ class GamificationReviewReminderMapperTest {
             mostActiveDays = "",
             averageResponseTime = 0L,
             bestCheckInTimes = "",
+            featureEngagementJson = "{}",
+            sessionAvgMinutes = 0.0,
+            sessionsPerWeek = 0.0,
             lastUpdated = "2026-03-06T10:00:00"
         )
 
