@@ -40,6 +40,26 @@ data class LifeValueSyncDto(
 )
 
 @Serializable
+data class DecisionSyncDto(
+    val id: String,
+    @SerialName("user_id") val userId: String,
+    val question: String,
+    @SerialName("options_considered") val optionsConsidered: String = "",
+    @SerialName("chosen_option") val chosenOption: String,
+    val reasoning: String = "",
+    @SerialName("related_goal_id") val relatedGoalId: String? = null,
+    @SerialName("expected_outcome") val expectedOutcome: String = "",
+    val confidence: Long = 50,
+    @SerialName("decided_at") val decidedAt: String,
+    @SerialName("actual_outcome") val actualOutcome: String? = null,
+    @SerialName("outcome_reviewed_at") val outcomeReviewedAt: String? = null,
+    @SerialName("outcome_quality") val outcomeQuality: String? = null,
+    @SerialName("updated_at") val updatedAt: String? = null,
+    @SerialName("is_deleted") val isDeleted: Boolean = false,
+    @SerialName("sync_version") val syncVersion: Long = 0
+)
+
+@Serializable
 data class MilestoneSyncDto(
     val id: String,
     @SerialName("user_id") val userId: String,
