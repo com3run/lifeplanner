@@ -237,6 +237,7 @@ val appModule = module {
     single<GoalDependencyRepository> { GoalDependencyRepositoryImpl(get(), get()) }
     single<CoachRepository> { CoachRepositoryImpl(get(), get()) }
     single<CoachPostRepository> { CoachPostRepositoryImpl(get()) }
+    single { az.tribe.lifeplanner.domain.service.ChoicePointDetector() }
     single { CoachOrchestrator() }
     single<ChatRepository> { ChatRepositoryImpl(get(), get<AiProxyService>(), get(), get(), get(), get()) }
     single { ReviewMessageBuilder(get()) }
@@ -339,6 +340,7 @@ val appModule = module {
     viewModelOf(::CoachViewModel)
     viewModelOf(::ReminderViewModel)
     viewModelOf(::LifeBalanceViewModel)
+    viewModel { az.tribe.lifeplanner.ui.decision.DecisionViewModel(get(), get(), get(), get()) }
     viewModelOf(::BackupViewModel)
     viewModelOf(::FocusViewModel)
     viewModelOf(::RetrospectiveViewModel)

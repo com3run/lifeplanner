@@ -80,6 +80,11 @@ internal fun NavGraphBuilder.appNavProfile(
                     launchSingleTop = true
                 }
             },
+            onNavigateToDecisions = {
+                navController.navigate(Screen.DecisionJournal.route) {
+                    launchSingleTop = true
+                }
+            },
             onNavigateToRetrospective = {
                 navController.navigate(Screen.Retrospective.route) {
                     launchSingleTop = true
