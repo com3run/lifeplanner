@@ -55,6 +55,23 @@ actual class DatabaseDriverFactory {
                     migrateToVersion26(db)
                 }
 
+                override fun onDowngrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) {
+                    // A device DB newer than this build's schema (e.g. after testing a
+                    // higher-schema branch) can't be downgraded by SQLite and would otherwise
+                    // crash on open. Recreate the local DB cleanly instead; synced data
+                    // restores from the cloud on next sync.
+                    Logger.w("DatabaseDriverFactory") {
+                        "Local DB v$oldVersion newer than app schema v$newVersion — recreating local database"
+                    }
+                    val tables = buildList {
+                        db.query(
+                            "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name != 'android_metadata'"
+                        ).use { c -> while (c.moveToNext()) add(c.getString(0)) }
+                    }
+                    tables.forEach { db.execSQL("DROP TABLE IF EXISTS `$it`") }
+                    onCreate(db) // re-create the current schema from scratch
+                }
+
                 override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) {
                     // Migration from version 3 to 4: Add UserEntity table
                     if (oldVersion < 4) {
