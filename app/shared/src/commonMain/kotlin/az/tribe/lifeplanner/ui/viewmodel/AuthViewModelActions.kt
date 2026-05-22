@@ -284,8 +284,8 @@ fun AuthViewModel.startVerificationPolling() {
                 kotlinx.coroutines.delay(3000)
                 if (_authState.value !is AuthState.EmailVerificationPending) break
 
-                supabaseClient.auth.refreshCurrentSession()
-                val user = supabaseClient.auth.currentUserOrNull()
+                supabaseClient?.auth?.refreshCurrentSession()
+                val user = supabaseClient?.auth?.currentUserOrNull()
                 if (user != null && user.email != null && user.emailConfirmedAt != null) {
                     Logger.d("AuthViewModel") { "Email verified on another device! Auto-signing in." }
                     val localUser = findOrCreateLocalUser(
@@ -316,8 +316,8 @@ internal fun AuthViewModel.startLinkVerificationPolling(email: String) {
             try {
                 kotlinx.coroutines.delay(5000)
                 if (_pendingVerificationEmail.value != email) break
-                supabaseClient.auth.refreshCurrentSession()
-                val user = supabaseClient.auth.currentUserOrNull()
+                supabaseClient?.auth?.refreshCurrentSession()
+                val user = supabaseClient?.auth?.currentUserOrNull()
                 if (user?.emailConfirmedAt != null) {
                     Logger.d("AuthViewModel") { "Email $email verified! Clearing banner." }
                     _pendingVerificationEmail.value = null
@@ -432,7 +432,7 @@ fun AuthViewModel.updateDisplayName(newName: String) {
             if (trimmed.isBlank() || trimmed.length < 2) return@launch
 
             // Update on Supabase
-            supabaseClient.auth.updateUser {
+            supabaseClient?.auth?.updateUser {
                 data = buildJsonObject {
                     put("display_name", JsonPrimitive(trimmed))
                 }
