@@ -1,6 +1,7 @@
 package az.tribe.lifeplanner.usecases
 
 import az.tribe.lifeplanner.domain.repository.GoalHistoryRepository
+import kotlin.random.Random
 import kotlin.time.Clock
 
 class LogGoalChangeUseCase(private val repository: GoalHistoryRepository) {
@@ -21,6 +22,6 @@ class LogGoalChangeUseCase(private val repository: GoalHistoryRepository) {
     }
 
     private fun generateChangeId(): String {
-        return "change_" + Clock.System.now().toEpochMilliseconds().toString()
+        return "change_" + Clock.System.now().toEpochMilliseconds() + "_" + Random.nextInt(1_000_000)
     }
 }
