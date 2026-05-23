@@ -259,3 +259,11 @@ buildkonfig {
 dependencies {
     androidRuntimeClasspath(compose.uiTooling)
 }
+
+// Host unit tests (testAndroidHostTest) spin up ~30 classes' worth of in-memory SQLDelight
+// DBs, Koin graphs and coroutine scopes in one fork. Give that fork a generous heap +
+// metaspace so the whole suite runs in a single Gradle invocation (CI runs it that way). (TRI-69)
+tasks.withType<Test>().configureEach {
+    maxHeapSize = "2g"
+    jvmArgs("-XX:+UseG1GC", "-XX:MaxMetaspaceSize=512m")
+}
