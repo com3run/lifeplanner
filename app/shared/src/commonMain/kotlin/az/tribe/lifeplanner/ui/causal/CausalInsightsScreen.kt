@@ -33,9 +33,15 @@ import az.tribe.lifeplanner.domain.model.InsightConfidence
 import az.tribe.lifeplanner.domain.model.InsightKind
 import az.tribe.lifeplanner.domain.service.Calibration
 import az.tribe.lifeplanner.ui.theme.modernColors
+import androidx.compose.runtime.remember
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.ArrowLeft
+import com.revenuecat.purchases.kmp.models.CustomerInfo
+import com.revenuecat.purchases.kmp.models.StoreTransaction
+import com.revenuecat.purchases.kmp.ui.revenuecatui.Paywall
+import com.revenuecat.purchases.kmp.ui.revenuecatui.PaywallListener
+import com.revenuecat.purchases.kmp.ui.revenuecatui.PaywallOptions
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -71,8 +77,27 @@ fun CausalInsightsScreen(
             state.isLoading -> Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
-            !state.isPremium -> Box(Modifier.fillMaxSize().padding(padding).padding(24.dp), contentAlignment = Alignment.Center) {
-                UpsellCard()
+            !state.isPremium -> {
+                // RevenueCat Paywall — shown when the `premium` entitlement is inactive. On
+                // purchase/restore, refresh the gate so the insights replace the paywall in place.
+                val paywallOptions = remember {
+                    PaywallOptions(dismissRequest = onBackClick) {
+                        shouldDisplayDismissButton = true
+                        listener = object : PaywallListener {
+                            override fun onPurchaseCompleted(
+                                customerInfo: CustomerInfo,
+                                storeTransaction: StoreTransaction,
+                            ) { viewModel.refresh() }
+
+                            override fun onRestoreCompleted(customerInfo: CustomerInfo) {
+                                viewModel.refresh()
+                            }
+                        }
+                    }
+                }
+                Box(Modifier.fillMaxSize().padding(padding)) {
+                    Paywall(paywallOptions)
+                }
             }
             else -> LazyColumn(
                 modifier = Modifier.fillMaxSize(),
@@ -180,24 +205,4 @@ private fun EmptyState() {
         color = MaterialTheme.modernColors.textSecondary,
         modifier = Modifier.padding(vertical = 16.dp)
     )
-}
-
-@Composable
-private fun UpsellCard() {
-    Surface(color = MaterialTheme.modernColors.cardBackground, shape = RoundedCornerShape(16.dp)) {
-        Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(
-                "Causal Insights is a premium feature",
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.modernColors.textPrimary
-            )
-            Text(
-                "Discover what actually drives your progress — correlations across sleep, mood, " +
-                    "focus and habits, plus how accurate your time estimates are. All computed " +
-                    "privately on your device.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.modernColors.textSecondary
-            )
-        }
-    }
 }
