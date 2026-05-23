@@ -238,6 +238,8 @@ val appModule = module {
     single<CoachRepository> { CoachRepositoryImpl(get(), get()) }
     single<CoachPostRepository> { CoachPostRepositoryImpl(get()) }
     single { az.tribe.lifeplanner.domain.service.ChoicePointDetector() }
+    single { az.tribe.lifeplanner.domain.service.CausalInsightEngine() }
+    single { az.tribe.lifeplanner.domain.service.CausalInsightProvider(get(), get(), get(), get(), get()) }
     single { CoachOrchestrator() }
     single<ChatRepository> { ChatRepositoryImpl(get(), get<AiProxyService>(), get(), get(), get(), get()) }
     single { ReviewMessageBuilder(get()) }
