@@ -266,4 +266,7 @@ dependencies {
 tasks.withType<Test>().configureEach {
     maxHeapSize = "2g"
     jvmArgs("-XX:+UseG1GC", "-XX:MaxMetaspaceSize=512m")
+    // Recycle the test JVM each class so leaked coroutine scopes / Dispatchers.IO listeners
+    // (e.g. SyncManager's uncancelled scope) can't accumulate and stall the full-suite run.
+    forkEvery = 1
 }
