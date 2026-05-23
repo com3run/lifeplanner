@@ -21,6 +21,7 @@ data class GoalSyncDto(
     @SerialName("is_archived") val isArchived: Boolean = false,
     @SerialName("ai_reasoning") val aiReasoning: String? = null,
     @SerialName("value_id") val valueId: String? = null,
+    @SerialName("predicted_due_date") val predictedDueDate: String? = null,
     @SerialName("updated_at") val updatedAt: String? = null,
     @SerialName("is_deleted") val isDeleted: Boolean = false,
     @SerialName("sync_version") val syncVersion: Long = 0
@@ -67,6 +68,7 @@ data class MilestoneSyncDto(
     val title: String,
     @SerialName("is_completed") val isCompleted: Boolean = false,
     @SerialName("due_date") val dueDate: String? = null,
+    @SerialName("estimated_effort") val estimatedEffort: Long? = null,
     @SerialName("created_at") val createdAt: String,
     @SerialName("updated_at") val updatedAt: String? = null,
     @SerialName("is_deleted") val isDeleted: Boolean = false,

@@ -66,6 +66,7 @@ CREATE TABLE goals (
     completion_rate REAL        NOT NULL DEFAULT 0.0,
     is_archived     BOOLEAN     NOT NULL DEFAULT FALSE,
     value_id        TEXT,
+    predicted_due_date TEXT,
     -- sync metadata
     updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
     is_deleted   BOOLEAN     NOT NULL DEFAULT FALSE,
@@ -80,6 +81,7 @@ CREATE TABLE milestones (
     title        TEXT        NOT NULL,
     is_completed BOOLEAN     NOT NULL DEFAULT FALSE,
     due_date     TEXT,
+    estimated_effort INTEGER,
     created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
     -- sync metadata
     updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),

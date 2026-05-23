@@ -37,6 +37,7 @@ class GoalMapperTest {
             isArchived = 0L,
             aiReasoning = null,
             valueId = null,
+            predictedDueDate = null,
             sync_updated_at = null,
             is_deleted = 0L,
             sync_version = 0L,
@@ -76,6 +77,7 @@ class GoalMapperTest {
             isArchived = 1L,
             aiReasoning = null,
             valueId = null,
+            predictedDueDate = null,
             sync_updated_at = null,
             is_deleted = 0L,
             sync_version = 0L,
@@ -102,6 +104,7 @@ class GoalMapperTest {
             isArchived = 0L,
             aiReasoning = null,
             valueId = null,
+            predictedDueDate = null,
             sync_updated_at = null,
             is_deleted = 0L,
             sync_version = 0L,
@@ -128,6 +131,7 @@ class GoalMapperTest {
             isArchived = 0L,
             aiReasoning = null,
             valueId = null,
+            predictedDueDate = null,
             sync_updated_at = null,
             is_deleted = 0L,
             sync_version = 0L,
@@ -159,6 +163,7 @@ class GoalMapperTest {
             isArchived = 0L,
             aiReasoning = null,
             valueId = null,
+            predictedDueDate = null,
             sync_updated_at = null,
             is_deleted = 0L,
             sync_version = 0L,
@@ -185,6 +190,7 @@ class GoalMapperTest {
             isArchived = 0L,
             aiReasoning = null,
             valueId = null,
+            predictedDueDate = null,
             sync_updated_at = null,
             is_deleted = 0L,
             sync_version = 0L,
@@ -212,6 +218,7 @@ class GoalMapperTest {
             isArchived = 0L,
             aiReasoning = null,
             valueId = null,
+            predictedDueDate = null,
             sync_updated_at = null,
             is_deleted = 0L,
             sync_version = 0L,
@@ -240,6 +247,7 @@ class GoalMapperTest {
                 isArchived = 0L,
                 aiReasoning = null,
                 valueId = null,
+                predictedDueDate = null,
                 sync_updated_at = null,
                 is_deleted = 0L,
                 sync_version = 0L,
@@ -267,6 +275,7 @@ class GoalMapperTest {
                 isArchived = 0L,
                 aiReasoning = null,
                 valueId = null,
+                predictedDueDate = null,
                 sync_updated_at = null,
                 is_deleted = 0L,
                 sync_version = 0L,
@@ -294,6 +303,7 @@ class GoalMapperTest {
                 isArchived = 0L,
                 aiReasoning = null,
                 valueId = null,
+                predictedDueDate = null,
                 sync_updated_at = null,
                 is_deleted = 0L,
                 sync_version = 0L,
@@ -435,6 +445,7 @@ class GoalMapperTest {
             title = "Step 1",
             isCompleted = 0L,
             dueDate = "2026-07-01",
+            estimatedEffort = null,
             createdAt = "2026-03-06T10:00:00",
             sync_updated_at = null,
             is_deleted = 0L,
@@ -458,6 +469,7 @@ class GoalMapperTest {
             title = "Done",
             isCompleted = 1L,
             dueDate = null,
+            estimatedEffort = null,
             createdAt = "2026-03-06T10:00:00",
             sync_updated_at = null,
             is_deleted = 0L,
@@ -476,6 +488,7 @@ class GoalMapperTest {
             title = "No date",
             isCompleted = 0L,
             dueDate = null,
+            estimatedEffort = null,
             createdAt = "2026-03-06T10:00:00",
             sync_updated_at = null,
             is_deleted = 0L,
@@ -783,6 +796,7 @@ class GoalMapperTest {
                 completionRate = 0.0, isArchived = 0L,
                 aiReasoning = null,
                 valueId = null,
+                predictedDueDate = null,
                 sync_updated_at = null, is_deleted = 0L, sync_version = 0L, last_synced_at = null
             ),
             GoalEntity(
@@ -792,6 +806,7 @@ class GoalMapperTest {
                 completionRate = 50.0, isArchived = 0L,
                 aiReasoning = null,
                 valueId = null,
+                predictedDueDate = null,
                 sync_updated_at = null, is_deleted = 0L, sync_version = 0L, last_synced_at = null
             )
         )
@@ -812,6 +827,7 @@ class GoalMapperTest {
                 completionRate = 0.0, isArchived = 0L,
                 aiReasoning = null,
                 valueId = null,
+                predictedDueDate = null,
                 sync_updated_at = null, is_deleted = 0L, sync_version = 0L, last_synced_at = null
             )
         )
@@ -825,8 +841,8 @@ class GoalMapperTest {
     @Test
     fun `toDomainMilestones maps list correctly`() {
         val entities = listOf(
-            MilestoneEntity("m1", "g1", "Step 1", 0L, null, "2026-01-01T00:00:00", null, 0L, 0L, null),
-            MilestoneEntity("m2", "g1", "Step 2", 1L, "2026-06-01", "2026-01-01T00:00:00", null, 0L, 0L, null)
+            MilestoneEntity("m1", "g1", "Step 1", 0L, null, null, "2026-01-01T00:00:00", null, 0L, 0L, null),
+            MilestoneEntity("m2", "g1", "Step 2", 1L, "2026-06-01", null, "2026-01-01T00:00:00", null, 0L, 0L, null)
         )
 
         val result = entities.toDomainMilestones()

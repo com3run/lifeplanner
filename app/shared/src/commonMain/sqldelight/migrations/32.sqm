@@ -1,0 +1,3 @@
+-- 32: Goal.predictedDueDate + Milestone.estimatedEffort (Pillar 4 Causal Model)
+ALTER TABLE GoalEntity ADD COLUMN predictedDueDate TEXT;
+ALTER TABLE MilestoneEntity ADD COLUMN estimatedEffort INTEGER;

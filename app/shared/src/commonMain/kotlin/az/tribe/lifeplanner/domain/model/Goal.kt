@@ -21,6 +21,9 @@ data class Goal(
     val completionRate: Float = 0f, // For the 60% progress shown in UI
     val isArchived: Boolean = false,
     val aiReasoning: String? = null,
-    val valueId: String? = null
+    val valueId: String? = null,
+    // Pillar 4 (Causal Model): the user's forecast captured at creation, kept separate from
+    // the live, editable dueDate — so we can later calibrate predicted vs actual.
+    val predictedDueDate: LocalDate? = null
 )
 

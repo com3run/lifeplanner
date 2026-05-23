@@ -55,6 +55,7 @@ class GoalTableSyncer(
         isArchived = local.isArchived != 0L,
         aiReasoning = local.aiReasoning,
         valueId = local.valueId,
+        predictedDueDate = local.predictedDueDate,
         updatedAt = local.sync_updated_at ?: Clock.System.now().toString(),
         isDeleted = local.is_deleted != 0L,
         syncVersion = local.sync_version
@@ -76,6 +77,7 @@ class GoalTableSyncer(
             isArchived = if (remote.isArchived) 1L else 0L,
             aiReasoning = remote.aiReasoning,
             valueId = remote.valueId,
+            predictedDueDate = remote.predictedDueDate,
             sync_updated_at = remote.updatedAt,
             is_deleted = if (remote.isDeleted) 1L else 0L,
             sync_version = remote.syncVersion,
@@ -99,6 +101,7 @@ class GoalTableSyncer(
             isArchived = entity.isArchived,
             aiReasoning = entity.aiReasoning,
             valueId = entity.valueId,
+            predictedDueDate = entity.predictedDueDate,
             sync_updated_at = entity.sync_updated_at,
             is_deleted = entity.is_deleted,
             sync_version = entity.sync_version,
