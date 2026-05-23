@@ -565,6 +565,7 @@ fun App(
                         appNavCoach(navController = navController)
                         appNavAuth(navController = navController)
                         appNavDecisions(navController = navController)
+                        appNavCausal(navController = navController)
                     }
 
                     if (!useRail) {
