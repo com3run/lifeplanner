@@ -53,6 +53,11 @@ kotlin {
     }
 
     sourceSets {
+        // RevenueCat purchases-kmp uses cinterop on iOS — opt in on iOS source sets only
+        // (the kotlinx.cinterop marker doesn't exist on Android/JVM).
+        matching { it.name.lowercase().startsWith("ios") }.configureEach {
+            languageSettings.optIn("kotlinx.cinterop.ExperimentalForeignApi")
+        }
         androidMain.dependencies {
             // Firebase BOM — supplies versions for the transitive com.google.firebase:*
             // artifacts that the dev.gitlive:firebase-* libs declare without versions.
@@ -153,6 +158,10 @@ kotlin {
             api(libs.kmpnotifier) // in iOS export this library
             //Kermit  for logging
             implementation(libs.kermit)
+
+            // RevenueCat — in-app subscriptions, Paywalls, Customer Center (KMP)
+            implementation(libs.purchases.kmp.core)
+            implementation(libs.purchases.kmp.ui)
         }
 
         iosMain.dependencies {
@@ -237,6 +246,16 @@ buildkonfig {
             FieldSpec.Type.STRING,
             "APP_VERSION",
             "2.5",
+        )
+        buildConfigField(
+            FieldSpec.Type.STRING,
+            "REVENUECAT_ANDROID_API_KEY",
+            localProperties["REVENUECAT_ANDROID_API_KEY"]?.toString() ?: "",
+        )
+        buildConfigField(
+            FieldSpec.Type.STRING,
+            "REVENUECAT_IOS_API_KEY",
+            localProperties["REVENUECAT_IOS_API_KEY"]?.toString() ?: "",
         )
     }
 

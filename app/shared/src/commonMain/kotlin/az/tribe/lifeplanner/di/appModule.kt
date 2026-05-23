@@ -242,7 +242,7 @@ val appModule = module {
     single { az.tribe.lifeplanner.domain.service.CausalInsightProvider(get(), get(), get(), get(), get()) }
     single { az.tribe.lifeplanner.domain.service.CalibrationEngine() }
     single { az.tribe.lifeplanner.domain.service.CalibrationProvider(get(), get(), get()) }
-    single<az.tribe.lifeplanner.core.PremiumGate> { az.tribe.lifeplanner.core.DefaultPremiumGate() }
+    single<az.tribe.lifeplanner.core.PremiumGate> { az.tribe.lifeplanner.core.RevenueCatPremiumGate() }
     single { CoachOrchestrator() }
     single<ChatRepository> { ChatRepositoryImpl(get(), get<AiProxyService>(), get(), get(), get(), get()) }
     single { ReviewMessageBuilder(get()) }

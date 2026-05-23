@@ -12,6 +12,7 @@ desugar_jdk_libs = "2.1.5"
 firebaseBom = "34.13.0"
 firebaseCommon = "2.4.0"
 supabase = "3.1.1"
+purchases-kmp = "3.0.2"
 kotlin = "2.3.21"
 sqldelight = "2.0.2"
 
@@ -64,6 +65,8 @@ gitlive-firebase-config = { module = "dev.gitlive:firebase-config", version.ref 
 
 supabase-postgrest = { module = "io.github.jan-tennert.supabase:postgrest-kt", version.ref = "supabase" }
 supabase-gotrue = { module = "io.github.jan-tennert.supabase:auth-kt", version.ref = "supabase" }
+purchases-kmp-core = { module = "com.revenuecat.purchases:purchases-kmp-core", version.ref = "purchases-kmp" }
+purchases-kmp-ui = { module = "com.revenuecat.purchases:purchases-kmp-ui", version.ref = "purchases-kmp" }
 supabase-compose-auth = { module = "io.github.jan-tennert.supabase:compose-auth", version.ref = "supabase" }
 
 navigation-compose = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
