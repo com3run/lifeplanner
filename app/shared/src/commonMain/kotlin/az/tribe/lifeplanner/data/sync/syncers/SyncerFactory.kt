@@ -16,6 +16,7 @@ fun createAllSyncers(
         UserTableSyncer(supabase, db),
         UserSituationTableSyncer(supabase, db),
         LifeValueTableSyncer(supabase, db),
+        IdentityStatementTableSyncer(supabase, db),  // identity_statements.value_id → life_values (soft ref)
         GoalTableSyncer(supabase, db),
         DecisionTableSyncer(supabase, db),   // decisions.related_goal_id → goals (soft ref)
         BadgeTableSyncer(supabase, db),

@@ -850,6 +850,37 @@ CREATE TRIGGER trg_decisions_sync
     FOR EACH ROW EXECUTE FUNCTION update_sync_metadata();
 
 -- ────────────────────────────────────────────────────────────
+-- 2.X identity_statements  (Pillar 5 — "I'm becoming someone who…")
+-- ────────────────────────────────────────────────────────────
+
+CREATE TABLE identity_statements (
+    id           TEXT        PRIMARY KEY,
+    user_id      UUID        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    statement    TEXT        NOT NULL,
+    value_id     TEXT,
+    is_active    BOOLEAN     NOT NULL DEFAULT TRUE,
+    sort_order   INTEGER     NOT NULL DEFAULT 0,
+    created_at   TEXT        NOT NULL,
+    -- sync metadata
+    updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    is_deleted   BOOLEAN     NOT NULL DEFAULT FALSE,
+    sync_version BIGINT      NOT NULL DEFAULT 0
+);
+
+CREATE INDEX idx_identity_statements_user_id ON identity_statements(user_id);
+CREATE INDEX idx_identity_statements_value ON identity_statements(value_id);
+
+ALTER TABLE identity_statements ENABLE ROW LEVEL SECURITY;
+CREATE POLICY identity_statements_select ON identity_statements FOR SELECT TO authenticated USING ((select auth.uid()) = user_id);
+CREATE POLICY identity_statements_insert ON identity_statements FOR INSERT TO authenticated WITH CHECK ((select auth.uid()) = user_id);
+CREATE POLICY identity_statements_update ON identity_statements FOR UPDATE TO authenticated USING ((select auth.uid()) = user_id) WITH CHECK ((select auth.uid()) = user_id);
+CREATE POLICY identity_statements_delete ON identity_statements FOR DELETE TO authenticated USING ((select auth.uid()) = user_id);
+
+CREATE TRIGGER trg_identity_statements_sync
+    BEFORE UPDATE ON identity_statements
+    FOR EACH ROW EXECUTE FUNCTION update_sync_metadata();
+
+-- ────────────────────────────────────────────────────────────
 -- 7. Tombstone cleanup – hard-delete soft-deleted rows > 30 days
 -- ────────────────────────────────────────────────────────────
 
@@ -867,7 +898,7 @@ BEGIN
             'goal_dependencies', 'chat_sessions', 'chat_messages', 'review_reports',
             'reminders', 'custom_coaches', 'coach_groups', 'coach_group_members',
             'focus_sessions', 'coach_persona_overrides', 'user_situations',
-            'life_values', 'decisions'
+            'life_values', 'decisions', 'identity_statements'
         ])
     LOOP
         EXECUTE format(
