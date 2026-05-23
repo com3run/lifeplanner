@@ -266,6 +266,7 @@ val appModule = module {
 
     // Existing Use Cases
     factory { GetAllGoalsUseCase(get()) }
+    factory { az.tribe.lifeplanner.usecases.ComputeValueAlignmentUseCase(get(), get(), get()) }
     factory { GetGoalsByTimelineUseCase(get()) }
     factory { GetGoalsByCategoryUseCase(get()) }
     factory { CreateGoalUseCase(get()) }
