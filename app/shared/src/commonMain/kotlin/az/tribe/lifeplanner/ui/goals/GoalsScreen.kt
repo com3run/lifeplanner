@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -33,19 +34,23 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import az.tribe.lifeplanner.domain.model.Goal
 import az.tribe.lifeplanner.ui.components.AppButton
+import az.tribe.lifeplanner.ui.components.AppButtonVariant
+import az.tribe.lifeplanner.ui.components.GradientHero
+import az.tribe.lifeplanner.ui.components.IconChip
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
 import az.tribe.lifeplanner.ui.theme.backgroundColor
-import az.tribe.lifeplanner.ui.theme.containerColor
 import az.tribe.lifeplanner.ui.theme.modernColors
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.ArrowLeft
+import com.adamglin.phosphoricons.regular.Flag
+import com.adamglin.phosphoricons.regular.Plus
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
  * D7 — the redesigned **Goals** canvas (D2): your commitments, active first, each laddered to a
- * reason. Token-pure (D3) + `AppButton` (D4). New-goal and open-goal route through the existing
- * flows. The value/Why-Chain tag is a Pillar 1 seam (see [GoalsViewModel]); category is the tag for now.
+ * reason. Premium gradient hero + per-category color accents, built on D3 tokens + D4 [AppButton].
+ * The value/Why-Chain tag is a Pillar 1 seam (see [GoalsViewModel]); category is the tag for now.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,17 +73,14 @@ fun GoalsScreen(
                         Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = "Back", tint = c.textPrimary)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = c.background,
-                    titleContentColor = c.textPrimary,
-                ),
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = c.background, titleContentColor = c.textPrimary),
             )
         },
     ) { padding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(
-                top = padding.calculateTopPadding(),
+                top = padding.calculateTopPadding() + LifePlannerDesign.Spacing.xs,
                 bottom = padding.calculateBottomPadding() + 84.dp,
                 start = LifePlannerDesign.Padding.screenHorizontal,
                 end = LifePlannerDesign.Padding.screenHorizontal,
@@ -86,21 +88,27 @@ fun GoalsScreen(
             verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.md),
         ) {
             item {
-                AppButton(
-                    text = "New goal",
-                    onClick = onNewGoal,
-                    modifier = Modifier.fillMaxWidth().padding(top = LifePlannerDesign.Spacing.xs),
+                GradientHero(
+                    eyebrow = "Your commitments",
+                    title = "Goals",
+                    subtitle = summary(state),
+                    trailing = {
+                        IconButton(onClick = onNewGoal) {
+                            Icon(PhosphorIcons.Regular.Plus, contentDescription = "New goal", tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(LifePlannerDesign.IconSize.large))
+                        }
+                    },
                 )
             }
 
             if (state.active.isEmpty() && state.completed.isEmpty()) {
                 item {
-                    Text(
-                        "Nothing here yet. A goal is something you're working toward — start with one " +
-                            "that matters to you.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = c.textSecondary,
-                    )
+                    Surface(Modifier.fillMaxWidth(), color = c.cardBackground, shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large)) {
+                        Column(Modifier.fillMaxWidth().padding(LifePlannerDesign.Padding.cardContentLarge), verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm)) {
+                            Text("Nothing here yet", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = c.textPrimary)
+                            Text("A goal is something you're working toward — start with one that matters to you.", style = MaterialTheme.typography.bodyMedium, color = c.textSecondary)
+                            AppButton(text = "Create your first goal", onClick = onNewGoal, modifier = Modifier.fillMaxWidth())
+                        }
+                    }
                 }
             }
 
@@ -108,7 +116,6 @@ fun GoalsScreen(
                 item { SectionLabel("Active · ${state.active.size}") }
                 items(state.active, key = { it.id }) { g -> GoalCard(g, onClick = { onOpenGoal(g.id) }) }
             }
-
             if (state.completed.isNotEmpty()) {
                 item { SectionLabel("Completed · ${state.completed.size}") }
                 items(state.completed, key = { it.id }) { g -> GoalCard(g, onClick = { onOpenGoal(g.id) }, dimmed = true) }
@@ -121,7 +128,7 @@ fun GoalsScreen(
 private fun SectionLabel(text: String) {
     Text(
         text,
-        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
         color = MaterialTheme.modernColors.textPrimary,
         modifier = Modifier.padding(top = LifePlannerDesign.Spacing.xs),
     )
@@ -130,57 +137,45 @@ private fun SectionLabel(text: String) {
 @Composable
 private fun GoalCard(goal: Goal, onClick: () -> Unit, dimmed: Boolean = false) {
     val c = MaterialTheme.modernColors
+    val accent = goal.category.backgroundColor()
     val rate = goal.completionRate.coerceIn(0f, 1f)
     Surface(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         color = c.cardBackground,
         shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large),
     ) {
-        Column(
+        Row(
             Modifier.fillMaxWidth().padding(LifePlannerDesign.Padding.cardContent),
-            verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.xs),
+            horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.xs), verticalAlignment = Alignment.CenterVertically) {
-                CategoryChip(goal)
-                Text("Due ${goal.dueDate}", style = MaterialTheme.typography.labelSmall, color = c.textTertiary)
-            }
-            Text(
-                goal.title,
-                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-                color = if (dimmed) c.textTertiary else c.textPrimary,
-                maxLines = 2,
-            )
-            // Custom token-pure progress bar (avoids M3 progress API drift).
-            Box(
-                Modifier.fillMaxWidth()
-                    .height(LifePlannerDesign.ComponentSize.progressBarHeight)
-                    .clip(RoundedCornerShape(LifePlannerDesign.CornerRadius.full))
-                    .background(c.surfaceVariant),
-            ) {
-                if (rate > 0f) {
-                    Box(
-                        Modifier.fillMaxWidth(rate)
-                            .height(LifePlannerDesign.ComponentSize.progressBarHeight)
-                            .clip(RoundedCornerShape(LifePlannerDesign.CornerRadius.full))
-                            .background(goal.category.backgroundColor()),
-                    )
+            IconChip(PhosphorIcons.Regular.Flag, tint = accent)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.xxs)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.xs), verticalAlignment = Alignment.CenterVertically) {
+                    Text(goal.category.displayName, style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium), color = accent)
+                    Text("· Due ${goal.dueDate}", style = MaterialTheme.typography.labelSmall, color = c.textTertiary)
+                }
+                Text(
+                    goal.title,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                    color = if (dimmed) c.textTertiary else c.textPrimary,
+                    maxLines = 2,
+                )
+                Box(
+                    Modifier.fillMaxWidth().height(LifePlannerDesign.ComponentSize.progressBarHeight)
+                        .clip(RoundedCornerShape(LifePlannerDesign.CornerRadius.full)).background(c.surfaceVariant),
+                ) {
+                    if (rate > 0f) {
+                        Box(Modifier.fillMaxWidth(rate).height(LifePlannerDesign.ComponentSize.progressBarHeight).clip(RoundedCornerShape(LifePlannerDesign.CornerRadius.full)).background(accent))
+                    }
                 }
             }
         }
     }
 }
 
-@Composable
-private fun CategoryChip(goal: Goal) {
-    Surface(
-        color = goal.category.containerColor(),
-        shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.full),
-    ) {
-        Text(
-            goal.category.displayName,
-            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
-            color = goal.category.backgroundColor(),
-            modifier = Modifier.padding(horizontal = LifePlannerDesign.Spacing.xs, vertical = 2.dp),
-        )
-    }
+private fun summary(state: GoalsState): String = when {
+    state.active.isEmpty() && state.completed.isEmpty() -> "Nothing yet — let's start one."
+    state.active.isEmpty() -> "${state.completed.size} done. Time for a new one?"
+    else -> "${state.active.size} active · ${state.completed.size} done"
 }
