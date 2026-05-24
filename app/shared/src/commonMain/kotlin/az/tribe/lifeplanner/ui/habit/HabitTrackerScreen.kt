@@ -30,6 +30,7 @@ fun HabitTrackerScreen(
     onNavigateBack: () -> Unit,
     onNavigateToAddHabit: () -> Unit = {},
     onNavigateToFocus: () -> Unit = {},
+    onOpenDetail: (String) -> Unit = {},
     isFromBottomNav: Boolean = false,
     viewModel: HabitViewModel = koinViewModel(),
     journalViewModel: JournalViewModel = koinViewModel(),
@@ -188,6 +189,7 @@ fun HabitTrackerScreen(
                             onCheckIn = { viewModel.toggleCheckIn(habitWithStatus.habit.id) },
                             onDelete = { viewModel.deleteHabit(habitWithStatus.habit.id) },
                             onEdit = { habitToEdit = habitWithStatus.habit },
+                            onCardClick = { onOpenDetail(habitWithStatus.habit.id) },
                             onFocusClick = { onNavigateToFocus() },
                             onIncrement = if (habitWithStatus.habit.targetCount > 1) {
                                 { viewModel.incrementCheckIn(habitWithStatus.habit.id) }

@@ -146,7 +146,7 @@ fun App(
         // Sync widget data on every app resume (processes pending widget check-ins)
         var resumeCount by remember { mutableIntStateOf(0) }
 
-        // Trigger Supabase sync on app foreground — only for real accounts
+        // Trigger Supabase sync on app foreground, only for real accounts
         val syncManager: SyncManager = koinInject()
         LaunchedEffect(resumeCount, authState) {
             if (resumeCount > 0 && authState is AuthState.Authenticated) {
@@ -189,7 +189,7 @@ fun App(
                     try {
                         habitRepo.checkIn(habitId, today)
                     } catch (_: Exception) {
-                        // Already checked in or invalid — skip
+                        // Already checked in or invalid, skip
                     }
                     widgetSync.removePendingCheckIn(habitId)
                 }
@@ -310,7 +310,7 @@ fun App(
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         val currentRoute = navBackStackEntry?.destination?.route
 
-        // Behavioral tracking — record screen enter/exit on every nav change
+        // Behavioral tracking, record screen enter/exit on every nav change
         val behaviorTracker: az.tribe.lifeplanner.data.behavior.BehaviorTracker = koinInject()
         LaunchedEffect(currentRoute) {
             behaviorTracker.onScreenChanged(currentRoute)
@@ -328,7 +328,7 @@ fun App(
         // Track app opened once per composition
         LaunchedEffect(Unit) { Analytics.appOpened() }
 
-        // PostHog screen tracking — fires on every route change
+        // PostHog screen tracking, fires on every route change
         LaunchedEffect(currentRoute) {
             currentRoute?.let { Analytics.screenViewed(it) }
         }
@@ -347,7 +347,7 @@ fun App(
             else -> Screen.CoachOnboarding.route
         }
 
-        // React to auth state changes — navigate to the right screen
+        // React to auth state changes, navigate to the right screen
         LaunchedEffect(authState) {
             when {
                 // Authenticated or Guest → ensure on Home or force coach onboarding
@@ -356,17 +356,17 @@ fun App(
                     // so we don't trigger it here to avoid racing with DB operations.
                     val current = navController.currentDestination?.route
                     when {
-                        // From sign_in — apply legacy upgrade here too, then route correctly
+                        // From sign_in, apply legacy upgrade here too, then route correctly
                         current == "sign_in" -> {
                             if (hasCompletedOnboarding == true && !CoachOnboardingViewModel.isComplete(settings)) {
                                 settings.putBoolean(CoachOnboardingViewModel.COACH_ONBOARDING_KEY, true)
                             }
-                            val next = if (CoachOnboardingViewModel.isComplete(settings)) Screen.Home.route
+                            val next = if (CoachOnboardingViewModel.isComplete(settings)) Screen.Today.route
                                        else Screen.CoachOnboarding.route
                             navController.navigate(next) { popUpTo(0) { inclusive = true } }
                         }
-                        // On a main app screen but onboarding not done — force it.
-                        // NOTE: do NOT run the legacy auto-upgrade here — it fires on every
+                        // On a main app screen but onboarding not done, force it.
+                        // NOTE: do NOT run the legacy auto-upgrade here, it fires on every
                         // auth-state refresh (e.g. sync updating lastSyncedAt) and would set
                         // COACH_ONBOARDING_KEY mid-onboarding, causing premature navigation.
                         !CoachOnboardingViewModel.isComplete(settings) && current != null
@@ -443,7 +443,7 @@ fun App(
 
         val showBottomNav = currentRoute in mainRoutes
 
-        // Contextual circle button action — changes per screen and hub tab
+        // Contextual circle button action, changes per screen and hub tab
         val navContextAction: NavContextAction? = when (currentRoute) {
             Screen.Home.route -> NavContextAction(
                 icon = PhosphorIcons.Regular.MagnifyingGlass,
@@ -563,8 +563,10 @@ fun App(
                             onHubTabSelected = { hubSelectedTab = it }
                         )
                         appNavHabits(navController = navController)
+                        appNavHabitDetailRedesign(navController = navController)
                         appNavToday(navController = navController)
                         appNavGoalsRedesign(navController = navController)
+                        appNavGoalDetailRedesign(navController = navController)
                         appNavYouRedesign(navController = navController)
                         appNavOnboardingRedesign(navController = navController)
                         appNavCoach(navController = navController)
