@@ -132,6 +132,7 @@ fun HomeScreen(
     val objectiveViewModel: BeginnerObjectiveViewModel = koinViewModel()
     val abilityViewModel: AbilityViewModel = koinViewModel()
     val homeViewModel: HomeViewModel = koinViewModel()
+    val possibilityViewModel: PossibilityViewModel = koinViewModel()
     val healthViewModel: HealthViewModel = koinViewModel()
     val balanceViewModel: LifeBalanceViewModel = koinViewModel()
 
@@ -145,6 +146,7 @@ fun HomeScreen(
     val userProgress by gamificationViewModel.userProgress.collectAsState()
     val newBadges by gamificationViewModel.newBadges.collectAsState()
     val goals by viewModel.goals.collectAsState()
+    val possibilities by possibilityViewModel.options.collectAsState()
     val habits by habitViewModel.habits.collectAsState()
     val abilities by abilityViewModel.abilities.collectAsState()
     val weeklySnapshots by homeViewModel.weeklySnapshots.collectAsState()
@@ -399,6 +401,23 @@ fun HomeScreen(
                         )
                     }
                 }
+            }
+
+            // ── Pillar 2: "Right now you could…" context-fit options ────────────
+            item(key = "possibility_engine") {
+                RightNowCard(
+                    options = possibilities,
+                    onOptionClick = { option ->
+                        when (option.type) {
+                            az.tribe.lifeplanner.domain.model.ActionOptionType.HABIT -> onNavigateToHabits()
+                            else -> {
+                                val gid = option.goalId ?: option.refId
+                                goals.find { it.id == gid }?.let(onGoalClick)
+                            }
+                        }
+                    },
+                    modifier = Modifier.padding(horizontal = LifePlannerDesign.Padding.screenHorizontal)
+                )
             }
 
             // ── 6. Today's pulse (habits + focus + steps in one card) ───────────

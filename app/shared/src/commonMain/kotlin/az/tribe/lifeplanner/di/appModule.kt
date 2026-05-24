@@ -254,6 +254,8 @@ val appModule = module {
     single { ReviewMessageBuilder(get()) }
     single<ReminderRepository> { ReminderRepositoryImpl(get(), get(), get()) }
     single { SmartReminderManager(get()) }
+    single { az.tribe.lifeplanner.domain.service.PossibilityEngine() }
+    single { az.tribe.lifeplanner.domain.service.PossibilityContextProvider(get(), get(), get()) }
     single<FocusRepository> { FocusRepositoryImpl(get(), get()) }
     single<AiUsageRepository> { AiUsageRepositoryImpl(get()) }
     single<RetrospectiveRepository> { RetrospectiveRepositoryImpl(get()) }
@@ -365,6 +367,7 @@ val appModule = module {
     viewModel { params -> AbilityDetailViewModel(params.get(), get(), get(), get(), get()) }
     viewModelOf(::HealthViewModel)
     viewModelOf(::HomeViewModel)
+    viewModel { az.tribe.lifeplanner.ui.home.PossibilityViewModel(get(), get()) }
     viewModelOf(::WeeklyEngagementViewModel)
     viewModelOf(::SearchViewModel)
     viewModelOf(::SmartHabitGeneratorViewModel)
