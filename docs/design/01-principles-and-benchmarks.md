@@ -78,10 +78,15 @@ There is no "average user." The experience adapts to the individual's `DecisionP
   that makes a valid personality profile feel like the failure case.
 
 ### P6 — Calm by default, alive on purpose
-Reduce surface area; spend motion and delight only where they carry meaning.
+Reduce surface area; spend motion and delight only where they carry meaning. **The user should
+never feel lost between features** — depth is available, not imposed.
 - **In practice:** small, learnable structure (top-tier apps feel *small*); generous whitespace;
   animation reserved for transitions that aid understanding and for genuine celebratory moments.
-- **Rejects:** dense dashboards, decorative motion everywhere, novelty for its own sake.
+  **Progressive disclosure is the default**: surface the few things that matter now, reveal the
+  rest on request or as the user matures — and only reveal a data feature once it has something
+  *honest* to say (this is where P6 meets P2). See D2 for the operational model.
+- **Rejects:** dense dashboards, decorative motion everywhere, novelty for its own sake, dumping
+  every feature on a new user at once.
 
 ---
 

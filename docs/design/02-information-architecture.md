@@ -1,222 +1,264 @@
 # D2 — Information Architecture & Navigation Redesign
 
-> **TRI-49** · Design Overhaul (**TRI-47**). Turns D1's principles — especially **P1 (agent, not
-> instrument)** and **P6 (calm by default, small surface)** — into a concrete screen map and route
-> structure. Cite D1 principle numbers when justifying a choice.
+> **TRI-49** · Design Overhaul (**TRI-47**). Operationalizes D1's **P6 (calm by default, small
+> surface)** and **P1 (agent, not instrument)** into a concrete nav model, screen map, and route map.
+>
+> **Mandate (from the product owner):** the app must feel *small and unintimidating* — a user should
+> **never feel lost or overwhelmed between features**. Depth is earned and offered, never dumped.
+> This doc treats anti-overwhelm as the primary constraint, not an afterthought.
 
 ---
 
-## 0. Goal of this doc
+## 1. What the best calm apps actually do (research)
 
-Collapse the app's ~30+ destinations into a **small, learnable structure** a new user can hold in
-their head, with an **agency-first front door**. Top-tier apps feel *small*; ours currently feels
-like a drawer of features. This doc defines the target nav model, the screen map, and the route
-map that D7 (screen redesigns) will build against.
+The instinct to *reduce*, not add, is backed by both platform guidance and the apps we benchmark
+against (D1 §3):
+
+- **Material Design — 3–5 bottom-nav destinations, and odd counts (3 or 5) read as calmer.** Past 5,
+  tap targets crowd and the long tail belongs elsewhere (a profile/menu), not in the bar.[^material]
+- **Oura just went the *other* way on tab count — from 5 tabs to 3** (Today / Vitals / My Health) in
+  its redesign, explicitly to cut overwhelm. Its **Today tab is built like a "Top Stories" page** —
+  the most timely, relevant thing first — and the **scores sit at the top of Today**, not in their
+  own tabs. Depth lives one tap down.[^oura]
+- **Whoop** keeps its **Home** as the daily anchor (the three dials live there) and uses a single
+  **"+" action button** for quick verbs (start workout, journal).[^whoop]
+- **Duolingo** keeps **Settings behind the profile icon** — never a tab, never a flat list in your
+  face.[^duo]
+- **Nielsen Norman Group — progressive disclosure**: show the few most-important options first;
+  defer advanced/rare features to a second layer revealed on request. It measurably improves
+  *learnability, efficiency, and error rate*, and "people understand a system better when you help
+  them prioritize."[^nng]
+
+**Four rules we adopt from this:**
+1. **3 tabs.** Odd, calm, Material-endorsed, and the direction the gold-standard data app moved *to*.
+2. **The daily front door is a "top stories" surface** — most relevant thing first, not a dashboard.
+3. **Settings and the long tail live behind the profile**, not in the nav bar.
+4. **Progressive disclosure is the law** — and we add a twist below: *reveal a feature when its data
+   is ready to be honest* (P6 × P2).
 
 ---
 
-## 1. Current-state inventory
+## 2. Current state & why it overwhelms
 
-### 1.1 Bottom navigation — 3 tabs
-`BottomNavItem.items = [Home, Hub, Profile]`:
+**Today: 3 tabs** — `[Home "Life", Hub "My Units", Profile "You"]` — but the middle tab is a **Hub**
+that swaps Journal / Goals / Habits / Abilities behind a hidden `hubSelectedTab` index, and
+everything else (focus, life balance, retrospective, causal insights, health, screen-time,
+reminders, coach, decisions, becoming, wiring, …) is scattered across Home, the Hub, and a long
+Profile menu.
 
-| Tab label | Route | Icon | Reality |
+The tab *count* is already fine. The **overwhelm comes from three things**, all fixable:
+1. **Buried core objects** — Goals and Habits, the heart of a planner, sit two taps deep behind the
+   jargon label "My Units." A new user can't find them. *(violates P6 learnability)*
+2. **A junk-drawer Profile** — ~12 unrelated items in one scroll, no grouping. *(P6)*
+3. **Everything visible at once, from day one** — a brand-new user sees dependency graphs, abilities,
+   causal insights, and decision journals before they have a single goal. *(the overwhelm mandate)*
+
+So the redesign keeps **3 tabs** but (a) gives every object an obvious home, (b) replaces the
+junk-drawer with a structured profile + gear-settings, and (c) **paces feature reveal over time**.
+
+---
+
+## 3. The model: **3 tabs + profile-gear settings + one context "+" + progressive disclosure**
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                      (content)                            │
+│                                                           │
+│                                        ┌──────────┐       │
+│                                        │   "+"    │  ◀ context-aware quick-capture
+│                                        └──────────┘       │
+├───────────────┬───────────────┬───────────────┬──────────┤
+│    Today      │     Goals     │      You       │           ◀ 3 bottom tabs
+│   (agency)    │ (commitments) │ (self + setup) │
+└───────────────┴───────────────┴───────────────┴──────────┘
+```
+
+| Tab | Question it answers | JTBD frequency | Principle |
 |---|---|---|---|
-| **Life** | `home` | Flower | The home/dashboard. |
-| **My Units** | `journal` | SquaresFour | A **Hub** that swaps content by an internal `hubSelectedTab` index. |
-| **You** | `profile` | User | Profile + a long menu of everything else. |
+| **Today** | "What can I do right now?" | every session | P1 agency, P2 (a key signal up top) |
+| **Goals** | "What am I working toward — and why?" | frequent | P4 show-the-why |
+| **You** | "Who am I becoming, and where's my stuff?" | reflective / occasional | P5, Pillars 5/7, P6 |
 
-### 1.2 The "My Units" Hub hides four core objects behind sub-tabs
-`hubSelectedTab` (0–3) swaps the Hub between:
-
-| Sub-tab | Content | Quick action |
-|---|---|---|
-| 0 | **Journal** | Write entry |
-| 1 | **Goals** | Add Goal (`goal_wizard`) |
-| 2 | **Habits** | New Habit (`smart_habit_generator`) |
-| 3 | **Abilities** *(feature-flagged)* | Add Ability |
-
-So **Goals and Habits — the two most important objects in a planner — have no top-level home.**
-They live two interactions deep, behind a jargon label ("My Units", "Abilities") that means
-nothing to a new user.
-
-### 1.3 Full destination inventory (~40 routes)
-Grouped by feature area (baseline + the Free Agents pillar UIs shipped this cycle):
-
-| Area | Routes |
-|---|---|
-| Onboarding / auth | `welcome`, `onboarding`, `coach_onboarding`, `coach_intro/{id}` |
-| Home / agency | `home` (+ Pillar 2 "Right now you could…" card) |
-| Goals | `goals`, `goal_detail/{id}`, `edit_goal/{id}`, `goal_wizard`, `ai_goal_generation`, `templates`, `add_goal_from_template/{id}`, `dependency_graph`, `dependency_graph/{goalId}` |
-| Habits | `habit_tracker`, `add_habit`, `smart_habit_generator` |
-| Journal | `journal`, `journal_wizard`, `journal_entry_detail/{id}` |
-| Focus | `focus_setup` |
-| Decisions *(Pillar 3)* | `decision_journal`, `decision_detail/{id}`, `decision_review`, ChoicePoint sheet |
-| Insight / data | `analytics`, `life_balance`, `screen_time_insight`, `health`, `retrospective`, `causal_insights` *(Pillar 4)* |
-| Identity *(Pillars 5/7)* | `becoming`, `your_wiring` |
-| Gamification | `achievements`, `abilities`, `ability_detail/{id}`, `create_ability` |
-| Coach / chat | `ai_chat`, `ai_chat/{sessionId}`, `create_coach`, `edit_coach/{id}`, `create_group`, `edit_group/{id}`, `coach_profile/{id}` |
-| System | `profile`, `reminders`, `backup_settings`, `feedback`, `search`, `story_reader` |
-
-**~13 feature areas, ~40 routes, 3 tabs** — the surface is large and the entry points are
-inconsistent (some via Hub sub-tab, some via Home, most via the Profile menu junk-drawer).
+Why not a 4th "Insights" tab (my v1 proposal)? Because **Insights isn't a daily action** — and Oura
+proved you can surface the headline signal *on Today* and keep the depth one tap down. A permanent
+Insights tab would spend scarce thumb-space on something used weekly, and add a destination the
+overwhelm mandate tells us to avoid. So **the key signal rides on Today; the full Insights surface
+lives inside You.**
 
 ---
 
-## 2. What's wrong today (measured against D1)
+## 4. Each tab — surface vs. revealed (progressive disclosure within the screen)
 
-1. **No agency-first front door (violates P1).** "Life"/Home shows state, not "what can I do right
-   now?". The Pillar 2 possibilities card was bolted on but the home isn't *organized* around choice.
-2. **Core objects are buried (violates P6 "learnable").** Goals and Habits sit behind the "My Units"
-   Hub's hidden sub-tabs. A first-time user cannot find Goals.
-3. **Jargon labels.** "My Units" and "Abilities" are internal terminology, not user language.
-4. **Insight is scattered (violates P2).** The "mirror" — Life Balance, Causal Insights, calibration,
-   Retrospective, Health, Screen-time, Analytics — is spread across six unrelated entry points with
-   no unified home. The Oura/Whoop benchmark (D1 §3.3–3.4) demands one trustworthy data home.
-5. **Profile is a junk drawer.** Identity (Becoming, Your Wiring), system settings, coach, decisions,
-   and gamification all dumped into one scrolling menu.
-6. **The pillar features have nowhere coherent to live**, so they accreted as Profile menu items.
+Every tab opens to a **calm summary with one clear focus**; depth is a tap away, never on the
+surface.
 
----
+### Today — the agency surface ("top stories" for your life)
+**Surface (always):**
+- **"Right now you could…"** — 1–3 ranked possibilities (Pillar 2), each with its fit reason.
+- **Today's habits** — inline check-in for *today only* (the daily verb; full manager is in Goals).
+- **One headline signal** — a single "becoming / alignment" pulse or today's balance glance
+  (Oura-style, top of Today) — *only once it's honest to show* (see §5).
+- **Pending Choice Point**, if any (Pillar 3) — surfaced as a gentle card, framed per the user's
+  wiring (Pillar 7).
 
-## 3. The redesigned IA
+**Revealed on tap:** a possibility → its goal/focus; the headline → full Insights; a habit → detail.
 
-### 3.1 Nav model: **4 tabs + a context-aware quick-capture action**
-Four is the sweet spot (≤5; top-tier apps rarely exceed it). The real *reduction* vs. today isn't
-the tab count — it's **killing the opaque "My Units" Hub and the Profile junk-drawer**, and giving
-every feature one obvious home. Each tab answers one question the user actually has:
+### Goals — commitments laddered to values
+**Surface:** the goals list (active first), each showing progress + its value tag; one primary
+"new goal" action.
+**Revealed on tap:** goal detail → milestones, the **Why-Chain** (Pillar 1), linked habits/focus;
+**Habits manager** (full CRUD) as a section; *Dependency graph* and *Templates* as advanced entries
+(see §5 — not shown to brand-new users).
 
-| Tab | The question it answers | Principle / benchmark |
-|---|---|---|
-| **Today** | "What can I do right now?" | P1 — the agency surface |
-| **Goals** | "What am I working toward, and why?" | P4 — show the why |
-| **Insights** | "What's actually true about me?" | P2 — mirror, not verdict (Oura/Whoop) |
-| **You** | "Who am I becoming, and my setup" | P5 + Pillar 5/7 |
-
-A persistent **quick-capture "+"** (context-aware, evolving today's per-route action) handles the
-*cross-cutting verbs* that don't deserve a tab: **write a journal entry, start a focus session, log
-a decision, add a goal/habit.** Capture is a verb; the tabs are nouns.
-
-### 3.2 What lives in each tab
-
-```
-TODAY  (home / agency surface)            ← replaces "Life"
-├─ "Right now you could…" possibilities   (Pillar 2)
-├─ Today's habits (inline check-in)       (habits live where they're used daily)
-├─ Active / suggested focus session       (Pillar — focus)
-├─ Pending Choice Points                  (Pillar 3)
-└─ Day intent + quick-capture "+"
-
-GOALS  (commitments, laddered to values)  ← promoted out of the Hub
-├─ Goals list  →  Goal detail
-│   ├─ Milestones
-│   └─ Why-Chain: Focus → Milestone → Goal → Value   (Pillar 1)
-├─ New goal: wizard / from template / AI-generate
-├─ Dependency graph
-└─ Habits manager (full)                  (daily check-in is on Today)
-
-INSIGHTS  (the mirror — one honest data home)   ← NEW consolidation
-├─ Life Balance (the wheel)
-├─ Causal Insights + calibration          (Pillar 4)
-├─ Retrospective / periodic Reviews
-├─ Health
-├─ Screen-time patterns
-└─ Analytics
-
-YOU  (identity + system)                  ← de-junk-drawered
-├─ Becoming — values & identity           (Pillar 5)
-├─ Your Wiring — DecisionProfile          (Pillar 7)
-├─ Decision Journal + Review Decisions    (Pillar 3)
-├─ Abilities & Achievements               (gamification)
-├─ Coach / Chat
-└─ Settings: reminders, backup, feedback, account
-```
-
-### 3.3 Cross-cutting & deep destinations
-- **Quick-capture "+"** → journal entry, focus, log decision, add goal/habit (sheet, context-aware).
-- **Search** → global, from a persistent affordance (top bar), not a tab.
-- **Coach/Chat** → lives under *You*, but also reachable as a floating affordance from *Today*
-  (it's the "thinking partner"; decide prominence in D7).
-- **Onboarding / Welcome / Coach onboarding** → pre-auth flow, outside the tab shell.
-- **Story reader** → content, launched contextually.
+### You — self + setup (organized, not a drawer)
+Grouped sections, each a calm card that drills in — **never a flat 12-item list**:
+- **Identity** — Becoming (Pillar 5), Your Wiring (Pillar 7).
+- **Insights / Patterns** — Life Balance, Causal Insights + calibration (Pillar 4), Retrospective,
+  Health, Screen-time. *(the consolidated "mirror" home)*
+- **Decisions** — Decision Journal + Review Decisions (Pillar 3).
+- **Coach** — chat + personas.
+- **Growth** — Abilities & Achievements.
+- **⚙︎ Settings (gear, top-right)** — Reminders, Backup, Account, Notifications, Feedback, About.
+  *(the Duolingo pattern: the whole config long-tail collapses behind one icon.)*
 
 ---
 
-## 4. New route map
+## 5. The anti-overwhelm engine: **pace the reveal; show a feature when it's ready to be honest**
 
-Routes are string-keyed (existing convention). Most route *strings* survive — the change is which
-**tab owns** them and the death of the Hub sub-tab indirection. Flagged changes only:
+This is the crucial part — *how we guide the user*. Features don't all exist on day one. They
+**arrive as the user grows and as their data becomes truthful.** This unifies P6 (calm) with P2
+(a number is a mirror, not a verdict): a feature that has nothing honest to say yet is **hidden, not
+shown empty or guessing.**
 
-| Route | Today | Goals | Insights | You | Change |
-|---|:--:|:--:|:--:|:--:|---|
-| `home` | ● | | | | becomes **Today**; reorganized around possibilities (P1) |
-| `goals`, `goal_detail/{id}`, `goal_wizard`, `templates`, `ai_goal_generation`, `dependency_graph` | | ● | | | **promoted** out of Hub to a top-level tab |
-| `habit_tracker`, `smart_habit_generator`, `add_habit` | ◐ | ● | | | daily check-in on **Today**; manager under **Goals** |
-| `journal`, `journal_wizard`, `journal_entry_detail/{id}` | ◐ | | | | journal is **quick-capture**, not a Hub sub-tab |
-| `focus_setup` | ● | | | | launched from Today / a goal |
-| `decision_journal`, `decision_detail/{id}`, `decision_review` | | | | ● | grouped under **You → Decisions** |
-| `life_balance`, `causal_insights`, `retrospective`, `health`, `screen_time_insight`, `analytics` | | | ● | | **consolidated** into the new **Insights** tab |
-| `becoming`, `your_wiring` | | | | ● | identity home under **You** |
-| `abilities`, `ability_detail/{id}`, `create_ability`, `achievements` | | | | ● | gamification under **You** (drop "My Units" label) |
-| `ai_chat`, `ai_chat/{id}`, coach CRUD | | | | ● | coach under **You** (+ optional Today affordance) |
-| `reminders`, `backup_settings`, `feedback`, `search`, `story_reader` | | | | ● | system/utility |
+| Stage | Trigger | What's visible | What's still hidden |
+|---|---|---|---|
+| **First run** | onboarding done | Today (1 possibility), create first Goal, add 1 habit, the "why" of one value (P4) | everything advanced |
+| **Getting going** | ≥1 goal + a few check-ins (~days) | Why-Chain, Habits manager, Life Balance starts filling, Becoming begins | causal insights, wiring, decisions, abilities, dependency graph |
+| **Enough signal** | data crosses honesty thresholds | **Your Wiring** appears once the `DecisionProfile` is reliable (**≥10 behavioural signals** — the `TuningInferenceEngine` says "still learning" before that); **Causal Insights** appears at **≥7 days** of data (the `CausalInsightEngine`'s `minSampleSize`); Retrospective after the first full period | power-user tools |
+| **Power user** | sustained, deliberate use | Dependency graph, Abilities, Coach groups, advanced export/backup | — |
 
-> **`terminology.md` follow-up:** the authoritative route list lives in
-> `../lifeplanner-assets/docs/terminology.md` (a separate, non-git asset repo). It should be updated
-> to this map when the routes are implemented in **D7** — tracked as a checklist item there rather
-> than edited blind from here.
+Mechanics:
+- **Reveal, don't gate.** Hidden ≠ locked-behind-paywall. Things *appear* when relevant; a user can
+  always opt into "show everything" in Settings. (We never punish curiosity — P1.)
+- **Data-honesty reveal is the signature move.** "Your Wiring" and "Causal Insights" literally
+  surface the moment the underlying engine has enough samples to be truthful — so the user's first
+  encounter with a feature is *already trustworthy*, never an empty or hand-wavy state. This is
+  uniquely ours: the engines (Pillars 4 & 7) already carry sample-size/confidence, so the UI can pace
+  itself off real readiness.
+- **Onboarding establishes the *why* in minute one** (P4) and drops the user on **Today** with exactly
+  one obvious next action — not a tour of 13 features. (Hands off to **D11**.)
+- **Contextual hints over upfront tutorials** (NN/g): introduce a feature where/when it becomes
+  relevant, not in a front-loaded carousel.
 
 ---
 
-## 5. Navigation-model decisions
+## 6. Settings & the long tail
 
-- **Bottom tab bar** (not a drawer/rail on phones): thumb-reachable, always visible, matches the
-  benchmark set. A `NavigationRail` already exists for large screens — keep it for tablet/landscape.
-- **Tabs are destinations, not a back-stack.** Switching tabs preserves each tab's own stack;
-  re-tapping the active tab pops to its root. (Standard, learnable — P6.)
-- **Modal vs. screen:** quick-capture and Choice Points are **bottom sheets** (lightweight, P1
-  "a quick deliberate re-choice, not a chore"). Detail/editing flows are full screens.
+Everything configuration/utility collapses behind the **⚙︎ gear in You's top bar** (Duolingo
+pattern), grouped: **Account · Notifications & Reminders · Data & Backup · Appearance · Help &
+Feedback · About**. None of these is ever a tab or a top-level Profile row. This single move empties
+most of today's Profile junk-drawer.
+
+---
+
+## 7. Quick-capture "+" — one action, context-aware (not a menu)
+
+A persistent "+" whose **default action matches the current tab**, so it's a single confident tap,
+never a chooser that re-introduces decision load:
+- **Today →** capture (journal / quick note)
+- **Goals →** new goal
+- **You →** (hidden; no capture verb here)
+- Long-press (optional, power users) → the small set of other verbs (start focus, log a decision).
+
+Verbs (journal, focus, log-decision) are **actions**, not destinations — they never deserve a tab.
+(Whoop's "+" validates this.)
+
+---
+
+## 8. Route map (tab ownership)
+
+Route strings mostly survive; the change is *ownership* + killing the Hub indirection. (● primary
+home, ◐ also surfaced, ▷ revealed progressively per §5.)
+
+| Routes | Today | Goals | You | Notes |
+|---|:--:|:--:|:--:|---|
+| `home` | ● | | | becomes **Today** (agency "top stories") |
+| `goals`, `goal_detail/{id}`, `goal_wizard`, `ai_goal_generation`, `add_goal_from_template/{id}` | | ● | | promoted out of the Hub |
+| `templates`, `dependency_graph`, `dependency_graph/{goalId}` | | ▷ | | advanced — revealed for power users |
+| `habit_tracker`, `add_habit`, `smart_habit_generator` | ◐ | ● | | daily check-in on Today; manager in Goals |
+| `journal`, `journal_wizard`, `journal_entry_detail/{id}` | ◐ | | | journal = quick-capture, not a Hub tab |
+| `focus_setup` | ● | | | launched from Today / a goal |
+| `life_balance`, `retrospective`, `health`, `screen_time_insight`, `analytics` | | | ● | **Insights** section in You |
+| `causal_insights` | | | ▷ | You → Insights; revealed at ≥7 days data |
+| `your_wiring` | | | ▷ | You → Identity; revealed at ≥10 signals |
+| `becoming` | ◐ | | ● | You → Identity; a pulse may surface on Today |
+| `decision_journal`, `decision_detail/{id}`, `decision_review` | | | ● | You → Decisions |
+| `abilities`, `ability_detail/{id}`, `create_ability`, `achievements` | | | ▷ | You → Growth (power user) |
+| `ai_chat`, `ai_chat/{id}`, coach CRUD, `coach_profile/{id}` | | | ● | You → Coach (optional Today affordance) |
+| `reminders`, `backup_settings`, `feedback`, `story_reader` | | | ● | behind **⚙︎ Settings** |
+| `search` | ◐ | ◐ | ◐ | global, top-bar affordance, not a tab |
+
+> **`terminology.md` follow-up:** the authoritative route list (`../lifeplanner-assets/docs/
+> terminology.md`, a separate non-git repo) gets updated to this map when routes are implemented in
+> **D7** — a checklist item there, not edited blind from here.
+
+---
+
+## 9. Navigation-model decisions
+
+- **Bottom tab bar** on phones (thumb-reachable, always visible); the existing `NavigationRail` stays
+  for tablet/landscape. 3 destinations, labels + icons, ~56–80dp, subtle elevation (Material).
+- **Tabs preserve independent back-stacks**; re-tapping the active tab pops to its root.
+- **Bottom sheets** for lightweight, in-the-moment things (quick-capture, Choice Points) so they feel
+  like "a quick deliberate re-choice, not a chore" (Pillar 3). Full screens for detail/editing.
 - **Deep links** (Quick-Settings tiles, notifications, widgets) resolve to the owning tab + push the
-  detail — e.g. "add goal" → Goals tab + wizard. (Fixes the dangling deep-link work, ref TRI-10.)
-- **The "+" is contextual**, not a global create-anything menu: its default action matches the
-  current tab (Today → capture; Goals → new goal; etc.).
+  detail (fixes the dangling deep-link work, ref TRI-10).
+- **One headline, never a verdict** (P2): if Today shows a pulse, it's framed as information with a
+  "why," never a grade — and it's absent until honest (§5).
 
 ---
 
-## 6. Migration map (today → target)
+## 10. Migration map (today → target)
 
 | Today | Target |
 |---|---|
-| "Life" tab | **Today** (re-centered on agency) |
-| "My Units" Hub (Journal/Goals/Habits/Abilities sub-tabs) | **dissolved** → Goals tab + Today check-ins + quick-capture + You |
-| "You"/Profile junk-drawer | **You**, organized into Identity / Decisions / Growth / Coach / Settings |
-| Insights scattered across 6 entry points | **Insights** tab (one home) |
-| Goals/Habits 2 levels deep | **top-level** (Goals tab; habits on Today + manager) |
+| "Life" tab | **Today** — re-centered on agency, "top stories" layout |
+| "My Units" Hub (Journal/Goals/Habits/Abilities sub-tabs) | **dissolved** → Goals (top-level) + Today check-ins + quick-capture + You |
+| Goals/Habits two taps deep | **top-level** in Goals; daily habits on Today |
+| Profile junk-drawer (~12 flat items) | **You**, grouped: Identity / Insights / Decisions / Coach / Growth + **⚙︎ Settings** |
+| Insights scattered across 6 entry points | **You → Insights** (one home) + a pulse on Today |
+| Every feature visible from day one | **paced reveal** by stage + data-honesty (§5) |
 
-**Net:** 3 opaque tabs → **4 self-describing tabs**; the buried-objects and junk-drawer problems
-are gone; every pillar feature has a coherent home.
-
----
-
-## 7. Open questions
-
-- **Habits: tab or not?** This proposal puts daily check-ins on **Today** and the manager under
-  **Goals**, keeping 4 tabs. *Alternative:* a dedicated **Habits** tab (5 total) if usage data shows
-  habits are the dominant daily action. Recommend validating with analytics before committing.
-- **One headline metric?** (Carried from D1 §7.) If Insights gets an Oura-style headline (e.g. a
-  "value-alignment pulse"), it lives at the top of the **Insights** tab — but only if we can show it
-  without it reading as a verdict (P2). Decide in **D8**.
-- **Coach prominence.** Thinking-partner positioning argues for a Today affordance; tab economy
-  argues for keeping it under You. Decide in **D7** with the Today layout.
+**Net:** still 3 tabs, but self-describing; nothing buried; the long tail collapses behind a gear;
+and a new user meets the app a few features at a time. Calmer *and* more capable.
 
 ---
 
-## 8. Handoff
+## 11. Open questions
 
-- **D3 (tokens)** is unblocked and independent — start the Compose theme next.
-- **D7 (core screens)** builds directly on this map: Today, Goals, Insights, You are its four
-  primary canvases.
-- **D11 (onboarding)** should drop the user into **Today** with the agency promise (P1) front-loaded.
+- **The Today pulse:** do we ship a single headline signal (value-alignment / becoming) at the top of
+  Today, or keep Today purely action-focused and leave all numbers to Insights? Leaning *yes, one
+  pulse, once honest* — finalize in **D8**.
+- **Coach prominence:** thinking-partner positioning argues for a Today affordance; calm argues for
+  keeping it in You. Decide with the Today layout in **D7**.
+- **"Show everything" escape hatch:** confirm the Settings toggle that opts power users out of paced
+  reveal (some users hate being paced). Recommend including it.
 
-*Next: **D3 — Design system foundations (color, type, spacing, tokens)** → a Compose Multiplatform
-`Theme`, reconciled with the existing `tokens.json` / `figma-variables-*.json` in the assets repo.*
+---
+
+## 12. Handoff
+
+- **D3 (tokens)** — unblocked, independent; build the Compose theme next (reconcile with the existing
+  `tokens.json` / `figma-variables-*.json`).
+- **D7 (core screens)** — Today, Goals, You are the three canvases; build the surface/revealed tiers
+  from §4.
+- **D9/D11 (motivation, onboarding)** — own the §5 reveal schedule and the minute-one "why."
+- **D8 (data-viz)** — decides the Today pulse.
+
+---
+
+[^material]: Material Design — Bottom navigation guidelines (3–5 destinations; odd counts preferred). https://m3.material.io/components/navigation-bar/guidelines · https://m2.material.io/components/bottom-navigation
+[^oura]: Oura — "Introducing the New Oura App Design" (5 tabs → Today / Vitals / My Health; Today as a "Top Stories" page; scores at the top of Today). https://ouraring.com/blog/new-oura-app-experience/
+[^whoop]: WHOOP — App Navigation Bar / The All-New Home Screen (Home holds the dials; "+" quick action). https://support.whoop.com/hc/en-us/articles/360056034814-WHOOP-App-Navigation-Bar
+[^duo]: Duolingo — Settings accessed via the profile icon. https://pageflows.com/post/android/settings/duolingo/
+[^nng]: Nielsen Norman Group — "Progressive Disclosure" (defer advanced features; improves learnability, efficiency, error rate). https://www.nngroup.com/articles/progressive-disclosure/
