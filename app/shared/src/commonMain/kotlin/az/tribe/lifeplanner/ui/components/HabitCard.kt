@@ -68,6 +68,7 @@ fun SwipeableHabitCard(
     onEdit: () -> Unit = {},
     onFocusClick: (() -> Unit)? = null,
     onIncrement: (() -> Unit)? = null,
+    onCardClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -171,7 +172,8 @@ fun SwipeableHabitCard(
                 habitWithStatus = habitWithStatus,
                 onCheckIn = onCheckIn,
                 onFocusClick = onFocusClick,
-                onIncrement = onIncrement
+                onIncrement = onIncrement,
+                onCardClick = onCardClick
             )
         }
     }
@@ -218,6 +220,7 @@ fun HabitCard(
     onCheckIn: (() -> Unit)? = null,
     onFocusClick: (() -> Unit)? = null,
     onIncrement: (() -> Unit)? = null,
+    onCardClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val habit = habitWithStatus.habit
@@ -243,7 +246,8 @@ fun HabitCard(
 
     Box(modifier = modifier.fillMaxWidth()) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth()
+            .then(if (onCardClick != null) Modifier.clickable(onClick = onCardClick) else Modifier),
         shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.medium),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface

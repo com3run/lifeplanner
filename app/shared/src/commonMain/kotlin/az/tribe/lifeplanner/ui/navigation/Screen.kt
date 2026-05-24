@@ -16,6 +16,7 @@ sealed class Screen(val route: String) {
     object GoalDetail : Screen("goal_detail/{goalId}")
     object AiGoalGeneration : Screen("ai_goal_generation")
     object HabitTracker : Screen("habit_tracker")
+    object HabitDetailRedesign : Screen("habit_detail_redesign/{habitId}")
     object AddHabit : Screen("add_habit")
     object Journal : Screen("journal")
     object JournalWizard : Screen("journal_wizard?goalId={goalId}")

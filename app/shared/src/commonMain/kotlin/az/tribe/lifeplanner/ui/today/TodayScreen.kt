@@ -42,6 +42,7 @@ import az.tribe.lifeplanner.ui.theme.modernColors
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.ArrowLeft
+import com.adamglin.phosphoricons.regular.CaretRight
 import com.adamglin.phosphoricons.regular.CheckCircle
 import com.adamglin.phosphoricons.regular.Circle
 import com.adamglin.phosphoricons.regular.Flag
@@ -61,6 +62,7 @@ import kotlin.time.Clock
 fun TodayScreen(
     onBackClick: () -> Unit,
     showBack: Boolean = true,
+    onOpenHabit: (String) -> Unit = {},
     viewModel: TodayViewModel = koinViewModel(),
 ) {
     val habits by viewModel.habitsToday.collectAsState()
@@ -139,7 +141,12 @@ fun TodayScreen(
                 item { Hint("No habits yet — small, repeatable actions go here.") }
             } else {
                 items(habits, key = { it.habit.id }) { h ->
-                    HabitRow(title = h.habit.title, done = h.doneToday, onToggle = { viewModel.checkInHabit(h.habit.id) })
+                    HabitRow(
+                        title = h.habit.title,
+                        done = h.doneToday,
+                        onToggle = { viewModel.checkInHabit(h.habit.id) },
+                        onOpen = { onOpenHabit(h.habit.id) },
+                    )
                 }
             }
         }
@@ -199,10 +206,10 @@ private fun PossibilityCard(title: String, reason: String, isHabit: Boolean, onA
 }
 
 @Composable
-private fun HabitRow(title: String, done: Boolean, onToggle: () -> Unit) {
+private fun HabitRow(title: String, done: Boolean, onToggle: () -> Unit, onOpen: () -> Unit) {
     val c = MaterialTheme.modernColors
     Surface(
-        modifier = Modifier.fillMaxWidth().bouncyClickable(enabled = !done, onClick = onToggle),
+        modifier = Modifier.fillMaxWidth().bouncyClickable(onClick = onOpen),
         color = c.cardBackground,
         shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large),
     ) {
@@ -211,17 +218,26 @@ private fun HabitRow(title: String, done: Boolean, onToggle: () -> Unit) {
             horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            // The check circle toggles the check-in; tapping the rest of the row opens the detail.
             Icon(
                 imageVector = if (done) PhosphorIcons.Regular.CheckCircle else PhosphorIcons.Regular.Circle,
                 contentDescription = if (done) "Done" else "Mark done",
                 tint = if (done) c.success else c.textTertiary,
-                modifier = Modifier.size(LifePlannerDesign.IconSize.large),
+                modifier = Modifier
+                    .size(LifePlannerDesign.IconSize.large)
+                    .bouncyClickable(enabled = !done, onClick = onToggle),
             )
             Text(
                 title,
                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = if (done) FontWeight.Normal else FontWeight.Medium),
                 color = if (done) c.textTertiary else c.textPrimary,
                 modifier = Modifier.weight(1f),
+            )
+            Icon(
+                PhosphorIcons.Regular.CaretRight,
+                contentDescription = null,
+                tint = c.textTertiary,
+                modifier = Modifier.size(LifePlannerDesign.IconSize.small),
             )
         }
     }

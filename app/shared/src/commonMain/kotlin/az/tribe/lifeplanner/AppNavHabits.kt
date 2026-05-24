@@ -32,6 +32,9 @@ internal fun NavGraphBuilder.appNavHabits(navController: NavController) {
                 navController.navigate(Screen.FocusSetup.route) {
                     launchSingleTop = true
                 }
+            },
+            onOpenDetail = { id ->
+                navController.navigate("habit_detail_redesign/$id") { launchSingleTop = true }
             }
         )
     }

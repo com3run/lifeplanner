@@ -361,7 +361,7 @@ fun App(
                             if (hasCompletedOnboarding == true && !CoachOnboardingViewModel.isComplete(settings)) {
                                 settings.putBoolean(CoachOnboardingViewModel.COACH_ONBOARDING_KEY, true)
                             }
-                            val next = if (CoachOnboardingViewModel.isComplete(settings)) Screen.Home.route
+                            val next = if (CoachOnboardingViewModel.isComplete(settings)) Screen.Today.route
                                        else Screen.CoachOnboarding.route
                             navController.navigate(next) { popUpTo(0) { inclusive = true } }
                         }
@@ -563,6 +563,7 @@ fun App(
                             onHubTabSelected = { hubSelectedTab = it }
                         )
                         appNavHabits(navController = navController)
+                        appNavHabitDetailRedesign(navController = navController)
                         appNavToday(navController = navController)
                         appNavGoalsRedesign(navController = navController)
                         appNavGoalDetailRedesign(navController = navController)

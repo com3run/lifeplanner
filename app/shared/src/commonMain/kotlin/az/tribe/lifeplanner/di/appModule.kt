@@ -366,6 +366,7 @@ val appModule = module {
     viewModel { az.tribe.lifeplanner.ui.today.TodayViewModel(get(), get(), get()) }
     viewModel { az.tribe.lifeplanner.ui.goals.GoalsViewModel(get()) }
     viewModel { params -> az.tribe.lifeplanner.ui.goals.GoalDetailViewModel(params.get(), get(), get()) }
+    viewModel { params -> az.tribe.lifeplanner.ui.habit.HabitDetailViewModel(params.get(), get(), get(), get(), get(), get()) }
     viewModelOf(::RetrospectiveViewModel)
     viewModelOf(::BeginnerObjectiveViewModel)
     viewModelOf(::AbilityViewModel)
