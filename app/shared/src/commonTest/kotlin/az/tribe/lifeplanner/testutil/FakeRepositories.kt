@@ -130,7 +130,7 @@ class FakeHabitRepository : HabitRepository {
         if (idx >= 0) { habits[idx] = habits[idx].copy(isActive = false); emitFlow() }
     }
     override suspend fun checkIn(habitId: String, date: LocalDate, notes: String): HabitCheckIn {
-        val ci = HabitCheckIn(Uuid.random().toString(), habitId, date, true, notes)
+        val ci = HabitCheckIn(Uuid.random().toString(), habitId, date, true, notes, count = 1)
         checkIns.add(ci)
         emitFlow()
         return ci
@@ -499,4 +499,26 @@ class FakeGoalHistoryRepository : GoalHistoryRepository {
         changes.add(GoalChange(id, goalId, field, oldValue, newValue, changedAt))
     }
     override suspend fun getHistoryForGoal(goalId: String) = changes.filter { it.goalId == goalId }
+}
+
+// ─── LifeValueRepository ─────────────────────────────────────────────────────
+
+class FakeLifeValueRepository : LifeValueRepository {
+    private val values = mutableListOf<LifeValue>()
+    private val _flow = MutableStateFlow<List<LifeValue>>(emptyList())
+
+    fun setValues(list: List<LifeValue>) { values.clear(); values.addAll(list); emit() }
+    private fun emit() { _flow.value = values.toList() }
+
+    override fun observeAllLifeValues(): Flow<List<LifeValue>> = _flow
+    override suspend fun getAllLifeValues() = values.toList()
+    override suspend fun getActiveLifeValues() = values.filter { it.isActive }
+    override suspend fun getLifeValueById(id: String) = values.find { it.id == id }
+    override suspend fun insertLifeValue(value: LifeValue) { values.add(value); emit() }
+    override suspend fun insertLifeValues(values: List<LifeValue>) { this.values.addAll(values); emit() }
+    override suspend fun updateLifeValue(value: LifeValue) {
+        val idx = values.indexOfFirst { it.id == value.id }
+        if (idx >= 0) { values[idx] = value; emit() }
+    }
+    override suspend fun deleteLifeValueById(id: String) { values.removeAll { it.id == id }; emit() }
 }

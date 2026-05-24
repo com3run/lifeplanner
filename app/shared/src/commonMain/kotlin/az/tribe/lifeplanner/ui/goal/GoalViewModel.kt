@@ -10,6 +10,8 @@ import az.tribe.lifeplanner.data.model.UserQuestionnaireAnswers
 import az.tribe.lifeplanner.domain.model.Goal
 import az.tribe.lifeplanner.domain.model.GoalAnalytics
 import az.tribe.lifeplanner.domain.model.GoalChange
+import az.tribe.lifeplanner.domain.model.LifeValue
+import az.tribe.lifeplanner.domain.repository.LifeValueRepository
 import az.tribe.lifeplanner.domain.enum.GoalFilter
 import az.tribe.lifeplanner.domain.enum.GoalStatus
 import az.tribe.lifeplanner.domain.model.XpRewards
@@ -27,6 +29,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -57,7 +60,8 @@ class GoalViewModel(
     internal val generateAiGoalsUseCase: GenerateAiGoalsUseCase,
     internal val geminiRepository: GeminiRepository,
     internal val smartReminderManager: SmartReminderManager,
-    private val gamificationRepository: GamificationRepository
+    private val gamificationRepository: GamificationRepository,
+    private val lifeValueRepository: LifeValueRepository
 ) : ViewModel() {
 
     // Smart reminder events (one-shot, collected by UI for snackbar)
@@ -102,6 +106,12 @@ class GoalViewModel(
             _isLoading.value = false
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    // Active life values for the "Why this goal?" picker (Pillar 1)
+    val lifeValues: StateFlow<List<LifeValue>> =
+        lifeValueRepository.observeAllLifeValues()
+            .map { values -> values.filter { it.isActive } }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val _analytics = MutableStateFlow<GoalAnalytics?>(null)
     val analytics: StateFlow<GoalAnalytics?> = _analytics
@@ -171,7 +181,16 @@ class GoalViewModel(
     fun updateGoal(goal: Goal) {
         viewModelScope.launch {
             try {
+                val oldGoal = getGoalByIdUseCase(goal.id)
                 updateGoalUseCase(goal)
+                if (oldGoal != null && oldGoal.valueId != goal.valueId) {
+                    logGoalChangeUseCase(
+                        goalId = goal.id,
+                        field = "valueId",
+                        oldValue = oldGoal.valueId,
+                        newValue = goal.valueId ?: ""
+                    )
+                }
                 val result = smartReminderManager.syncRemindersForGoal(goal)
                 if (result.created > 0) {
                     _reminderEvent.emit("Reminders updated for \"${goal.title}\"")

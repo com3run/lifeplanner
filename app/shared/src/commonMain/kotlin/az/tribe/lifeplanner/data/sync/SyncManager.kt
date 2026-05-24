@@ -180,8 +180,11 @@ class SyncManager private constructor(
             return
         }
 
-        // Skip sync for anonymous/guest users — data stays local-only until they create an account
-        val isGuest = supabase?.auth?.currentUserOrNull()?.email.isNullOrBlank()
+        // Skip sync for anonymous/guest users — data stays local-only until they create an account.
+        // When supabase is null (test constructor with injected syncers) treat as non-guest so
+        // the orchestration path actually runs.
+        val isGuest = if (supabase == null) false
+        else supabase.auth.currentUserOrNull()?.email.isNullOrBlank()
         if (isGuest) {
             Logger.d("SyncManager") { "Guest user, skipping sync — data stays on device until account created" }
             _syncStatus.value = _syncStatus.value.copy(state = SyncState.IDLE)

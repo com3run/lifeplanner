@@ -479,7 +479,7 @@ class HabitMapperTest {
             is_deleted = 0L,
             sync_version = 0L,
             last_synced_at = null,
-            count = 1L
+            count = 0L
         )
 
         assertFalse(entity.toDomain().completed)
@@ -581,7 +581,8 @@ class HabitMapperTest {
                 linkedGoalId = null, correlationScore = 0.0, isActive = 1L,
                 createdAt = "2026-01-01T00:00:00", reminderTime = null,
                 sync_updated_at = null, is_deleted = 0L, sync_version = 0L, last_synced_at = null,
-                type = "BUILD", unit = null
+                type = "BUILD",
+                unit = null
             ),
             HabitEntity(
                 id = "h2", title = "B", description = "", category = "BODY",
@@ -590,7 +591,8 @@ class HabitMapperTest {
                 linkedGoalId = "g1", correlationScore = 0.5, isActive = 0L,
                 createdAt = "2026-01-01T00:00:00", reminderTime = "09:00",
                 sync_updated_at = null, is_deleted = 0L, sync_version = 0L, last_synced_at = null,
-                type = "BUILD", unit = null
+                type = "BUILD",
+                unit = null
             )
         )
 

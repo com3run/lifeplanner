@@ -10,8 +10,7 @@ import az.tribe.lifeplanner.data.sync.SyncStatus
 import az.tribe.lifeplanner.data.sync.TableSyncer
 import az.tribe.lifeplanner.domain.model.User
 import az.tribe.lifeplanner.domain.repository.UserRepository
-import io.github.jan.supabase.auth.Auth
-import io.github.jan.supabase.createSupabaseClient
+import com.russhwolf.settings.MapSettings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -30,9 +29,6 @@ class AuthViewModelTest {
     private lateinit var mockUserRepository: MockUserRepository
     private lateinit var mockSyncManager: SyncManager
     private val testDispatcher = StandardTestDispatcher()
-    private val fakeSupabaseClient = createSupabaseClient("https://fake.supabase.co", "fake-key") {
-        install(Auth)
-    }
 
     @BeforeTest
     fun setup() {
@@ -45,7 +41,7 @@ class AuthViewModelTest {
             connectivityFlow = null,
             syncersProvider = { emptyList() }
         )
-        viewModel = AuthViewModel(mockAuthService, mockUserRepository, mockSyncManager, fakeSupabaseClient)
+        viewModel = AuthViewModel(mockAuthService, mockUserRepository, mockSyncManager, supabaseClient = null, settings = MapSettings())
     }
 
     @AfterTest

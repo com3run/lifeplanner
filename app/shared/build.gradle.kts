@@ -48,6 +48,7 @@ kotlin {
         }
         withHostTest {
             isIncludeAndroidResources = true
+            isReturnDefaultValues = true
         }
     }
 
@@ -187,7 +188,7 @@ sqldelight {
         create("LifePlannerDB") {
             packageName.set("az.tribe.lifeplanner.database")
             schemaOutputDirectory = file("src/commonMain/sqldelight/databases")
-            version = 28 // 22: HabitEntity.unit, 23: CachedPersonaEntity, 24: HabitCheckInEntity.count, 26: CachedPersonaEntity.slug+avatar_url, 27: UserSituationEntity, 28: ScreenTimeEventEntity + UserActivityPattern behavioral columns
+            version = 34 // 22: HabitEntity.unit, 23: CachedPersonaEntity, 24: HabitCheckInEntity.count, 26: CachedPersonaEntity.slug+avatar_url, 27: UserSituationEntity, 28: ScreenTimeEventEntity + UserActivityPattern behavioral columns, 29: LifeValueEntity table, 30: GoalEntity.valueId, 31: DecisionEntity table, 32: Goal.predictedDueDate + Milestone.estimatedEffort, 33: IdentityStatementEntity table, 34: DecisionProfileEntity table
             generateAsync.set(true)
         }
     }
@@ -257,4 +258,15 @@ buildkonfig {
 
 dependencies {
     androidRuntimeClasspath(compose.uiTooling)
+}
+
+// Host unit tests (testAndroidHostTest) spin up ~30 classes' worth of in-memory SQLDelight
+// DBs, Koin graphs and coroutine scopes in one fork. Give that fork a generous heap +
+// metaspace so the whole suite runs in a single Gradle invocation (CI runs it that way). (TRI-69)
+tasks.withType<Test>().configureEach {
+    maxHeapSize = "2g"
+    jvmArgs("-XX:+UseG1GC", "-XX:MaxMetaspaceSize=512m")
+    // Recycle the test JVM each class so leaked coroutine scopes / Dispatchers.IO listeners
+    // (e.g. SyncManager's uncancelled scope) can't accumulate and stall the full-suite run.
+    forkEvery = 1
 }

@@ -279,6 +279,5 @@ private class FakeAiProxyService : AiProxyService {
         messages: List<AiProxyService.ChatMessage>,
         systemPrompt: String?,
         provider: AiProvider?
-    ): kotlinx.coroutines.flow.Flow<AiProxyService.StreamEvent> =
-        kotlinx.coroutines.flow.emptyFlow()
+    ): Flow<AiProxyService.StreamEvent> = kotlinx.coroutines.flow.emptyFlow()
 }

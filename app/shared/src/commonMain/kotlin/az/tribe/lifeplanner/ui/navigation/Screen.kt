@@ -44,4 +44,10 @@ sealed class Screen(val route: String) {
     object CoachOnboarding : Screen("coach_onboarding")
     object CoachIntro : Screen("coach_intro/{coachId}")
     object ScreenTimeInsight : Screen("screen_time_insight")
+    object DecisionJournal : Screen("decision_journal")
+    object DecisionDetail : Screen("decision_detail/{decisionId}")
+    object CausalInsights : Screen("causal_insights")
+    object Becoming : Screen("becoming")
+    object DecisionReview : Screen("decision_review")
+    object YourWiring : Screen("your_wiring")
 }

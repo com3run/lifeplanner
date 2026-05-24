@@ -46,6 +46,8 @@ suspend fun SharedDatabase.insertGoal(goal: GoalEntity) {
             completionRate = goal.completionRate ?: 0.0,
             isArchived = goal.isArchived,
             aiReasoning = goal.aiReasoning,
+            valueId = goal.valueId,
+            predictedDueDate = goal.predictedDueDate,
             sync_updated_at = nowTimestamp(),
             is_deleted = 0L,
             sync_version = 0L,
@@ -71,6 +73,8 @@ suspend fun SharedDatabase.insertGoals(goals: List<GoalEntity>) {
                 completionRate = goal.completionRate,
                 isArchived = goal.isArchived,
                 aiReasoning = goal.aiReasoning,
+                valueId = goal.valueId,
+                predictedDueDate = goal.predictedDueDate,
                 sync_updated_at = nowTimestamp(),
                 is_deleted = 0L,
                 sync_version = 0L,
@@ -115,6 +119,8 @@ suspend fun SharedDatabase.updateGoal(goal: GoalEntity) {
             completionRate = goal.completionRate,
             isArchived = goal.isArchived,
             aiReasoning = goal.aiReasoning,
+            valueId = goal.valueId,
+            predictedDueDate = goal.predictedDueDate,
             id = goal.id,
             createdAt = goal.createdAt
         )
@@ -235,6 +241,7 @@ suspend fun SharedDatabase.insertMilestone(milestone: MilestoneEntity) {
             title = milestone.title,
             isCompleted = milestone.isCompleted,
             dueDate = milestone.dueDate,
+            estimatedEffort = milestone.estimatedEffort,
             createdAt = milestone.createdAt,
             sync_updated_at = nowTimestamp(),
             is_deleted = 0L,
@@ -256,6 +263,7 @@ suspend fun SharedDatabase.updateMilestone(milestone: MilestoneEntity) {
             title = milestone.title,
             isCompleted = milestone.isCompleted,
             dueDate = milestone.dueDate,
+            estimatedEffort = milestone.estimatedEffort,
             id = milestone.id
         )
     }

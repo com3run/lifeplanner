@@ -14,6 +14,7 @@ import az.tribe.lifeplanner.domain.service.SmartReminderManager
 import az.tribe.lifeplanner.testutil.FakeGamificationRepository
 import az.tribe.lifeplanner.testutil.FakeGoalHistoryRepository
 import az.tribe.lifeplanner.testutil.FakeGoalRepository
+import az.tribe.lifeplanner.testutil.FakeLifeValueRepository
 import az.tribe.lifeplanner.testutil.FakeReminderRepository
 import az.tribe.lifeplanner.testutil.testGoal
 import az.tribe.lifeplanner.testutil.testGoalAnalytics
@@ -68,7 +69,8 @@ class GoalViewModelTest {
             generateAiGoalsUseCase = GenerateAiGoalsUseCase(fakeGeminiRepository),
             geminiRepository = fakeGeminiRepository,
             smartReminderManager = SmartReminderManager(FakeReminderRepository()),
-            gamificationRepository = FakeGamificationRepository()
+            gamificationRepository = FakeGamificationRepository(),
+            lifeValueRepository = FakeLifeValueRepository()
         )
     }
 

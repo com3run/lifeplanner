@@ -174,7 +174,9 @@ fun GoalEntity.toDomain(milestones: List<Milestone> = emptyList()): Goal {
         createdAt = parseLocalDateTime(createdAt),
         completionRate = completionRate.toFloat() ?: 0f,
         isArchived = isArchived == 1L,
-        aiReasoning = aiReasoning
+        aiReasoning = aiReasoning,
+        valueId = valueId,
+        predictedDueDate = predictedDueDate?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
     )
 }
 
@@ -193,6 +195,8 @@ fun Goal.toEntity(): GoalEntity {
         completionRate = completionRate.toDouble(),
         isArchived = if (isArchived) 1L else 0L,
         aiReasoning = aiReasoning,
+        valueId = valueId,
+        predictedDueDate = predictedDueDate?.toString(),
         sync_updated_at = Clock.System.now().toString(),
         is_deleted = 0L,
         sync_version = 0L,
@@ -206,7 +210,8 @@ fun MilestoneEntity.toDomain(): Milestone {
         id = id,
         title = title,
         isCompleted = isCompleted == 1L,
-        dueDate = dueDate?.let { LocalDate.parse(it) }
+        dueDate = dueDate?.let { LocalDate.parse(it) },
+        estimatedEffort = estimatedEffort?.toInt()
     )
 }
 
@@ -217,6 +222,7 @@ fun Milestone.toEntity(goalId: String): MilestoneEntity {
         title = title,
         isCompleted = if (isCompleted) 1L else 0L,
         dueDate = dueDate?.toString(),
+        estimatedEffort = estimatedEffort?.toLong(),
         createdAt = Clock.System.now().toString(),
         sync_updated_at = Clock.System.now().toString(),
         is_deleted = 0L,

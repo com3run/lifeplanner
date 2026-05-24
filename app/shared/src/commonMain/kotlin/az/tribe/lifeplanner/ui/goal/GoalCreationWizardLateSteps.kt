@@ -246,6 +246,8 @@ internal fun DetailsStep(
     onDescriptionChange: (String) -> Unit,
     goalCategory: GoalCategory,
     onCategoryChange: (GoalCategory) -> Unit,
+    selectedValueTitle: String?,
+    onValueClick: () -> Unit,
     canProceed: Boolean,
     onNext: () -> Unit
 ) {
@@ -339,6 +341,27 @@ internal fun DetailsStep(
                         selectedBorderWidth = 1.dp
                     ) else FilterChipDefaults.filterChipBorder(enabled = true, selected = false),
                     shape = RoundedCornerShape(50)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Text("Why this goal? (optional)", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 8.dp))
+        Surface(
+            modifier = Modifier.fillMaxWidth().height(56.dp).clickable(onClick = onValueClick),
+            shape = RoundedCornerShape(12.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant
+        ) {
+            Row(
+                modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = selectedValueTitle ?: "Link to a life value",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = if (selectedValueTitle != null) MaterialTheme.colorScheme.onSurface
+                            else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }

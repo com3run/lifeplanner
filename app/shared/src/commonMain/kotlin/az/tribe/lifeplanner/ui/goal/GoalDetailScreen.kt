@@ -87,6 +87,7 @@ fun GoalDetailScreen(
     val goals by viewModel.goals.collectAsState()
     val goal = goals.find { it.id == goalId }
     val dependencyUiState by dependencyViewModel.uiState.collectAsState()
+    val lifeValues by viewModel.lifeValues.collectAsState()
 
     var journalEntries by remember { mutableStateOf<List<JournalEntry>>(emptyList()) }
     var poweredByAbilities by remember { mutableStateOf<List<Ability>>(emptyList()) }
@@ -101,6 +102,7 @@ fun GoalDetailScreen(
     var showHistoryModal by remember { mutableStateOf(false) }
     var showAddDependencySheet by remember { mutableStateOf(false) }
     var showOverflowMenu by remember { mutableStateOf(false) }
+    var showValueSheet by remember { mutableStateOf(false) }
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
     val promptCompleteGoalId by viewModel.promptCompleteGoal.collectAsState()
@@ -262,6 +264,17 @@ fun GoalDetailScreen(
                 )
             }
 
+            // Pillar 1: Why-Chain (value → goal → milestones) + orphan nudge
+            item {
+                val linkedValue = lifeValues.find { it.id == goal.valueId }
+                WhyChainComponent(
+                    valueTitle = linkedValue?.title,
+                    goalTitle = goal.title,
+                    milestoneCount = goal.milestones.size,
+                    onValueClick = { showValueSheet = true }
+                )
+            }
+
             if (!goal.aiReasoning.isNullOrBlank()) {
                 item {
                     AiReasoningCard(reasoning = goal.aiReasoning!!)
@@ -382,4 +395,13 @@ fun GoalDetailScreen(
         message = "Goal Complete!",
         onDismiss = { showGoalCelebration = false }
     )
+
+    if (showValueSheet) {
+        WhyThisGoalBottomSheet(
+            values = lifeValues,
+            selectedValueId = goal.valueId,
+            onSelect = { viewModel.updateGoal(goal.copy(valueId = it)) },
+            onDismiss = { showValueSheet = false }
+        )
+    }
 }

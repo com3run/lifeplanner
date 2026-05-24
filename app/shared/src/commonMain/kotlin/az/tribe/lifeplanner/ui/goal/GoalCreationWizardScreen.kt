@@ -17,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -140,6 +141,11 @@ fun GoalCreationWizardScreen(
     var goalDescription by remember { mutableStateOf("") }
     var goalCategory by remember { mutableStateOf(GoalCategory.CAREER) }
     var aiReasoning by remember { mutableStateOf<String?>(null) }
+
+    // Pillar 1: optional life-value link, set on the DETAILS step
+    val lifeValues by viewModel.lifeValues.collectAsState()
+    var selectedValueId by remember { mutableStateOf<String?>(null) }
+    var showValueSheet by remember { mutableStateOf(false) }
 
     var goalTimeline by remember { mutableStateOf(GoalTimeline.SHORT_TERM) }
     var goalDueDate by remember {
@@ -472,7 +478,8 @@ fun GoalCreationWizardScreen(
             createdAt = now,
             completionRate = 0f,
             isArchived = false,
-            aiReasoning = if (isAiPath) aiReasoning else null
+            aiReasoning = if (isAiPath) aiReasoning else null,
+            valueId = selectedValueId
         )
         viewModel.createGoal(goal)
         aiSuggestedHabits.filter { it.second }.forEach { (habit, _) ->
@@ -574,6 +581,8 @@ fun GoalCreationWizardScreen(
                     onDescriptionChange = { goalDescription = it },
                     goalCategory = goalCategory,
                     onCategoryChange = { goalCategory = it },
+                    selectedValueTitle = lifeValues.find { it.id == selectedValueId }?.title,
+                    onValueClick = { showValueSheet = true },
                     canProceed = goalTitle.isNotBlank() && goalDescription.isNotBlank(),
                     onNext = { step = GoalWizardStep.TIMELINE }
                 )
@@ -642,6 +651,15 @@ fun GoalCreationWizardScreen(
             ) {
                 DatePicker(state = datePickerState)
             }
+        }
+
+        if (showValueSheet) {
+            WhyThisGoalBottomSheet(
+                values = lifeValues,
+                selectedValueId = selectedValueId,
+                onSelect = { selectedValueId = it },
+                onDismiss = { showValueSheet = false }
+            )
         }
     }
 }
