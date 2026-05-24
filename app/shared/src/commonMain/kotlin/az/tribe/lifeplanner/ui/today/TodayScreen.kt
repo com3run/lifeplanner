@@ -32,6 +32,8 @@ import az.tribe.lifeplanner.ui.components.AppButton
 import az.tribe.lifeplanner.ui.components.AppButtonVariant
 import az.tribe.lifeplanner.ui.components.GradientHero
 import az.tribe.lifeplanner.ui.components.IconChip
+import az.tribe.lifeplanner.ui.components.ProgressRing
+import androidx.compose.ui.graphics.Color
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
 import az.tribe.lifeplanner.ui.theme.LifePlannerGradients
 import az.tribe.lifeplanner.ui.theme.bouncyClickable
@@ -94,6 +96,23 @@ fun TodayScreen(
                     title = greeting(),
                     subtitle = if (habits.isEmpty()) "What matters to you right now is your call."
                     else "$doneCount of ${habits.size} habits done today — your call on the rest.",
+                    trailing = if (habits.isEmpty()) null else {
+                        {
+                            ProgressRing(
+                                progress = doneCount.toFloat() / habits.size,
+                                diameter = 64.dp,
+                                strokeWidth = 7.dp,
+                                color = Color.White,
+                                trackColor = Color.White.copy(alpha = 0.3f),
+                            ) {
+                                Text(
+                                    "$doneCount/${habits.size}",
+                                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                    color = Color.White,
+                                )
+                            }
+                        }
+                    },
                 )
             }
 
