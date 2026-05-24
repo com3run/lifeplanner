@@ -47,4 +47,6 @@ sealed class Screen(val route: String) {
     object DecisionJournal : Screen("decision_journal")
     object DecisionDetail : Screen("decision_detail/{decisionId}")
     object CausalInsights : Screen("causal_insights")
+    object Becoming : Screen("becoming")
+    object DecisionReview : Screen("decision_review")
 }

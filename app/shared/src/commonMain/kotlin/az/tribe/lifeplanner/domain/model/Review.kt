@@ -86,7 +86,8 @@ enum class InsightType {
     HABIT_CORRELATION,
     TIME_MANAGEMENT,
     CONSISTENCY,
-    CATEGORY_FOCUS
+    CATEGORY_FOCUS,
+    DECISION_QUALITY
 }
 
 /**

@@ -1,0 +1,15 @@
+-- 33: IdentityStatementEntity table (Pillar 5 — "I'm becoming someone who…")
+CREATE TABLE IF NOT EXISTS IdentityStatementEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    statement TEXT NOT NULL,
+    valueId TEXT,
+    isActive INTEGER NOT NULL DEFAULT 1,
+    sortOrder INTEGER NOT NULL DEFAULT 0,
+    createdAt TEXT NOT NULL,
+    sync_updated_at TEXT,
+    is_deleted INTEGER NOT NULL DEFAULT 0,
+    sync_version INTEGER NOT NULL DEFAULT 0,
+    last_synced_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_identity_statement_value ON IdentityStatementEntity(valueId);

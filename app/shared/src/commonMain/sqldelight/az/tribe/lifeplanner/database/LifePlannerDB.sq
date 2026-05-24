@@ -2348,3 +2348,62 @@ DELETE FROM DecisionEntity WHERE is_deleted = 1 AND last_synced_at IS NOT NULL;
 upsertDecisionFromSync:
 INSERT OR REPLACE INTO DecisionEntity(id, question, optionsConsidered, chosenOption, reasoning, relatedGoalId, expectedOutcome, confidence, decidedAt, actualOutcome, outcomeReviewedAt, outcomeQuality, sync_updated_at, is_deleted, sync_version, last_synced_at)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+-- ============== IdentityStatementEntity (Pillar 5: "I'm becoming someone who…") ==============
+-- Identity layer above XP/levels, tied to a LifeValue (Pillar 1) via valueId (soft ref).
+CREATE TABLE IdentityStatementEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    statement TEXT NOT NULL,
+    valueId TEXT,
+    isActive INTEGER NOT NULL DEFAULT 1,
+    sortOrder INTEGER NOT NULL DEFAULT 0,
+    createdAt TEXT NOT NULL,
+    sync_updated_at TEXT,
+    is_deleted INTEGER NOT NULL DEFAULT 0,
+    sync_version INTEGER NOT NULL DEFAULT 0,
+    last_synced_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_identity_statement_value ON IdentityStatementEntity(valueId);
+
+selectAllIdentityStatements:
+SELECT * FROM IdentityStatementEntity WHERE is_deleted = 0 ORDER BY sortOrder ASC;
+
+selectIdentityStatementById:
+SELECT * FROM IdentityStatementEntity WHERE id = ?;
+
+selectIdentityStatementsByValue:
+SELECT * FROM IdentityStatementEntity WHERE valueId = ? AND is_deleted = 0 ORDER BY sortOrder ASC;
+
+insertIdentityStatement:
+INSERT OR REPLACE INTO IdentityStatementEntity(id, statement, valueId, isActive, sortOrder, createdAt, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+updateIdentityStatement:
+UPDATE IdentityStatementEntity
+SET statement = ?, valueId = ?, isActive = ?, sortOrder = ?, createdAt = ?,
+    sync_updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+WHERE id = ?;
+
+softDeleteIdentityStatement:
+UPDATE IdentityStatementEntity SET is_deleted = 1, sync_updated_at = ? WHERE id = ?;
+
+deleteAllIdentityStatements:
+DELETE FROM IdentityStatementEntity;
+
+-- IdentityStatement sync queries
+getUnsyncedIdentityStatements:
+SELECT * FROM IdentityStatementEntity WHERE (last_synced_at IS NULL OR sync_updated_at > last_synced_at) AND is_deleted = 0;
+
+getDeletedIdentityStatements:
+SELECT * FROM IdentityStatementEntity WHERE is_deleted = 1;
+
+markIdentityStatementSynced:
+UPDATE IdentityStatementEntity SET last_synced_at = ? WHERE id = ?;
+
+purgeDeletedIdentityStatements:
+DELETE FROM IdentityStatementEntity WHERE is_deleted = 1 AND last_synced_at IS NOT NULL;
+
+upsertIdentityStatementFromSync:
+INSERT OR REPLACE INTO IdentityStatementEntity(id, statement, valueId, isActive, sortOrder, createdAt, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);

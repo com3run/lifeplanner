@@ -740,3 +740,24 @@ internal fun migrateToVersion32(db: SupportSQLiteDatabase) {
     addColumnSafe(db, "GoalEntity", "predictedDueDate", "TEXT")
     addColumnSafe(db, "MilestoneEntity", "estimatedEffort", "INTEGER")
 }
+
+internal fun migrateToVersion33(db: SupportSQLiteDatabase) {
+    // Schema v33: IdentityStatementEntity table (Pillar 5 — "I'm becoming someone who…") — matches migration 33.sqm
+    db.execSQL(
+        """
+        CREATE TABLE IF NOT EXISTS IdentityStatementEntity (
+            id TEXT NOT NULL PRIMARY KEY,
+            statement TEXT NOT NULL,
+            valueId TEXT,
+            isActive INTEGER NOT NULL DEFAULT 1,
+            sortOrder INTEGER NOT NULL DEFAULT 0,
+            createdAt TEXT NOT NULL,
+            sync_updated_at TEXT,
+            is_deleted INTEGER NOT NULL DEFAULT 0,
+            sync_version INTEGER NOT NULL DEFAULT 0,
+            last_synced_at TEXT
+        )
+        """.trimIndent()
+    )
+    db.execSQL("CREATE INDEX IF NOT EXISTS idx_identity_statement_value ON IdentityStatementEntity(valueId)")
+}

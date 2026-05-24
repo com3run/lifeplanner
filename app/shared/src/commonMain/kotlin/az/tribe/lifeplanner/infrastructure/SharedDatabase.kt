@@ -58,6 +58,7 @@ class SharedDatabase(
             q.deleteAllAbilityHabitLinks()
             q.deleteAllAbilities()
             q.deleteAllLifeValues()
+            q.deleteAllIdentityStatements()
             q.deleteAllDecisions()
             q.deleteAllGoals()
             q.deleteAllHabits()

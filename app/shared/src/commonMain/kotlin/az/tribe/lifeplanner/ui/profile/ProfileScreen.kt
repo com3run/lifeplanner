@@ -40,6 +40,7 @@ import com.adamglin.phosphoricons.regular.ClockCounterClockwise
 import com.adamglin.phosphoricons.regular.CloudArrowUp
 import com.adamglin.phosphoricons.regular.CloudSlash
 import com.adamglin.phosphoricons.regular.ChartBar
+import com.adamglin.phosphoricons.regular.Scales
 import com.adamglin.phosphoricons.regular.SignOut
 import com.russhwolf.settings.Settings
 import org.koin.compose.koinInject
@@ -61,6 +62,8 @@ fun ProfileScreen(
     onNavigateToScreenTimeInsight: () -> Unit = {},
     onNavigateToDecisions: () -> Unit = {},
     onNavigateToCausalInsights: () -> Unit = {},
+    onNavigateToBecoming: () -> Unit = {},
+    onNavigateToDecisionReview: () -> Unit = {},
     onNavigateToAICoach: () -> Unit,
     onNavigateToSignIn: () -> Unit = {},
     onNavigateToFeedback: () -> Unit = {},
@@ -203,6 +206,8 @@ fun ProfileScreen(
             item { ProfileMenuItem(icon = PhosphorIcons.Regular.ClockCounterClockwise, title = "Day Retrospective", subtitle = "Browse past days and activity", onClick = onNavigateToRetrospective) }
             item { ProfileMenuItem(icon = PhosphorIcons.Regular.ClockCounterClockwise, title = "Decision Journal", subtitle = "Your choices, reasoning, and outcomes", onClick = onNavigateToDecisions) }
             item { ProfileMenuItem(icon = PhosphorIcons.Regular.ChartBar, title = "Causal Insights", subtitle = "What actually drives your progress", onClick = onNavigateToCausalInsights) }
+            item { ProfileMenuItem(icon = PhosphorIcons.Regular.Brain, title = "Becoming", subtitle = "Who you're becoming — values & identity", onClick = onNavigateToBecoming) }
+            item { ProfileMenuItem(icon = PhosphorIcons.Regular.Scales, title = "Review Decisions", subtitle = "Grade your reasoning, not just outcomes", onClick = onNavigateToDecisionReview) }
             item { ProfileMenuItem(icon = PhosphorIcons.Regular.ChartBar, title = "My Patterns", subtitle = "See how you use the app + personalized tips", onClick = onNavigateToScreenTimeInsight) }
             item { ProfileMenuItem(icon = PhosphorIcons.Regular.ChatCircleText, title = "Send Feedback", subtitle = "Report bugs, request features", onClick = onNavigateToFeedback) }
 
