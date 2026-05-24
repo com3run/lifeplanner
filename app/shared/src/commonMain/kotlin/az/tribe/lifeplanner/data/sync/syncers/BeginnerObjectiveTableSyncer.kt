@@ -19,7 +19,10 @@ class BeginnerObjectiveTableSyncer(
     private val settings = Settings()
 
     override suspend fun upsertRemote(dtos: List<BeginnerObjectiveSyncDto>) {
-        supabase.postgrest[tableName].upsert(dtos)
+        // Conflict on the natural key (user + type), not the random UUID primary key.
+        // Otherwise each fresh sign-in mints new UUIDs and stacks a whole new copy of
+        // every objective in the cloud. Requires UNIQUE(user_id, objective_type) remotely.
+        supabase.postgrest[tableName].upsert(dtos) { onConflict = "user_id,objective_type" }
     }
 
     override suspend fun getUnsyncedLocal(): List<BeginnerObjectiveEntity> {
@@ -108,6 +111,13 @@ class BeginnerObjectiveTableSyncer(
         remoteItems.forEach { remote ->
             val local = remoteToLocal(remote)
             upsertLocal(local)
+        }
+
+        // Pulled rows carry the cloud's UUIDs, which may differ from the locally-minted
+        // UUID for the same objective type, collapse to one row per type so the count
+        // can't balloon on sign-in. Cloud is already unique per (user, type).
+        if (remoteItems.isNotEmpty()) {
+            db { it.lifePlannerDBQueries.deduplicateBeginnerObjectives() }
         }
 
         setLastPullTimestamp(now)
