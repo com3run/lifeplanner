@@ -881,6 +881,52 @@ CREATE TRIGGER trg_identity_statements_sync
     FOR EACH ROW EXECUTE FUNCTION update_sync_metadata();
 
 -- ────────────────────────────────────────────────────────────
+-- 2.X decision_profiles  (Pillar 7 — the user's six Innate "wiring" dials)
+-- One row per user. Each dial: value (0..1, neutral 0.5), inference confidence (0..1),
+-- and sample size. Inferred from behaviour; no dial value is "good" or "bad".
+-- ────────────────────────────────────────────────────────────
+
+CREATE TABLE decision_profiles (
+    id           TEXT        PRIMARY KEY,
+    user_id      UUID        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    confidence_threshold_value      DOUBLE PRECISION NOT NULL DEFAULT 0.5,
+    confidence_threshold_confidence DOUBLE PRECISION NOT NULL DEFAULT 0.0,
+    confidence_threshold_samples    INTEGER          NOT NULL DEFAULT 0,
+    novelty_salience_value          DOUBLE PRECISION NOT NULL DEFAULT 0.5,
+    novelty_salience_confidence     DOUBLE PRECISION NOT NULL DEFAULT 0.0,
+    novelty_salience_samples        INTEGER          NOT NULL DEFAULT 0,
+    delay_discounting_value         DOUBLE PRECISION NOT NULL DEFAULT 0.5,
+    delay_discounting_confidence    DOUBLE PRECISION NOT NULL DEFAULT 0.0,
+    delay_discounting_samples       INTEGER          NOT NULL DEFAULT 0,
+    punishment_sensitivity_value      DOUBLE PRECISION NOT NULL DEFAULT 0.5,
+    punishment_sensitivity_confidence DOUBLE PRECISION NOT NULL DEFAULT 0.0,
+    punishment_sensitivity_samples    INTEGER          NOT NULL DEFAULT 0,
+    reward_sensitivity_value          DOUBLE PRECISION NOT NULL DEFAULT 0.5,
+    reward_sensitivity_confidence     DOUBLE PRECISION NOT NULL DEFAULT 0.0,
+    reward_sensitivity_samples        INTEGER          NOT NULL DEFAULT 0,
+    risk_aversion_value             DOUBLE PRECISION NOT NULL DEFAULT 0.5,
+    risk_aversion_confidence        DOUBLE PRECISION NOT NULL DEFAULT 0.0,
+    risk_aversion_samples           INTEGER          NOT NULL DEFAULT 0,
+    -- sync metadata
+    updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    is_deleted   BOOLEAN     NOT NULL DEFAULT FALSE,
+    sync_version BIGINT      NOT NULL DEFAULT 0,
+    UNIQUE (user_id)
+);
+
+CREATE INDEX idx_decision_profiles_user_id ON decision_profiles(user_id);
+
+ALTER TABLE decision_profiles ENABLE ROW LEVEL SECURITY;
+CREATE POLICY decision_profiles_select ON decision_profiles FOR SELECT TO authenticated USING ((select auth.uid()) = user_id);
+CREATE POLICY decision_profiles_insert ON decision_profiles FOR INSERT TO authenticated WITH CHECK ((select auth.uid()) = user_id);
+CREATE POLICY decision_profiles_update ON decision_profiles FOR UPDATE TO authenticated USING ((select auth.uid()) = user_id) WITH CHECK ((select auth.uid()) = user_id);
+CREATE POLICY decision_profiles_delete ON decision_profiles FOR DELETE TO authenticated USING ((select auth.uid()) = user_id);
+
+CREATE TRIGGER trg_decision_profiles_sync
+    BEFORE UPDATE ON decision_profiles
+    FOR EACH ROW EXECUTE FUNCTION update_sync_metadata();
+
+-- ────────────────────────────────────────────────────────────
 -- 7. Tombstone cleanup – hard-delete soft-deleted rows > 30 days
 -- ────────────────────────────────────────────────────────────
 
@@ -898,7 +944,7 @@ BEGIN
             'goal_dependencies', 'chat_sessions', 'chat_messages', 'review_reports',
             'reminders', 'custom_coaches', 'coach_groups', 'coach_group_members',
             'focus_sessions', 'coach_persona_overrides', 'user_situations',
-            'life_values', 'decisions', 'identity_statements'
+            'life_values', 'decisions', 'identity_statements', 'decision_profiles'
         ])
     LOOP
         EXECUTE format(

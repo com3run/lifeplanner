@@ -761,3 +761,36 @@ internal fun migrateToVersion33(db: SupportSQLiteDatabase) {
     )
     db.execSQL("CREATE INDEX IF NOT EXISTS idx_identity_statement_value ON IdentityStatementEntity(valueId)")
 }
+
+internal fun migrateToVersion34(db: SupportSQLiteDatabase) {
+    // Schema v34: DecisionProfileEntity table (Pillar 7 — the user's six Innate "wiring" dials) — matches migration 34.sqm
+    db.execSQL(
+        """
+        CREATE TABLE IF NOT EXISTS DecisionProfileEntity (
+            id TEXT NOT NULL PRIMARY KEY,
+            confidenceThresholdValue REAL NOT NULL DEFAULT 0.5,
+            confidenceThresholdConfidence REAL NOT NULL DEFAULT 0.0,
+            confidenceThresholdSamples INTEGER NOT NULL DEFAULT 0,
+            noveltySalienceValue REAL NOT NULL DEFAULT 0.5,
+            noveltySalienceConfidence REAL NOT NULL DEFAULT 0.0,
+            noveltySalienceSamples INTEGER NOT NULL DEFAULT 0,
+            delayDiscountingValue REAL NOT NULL DEFAULT 0.5,
+            delayDiscountingConfidence REAL NOT NULL DEFAULT 0.0,
+            delayDiscountingSamples INTEGER NOT NULL DEFAULT 0,
+            punishmentSensitivityValue REAL NOT NULL DEFAULT 0.5,
+            punishmentSensitivityConfidence REAL NOT NULL DEFAULT 0.0,
+            punishmentSensitivitySamples INTEGER NOT NULL DEFAULT 0,
+            rewardSensitivityValue REAL NOT NULL DEFAULT 0.5,
+            rewardSensitivityConfidence REAL NOT NULL DEFAULT 0.0,
+            rewardSensitivitySamples INTEGER NOT NULL DEFAULT 0,
+            riskAversionValue REAL NOT NULL DEFAULT 0.5,
+            riskAversionConfidence REAL NOT NULL DEFAULT 0.0,
+            riskAversionSamples INTEGER NOT NULL DEFAULT 0,
+            sync_updated_at TEXT,
+            is_deleted INTEGER NOT NULL DEFAULT 0,
+            sync_version INTEGER NOT NULL DEFAULT 0,
+            last_synced_at TEXT
+        )
+        """.trimIndent()
+    )
+}
