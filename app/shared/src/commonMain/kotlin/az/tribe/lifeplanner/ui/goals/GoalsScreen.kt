@@ -60,6 +60,7 @@ fun GoalsScreen(
     onBackClick: () -> Unit,
     onNewGoal: () -> Unit,
     onOpenGoal: (String) -> Unit,
+    showBack: Boolean = true,
     viewModel: GoalsViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -71,8 +72,10 @@ fun GoalsScreen(
             TopAppBar(
                 title = { Text("Goals", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = "Back", tint = c.textPrimary)
+                    if (showBack) {
+                        IconButton(onClick = onBackClick) {
+                            Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = "Back", tint = c.textPrimary)
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = c.background, titleContentColor = c.textPrimary),

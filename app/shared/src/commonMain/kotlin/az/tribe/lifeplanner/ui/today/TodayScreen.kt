@@ -60,6 +60,7 @@ import kotlin.time.Clock
 @Composable
 fun TodayScreen(
     onBackClick: () -> Unit,
+    showBack: Boolean = true,
     viewModel: TodayViewModel = koinViewModel(),
 ) {
     val habits by viewModel.habitsToday.collectAsState()
@@ -73,8 +74,10 @@ fun TodayScreen(
             TopAppBar(
                 title = { Text("Today", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = "Back", tint = c.textPrimary)
+                    if (showBack) {
+                        IconButton(onClick = onBackClick) {
+                            Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = "Back", tint = c.textPrimary)
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = c.background, titleContentColor = c.textPrimary),

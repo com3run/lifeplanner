@@ -6,11 +6,12 @@ import androidx.navigation.compose.composable
 import az.tribe.lifeplanner.ui.goals.GoalsScreen
 import az.tribe.lifeplanner.ui.navigation.Screen
 
-/** D7 preview route for the redesigned Goals canvas — new-goal and open-goal reuse existing flows. */
+/** The redesigned Goals canvas — now the second bottom-tab (a root). New-goal / open-goal reuse existing flows. */
 internal fun NavGraphBuilder.appNavGoalsRedesign(navController: NavController) {
     composable(Screen.GoalsRedesign.route) {
         GoalsScreen(
-            onBackClick = { navController.popBackStack() },
+            onBackClick = {},
+            showBack = false,
             onNewGoal = { navController.navigate(Screen.GoalWizard.route) { launchSingleTop = true } },
             onOpenGoal = { id -> navController.navigate("goal_detail/$id") { launchSingleTop = true } },
         )

@@ -8,6 +8,7 @@ import az.tribe.lifeplanner.ui.today.TodayScreen
 
 internal fun NavGraphBuilder.appNavToday(navController: NavController) {
     composable(Screen.Today.route) {
-        TodayScreen(onBackClick = { navController.popBackStack() })
+        // Today is now the first bottom-tab (a root) — no back arrow.
+        TodayScreen(onBackClick = {}, showBack = false)
     }
 }

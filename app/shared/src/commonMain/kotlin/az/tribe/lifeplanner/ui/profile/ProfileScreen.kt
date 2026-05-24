@@ -210,9 +210,7 @@ fun ProfileScreen(
                 )
             }
 
-            item { ProfileSectionHeader("New") }
-            item { ProfileMenuItem(icon = PhosphorIcons.Regular.Sun, title = "Today (new design)", subtitle = "Preview the redesigned agency surface", onClick = onNavigateToToday) }
-            item { ProfileMenuItem(icon = PhosphorIcons.Regular.Flag, title = "Goals (new design)", subtitle = "Preview the redesigned goals canvas", onClick = onNavigateToGoalsRedesign) }
+            item { ProfileSectionHeader("Preview") }
             item { ProfileMenuItem(icon = PhosphorIcons.Regular.User, title = "You (new design)", subtitle = "Preview the redesigned profile + dark-mode toggle", onClick = onNavigateToYouRedesign) }
             item { ProfileMenuItem(icon = PhosphorIcons.Regular.Sparkle, title = "Onboarding (new design)", subtitle = "Preview the redesigned first-run flow", onClick = onNavigateToOnboardingRedesign) }
 
