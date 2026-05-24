@@ -80,6 +80,31 @@ internal fun NavGraphBuilder.appNavProfile(
                     launchSingleTop = true
                 }
             },
+            onNavigateToDecisions = {
+                navController.navigate(Screen.DecisionJournal.route) {
+                    launchSingleTop = true
+                }
+            },
+            onNavigateToCausalInsights = {
+                navController.navigate(Screen.CausalInsights.route) {
+                    launchSingleTop = true
+                }
+            },
+            onNavigateToBecoming = {
+                navController.navigate(Screen.Becoming.route) {
+                    launchSingleTop = true
+                }
+            },
+            onNavigateToDecisionReview = {
+                navController.navigate(Screen.DecisionReview.route) {
+                    launchSingleTop = true
+                }
+            },
+            onNavigateToYourWiring = {
+                navController.navigate(Screen.YourWiring.route) {
+                    launchSingleTop = true
+                }
+            },
             onNavigateToRetrospective = {
                 navController.navigate(Screen.Retrospective.route) {
                     launchSingleTop = true

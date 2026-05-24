@@ -65,6 +65,8 @@ CREATE TABLE goals (
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
     completion_rate REAL        NOT NULL DEFAULT 0.0,
     is_archived     BOOLEAN     NOT NULL DEFAULT FALSE,
+    value_id        TEXT,
+    predicted_due_date TEXT,
     -- sync metadata
     updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
     is_deleted   BOOLEAN     NOT NULL DEFAULT FALSE,
@@ -79,6 +81,7 @@ CREATE TABLE milestones (
     title        TEXT        NOT NULL,
     is_completed BOOLEAN     NOT NULL DEFAULT FALSE,
     due_date     TEXT,
+    estimated_effort INTEGER,
     created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
     -- sync metadata
     updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -780,6 +783,150 @@ CREATE TRIGGER trg_user_situations_sync
     FOR EACH ROW EXECUTE FUNCTION update_sync_metadata();
 
 -- ────────────────────────────────────────────────────────────
+-- 2.X life_values  (Pillar 1 — the "reason" layer above goals)
+-- ────────────────────────────────────────────────────────────
+
+CREATE TABLE life_values (
+    id           TEXT        PRIMARY KEY,
+    user_id      UUID        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    title        TEXT        NOT NULL,
+    description  TEXT        NOT NULL DEFAULT '',
+    is_active    BOOLEAN     NOT NULL DEFAULT TRUE,
+    sort_order   INTEGER     NOT NULL DEFAULT 0,
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    -- sync metadata
+    updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    is_deleted   BOOLEAN     NOT NULL DEFAULT FALSE,
+    sync_version BIGINT      NOT NULL DEFAULT 0
+);
+
+CREATE INDEX idx_life_values_user_id ON life_values(user_id);
+
+ALTER TABLE life_values ENABLE ROW LEVEL SECURITY;
+CREATE POLICY life_values_select ON life_values FOR SELECT TO authenticated USING ((select auth.uid()) = user_id);
+CREATE POLICY life_values_insert ON life_values FOR INSERT TO authenticated WITH CHECK ((select auth.uid()) = user_id);
+CREATE POLICY life_values_update ON life_values FOR UPDATE TO authenticated USING ((select auth.uid()) = user_id) WITH CHECK ((select auth.uid()) = user_id);
+CREATE POLICY life_values_delete ON life_values FOR DELETE TO authenticated USING ((select auth.uid()) = user_id);
+
+CREATE TRIGGER trg_life_values_sync
+    BEFORE UPDATE ON life_values
+    FOR EACH ROW EXECUTE FUNCTION update_sync_metadata();
+
+-- ────────────────────────────────────────────────────────────
+-- 2.X decisions  (Pillar 3 — decisions as first-class objects)
+-- ────────────────────────────────────────────────────────────
+
+CREATE TABLE decisions (
+    id                  TEXT        PRIMARY KEY,
+    user_id             UUID        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    question            TEXT        NOT NULL,
+    options_considered  TEXT        NOT NULL DEFAULT '',
+    chosen_option       TEXT        NOT NULL,
+    reasoning           TEXT        NOT NULL DEFAULT '',
+    related_goal_id     TEXT,
+    expected_outcome    TEXT        NOT NULL DEFAULT '',
+    confidence          INTEGER     NOT NULL DEFAULT 50,
+    decided_at          TEXT        NOT NULL,
+    actual_outcome      TEXT,
+    outcome_reviewed_at TEXT,
+    outcome_quality     TEXT,
+    -- sync metadata
+    updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    is_deleted   BOOLEAN     NOT NULL DEFAULT FALSE,
+    sync_version BIGINT      NOT NULL DEFAULT 0
+);
+
+CREATE INDEX idx_decisions_user_id ON decisions(user_id);
+CREATE INDEX idx_decisions_goal ON decisions(related_goal_id);
+
+ALTER TABLE decisions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY decisions_select ON decisions FOR SELECT TO authenticated USING ((select auth.uid()) = user_id);
+CREATE POLICY decisions_insert ON decisions FOR INSERT TO authenticated WITH CHECK ((select auth.uid()) = user_id);
+CREATE POLICY decisions_update ON decisions FOR UPDATE TO authenticated USING ((select auth.uid()) = user_id) WITH CHECK ((select auth.uid()) = user_id);
+CREATE POLICY decisions_delete ON decisions FOR DELETE TO authenticated USING ((select auth.uid()) = user_id);
+
+CREATE TRIGGER trg_decisions_sync
+    BEFORE UPDATE ON decisions
+    FOR EACH ROW EXECUTE FUNCTION update_sync_metadata();
+
+-- ────────────────────────────────────────────────────────────
+-- 2.X identity_statements  (Pillar 5 — "I'm becoming someone who…")
+-- ────────────────────────────────────────────────────────────
+
+CREATE TABLE identity_statements (
+    id           TEXT        PRIMARY KEY,
+    user_id      UUID        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    statement    TEXT        NOT NULL,
+    value_id     TEXT,
+    is_active    BOOLEAN     NOT NULL DEFAULT TRUE,
+    sort_order   INTEGER     NOT NULL DEFAULT 0,
+    created_at   TEXT        NOT NULL,
+    -- sync metadata
+    updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    is_deleted   BOOLEAN     NOT NULL DEFAULT FALSE,
+    sync_version BIGINT      NOT NULL DEFAULT 0
+);
+
+CREATE INDEX idx_identity_statements_user_id ON identity_statements(user_id);
+CREATE INDEX idx_identity_statements_value ON identity_statements(value_id);
+
+ALTER TABLE identity_statements ENABLE ROW LEVEL SECURITY;
+CREATE POLICY identity_statements_select ON identity_statements FOR SELECT TO authenticated USING ((select auth.uid()) = user_id);
+CREATE POLICY identity_statements_insert ON identity_statements FOR INSERT TO authenticated WITH CHECK ((select auth.uid()) = user_id);
+CREATE POLICY identity_statements_update ON identity_statements FOR UPDATE TO authenticated USING ((select auth.uid()) = user_id) WITH CHECK ((select auth.uid()) = user_id);
+CREATE POLICY identity_statements_delete ON identity_statements FOR DELETE TO authenticated USING ((select auth.uid()) = user_id);
+
+CREATE TRIGGER trg_identity_statements_sync
+    BEFORE UPDATE ON identity_statements
+    FOR EACH ROW EXECUTE FUNCTION update_sync_metadata();
+
+-- ────────────────────────────────────────────────────────────
+-- 2.X decision_profiles  (Pillar 7 — the user's six Innate "wiring" dials)
+-- One row per user. Each dial: value (0..1, neutral 0.5), inference confidence (0..1),
+-- and sample size. Inferred from behaviour; no dial value is "good" or "bad".
+-- ────────────────────────────────────────────────────────────
+
+CREATE TABLE decision_profiles (
+    id           TEXT        PRIMARY KEY,
+    user_id      UUID        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    confidence_threshold_value      DOUBLE PRECISION NOT NULL DEFAULT 0.5,
+    confidence_threshold_confidence DOUBLE PRECISION NOT NULL DEFAULT 0.0,
+    confidence_threshold_samples    INTEGER          NOT NULL DEFAULT 0,
+    novelty_salience_value          DOUBLE PRECISION NOT NULL DEFAULT 0.5,
+    novelty_salience_confidence     DOUBLE PRECISION NOT NULL DEFAULT 0.0,
+    novelty_salience_samples        INTEGER          NOT NULL DEFAULT 0,
+    delay_discounting_value         DOUBLE PRECISION NOT NULL DEFAULT 0.5,
+    delay_discounting_confidence    DOUBLE PRECISION NOT NULL DEFAULT 0.0,
+    delay_discounting_samples       INTEGER          NOT NULL DEFAULT 0,
+    punishment_sensitivity_value      DOUBLE PRECISION NOT NULL DEFAULT 0.5,
+    punishment_sensitivity_confidence DOUBLE PRECISION NOT NULL DEFAULT 0.0,
+    punishment_sensitivity_samples    INTEGER          NOT NULL DEFAULT 0,
+    reward_sensitivity_value          DOUBLE PRECISION NOT NULL DEFAULT 0.5,
+    reward_sensitivity_confidence     DOUBLE PRECISION NOT NULL DEFAULT 0.0,
+    reward_sensitivity_samples        INTEGER          NOT NULL DEFAULT 0,
+    risk_aversion_value             DOUBLE PRECISION NOT NULL DEFAULT 0.5,
+    risk_aversion_confidence        DOUBLE PRECISION NOT NULL DEFAULT 0.0,
+    risk_aversion_samples           INTEGER          NOT NULL DEFAULT 0,
+    -- sync metadata
+    updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    is_deleted   BOOLEAN     NOT NULL DEFAULT FALSE,
+    sync_version BIGINT      NOT NULL DEFAULT 0,
+    UNIQUE (user_id)
+);
+
+CREATE INDEX idx_decision_profiles_user_id ON decision_profiles(user_id);
+
+ALTER TABLE decision_profiles ENABLE ROW LEVEL SECURITY;
+CREATE POLICY decision_profiles_select ON decision_profiles FOR SELECT TO authenticated USING ((select auth.uid()) = user_id);
+CREATE POLICY decision_profiles_insert ON decision_profiles FOR INSERT TO authenticated WITH CHECK ((select auth.uid()) = user_id);
+CREATE POLICY decision_profiles_update ON decision_profiles FOR UPDATE TO authenticated USING ((select auth.uid()) = user_id) WITH CHECK ((select auth.uid()) = user_id);
+CREATE POLICY decision_profiles_delete ON decision_profiles FOR DELETE TO authenticated USING ((select auth.uid()) = user_id);
+
+CREATE TRIGGER trg_decision_profiles_sync
+    BEFORE UPDATE ON decision_profiles
+    FOR EACH ROW EXECUTE FUNCTION update_sync_metadata();
+
+-- ────────────────────────────────────────────────────────────
 -- 7. Tombstone cleanup – hard-delete soft-deleted rows > 30 days
 -- ────────────────────────────────────────────────────────────
 
@@ -796,7 +943,8 @@ BEGIN
             'habits', 'habit_check_ins', 'journal_entries', 'badges', 'challenges',
             'goal_dependencies', 'chat_sessions', 'chat_messages', 'review_reports',
             'reminders', 'custom_coaches', 'coach_groups', 'coach_group_members',
-            'focus_sessions', 'coach_persona_overrides', 'user_situations'
+            'focus_sessions', 'coach_persona_overrides', 'user_situations',
+            'life_values', 'decisions', 'identity_statements', 'decision_profiles'
         ])
     LOOP
         EXECUTE format(

@@ -26,6 +26,10 @@ import az.tribe.lifeplanner.data.repository.GoalHistoryRepositoryImpl
 import az.tribe.lifeplanner.data.repository.FocusRepositoryImpl
 import az.tribe.lifeplanner.data.repository.RetrospectiveRepositoryImpl
 import az.tribe.lifeplanner.data.repository.GoalRepositoryImpl
+import az.tribe.lifeplanner.data.repository.LifeValueRepositoryImpl
+import az.tribe.lifeplanner.data.repository.DecisionRepositoryImpl
+import az.tribe.lifeplanner.data.repository.DecisionProfileRepositoryImpl
+import az.tribe.lifeplanner.data.repository.IdentityStatementRepositoryImpl
 import az.tribe.lifeplanner.data.repository.AbilityRepositoryImpl
 import az.tribe.lifeplanner.data.repository.CoachOrchestrator
 import az.tribe.lifeplanner.data.repository.UserSituationRepositoryImpl
@@ -55,6 +59,10 @@ import az.tribe.lifeplanner.domain.repository.GoalHistoryRepository
 import az.tribe.lifeplanner.domain.repository.FocusRepository
 import az.tribe.lifeplanner.domain.repository.RetrospectiveRepository
 import az.tribe.lifeplanner.domain.repository.GoalRepository
+import az.tribe.lifeplanner.domain.repository.LifeValueRepository
+import az.tribe.lifeplanner.domain.repository.DecisionRepository
+import az.tribe.lifeplanner.domain.repository.DecisionProfileRepository
+import az.tribe.lifeplanner.domain.repository.IdentityStatementRepository
 import az.tribe.lifeplanner.domain.repository.AbilityRepository
 import az.tribe.lifeplanner.domain.repository.UserSituationRepository
 import az.tribe.lifeplanner.domain.repository.HealthRepository
@@ -225,6 +233,10 @@ val appModule = module {
     single<GeminiRepository> { GeminiRepositoryImp(get()) }
 
     single<GoalRepository> { GoalRepositoryImpl(get(), get(), get()) }
+    single<LifeValueRepository> { LifeValueRepositoryImpl(get(), get()) }
+    single<DecisionRepository> { DecisionRepositoryImpl(get(), get()) }
+    single<IdentityStatementRepository> { IdentityStatementRepositoryImpl(get(), get()) }
+    single<DecisionProfileRepository> { DecisionProfileRepositoryImpl(get(), get()) }
     single<GoalHistoryRepository> { GoalHistoryRepositoryImpl(get(), get()) }
     single<GamificationRepository> { GamificationRepositoryImpl(get(), get(), get(), get()) }
     single<UserRepository> { UserRepositoryImpl(get(), get()) }
@@ -233,11 +245,19 @@ val appModule = module {
     single<GoalDependencyRepository> { GoalDependencyRepositoryImpl(get(), get()) }
     single<CoachRepository> { CoachRepositoryImpl(get(), get()) }
     single<CoachPostRepository> { CoachPostRepositoryImpl(get()) }
+    single { az.tribe.lifeplanner.domain.service.ChoicePointDetector() }
+    single { az.tribe.lifeplanner.domain.service.CausalInsightEngine() }
+    single { az.tribe.lifeplanner.domain.service.CausalInsightProvider(get(), get(), get(), get(), get()) }
+    single { az.tribe.lifeplanner.domain.service.CalibrationEngine() }
+    single { az.tribe.lifeplanner.domain.service.CalibrationProvider(get(), get(), get()) }
+    single<az.tribe.lifeplanner.core.PremiumGate> { az.tribe.lifeplanner.core.DefaultPremiumGate() }
     single { CoachOrchestrator() }
     single<ChatRepository> { ChatRepositoryImpl(get(), get<AiProxyService>(), get(), get(), get(), get()) }
     single { ReviewMessageBuilder(get()) }
     single<ReminderRepository> { ReminderRepositoryImpl(get(), get(), get()) }
     single { SmartReminderManager(get()) }
+    single { az.tribe.lifeplanner.domain.service.PossibilityEngine() }
+    single { az.tribe.lifeplanner.domain.service.PossibilityContextProvider(get(), get(), get()) }
     single<FocusRepository> { FocusRepositoryImpl(get(), get()) }
     single<AiUsageRepository> { AiUsageRepositoryImpl(get()) }
     single<RetrospectiveRepository> { RetrospectiveRepositoryImpl(get()) }
@@ -253,10 +273,12 @@ val appModule = module {
 
     // Existing Use Cases
     factory { GetAllGoalsUseCase(get()) }
+    factory { az.tribe.lifeplanner.usecases.ComputeValueAlignmentUseCase(get(), get(), get()) }
     factory { GetGoalsByTimelineUseCase(get()) }
     factory { GetGoalsByCategoryUseCase(get()) }
     factory { CreateGoalUseCase(get()) }
     factory { DeleteGoalUseCase(get()) }
+    factory { az.tribe.lifeplanner.usecases.PromoteTopValuesToLifeValuesUseCase(get(), get(), get()) }
     factory { UpdateGoalUseCase(get()) }
     factory { UpdateGoalProgressUseCase(get()) }
     factory { LogGoalChangeUseCase(get()) }
@@ -334,6 +356,11 @@ val appModule = module {
     viewModelOf(::CoachViewModel)
     viewModelOf(::ReminderViewModel)
     viewModelOf(::LifeBalanceViewModel)
+    viewModel { az.tribe.lifeplanner.ui.decision.DecisionViewModel(get(), get(), get(), get(), get()) }
+    viewModel { az.tribe.lifeplanner.ui.causal.CausalInsightsViewModel(get(), get(), get()) }
+    viewModel { az.tribe.lifeplanner.ui.becoming.BecomingViewModel(get(), get(), get()) }
+    viewModel { az.tribe.lifeplanner.ui.decision.MetacognitiveReviewViewModel(get()) }
+    viewModel { az.tribe.lifeplanner.ui.wiring.WiringViewModel(get()) }
     viewModelOf(::BackupViewModel)
     viewModelOf(::FocusViewModel)
     viewModel { az.tribe.lifeplanner.ui.today.TodayViewModel(get(), get()) }
@@ -344,6 +371,7 @@ val appModule = module {
     viewModel { params -> AbilityDetailViewModel(params.get(), get(), get(), get(), get()) }
     viewModelOf(::HealthViewModel)
     viewModelOf(::HomeViewModel)
+    viewModel { az.tribe.lifeplanner.ui.home.PossibilityViewModel(get(), get()) }
     viewModelOf(::WeeklyEngagementViewModel)
     viewModelOf(::SearchViewModel)
     viewModelOf(::SmartHabitGeneratorViewModel)

@@ -682,3 +682,115 @@ internal fun migrateToVersion25(db: SupportSQLiteDatabase) {
         """.trimIndent()
     )
 }
+
+internal fun migrateToVersion29(db: SupportSQLiteDatabase) {
+    // Schema v29: LifeValueEntity table (Pillar 1) — matches migration 29.sqm
+    db.execSQL(
+        """
+        CREATE TABLE IF NOT EXISTS LifeValueEntity (
+            id TEXT NOT NULL PRIMARY KEY,
+            title TEXT NOT NULL,
+            description TEXT NOT NULL DEFAULT '',
+            isActive INTEGER NOT NULL DEFAULT 1,
+            sortOrder INTEGER NOT NULL DEFAULT 0,
+            sync_updated_at TEXT,
+            is_deleted INTEGER NOT NULL DEFAULT 0,
+            sync_version INTEGER NOT NULL DEFAULT 0,
+            last_synced_at TEXT
+        )
+        """.trimIndent()
+    )
+    db.execSQL("CREATE INDEX IF NOT EXISTS idx_life_value_active ON LifeValueEntity(isActive, is_deleted)")
+}
+
+internal fun migrateToVersion30(db: SupportSQLiteDatabase) {
+    // Schema v30: GoalEntity.valueId (Pillar 1 Why-Chain) — matches migration 30.sqm
+    addColumnSafe(db, "GoalEntity", "valueId", "TEXT")
+}
+
+internal fun migrateToVersion31(db: SupportSQLiteDatabase) {
+    // Schema v31: DecisionEntity table (Pillar 3) — matches migration 31.sqm
+    db.execSQL(
+        """
+        CREATE TABLE IF NOT EXISTS DecisionEntity (
+            id TEXT NOT NULL PRIMARY KEY,
+            question TEXT NOT NULL,
+            optionsConsidered TEXT NOT NULL DEFAULT '',
+            chosenOption TEXT NOT NULL,
+            reasoning TEXT NOT NULL DEFAULT '',
+            relatedGoalId TEXT,
+            expectedOutcome TEXT NOT NULL DEFAULT '',
+            confidence INTEGER NOT NULL DEFAULT 50,
+            decidedAt TEXT NOT NULL,
+            actualOutcome TEXT,
+            outcomeReviewedAt TEXT,
+            outcomeQuality TEXT,
+            sync_updated_at TEXT,
+            is_deleted INTEGER NOT NULL DEFAULT 0,
+            sync_version INTEGER NOT NULL DEFAULT 0,
+            last_synced_at TEXT
+        )
+        """.trimIndent()
+    )
+    db.execSQL("CREATE INDEX IF NOT EXISTS idx_decision_goal ON DecisionEntity(relatedGoalId)")
+}
+
+internal fun migrateToVersion32(db: SupportSQLiteDatabase) {
+    // Schema v32: Goal.predictedDueDate + Milestone.estimatedEffort (Pillar 4 Causal Model) — matches migration 32.sqm
+    addColumnSafe(db, "GoalEntity", "predictedDueDate", "TEXT")
+    addColumnSafe(db, "MilestoneEntity", "estimatedEffort", "INTEGER")
+}
+
+internal fun migrateToVersion33(db: SupportSQLiteDatabase) {
+    // Schema v33: IdentityStatementEntity table (Pillar 5 — "I'm becoming someone who…") — matches migration 33.sqm
+    db.execSQL(
+        """
+        CREATE TABLE IF NOT EXISTS IdentityStatementEntity (
+            id TEXT NOT NULL PRIMARY KEY,
+            statement TEXT NOT NULL,
+            valueId TEXT,
+            isActive INTEGER NOT NULL DEFAULT 1,
+            sortOrder INTEGER NOT NULL DEFAULT 0,
+            createdAt TEXT NOT NULL,
+            sync_updated_at TEXT,
+            is_deleted INTEGER NOT NULL DEFAULT 0,
+            sync_version INTEGER NOT NULL DEFAULT 0,
+            last_synced_at TEXT
+        )
+        """.trimIndent()
+    )
+    db.execSQL("CREATE INDEX IF NOT EXISTS idx_identity_statement_value ON IdentityStatementEntity(valueId)")
+}
+
+internal fun migrateToVersion34(db: SupportSQLiteDatabase) {
+    // Schema v34: DecisionProfileEntity table (Pillar 7 — the user's six Innate "wiring" dials) — matches migration 34.sqm
+    db.execSQL(
+        """
+        CREATE TABLE IF NOT EXISTS DecisionProfileEntity (
+            id TEXT NOT NULL PRIMARY KEY,
+            confidenceThresholdValue REAL NOT NULL DEFAULT 0.5,
+            confidenceThresholdConfidence REAL NOT NULL DEFAULT 0.0,
+            confidenceThresholdSamples INTEGER NOT NULL DEFAULT 0,
+            noveltySalienceValue REAL NOT NULL DEFAULT 0.5,
+            noveltySalienceConfidence REAL NOT NULL DEFAULT 0.0,
+            noveltySalienceSamples INTEGER NOT NULL DEFAULT 0,
+            delayDiscountingValue REAL NOT NULL DEFAULT 0.5,
+            delayDiscountingConfidence REAL NOT NULL DEFAULT 0.0,
+            delayDiscountingSamples INTEGER NOT NULL DEFAULT 0,
+            punishmentSensitivityValue REAL NOT NULL DEFAULT 0.5,
+            punishmentSensitivityConfidence REAL NOT NULL DEFAULT 0.0,
+            punishmentSensitivitySamples INTEGER NOT NULL DEFAULT 0,
+            rewardSensitivityValue REAL NOT NULL DEFAULT 0.5,
+            rewardSensitivityConfidence REAL NOT NULL DEFAULT 0.0,
+            rewardSensitivitySamples INTEGER NOT NULL DEFAULT 0,
+            riskAversionValue REAL NOT NULL DEFAULT 0.5,
+            riskAversionConfidence REAL NOT NULL DEFAULT 0.0,
+            riskAversionSamples INTEGER NOT NULL DEFAULT 0,
+            sync_updated_at TEXT,
+            is_deleted INTEGER NOT NULL DEFAULT 0,
+            sync_version INTEGER NOT NULL DEFAULT 0,
+            last_synced_at TEXT
+        )
+        """.trimIndent()
+    )
+}

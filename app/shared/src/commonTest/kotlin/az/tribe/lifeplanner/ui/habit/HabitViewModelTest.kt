@@ -1,6 +1,7 @@
 package az.tribe.lifeplanner.ui.habit
 
 import app.cash.turbine.test
+import com.russhwolf.settings.MapSettings
 import az.tribe.lifeplanner.domain.enum.GoalCategory
 import az.tribe.lifeplanner.domain.enum.HabitFrequency
 import az.tribe.lifeplanner.domain.service.SmartReminderManager
@@ -18,6 +19,7 @@ import az.tribe.lifeplanner.usecases.habit.UncheckHabitUseCase
 import az.tribe.lifeplanner.usecases.habit.UpdateHabitUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -63,7 +65,8 @@ class HabitViewModelTest {
             uncheckHabitUseCase = UncheckHabitUseCase(fakeRepository),
             smartReminderManager = SmartReminderManager(FakeReminderRepository()),
             awardAbilityXpUseCase = AwardAbilityXpUseCase(FakeAbilityRepository()),
-            gamificationRepository = FakeGamificationRepository()
+            gamificationRepository = FakeGamificationRepository(),
+            settings = MapSettings()
         )
     }
 
@@ -127,13 +130,13 @@ class HabitViewModelTest {
     fun `isLoading becomes false after habits emit`() = runTest(testDispatcher) {
         fakeRepository.setHabits(listOf(testHabit()))
         viewModel = createViewModel()
+        // habits is a WhileSubscribed StateFlow; collect it so the load (which flips
+        // isLoading to false via onEach) actually runs.
+        val job = launch { viewModel.habits.collect {} }
         testDispatcher.scheduler.advanceUntilIdle()
 
-        viewModel.isLoading.test {
-            val loading = awaitItem()
-            assertFalse(loading)
-            cancelAndIgnoreRemainingEvents()
-        }
+        assertFalse(viewModel.isLoading.value)
+        job.cancel()
     }
 
     @Test

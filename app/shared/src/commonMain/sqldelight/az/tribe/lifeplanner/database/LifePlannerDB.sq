@@ -13,6 +13,8 @@ CREATE TABLE GoalEntity (
     completionRate REAL NOT NULL DEFAULT 0.0,
     isArchived INTEGER NOT NULL DEFAULT 0,
     aiReasoning TEXT,
+    valueId TEXT,
+    predictedDueDate TEXT,
     sync_updated_at TEXT,
     is_deleted INTEGER NOT NULL DEFAULT 0,
     sync_version INTEGER NOT NULL DEFAULT 0,
@@ -27,8 +29,8 @@ SELECT * FROM GoalEntity WHERE id = ?;
 
 -- Updated insert query with conflict resolution
 insertGoal:
-INSERT OR REPLACE INTO GoalEntity(id, category, title, description, status, timeline, dueDate, progress, notes, createdAt, completionRate, isArchived, aiReasoning, sync_updated_at, is_deleted, sync_version, last_synced_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT OR REPLACE INTO GoalEntity(id, category, title, description, status, timeline, dueDate, progress, notes, createdAt, completionRate, isArchived, aiReasoning, valueId, predictedDueDate, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 selectGoalsByTimeline:
 SELECT * FROM GoalEntity
@@ -58,6 +60,8 @@ SET
   completionRate = ?,
   isArchived = ?,
   aiReasoning = ?,
+  valueId = ?,
+  predictedDueDate = ?,
   sync_updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
 WHERE id = ?;
 
@@ -155,6 +159,7 @@ CREATE TABLE IF NOT EXISTS MilestoneEntity (
     title TEXT NOT NULL,
     isCompleted INTEGER NOT NULL DEFAULT 0,
     dueDate TEXT,
+    estimatedEffort INTEGER,
     createdAt TEXT NOT NULL,
     sync_updated_at TEXT,
     is_deleted INTEGER NOT NULL DEFAULT 0,
@@ -165,8 +170,8 @@ CREATE TABLE IF NOT EXISTS MilestoneEntity (
 
 -- Milestone queries
 insertMilestone:
-INSERT OR REPLACE INTO MilestoneEntity(id, goalId, title, isCompleted, dueDate, createdAt, sync_updated_at, is_deleted, sync_version, last_synced_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT OR REPLACE INTO MilestoneEntity(id, goalId, title, isCompleted, dueDate, estimatedEffort, createdAt, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 getMilestonesByGoalId:
 SELECT * FROM MilestoneEntity
@@ -181,7 +186,7 @@ ORDER BY goalId, createdAt ASC;
 
 updateMilestone:
 UPDATE MilestoneEntity
-SET title = ?, isCompleted = ?, dueDate = ?, sync_updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+SET title = ?, isCompleted = ?, dueDate = ?, estimatedEffort = ?, sync_updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
 WHERE id = ?;
 
 getGoalIdForMilestone:
@@ -1737,12 +1742,12 @@ DELETE FROM FocusSessionEntity WHERE is_deleted = 1 AND last_synced_at IS NOT NU
 -- ============== Upsert From Sync Queries ==============
 
 upsertGoalFromSync:
-INSERT OR REPLACE INTO GoalEntity(id, category, title, description, status, timeline, dueDate, progress, notes, createdAt, completionRate, isArchived, aiReasoning, sync_updated_at, is_deleted, sync_version, last_synced_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT OR REPLACE INTO GoalEntity(id, category, title, description, status, timeline, dueDate, progress, notes, createdAt, completionRate, isArchived, aiReasoning, valueId, predictedDueDate, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 upsertMilestoneFromSync:
-INSERT OR REPLACE INTO MilestoneEntity(id, goalId, title, isCompleted, dueDate, createdAt, sync_updated_at, is_deleted, sync_version, last_synced_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT OR REPLACE INTO MilestoneEntity(id, goalId, title, isCompleted, dueDate, estimatedEffort, createdAt, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 upsertGoalHistoryFromSync:
 INSERT OR REPLACE INTO GoalHistoryEntity(id, goalId, field, oldValue, newValue, changedAt, sync_updated_at, is_deleted, sync_version, last_synced_at)
@@ -2219,3 +2224,243 @@ SELECT * FROM CachedPersonaEntity WHERE is_active = 1;
 
 deleteAllCachedPersonas:
 DELETE FROM CachedPersonaEntity;
+
+-- ============== LifeValueEntity (Pillar 1: the "reason" layer above Goal) ==============
+-- `order` is a SQL reserved word, so the column is named `sortOrder`.
+CREATE TABLE LifeValueEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    isActive INTEGER NOT NULL DEFAULT 1,
+    sortOrder INTEGER NOT NULL DEFAULT 0,
+    sync_updated_at TEXT,
+    is_deleted INTEGER NOT NULL DEFAULT 0,
+    sync_version INTEGER NOT NULL DEFAULT 0,
+    last_synced_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_life_value_active ON LifeValueEntity(isActive, is_deleted);
+
+selectAllLifeValues:
+SELECT * FROM LifeValueEntity WHERE is_deleted = 0 ORDER BY sortOrder ASC;
+
+selectActiveLifeValues:
+SELECT * FROM LifeValueEntity WHERE is_deleted = 0 AND isActive = 1 ORDER BY sortOrder ASC;
+
+selectLifeValueById:
+SELECT * FROM LifeValueEntity WHERE id = ?;
+
+insertLifeValue:
+INSERT OR REPLACE INTO LifeValueEntity(id, title, description, isActive, sortOrder, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+updateLifeValue:
+UPDATE LifeValueEntity
+SET title = ?, description = ?, isActive = ?, sortOrder = ?,
+    sync_updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+WHERE id = ?;
+
+softDeleteLifeValue:
+UPDATE LifeValueEntity SET is_deleted = 1, sync_updated_at = ? WHERE id = ?;
+
+deleteAllLifeValues:
+DELETE FROM LifeValueEntity;
+
+-- LifeValue sync queries
+getUnsyncedLifeValues:
+SELECT * FROM LifeValueEntity WHERE (last_synced_at IS NULL OR sync_updated_at > last_synced_at) AND is_deleted = 0;
+
+getDeletedLifeValues:
+SELECT * FROM LifeValueEntity WHERE is_deleted = 1;
+
+markLifeValueSynced:
+UPDATE LifeValueEntity SET last_synced_at = ? WHERE id = ?;
+
+purgeDeletedLifeValues:
+DELETE FROM LifeValueEntity WHERE is_deleted = 1 AND last_synced_at IS NOT NULL;
+
+upsertLifeValueFromSync:
+INSERT OR REPLACE INTO LifeValueEntity(id, title, description, isActive, sortOrder, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+-- ============== DecisionEntity (Pillar 3: decisions as first-class objects) ==============
+-- optionsConsidered stored as a newline-delimited string; outcomeQuality as the enum name.
+CREATE TABLE DecisionEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    question TEXT NOT NULL,
+    optionsConsidered TEXT NOT NULL DEFAULT '',
+    chosenOption TEXT NOT NULL,
+    reasoning TEXT NOT NULL DEFAULT '',
+    relatedGoalId TEXT,
+    expectedOutcome TEXT NOT NULL DEFAULT '',
+    confidence INTEGER NOT NULL DEFAULT 50,
+    decidedAt TEXT NOT NULL,
+    actualOutcome TEXT,
+    outcomeReviewedAt TEXT,
+    outcomeQuality TEXT,
+    sync_updated_at TEXT,
+    is_deleted INTEGER NOT NULL DEFAULT 0,
+    sync_version INTEGER NOT NULL DEFAULT 0,
+    last_synced_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_decision_goal ON DecisionEntity(relatedGoalId);
+
+selectAllDecisions:
+SELECT * FROM DecisionEntity WHERE is_deleted = 0 ORDER BY decidedAt DESC;
+
+selectDecisionById:
+SELECT * FROM DecisionEntity WHERE id = ?;
+
+selectDecisionsByGoal:
+SELECT * FROM DecisionEntity WHERE relatedGoalId = ? AND is_deleted = 0 ORDER BY decidedAt DESC;
+
+insertDecision:
+INSERT OR REPLACE INTO DecisionEntity(id, question, optionsConsidered, chosenOption, reasoning, relatedGoalId, expectedOutcome, confidence, decidedAt, actualOutcome, outcomeReviewedAt, outcomeQuality, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+updateDecision:
+UPDATE DecisionEntity
+SET question = ?, optionsConsidered = ?, chosenOption = ?, reasoning = ?, relatedGoalId = ?,
+    expectedOutcome = ?, confidence = ?, decidedAt = ?, actualOutcome = ?, outcomeReviewedAt = ?, outcomeQuality = ?,
+    sync_updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+WHERE id = ?;
+
+softDeleteDecision:
+UPDATE DecisionEntity SET is_deleted = 1, sync_updated_at = ? WHERE id = ?;
+
+deleteAllDecisions:
+DELETE FROM DecisionEntity;
+
+-- Decision sync queries
+getUnsyncedDecisions:
+SELECT * FROM DecisionEntity WHERE (last_synced_at IS NULL OR sync_updated_at > last_synced_at) AND is_deleted = 0;
+
+getDeletedDecisions:
+SELECT * FROM DecisionEntity WHERE is_deleted = 1;
+
+markDecisionSynced:
+UPDATE DecisionEntity SET last_synced_at = ? WHERE id = ?;
+
+purgeDeletedDecisions:
+DELETE FROM DecisionEntity WHERE is_deleted = 1 AND last_synced_at IS NOT NULL;
+
+upsertDecisionFromSync:
+INSERT OR REPLACE INTO DecisionEntity(id, question, optionsConsidered, chosenOption, reasoning, relatedGoalId, expectedOutcome, confidence, decidedAt, actualOutcome, outcomeReviewedAt, outcomeQuality, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+-- ============== IdentityStatementEntity (Pillar 5: "I'm becoming someone who…") ==============
+-- Identity layer above XP/levels, tied to a LifeValue (Pillar 1) via valueId (soft ref).
+CREATE TABLE IdentityStatementEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    statement TEXT NOT NULL,
+    valueId TEXT,
+    isActive INTEGER NOT NULL DEFAULT 1,
+    sortOrder INTEGER NOT NULL DEFAULT 0,
+    createdAt TEXT NOT NULL,
+    sync_updated_at TEXT,
+    is_deleted INTEGER NOT NULL DEFAULT 0,
+    sync_version INTEGER NOT NULL DEFAULT 0,
+    last_synced_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_identity_statement_value ON IdentityStatementEntity(valueId);
+
+selectAllIdentityStatements:
+SELECT * FROM IdentityStatementEntity WHERE is_deleted = 0 ORDER BY sortOrder ASC;
+
+selectIdentityStatementById:
+SELECT * FROM IdentityStatementEntity WHERE id = ?;
+
+selectIdentityStatementsByValue:
+SELECT * FROM IdentityStatementEntity WHERE valueId = ? AND is_deleted = 0 ORDER BY sortOrder ASC;
+
+insertIdentityStatement:
+INSERT OR REPLACE INTO IdentityStatementEntity(id, statement, valueId, isActive, sortOrder, createdAt, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+updateIdentityStatement:
+UPDATE IdentityStatementEntity
+SET statement = ?, valueId = ?, isActive = ?, sortOrder = ?, createdAt = ?,
+    sync_updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+WHERE id = ?;
+
+softDeleteIdentityStatement:
+UPDATE IdentityStatementEntity SET is_deleted = 1, sync_updated_at = ? WHERE id = ?;
+
+deleteAllIdentityStatements:
+DELETE FROM IdentityStatementEntity;
+
+-- IdentityStatement sync queries
+getUnsyncedIdentityStatements:
+SELECT * FROM IdentityStatementEntity WHERE (last_synced_at IS NULL OR sync_updated_at > last_synced_at) AND is_deleted = 0;
+
+getDeletedIdentityStatements:
+SELECT * FROM IdentityStatementEntity WHERE is_deleted = 1;
+
+markIdentityStatementSynced:
+UPDATE IdentityStatementEntity SET last_synced_at = ? WHERE id = ?;
+
+purgeDeletedIdentityStatements:
+DELETE FROM IdentityStatementEntity WHERE is_deleted = 1 AND last_synced_at IS NOT NULL;
+
+upsertIdentityStatementFromSync:
+INSERT OR REPLACE INTO IdentityStatementEntity(id, statement, valueId, isActive, sortOrder, createdAt, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+-- ============== DecisionProfileEntity (Pillar 7: the user's six "wiring" dials) ==============
+-- One row per user. Kevin Mitchell's six Innate decision-making dials (Fig 6.2), each with a
+-- value (0..1, neutral 0.5), an inference confidence (0..1), and a sample size. Inferred from
+-- behaviour by the TuningInferenceEngine; no dial value is "good" or "bad".
+CREATE TABLE DecisionProfileEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    confidenceThresholdValue REAL NOT NULL DEFAULT 0.5,
+    confidenceThresholdConfidence REAL NOT NULL DEFAULT 0.0,
+    confidenceThresholdSamples INTEGER NOT NULL DEFAULT 0,
+    noveltySalienceValue REAL NOT NULL DEFAULT 0.5,
+    noveltySalienceConfidence REAL NOT NULL DEFAULT 0.0,
+    noveltySalienceSamples INTEGER NOT NULL DEFAULT 0,
+    delayDiscountingValue REAL NOT NULL DEFAULT 0.5,
+    delayDiscountingConfidence REAL NOT NULL DEFAULT 0.0,
+    delayDiscountingSamples INTEGER NOT NULL DEFAULT 0,
+    punishmentSensitivityValue REAL NOT NULL DEFAULT 0.5,
+    punishmentSensitivityConfidence REAL NOT NULL DEFAULT 0.0,
+    punishmentSensitivitySamples INTEGER NOT NULL DEFAULT 0,
+    rewardSensitivityValue REAL NOT NULL DEFAULT 0.5,
+    rewardSensitivityConfidence REAL NOT NULL DEFAULT 0.0,
+    rewardSensitivitySamples INTEGER NOT NULL DEFAULT 0,
+    riskAversionValue REAL NOT NULL DEFAULT 0.5,
+    riskAversionConfidence REAL NOT NULL DEFAULT 0.0,
+    riskAversionSamples INTEGER NOT NULL DEFAULT 0,
+    sync_updated_at TEXT,
+    is_deleted INTEGER NOT NULL DEFAULT 0,
+    sync_version INTEGER NOT NULL DEFAULT 0,
+    last_synced_at TEXT
+);
+
+selectDecisionProfile:
+SELECT * FROM DecisionProfileEntity WHERE is_deleted = 0 LIMIT 1;
+
+upsertDecisionProfile:
+INSERT OR REPLACE INTO DecisionProfileEntity(id, confidenceThresholdValue, confidenceThresholdConfidence, confidenceThresholdSamples, noveltySalienceValue, noveltySalienceConfidence, noveltySalienceSamples, delayDiscountingValue, delayDiscountingConfidence, delayDiscountingSamples, punishmentSensitivityValue, punishmentSensitivityConfidence, punishmentSensitivitySamples, rewardSensitivityValue, rewardSensitivityConfidence, rewardSensitivitySamples, riskAversionValue, riskAversionConfidence, riskAversionSamples, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+deleteAllDecisionProfiles:
+DELETE FROM DecisionProfileEntity;
+
+-- DecisionProfile sync queries
+getUnsyncedDecisionProfiles:
+SELECT * FROM DecisionProfileEntity WHERE (last_synced_at IS NULL OR sync_updated_at > last_synced_at) AND is_deleted = 0;
+
+getDeletedDecisionProfiles:
+SELECT * FROM DecisionProfileEntity WHERE is_deleted = 1;
+
+markDecisionProfileSynced:
+UPDATE DecisionProfileEntity SET last_synced_at = ? WHERE id = ?;
+
+purgeDeletedDecisionProfiles:
+DELETE FROM DecisionProfileEntity WHERE is_deleted = 1 AND last_synced_at IS NOT NULL;
+
+upsertDecisionProfileFromSync:
+INSERT OR REPLACE INTO DecisionProfileEntity(id, confidenceThresholdValue, confidenceThresholdConfidence, confidenceThresholdSamples, noveltySalienceValue, noveltySalienceConfidence, noveltySalienceSamples, delayDiscountingValue, delayDiscountingConfidence, delayDiscountingSamples, punishmentSensitivityValue, punishmentSensitivityConfidence, punishmentSensitivitySamples, rewardSensitivityValue, rewardSensitivityConfidence, rewardSensitivitySamples, riskAversionValue, riskAversionConfidence, riskAversionSamples, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);

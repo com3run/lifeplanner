@@ -15,7 +15,11 @@ fun createAllSyncers(
         // Tier 1: No FK dependencies
         UserTableSyncer(supabase, db),
         UserSituationTableSyncer(supabase, db),
+        LifeValueTableSyncer(supabase, db),
+        IdentityStatementTableSyncer(supabase, db),  // identity_statements.value_id → life_values (soft ref)
+        DecisionProfileTableSyncer(supabase, db),    // decision_profiles (one row per user)
         GoalTableSyncer(supabase, db),
+        DecisionTableSyncer(supabase, db),   // decisions.related_goal_id → goals (soft ref)
         BadgeTableSyncer(supabase, db),
         CustomCoachTableSyncer(supabase, db),
         CoachGroupTableSyncer(supabase, db),

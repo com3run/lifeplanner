@@ -20,6 +20,82 @@ data class GoalSyncDto(
     @SerialName("completion_rate") val completionRate: Double = 0.0,
     @SerialName("is_archived") val isArchived: Boolean = false,
     @SerialName("ai_reasoning") val aiReasoning: String? = null,
+    @SerialName("value_id") val valueId: String? = null,
+    @SerialName("predicted_due_date") val predictedDueDate: String? = null,
+    @SerialName("updated_at") val updatedAt: String? = null,
+    @SerialName("is_deleted") val isDeleted: Boolean = false,
+    @SerialName("sync_version") val syncVersion: Long = 0
+)
+
+@Serializable
+data class LifeValueSyncDto(
+    val id: String,
+    @SerialName("user_id") val userId: String,
+    val title: String,
+    val description: String = "",
+    @SerialName("is_active") val isActive: Boolean = true,
+    @SerialName("sort_order") val sortOrder: Long = 0,
+    @SerialName("updated_at") val updatedAt: String? = null,
+    @SerialName("is_deleted") val isDeleted: Boolean = false,
+    @SerialName("sync_version") val syncVersion: Long = 0
+)
+
+@Serializable
+data class DecisionSyncDto(
+    val id: String,
+    @SerialName("user_id") val userId: String,
+    val question: String,
+    @SerialName("options_considered") val optionsConsidered: String = "",
+    @SerialName("chosen_option") val chosenOption: String,
+    val reasoning: String = "",
+    @SerialName("related_goal_id") val relatedGoalId: String? = null,
+    @SerialName("expected_outcome") val expectedOutcome: String = "",
+    val confidence: Long = 50,
+    @SerialName("decided_at") val decidedAt: String,
+    @SerialName("actual_outcome") val actualOutcome: String? = null,
+    @SerialName("outcome_reviewed_at") val outcomeReviewedAt: String? = null,
+    @SerialName("outcome_quality") val outcomeQuality: String? = null,
+    @SerialName("updated_at") val updatedAt: String? = null,
+    @SerialName("is_deleted") val isDeleted: Boolean = false,
+    @SerialName("sync_version") val syncVersion: Long = 0
+)
+
+@Serializable
+data class IdentityStatementSyncDto(
+    val id: String,
+    @SerialName("user_id") val userId: String,
+    val statement: String,
+    @SerialName("value_id") val valueId: String? = null,
+    @SerialName("is_active") val isActive: Boolean = true,
+    @SerialName("sort_order") val sortOrder: Long = 0,
+    @SerialName("created_at") val createdAt: String,
+    @SerialName("updated_at") val updatedAt: String? = null,
+    @SerialName("is_deleted") val isDeleted: Boolean = false,
+    @SerialName("sync_version") val syncVersion: Long = 0
+)
+
+@Serializable
+data class DecisionProfileSyncDto(
+    val id: String,
+    @SerialName("user_id") val userId: String,
+    @SerialName("confidence_threshold_value") val confidenceThresholdValue: Double = 0.5,
+    @SerialName("confidence_threshold_confidence") val confidenceThresholdConfidence: Double = 0.0,
+    @SerialName("confidence_threshold_samples") val confidenceThresholdSamples: Long = 0,
+    @SerialName("novelty_salience_value") val noveltySalienceValue: Double = 0.5,
+    @SerialName("novelty_salience_confidence") val noveltySalienceConfidence: Double = 0.0,
+    @SerialName("novelty_salience_samples") val noveltySalienceSamples: Long = 0,
+    @SerialName("delay_discounting_value") val delayDiscountingValue: Double = 0.5,
+    @SerialName("delay_discounting_confidence") val delayDiscountingConfidence: Double = 0.0,
+    @SerialName("delay_discounting_samples") val delayDiscountingSamples: Long = 0,
+    @SerialName("punishment_sensitivity_value") val punishmentSensitivityValue: Double = 0.5,
+    @SerialName("punishment_sensitivity_confidence") val punishmentSensitivityConfidence: Double = 0.0,
+    @SerialName("punishment_sensitivity_samples") val punishmentSensitivitySamples: Long = 0,
+    @SerialName("reward_sensitivity_value") val rewardSensitivityValue: Double = 0.5,
+    @SerialName("reward_sensitivity_confidence") val rewardSensitivityConfidence: Double = 0.0,
+    @SerialName("reward_sensitivity_samples") val rewardSensitivitySamples: Long = 0,
+    @SerialName("risk_aversion_value") val riskAversionValue: Double = 0.5,
+    @SerialName("risk_aversion_confidence") val riskAversionConfidence: Double = 0.0,
+    @SerialName("risk_aversion_samples") val riskAversionSamples: Long = 0,
     @SerialName("updated_at") val updatedAt: String? = null,
     @SerialName("is_deleted") val isDeleted: Boolean = false,
     @SerialName("sync_version") val syncVersion: Long = 0
@@ -33,6 +109,7 @@ data class MilestoneSyncDto(
     val title: String,
     @SerialName("is_completed") val isCompleted: Boolean = false,
     @SerialName("due_date") val dueDate: String? = null,
+    @SerialName("estimated_effort") val estimatedEffort: Long? = null,
     @SerialName("created_at") val createdAt: String,
     @SerialName("updated_at") val updatedAt: String? = null,
     @SerialName("is_deleted") val isDeleted: Boolean = false,
