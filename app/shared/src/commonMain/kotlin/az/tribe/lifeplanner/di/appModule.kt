@@ -144,6 +144,7 @@ import az.tribe.lifeplanner.usecases.UpdateGoalStatusUseCase
 import az.tribe.lifeplanner.usecases.UpdateGoalUseCase
 import az.tribe.lifeplanner.usecases.UpdateMilestoneUseCase
 import com.russhwolf.settings.Settings
+import az.tribe.lifeplanner.ui.theme.ThemeController
 import az.tribe.lifeplanner.ui.planner.WeeklyPlannerViewModel
 import io.github.jan.supabase.auth.auth
 import org.koin.core.module.dsl.viewModel
@@ -157,6 +158,7 @@ val appModule = module {
     single { DatabaseDriverFactory() }
     single { SharedDatabase(get()) }
     single { Settings() }
+    single { ThemeController(get()) }
     single<FileSharer> { createFileSharer() }
     single { WidgetDataSyncService() }
     single { NetworkConnectivityObserver() }
@@ -361,6 +363,8 @@ val appModule = module {
     viewModel { az.tribe.lifeplanner.ui.wiring.WiringViewModel(get()) }
     viewModelOf(::BackupViewModel)
     viewModelOf(::FocusViewModel)
+    viewModel { az.tribe.lifeplanner.ui.today.TodayViewModel(get(), get(), get()) }
+    viewModel { az.tribe.lifeplanner.ui.goals.GoalsViewModel(get()) }
     viewModelOf(::RetrospectiveViewModel)
     viewModelOf(::BeginnerObjectiveViewModel)
     viewModelOf(::AbilityViewModel)

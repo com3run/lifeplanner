@@ -115,6 +115,26 @@ internal fun NavGraphBuilder.appNavProfile(
                     launchSingleTop = true
                 }
             },
+            onNavigateToToday = {
+                navController.navigate(Screen.Today.route) {
+                    launchSingleTop = true
+                }
+            },
+            onNavigateToGoalsRedesign = {
+                navController.navigate(Screen.GoalsRedesign.route) {
+                    launchSingleTop = true
+                }
+            },
+            onNavigateToYouRedesign = {
+                navController.navigate(Screen.YouRedesign.route) {
+                    launchSingleTop = true
+                }
+            },
+            onNavigateToOnboardingRedesign = {
+                navController.navigate(Screen.OnboardingRedesign.route) {
+                    launchSingleTop = true
+                }
+            },
             onNavigateToAICoach = {
                 navController.navigate(Screen.AIChat.route) {
                     launchSingleTop = true

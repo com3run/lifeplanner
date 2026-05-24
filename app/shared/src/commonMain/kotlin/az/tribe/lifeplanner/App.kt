@@ -55,6 +55,9 @@ import az.tribe.lifeplanner.ui.gamification.GamificationEvent
 import az.tribe.lifeplanner.ui.gamification.GamificationViewModel
 import az.tribe.lifeplanner.ui.navigation.Screen
 import az.tribe.lifeplanner.ui.theme.LifePlannerTheme
+import az.tribe.lifeplanner.ui.theme.ThemeController
+import az.tribe.lifeplanner.ui.theme.ThemeMode
+import androidx.compose.foundation.isSystemInDarkTheme
 import az.tribe.lifeplanner.ui.viewmodel.AuthState
 import az.tribe.lifeplanner.ui.viewmodel.AuthViewModel
 import az.tribe.lifeplanner.util.InAppUpdateEffect
@@ -88,7 +91,15 @@ fun App(
     authViewModel: AuthViewModel = koinInject(),
     promoRoute: String? = null
 ) {
-    LifePlannerTheme {
+    // D3 audit G2: appearance follows a persisted preference (defaults to System), not a hardcoded dark.
+    val themeController: ThemeController = koinInject()
+    val themeMode by themeController.mode.collectAsState()
+    val darkTheme = when (themeMode) {
+        ThemeMode.SYSTEM -> isSystemInDarkTheme()
+        ThemeMode.LIGHT -> false
+        ThemeMode.DARK -> true
+    }
+    LifePlannerTheme(darkTheme = darkTheme) {
         var myPushNotificationToken by remember { mutableStateOf("") }
 
         val hasCompletedOnboarding by authViewModel.hasCompletedOnboarding.collectAsState()
@@ -330,7 +341,7 @@ fun App(
                 if (hasCompletedOnboarding == true && !CoachOnboardingViewModel.isComplete(settings)) {
                     settings.putBoolean(CoachOnboardingViewModel.COACH_ONBOARDING_KEY, true)
                 }
-                if (CoachOnboardingViewModel.isComplete(settings)) Screen.Home.route
+                if (CoachOnboardingViewModel.isComplete(settings)) Screen.Today.route
                 else Screen.CoachOnboarding.route
             }
             else -> Screen.CoachOnboarding.route
@@ -416,27 +427,17 @@ fun App(
 
         // Routes where bottom navigation should be visible
         val mainRoutes = buildList {
-            add(Screen.Home.route)
-            add(Screen.Journal.route)
-            if (FeatureFlags.ABILITIES_ENABLED) add(Screen.Abilities.route)
+            add(Screen.Today.route)
+            add(Screen.GoalsRedesign.route)
             add(Screen.Profile.route)
         }
 
         // Tab index for directional slide transitions between bottom nav tabs
-        val tabIndex = if (FeatureFlags.ABILITIES_ENABLED) {
-            mapOf(
-                Screen.Home.route to 0,
-                Screen.Journal.route to 1,
-                Screen.Abilities.route to 2,
-                Screen.Profile.route to 3
-            )
-        } else {
-            mapOf(
-                Screen.Home.route to 0,
-                Screen.Journal.route to 1,
-                Screen.Profile.route to 2
-            )
-        }
+        val tabIndex = mapOf(
+            Screen.Today.route to 0,
+            Screen.GoalsRedesign.route to 1,
+            Screen.Profile.route to 2
+        )
         // Slide offset = 25% of width for a subtle directional hint
         val slideOffset: (Int) -> Int = { fullWidth -> fullWidth / 4 }
 
@@ -562,6 +563,10 @@ fun App(
                             onHubTabSelected = { hubSelectedTab = it }
                         )
                         appNavHabits(navController = navController)
+                        appNavToday(navController = navController)
+                        appNavGoalsRedesign(navController = navController)
+                        appNavYouRedesign(navController = navController)
+                        appNavOnboardingRedesign(navController = navController)
                         appNavCoach(navController = navController)
                         appNavAuth(navController = navController)
                         appNavDecisions(navController = navController)

@@ -8,12 +8,13 @@ import kotlinx.datetime.LocalDateTime
  * Maps to GoalCategory for automatic score calculation.
  */
 enum class LifeArea(val displayName: String, val description: String, val icon: String) {
+    // displayName uses the canonical terminology.md spellings (see GoalCategory.displayName).
     CAREER("Career", "Professional growth, skills, and work achievements", "💼"),
-    MONEY("Money", "Money management, savings, and financial security", "💰"),
-    BODY("Body", "Health, fitness, and physical wellbeing", "💪"),
-    PEOPLE("People", "Friendships, relationships, and social connections", "👥"),
-    WELLBEING("Wellbeing", "Mental health, self-awareness, and emotional balance", "🧠"),
-    PURPOSE("Purpose", "Meaning, mindfulness, and inner peace", "🧘")
+    MONEY("Financial", "Money management, savings, and financial security", "💰"),
+    BODY("Physical", "Health, fitness, and physical wellbeing", "💪"),
+    PEOPLE("Social", "Friendships, relationships, and social connections", "👥"),
+    WELLBEING("Emotional", "Mental health, self-awareness, and emotional balance", "🧠"),
+    PURPOSE("Spiritual", "Meaning, mindfulness, and inner peace", "🧘")
 }
 
 /**

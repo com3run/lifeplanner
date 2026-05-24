@@ -287,13 +287,4 @@ private fun GoalCategory.getGradient(): Brush {
     return Brush.horizontalGradient(colors)
 }
 
-private val GoalCategory.displayName: String
-    get() = when (this) {
-        GoalCategory.CAREER -> "Career"
-        GoalCategory.MONEY -> "Money"
-        GoalCategory.BODY -> "Body"
-        GoalCategory.PEOPLE -> "People"
-        GoalCategory.WELLBEING -> "Wellbeing"
-        GoalCategory.PURPOSE -> "Purpose"
-        GoalCategory.FAMILY -> "Family"
-    }
+// Category display names now come from the canonical GoalCategory.displayName (terminology.md).

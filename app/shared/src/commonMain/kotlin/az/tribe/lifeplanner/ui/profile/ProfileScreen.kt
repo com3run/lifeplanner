@@ -33,6 +33,10 @@ import az.tribe.lifeplanner.ui.viewmodel.*
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.Bell
+import com.adamglin.phosphoricons.regular.Sun
+import com.adamglin.phosphoricons.regular.Flag
+import com.adamglin.phosphoricons.regular.User
+import com.adamglin.phosphoricons.regular.Sparkle
 import com.adamglin.phosphoricons.regular.Brain
 import com.adamglin.phosphoricons.regular.CaretRight
 import com.adamglin.phosphoricons.regular.ChatCircleText
@@ -61,6 +65,10 @@ fun ProfileScreen(
     onNavigateToBackup: () -> Unit,
     onNavigateToRetrospective: () -> Unit = {},
     onNavigateToScreenTimeInsight: () -> Unit = {},
+    onNavigateToToday: () -> Unit = {},
+    onNavigateToGoalsRedesign: () -> Unit = {},
+    onNavigateToYouRedesign: () -> Unit = {},
+    onNavigateToOnboardingRedesign: () -> Unit = {},
     onNavigateToDecisions: () -> Unit = {},
     onNavigateToCausalInsights: () -> Unit = {},
     onNavigateToBecoming: () -> Unit = {},
@@ -201,6 +209,10 @@ fun ProfileScreen(
                     onConnect = calendarPermission.request
                 )
             }
+
+            item { ProfileSectionHeader("Preview") }
+            item { ProfileMenuItem(icon = PhosphorIcons.Regular.User, title = "You (new design)", subtitle = "Preview the redesigned profile + dark-mode toggle", onClick = onNavigateToYouRedesign) }
+            item { ProfileMenuItem(icon = PhosphorIcons.Regular.Sparkle, title = "Onboarding (new design)", subtitle = "Preview the redesigned first-run flow", onClick = onNavigateToOnboardingRedesign) }
 
             item { ProfileSectionHeader("Settings") }
             item { ProfileMenuItem(icon = PhosphorIcons.Regular.Bell, title = "Reminders", subtitle = "Notification preferences", onClick = onNavigateToReminders) }
