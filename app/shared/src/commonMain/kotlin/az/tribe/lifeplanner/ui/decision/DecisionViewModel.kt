@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import az.tribe.lifeplanner.domain.model.ChoicePoint
 import az.tribe.lifeplanner.domain.model.Decision
+import az.tribe.lifeplanner.domain.repository.DecisionProfileRepository
 import az.tribe.lifeplanner.domain.repository.DecisionRepository
 import az.tribe.lifeplanner.domain.repository.GoalRepository
 import az.tribe.lifeplanner.domain.repository.HabitRepository
@@ -41,6 +42,7 @@ class DecisionViewModel(
     private val goalRepository: GoalRepository,
     private val habitRepository: HabitRepository,
     private val detector: ChoicePointDetector,
+    private val decisionProfileRepository: DecisionProfileRepository,
 ) : ViewModel() {
 
     val decisions: StateFlow<List<Decision>> =
@@ -58,7 +60,8 @@ class DecisionViewModel(
                 val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
                 val goals = goalRepository.getActiveGoals()
                 val habits = habitRepository.observeHabitsWithTodayStatus().firstOrNull().orEmpty()
-                detector.detect(today, goals, habits)
+                val profile = decisionProfileRepository.getProfile() // Pillar 7: tune prompts to the user's wiring
+                detector.detect(today, goals, habits, profile)
             } catch (e: Exception) {
                 Logger.w("DecisionViewModel") { "Choice-point detection failed: ${e.message}" }
                 emptyList()

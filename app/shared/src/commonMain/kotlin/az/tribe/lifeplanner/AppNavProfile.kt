@@ -100,6 +100,11 @@ internal fun NavGraphBuilder.appNavProfile(
                     launchSingleTop = true
                 }
             },
+            onNavigateToYourWiring = {
+                navController.navigate(Screen.YourWiring.route) {
+                    launchSingleTop = true
+                }
+            },
             onNavigateToRetrospective = {
                 navController.navigate(Screen.Retrospective.route) {
                     launchSingleTop = true

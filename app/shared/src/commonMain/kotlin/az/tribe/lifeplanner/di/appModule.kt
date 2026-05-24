@@ -352,10 +352,11 @@ val appModule = module {
     viewModelOf(::CoachViewModel)
     viewModelOf(::ReminderViewModel)
     viewModelOf(::LifeBalanceViewModel)
-    viewModel { az.tribe.lifeplanner.ui.decision.DecisionViewModel(get(), get(), get(), get()) }
+    viewModel { az.tribe.lifeplanner.ui.decision.DecisionViewModel(get(), get(), get(), get(), get()) }
     viewModel { az.tribe.lifeplanner.ui.causal.CausalInsightsViewModel(get(), get(), get()) }
     viewModel { az.tribe.lifeplanner.ui.becoming.BecomingViewModel(get(), get(), get()) }
     viewModel { az.tribe.lifeplanner.ui.decision.MetacognitiveReviewViewModel(get()) }
+    viewModel { az.tribe.lifeplanner.ui.wiring.WiringViewModel(get()) }
     viewModelOf(::BackupViewModel)
     viewModelOf(::FocusViewModel)
     viewModelOf(::RetrospectiveViewModel)

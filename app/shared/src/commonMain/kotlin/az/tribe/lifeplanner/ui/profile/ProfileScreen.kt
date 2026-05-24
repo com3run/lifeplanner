@@ -41,6 +41,7 @@ import com.adamglin.phosphoricons.regular.CloudArrowUp
 import com.adamglin.phosphoricons.regular.CloudSlash
 import com.adamglin.phosphoricons.regular.ChartBar
 import com.adamglin.phosphoricons.regular.Scales
+import com.adamglin.phosphoricons.regular.Sliders
 import com.adamglin.phosphoricons.regular.SignOut
 import com.russhwolf.settings.Settings
 import org.koin.compose.koinInject
@@ -64,6 +65,7 @@ fun ProfileScreen(
     onNavigateToCausalInsights: () -> Unit = {},
     onNavigateToBecoming: () -> Unit = {},
     onNavigateToDecisionReview: () -> Unit = {},
+    onNavigateToYourWiring: () -> Unit = {},
     onNavigateToAICoach: () -> Unit,
     onNavigateToSignIn: () -> Unit = {},
     onNavigateToFeedback: () -> Unit = {},
@@ -208,6 +210,7 @@ fun ProfileScreen(
             item { ProfileMenuItem(icon = PhosphorIcons.Regular.ChartBar, title = "Causal Insights", subtitle = "What actually drives your progress", onClick = onNavigateToCausalInsights) }
             item { ProfileMenuItem(icon = PhosphorIcons.Regular.Brain, title = "Becoming", subtitle = "Who you're becoming — values & identity", onClick = onNavigateToBecoming) }
             item { ProfileMenuItem(icon = PhosphorIcons.Regular.Scales, title = "Review Decisions", subtitle = "Grade your reasoning, not just outcomes", onClick = onNavigateToDecisionReview) }
+            item { ProfileMenuItem(icon = PhosphorIcons.Regular.Sliders, title = "Your Wiring", subtitle = "How you're wired — your decision-making profile", onClick = onNavigateToYourWiring) }
             item { ProfileMenuItem(icon = PhosphorIcons.Regular.ChartBar, title = "My Patterns", subtitle = "See how you use the app + personalized tips", onClick = onNavigateToScreenTimeInsight) }
             item { ProfileMenuItem(icon = PhosphorIcons.Regular.ChatCircleText, title = "Send Feedback", subtitle = "Report bugs, request features", onClick = onNavigateToFeedback) }
 
