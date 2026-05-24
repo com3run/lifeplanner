@@ -567,6 +567,7 @@ fun App(
                             onHubTabSelected = { hubSelectedTab = it }
                         )
                         appNavHabits(navController = navController)
+                        appNavToday(navController = navController)
                         appNavCoach(navController = navController)
                         appNavAuth(navController = navController)
                     }

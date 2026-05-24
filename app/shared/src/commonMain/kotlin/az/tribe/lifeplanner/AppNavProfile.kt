@@ -90,6 +90,11 @@ internal fun NavGraphBuilder.appNavProfile(
                     launchSingleTop = true
                 }
             },
+            onNavigateToToday = {
+                navController.navigate(Screen.Today.route) {
+                    launchSingleTop = true
+                }
+            },
             onNavigateToAICoach = {
                 navController.navigate(Screen.AIChat.route) {
                     launchSingleTop = true
