@@ -66,10 +66,29 @@ with its real possibilities + choice points rather than the interim heuristic.
 
 ---
 
+---
+
+## Installment 2 — the Goals screen
+
+`ui/goals/GoalsScreen.kt` + `GoalsViewModel.kt` — the D2 **Goals** canvas ("what am I working toward,
+and why?"). Reachable via **Profile → "Goals (new design)"**.
+
+- **Active first, then Completed**, sorted by nearest due date; each goal a token-pure card: a
+  **category chip** (the now-canonical `displayName` + category color, from G1), title, a custom
+  token-pure progress bar (category color on `surfaceVariant`), and due date.
+- **New goal** (`AppButton`) and tapping a card **reuse the existing flows** (`goal_wizard`,
+  `goal_detail/{id}`) — so it's functional today, not a mock.
+- **Empty state** when there are no goals.
+- **Pillar 1 seam:** `Goal` has no `valueId` on `main` yet, so the visible tag is the category;
+  when Pillar 1 lands, the card grows a **value tag + one-tap Why-Chain** (P4). The card layout
+  already leaves room for it.
+
+Same additive, zero-risk approach as Today (new route, no change to the existing Goals tab).
+
 ## Next
 
-- Continue D7 with **Goals** and **You** (the other two D2 canvases), same token/primitive discipline
-  and empty/error states.
+- Continue D7 with the **You** canvas (the third D2 tab).
+- Promote Today + Goals from preview routes into the bottom-tab shell (the D2 3-tab model) once
+  validated / the pillar stack merges.
 - **D8** decides the Today headline pulse.
-- Build remaining D4 primitives (`AppTextField`, `AppChip`, `AppBottomSheet`, …) as these screens
-  need them.
+- Build remaining D4 primitives (`AppTextField`, `AppChip`, `AppBottomSheet`, …) as screens need them.

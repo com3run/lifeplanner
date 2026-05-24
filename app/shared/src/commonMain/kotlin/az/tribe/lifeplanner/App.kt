@@ -568,6 +568,7 @@ fun App(
                         )
                         appNavHabits(navController = navController)
                         appNavToday(navController = navController)
+                        appNavGoalsRedesign(navController = navController)
                         appNavCoach(navController = navController)
                         appNavAuth(navController = navController)
                     }

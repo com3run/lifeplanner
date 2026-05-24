@@ -34,6 +34,7 @@ import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.Bell
 import com.adamglin.phosphoricons.regular.Sun
+import com.adamglin.phosphoricons.regular.Flag
 import com.adamglin.phosphoricons.regular.Brain
 import com.adamglin.phosphoricons.regular.CaretRight
 import com.adamglin.phosphoricons.regular.ChatCircleText
@@ -61,6 +62,7 @@ fun ProfileScreen(
     onNavigateToRetrospective: () -> Unit = {},
     onNavigateToScreenTimeInsight: () -> Unit = {},
     onNavigateToToday: () -> Unit = {},
+    onNavigateToGoalsRedesign: () -> Unit = {},
     onNavigateToAICoach: () -> Unit,
     onNavigateToSignIn: () -> Unit = {},
     onNavigateToFeedback: () -> Unit = {},
@@ -199,6 +201,7 @@ fun ProfileScreen(
 
             item { ProfileSectionHeader("New") }
             item { ProfileMenuItem(icon = PhosphorIcons.Regular.Sun, title = "Today (new design)", subtitle = "Preview the redesigned agency surface", onClick = onNavigateToToday) }
+            item { ProfileMenuItem(icon = PhosphorIcons.Regular.Flag, title = "Goals (new design)", subtitle = "Preview the redesigned goals canvas", onClick = onNavigateToGoalsRedesign) }
 
             item { ProfileSectionHeader("Settings") }
             item { ProfileMenuItem(icon = PhosphorIcons.Regular.Bell, title = "Reminders", subtitle = "Notification preferences", onClick = onNavigateToReminders) }
