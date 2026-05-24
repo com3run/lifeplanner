@@ -8,6 +8,7 @@ import androidx.navigation.navArgument
 import androidx.savedstate.read
 import az.tribe.lifeplanner.ui.decision.DecisionDetailScreen
 import az.tribe.lifeplanner.ui.decision.DecisionJournalScreen
+import az.tribe.lifeplanner.ui.decision.MetacognitiveReviewScreen
 import az.tribe.lifeplanner.ui.navigation.Screen
 
 internal fun NavGraphBuilder.appNavDecisions(navController: NavController) {
@@ -30,5 +31,9 @@ internal fun NavGraphBuilder.appNavDecisions(navController: NavController) {
             decisionId = decisionId,
             onBackClick = { navController.popBackStack() }
         )
+    }
+
+    composable(Screen.DecisionReview.route) {
+        MetacognitiveReviewScreen(onBackClick = { navController.popBackStack() })
     }
 }
