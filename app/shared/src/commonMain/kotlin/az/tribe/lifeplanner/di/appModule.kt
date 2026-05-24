@@ -363,7 +363,7 @@ val appModule = module {
     viewModel { az.tribe.lifeplanner.ui.wiring.WiringViewModel(get()) }
     viewModelOf(::BackupViewModel)
     viewModelOf(::FocusViewModel)
-    viewModel { az.tribe.lifeplanner.ui.today.TodayViewModel(get(), get()) }
+    viewModel { az.tribe.lifeplanner.ui.today.TodayViewModel(get(), get(), get()) }
     viewModel { az.tribe.lifeplanner.ui.goals.GoalsViewModel(get()) }
     viewModelOf(::RetrospectiveViewModel)
     viewModelOf(::BeginnerObjectiveViewModel)

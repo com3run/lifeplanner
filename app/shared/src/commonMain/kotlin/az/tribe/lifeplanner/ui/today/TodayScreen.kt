@@ -28,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import az.tribe.lifeplanner.domain.model.ActionOptionType
 import az.tribe.lifeplanner.ui.components.AppButton
 import az.tribe.lifeplanner.ui.components.AppButtonVariant
 import az.tribe.lifeplanner.ui.components.GradientHero
@@ -120,12 +121,12 @@ fun TodayScreen(
             if (possibilities.isEmpty()) {
                 item { Hint("Add a goal or a habit and your next best move shows up here.") }
             } else {
-                items(possibilities, key = { it.kind.name + it.targetId }) { p ->
+                items(possibilities, key = { it.type.name + it.refId }) { p ->
                     PossibilityCard(
                         title = p.title,
-                        reason = p.reason,
-                        isHabit = p.kind == Possibility.Kind.HABIT,
-                        onAction = { if (p.kind == Possibility.Kind.HABIT) viewModel.checkInHabit(p.targetId) },
+                        reason = p.fitReason,
+                        isHabit = p.type == ActionOptionType.HABIT,
+                        onAction = { if (p.type == ActionOptionType.HABIT) viewModel.checkInHabit(p.refId) },
                     )
                 }
             }
