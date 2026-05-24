@@ -85,10 +85,30 @@ and why?"). Reachable via **Profile → "Goals (new design)"**.
 
 Same additive, zero-risk approach as Today (new route, no change to the existing Goals tab).
 
+---
+
+## Installment 3 — the You screen
+
+`ui/you/YouScreen.kt` — the D2 **You** canvas ("who am I becoming, and where's my stuff?").
+Reachable via **Profile → "You (new design)"**. Replaces the flat junk-drawer with calm, grouped
+sections: **Identity · Insights · Growth · Coach · Appearance · Settings**.
+
+- **Delivers G2's user-facing half:** an **Appearance** segmented toggle (System / Light / Dark)
+  wired to `ThemeController` — tapping it re-themes the **whole app live** (the App root collects
+  `themeController.mode`). This is the visible control D3/G2 promised for the Settings screen.
+- **Real links:** Insights (Life Balance, Analytics, My Patterns, Reviews), Growth (Abilities,
+  Achievements), Coach, and Settings (Reminders, Backup, Feedback) all route to existing
+  destinations via a single `onNavigate(route)`.
+- **Pillar 5/7/3 seam:** Identity (Becoming, Your Wiring) and Decisions don't exist on `main` yet,
+  so they're a single honest "arriving with the next update" line — no dead-end rows.
+- Token-pure rows (icon · title · subtitle · `CaretRight`), grouped cards, section labels.
+
+That completes the **three D2 canvases** (Today · Goals · You) as previews on the new design system.
+
 ## Next
 
-- Continue D7 with the **You** canvas (the third D2 tab).
-- Promote Today + Goals from preview routes into the bottom-tab shell (the D2 3-tab model) once
-  validated / the pillar stack merges.
-- **D8** decides the Today headline pulse.
+- **Promote** Today / Goals / You from preview routes into the bottom-tab shell (the D2 3-tab model)
+  once validated / the pillar stack merges — replacing the old Home/Hub/Profile tabs.
+- **D8** decides the Today headline pulse; **D5** is the Figma visual-identity pass.
 - Build remaining D4 primitives (`AppTextField`, `AppChip`, `AppBottomSheet`, …) as screens need them.
+- Apply the **paced-reveal** rules (D2 §5) once pillar features are present to reveal.
