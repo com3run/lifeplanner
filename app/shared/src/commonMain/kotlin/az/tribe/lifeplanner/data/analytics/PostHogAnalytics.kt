@@ -1,7 +1,7 @@
 package az.tribe.lifeplanner.data.analytics
 
 /**
- * PostHog product analytics — comprehensive event tracking for funnels,
+ * PostHog product analytics, comprehensive event tracking for funnels,
  * retention analysis, feature adoption, and experimentation.
  *
  * Event naming convention: snake_case, noun_verb format.

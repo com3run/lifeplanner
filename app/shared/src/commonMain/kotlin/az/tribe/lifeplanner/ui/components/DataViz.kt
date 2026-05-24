@@ -31,7 +31,7 @@ import az.tribe.lifeplanner.ui.theme.Motion
 import az.tribe.lifeplanner.ui.theme.modernColors
 
 /**
- * D8 — the data-visualization system. Every number is a **mirror, not a verdict** (D1 P2): viz is
+ * D8, the data-visualization system. Every number is a **mirror, not a verdict** (D1 P2): viz is
  * calm, honest about uncertainty, and explains *why*. Token-pure; animations use [Motion].
  */
 

@@ -104,7 +104,7 @@ private fun buildChatHistory(phase: OnboardingPhase, vm: CoachOnboardingViewMode
     val specialistName = runCatching { CoachPersona.getById(vm.specialistCoachId).name }.getOrElse { "Your coach" }
 
     if (OnboardingPhase.LUNA_INTRO.isBefore(phase)) {
-        coachMsg("Hi, I'm Luna — your life coach! Before we dive in, I'd love to get to know you a little. It'll only take 2 minutes.", "Luna", luna)
+        coachMsg("Hi, I'm Luna, your life coach! Before we dive in, I'd love to get to know you a little. It'll only take 2 minutes.", "Luna", luna)
         userMsg("Let's do it!")
     }
     if (OnboardingPhase.LUNA_NAME.isBefore(phase)) {
@@ -124,14 +124,14 @@ private fun buildChatHistory(phase: OnboardingPhase, vm: CoachOnboardingViewMode
         userMsg(if (cats.isNotBlank()) cats else "Skipped")
     }
     if (OnboardingPhase.LUNA_WELLBEING.isBefore(phase)) {
-        coachMsg("How are you feeling lately? Be honest — this helps me calibrate your goals.", "Luna", luna)
+        coachMsg("How are you feeling lately? Be honest, this helps me calibrate your goals.", "Luna", luna)
         userMsg("Stress: ${vm.stressLevel}/10 · Sleep: ${vm.sleepQuality}/10")
     }
     if (OnboardingPhase.SPECIALIST_INTRO.isBefore(phase)) {
         val area = vm.topPriorities.firstOrNull()?.name?.lowercase()?.replaceFirstChar { it.uppercase() }
             ?: vm.topPriority?.name?.lowercase()?.replaceFirstChar { it.uppercase() }
             ?: "your goals"
-        coachMsg("I'm bringing in $specialistName — our $area specialist.", "Luna", luna)
+        coachMsg("I'm bringing in $specialistName, our $area specialist.", "Luna", luna)
         userMsg("Let's meet them!")
     }
     if (OnboardingPhase.SPECIALIST_Q1.isBefore(phase)) {

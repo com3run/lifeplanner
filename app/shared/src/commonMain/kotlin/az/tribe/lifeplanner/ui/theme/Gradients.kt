@@ -218,7 +218,7 @@ object LifePlannerGradients {
     // ==================== GLASS EFFECT GRADIENTS ====================
 
     /**
-     * Subtle glass overlay gradient — light mode only
+     * Subtle glass overlay gradient, light mode only
      * Use for: Glass card backgrounds
      */
     val glassOverlay: Brush
@@ -230,15 +230,15 @@ object LifePlannerGradients {
         )
 
     /**
-     * Dark-mode glass overlay — a gentle top-to-bottom dark gradient that
+     * Dark-mode glass overlay, a gentle top-to-bottom dark gradient that
      * lifts the card top just enough to read without any white wash.
      * Uses the app's surfaceVariant dark tone (#252E42) fading to near-transparent.
      */
     val glassOverlayDark: Brush
         @Composable get() = Brush.verticalGradient(
             colors = listOf(
-                Color(0xFF252E42).copy(alpha = 0.55f),  // surfaceVariant dark — top highlight
-                Color(0xFF1B2437).copy(alpha = 0.08f)   // surface dark — barely there at bottom
+                Color(0xFF252E42).copy(alpha = 0.55f),  // surfaceVariant dark, top highlight
+                Color(0xFF1B2437).copy(alpha = 0.08f)   // surface dark, barely there at bottom
             )
         )
     /**
@@ -265,7 +265,7 @@ object LifePlannerGradients {
         )
 
     /**
-     * Dark blue glass — for nav bar and floating surfaces in dark mode.
+     * Dark blue glass, for nav bar and floating surfaces in dark mode.
      * Deep navy with a subtle blue tint, ~93% opaque so the background
      * colour bleeds through just enough to feel layered.
      */

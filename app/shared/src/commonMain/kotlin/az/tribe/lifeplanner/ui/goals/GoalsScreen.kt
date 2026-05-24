@@ -50,7 +50,7 @@ import com.adamglin.phosphoricons.regular.Plus
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
- * D7 — the redesigned **Goals** canvas (D2): your commitments, active first, each laddered to a
+ * D7, the redesigned **Goals** canvas (D2): your commitments, active first, each laddered to a
  * reason. Premium gradient hero + per-category color accents, built on D3 tokens + D4 [AppButton].
  * The value/Why-Chain tag is a Pillar 1 seam (see [GoalsViewModel]); category is the tag for now.
  */
@@ -109,7 +109,7 @@ fun GoalsScreen(
                 item {
                     StateView(
                         title = "Nothing here yet",
-                        message = "A goal is something you're working toward — start with one that matters to you.",
+                        message = "A goal is something you're working toward, start with one that matters to you.",
                         icon = PhosphorIcons.Regular.Flag,
                         actionLabel = "Create your first goal",
                         onAction = onNewGoal,
@@ -181,7 +181,7 @@ private fun GoalCard(goal: Goal, onClick: () -> Unit, dimmed: Boolean = false) {
 }
 
 private fun summary(state: GoalsState): String = when {
-    state.active.isEmpty() && state.completed.isEmpty() -> "Nothing yet — let's start one."
+    state.active.isEmpty() && state.completed.isEmpty() -> "Nothing yet, let's start one."
     state.active.isEmpty() -> "${state.completed.size} done. Time for a new one?"
     else -> "${state.active.size} active · ${state.completed.size} done"
 }

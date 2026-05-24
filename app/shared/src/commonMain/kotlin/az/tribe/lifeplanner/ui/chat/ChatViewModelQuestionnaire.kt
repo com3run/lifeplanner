@@ -60,7 +60,7 @@ fun ChatViewModel.submitGoalQuestionnaire() {
     if (q.submitted) return
 
     val answersText = q.questions.zip(q.answers).joinToString("\n") { (question, selected) ->
-        val answerStr = if (selected.isEmpty()) "—" else selected.joinToString(", ")
+        val answerStr = if (selected.isEmpty()) "-" else selected.joinToString(", ")
         "• ${question.text}: $answerStr"
     }
     val message = "Goal clarification answers for \"${q.intentText.take(60)}\":\n$answersText\n\nPlease create a personalised goal for me based on these answers."
@@ -72,15 +72,15 @@ fun ChatViewModel.submitGoalQuestionnaire() {
     sendMessage(message)
 }
 
-// Returns (questions, hadError). Always AI-generated — no static fallback.
+// Returns (questions, hadError). Always AI-generated, no static fallback.
 internal suspend fun ChatViewModel.generateGoalQuestions(intentText: String): Pair<List<ChatGoalQuestion>, Boolean> {
     return try {
         val prompt = """
             The user wants to achieve: "$intentText"
 
             Generate exactly 7 clarifying questions to deeply personalise their goal.
-            Every question must be specific to their stated intent — not generic filler.
-            Each question must allow multiple answers and have 5–6 options tailored to their goal.
+            Every question must be specific to their stated intent, not generic filler.
+            Each question must allow multiple answers and have 5-6 options tailored to their goal.
             For each question include at least one "tricky" or unexpected option that reveals hidden priorities.
             Always include "None of the above" as the final option for every question.
             Cover: motivation/why, prior experience, current obstacles, timeline, support system,

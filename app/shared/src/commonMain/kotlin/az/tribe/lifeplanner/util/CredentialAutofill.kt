@@ -19,7 +19,7 @@ expect fun SaveCredentialEffect(
 
 /**
  * Shows the platform credential chooser (Android: CredentialManager bottom sheet;
- * iOS: no-op — the system keyboard suggestion bar handles this natively).
+ * iOS: no-op, the system keyboard suggestion bar handles this natively).
  *
  * Set [trigger] to true to open the chooser. On success [onCredentialReceived] is
  * called with the email and password. [onComplete] is always called afterwards so

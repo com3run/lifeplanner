@@ -62,14 +62,14 @@ fun TodayPulseCard(
 
     val allDone = totalHabits > 0 && habitsCompleted == totalHabits
     val stepsText = when {
-        !healthConnected || todaySteps == null -> "—"
+        !healthConnected || todaySteps == null -> "-"
         todaySteps >= 1000L -> "${todaySteps / 1000}.${(todaySteps % 1000) / 100}K"
         else -> todaySteps.toString()
     }
     val focusText = when {
         todayFocusMinutes >= 60 -> "${todayFocusMinutes / 60}h ${todayFocusMinutes % 60}m"
         todayFocusMinutes > 0 -> "${todayFocusMinutes}m"
-        else -> "—"
+        else -> "-"
     }
 
     GlassCard(modifier = modifier.fillMaxWidth(), cornerRadius = 20.dp) {
@@ -108,7 +108,7 @@ fun TodayPulseCard(
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 PulseTile(
-                    value = if (totalHabits > 0) "$habitsCompleted/$totalHabits" else "—",
+                    value = if (totalHabits > 0) "$habitsCompleted/$totalHabits" else "-",
                     label = "Habits",
                     accentColor = Color(0xFF28C76F),
                     onClick = onHabitsClick,

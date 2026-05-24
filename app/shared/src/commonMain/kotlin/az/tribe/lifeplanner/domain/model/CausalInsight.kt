@@ -2,7 +2,7 @@ package az.tribe.lifeplanner.domain.model
 
 import kotlinx.datetime.LocalDate
 
-/** Pillar 4 — how much to trust an insight, driven purely by sample size. */
+/** Pillar 4, how much to trust an insight, driven purely by sample size. */
 enum class InsightConfidence { LOW, MODERATE, HIGH }
 
 enum class InsightKind {
@@ -13,7 +13,7 @@ enum class InsightKind {
 }
 
 /**
- * Pillar 4 (Causal Model) — one plain-language finding derived on-device from the user's
+ * Pillar 4 (Causal Model), one plain-language finding derived on-device from the user's
  * own history (no AI). Always carries its sample size + confidence so it stays honest about
  * small data.
  */

@@ -67,7 +67,7 @@ internal fun FilterChipsRow(
         modifier = modifier.horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        // "All" chip — active when nothing is selected
+        // "All" chip, active when nothing is selected
         FilterChip(
             selected = selectedFilters.isEmpty(),
             onClick = onClearAll,

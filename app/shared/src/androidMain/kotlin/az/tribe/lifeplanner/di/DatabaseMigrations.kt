@@ -684,7 +684,7 @@ internal fun migrateToVersion25(db: SupportSQLiteDatabase) {
 }
 
 internal fun migrateToVersion29(db: SupportSQLiteDatabase) {
-    // Schema v29: LifeValueEntity table (Pillar 1) — matches migration 29.sqm
+    // Schema v29: LifeValueEntity table (Pillar 1), matches migration 29.sqm
     db.execSQL(
         """
         CREATE TABLE IF NOT EXISTS LifeValueEntity (
@@ -704,12 +704,12 @@ internal fun migrateToVersion29(db: SupportSQLiteDatabase) {
 }
 
 internal fun migrateToVersion30(db: SupportSQLiteDatabase) {
-    // Schema v30: GoalEntity.valueId (Pillar 1 Why-Chain) — matches migration 30.sqm
+    // Schema v30: GoalEntity.valueId (Pillar 1 Why-Chain), matches migration 30.sqm
     addColumnSafe(db, "GoalEntity", "valueId", "TEXT")
 }
 
 internal fun migrateToVersion31(db: SupportSQLiteDatabase) {
-    // Schema v31: DecisionEntity table (Pillar 3) — matches migration 31.sqm
+    // Schema v31: DecisionEntity table (Pillar 3), matches migration 31.sqm
     db.execSQL(
         """
         CREATE TABLE IF NOT EXISTS DecisionEntity (
@@ -736,13 +736,13 @@ internal fun migrateToVersion31(db: SupportSQLiteDatabase) {
 }
 
 internal fun migrateToVersion32(db: SupportSQLiteDatabase) {
-    // Schema v32: Goal.predictedDueDate + Milestone.estimatedEffort (Pillar 4 Causal Model) — matches migration 32.sqm
+    // Schema v32: Goal.predictedDueDate + Milestone.estimatedEffort (Pillar 4 Causal Model), matches migration 32.sqm
     addColumnSafe(db, "GoalEntity", "predictedDueDate", "TEXT")
     addColumnSafe(db, "MilestoneEntity", "estimatedEffort", "INTEGER")
 }
 
 internal fun migrateToVersion33(db: SupportSQLiteDatabase) {
-    // Schema v33: IdentityStatementEntity table (Pillar 5 — "I'm becoming someone who…") — matches migration 33.sqm
+    // Schema v33: IdentityStatementEntity table (Pillar 5, "I'm becoming someone who…"), matches migration 33.sqm
     db.execSQL(
         """
         CREATE TABLE IF NOT EXISTS IdentityStatementEntity (
@@ -763,7 +763,7 @@ internal fun migrateToVersion33(db: SupportSQLiteDatabase) {
 }
 
 internal fun migrateToVersion34(db: SupportSQLiteDatabase) {
-    // Schema v34: DecisionProfileEntity table (Pillar 7 — the user's six Innate "wiring" dials) — matches migration 34.sqm
+    // Schema v34: DecisionProfileEntity table (Pillar 7, the user's six Innate "wiring" dials), matches migration 34.sqm
     db.execSQL(
         """
         CREATE TABLE IF NOT EXISTS DecisionProfileEntity (

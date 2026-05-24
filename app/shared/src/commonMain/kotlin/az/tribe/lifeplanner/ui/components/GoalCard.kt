@@ -50,7 +50,7 @@ fun GoalCard(
             .animateContentSize(),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Title — full width so even long titles can display 2 lines
+        // Title, full width so even long titles can display 2 lines
         Text(
             text = goal.title,
             style = MaterialTheme.typography.titleMedium.copy(
@@ -71,7 +71,7 @@ fun GoalCard(
             StatusChip(status = goal.status)
         }
 
-        // Description — 1 line; full text always accessible on detail screen
+        // Description, 1 line; full text always accessible on detail screen
         if (goal.description.isNotBlank()) {
             Text(
                 text = goal.description,

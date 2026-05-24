@@ -75,7 +75,7 @@ fun LifeWebCard(
             streamText = ""
             aiProxy.chatStream(
                 messages = listOf(AiProxyService.ChatMessage("user", buildWebPrompt(report))),
-                systemPrompt = "You are a life harmony analyst. Identify powerful cross-area patterns. Be poetic, personal, and specific. 2–3 sentences max. Never use bullet points or lists."
+                systemPrompt = "You are a life harmony analyst. Identify powerful cross-area patterns. Be poetic, personal, and specific. 2-3 sentences max. Never use bullet points or lists."
             ).collect { event ->
                 when (event) {
                     is AiProxyService.StreamEvent.TextChunk -> streamText += event.text
@@ -131,7 +131,7 @@ fun LifeWebCard(
 
             Spacer(Modifier.height(16.dp))
 
-            // Web canvas — self-contained with no overlapping siblings
+            // Web canvas, self-contained with no overlapping siblings
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -278,7 +278,7 @@ private fun AreaLegendChip(areaScore: az.tribe.lifeplanner.domain.model.LifeArea
 }
 
 private fun buildWebPrompt(report: LifeBalanceReport): String = buildString {
-    appendLine("Life energy snapshot — overall score ${report.overallScore}/100:")
+    appendLine("Life energy snapshot, overall score ${report.overallScore}/100:")
     report.areaScores.forEach { s ->
         appendLine(
             "  ${s.area.displayName}: ${s.score}/100 · " +
@@ -293,7 +293,7 @@ private fun buildWebPrompt(report: LifeBalanceReport): String = buildString {
     }
     appendLine()
     appendLine(
-        "Find ONE powerful hidden connection between the life areas — a pattern that reveals " +
+        "Find ONE powerful hidden connection between the life areas, a pattern that reveals " +
         "something meaningful about this person's journey right now. " +
         "Start with 'Your' or describe a specific cross-area dynamic. Be personal and specific."
     )

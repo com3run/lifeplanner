@@ -53,7 +53,7 @@ import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Clock
 
 /**
- * D7 — the redesigned **Today** agency surface (D2): a calm "top stories for your life" front door
+ * D7, the redesigned **Today** agency surface (D2): a calm "top stories for your life" front door
  * answering "what can I do right now?". Built on D3 tokens, the D4 [AppButton], and the premium
  * [GradientHero]/[IconChip] blocks so it matches the app's gradient/depth craft bar.
  */
@@ -101,7 +101,7 @@ fun TodayScreen(
                     eyebrow = today(),
                     title = greeting(),
                     subtitle = if (habits.isEmpty()) "What matters to you right now is your call."
-                    else "$doneCount of ${habits.size} habits done today — your call on the rest.",
+                    else "$doneCount of ${habits.size} habits done today, your call on the rest.",
                     trailing = if (habits.isEmpty()) null else {
                         {
                             ProgressRing(
@@ -138,7 +138,7 @@ fun TodayScreen(
 
             item { SectionLabel("Today's habits") }
             if (habits.isEmpty()) {
-                item { Hint("No habits yet — small, repeatable actions go here.") }
+                item { Hint("No habits yet, small, repeatable actions go here.") }
             } else {
                 items(habits, key = { it.habit.id }) { h ->
                     HabitRow(

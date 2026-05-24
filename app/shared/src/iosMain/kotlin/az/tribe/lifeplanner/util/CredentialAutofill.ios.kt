@@ -22,7 +22,7 @@ actual fun SaveCredentialEffect(
 
 /**
  * iOS: the system keyboard suggestion bar shows saved credentials automatically
- * when the text field has a password content type — no explicit picker needed.
+ * when the text field has a password content type, no explicit picker needed.
  */
 @Composable
 actual fun GetCredentialEffect(

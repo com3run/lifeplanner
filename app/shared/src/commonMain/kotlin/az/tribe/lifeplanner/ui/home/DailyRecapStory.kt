@@ -21,7 +21,7 @@ fun generateDailyRecapStory(
 ): Story {
     val storyId = "daily_recap_$today"
 
-    // weeklyCompletions is Mon(0)–Sun(6). Find yesterday's index.
+    // weeklyCompletions is Mon(0)-Sun(6). Find yesterday's index.
     val todayIndex = today.dayOfWeek.ordinal // Mon=0 … Sun=6
     val yesterdayIndex = if (todayIndex == 0) 6 else todayIndex - 1
     val yesterdayName = dayName(yesterdayIndex)
@@ -139,7 +139,7 @@ private val intentionQuotes = listOf(
     ),
     Pair(
         "What you do today\nwill always\nhave happened.",
-        "Live it fully — you cannot unlive it."
+        "Live it fully, you cannot unlive it."
     ),
     Pair(
         "Live it fully.\nMemory makes\nit eternal.",
@@ -148,7 +148,7 @@ private val intentionQuotes = listOf(
 )
 
 /**
- * Generates a full-screen daily intention story — the first card the user sees.
+ * Generates a full-screen daily intention story, the first card the user sees.
  * Rotates through 7 philosophical quotes, one per day of the week.
  */
 fun generateDailyIntentionStory(today: LocalDate): Story {
@@ -169,7 +169,7 @@ fun generateDailyIntentionStory(today: LocalDate): Story {
 
 /**
  * Returns a small rotation of curated tip/fact stories that changes every day.
- * Content is gossip-style — interesting science, surprising stats, counter-intuitive facts
+ * Content is gossip-style, interesting science, surprising stats, counter-intuitive facts
  * about habits, productivity, and personal growth. No "check in" filler.
  */
 fun getCuratedTipStories(today: LocalDate): List<Story> {
@@ -177,7 +177,7 @@ fun getCuratedTipStories(today: LocalDate): List<Story> {
         Story(
             id = "tip_66days",
             title = "It's Not 21 Days",
-            subtitle = "The popular idea that habits form in 21 days is a myth. Research from University College London found the real average is 66 days — and it varies wildly: 18 to 254 days depending on the person and habit.",
+            subtitle = "The popular idea that habits form in 21 days is a myth. Research from University College London found the real average is 66 days, and it varies wildly: 18 to 254 days depending on the person and habit.",
             emoji = "📅",
             category = "science",
             gradientStart = "#4F46E5",
@@ -249,7 +249,7 @@ fun getCuratedTipStories(today: LocalDate): List<Story> {
         Story(
             id = "tip_progress_principle",
             title = "Small Wins Fuel Big Ones",
-            subtitle = "Harvard research found that the single biggest daily motivator is \"the progress principle\" — making even tiny forward movement on meaningful work. Logging a small win activates the same reward circuits as a major milestone.",
+            subtitle = "Harvard research found that the single biggest daily motivator is \"the progress principle\", making even tiny forward movement on meaningful work. Logging a small win activates the same reward circuits as a major milestone.",
             emoji = "🏅",
             category = "science",
             gradientStart = "#0284C7",
@@ -261,7 +261,7 @@ fun getCuratedTipStories(today: LocalDate): List<Story> {
         Story(
             id = "tip_implementation_intention",
             title = "\"When X, I Will Y\"",
-            subtitle = "Studies show that writing down \"I will [habit] at [time] in [place]\" doubles or triples the chance of follow-through. It's called an implementation intention — and it takes under 30 seconds to create.",
+            subtitle = "Studies show that writing down \"I will [habit] at [time] in [place]\" doubles or triples the chance of follow-through. It's called an implementation intention, and it takes under 30 seconds to create.",
             emoji = "✍️",
             category = "tips",
             gradientStart = "#047857",
@@ -273,7 +273,7 @@ fun getCuratedTipStories(today: LocalDate): List<Story> {
         Story(
             id = "tip_social_commitment",
             title = "Tell Someone",
-            subtitle = "Publicly committing to a goal increases completion rates by up to 65%. Adding accountability — a friend, a coach, or just logging it — bumps that to 95%. The act of being seen changes the game.",
+            subtitle = "Publicly committing to a goal increases completion rates by up to 65%. Adding accountability, a friend, a coach, or just logging it, bumps that to 95%. The act of being seen changes the game.",
             emoji = "🤝",
             category = "tips",
             gradientStart = "#9333EA",
@@ -285,7 +285,7 @@ fun getCuratedTipStories(today: LocalDate): List<Story> {
         Story(
             id = "tip_goldilocks",
             title = "The Goldilocks Zone",
-            subtitle = "Motivation peaks when a task is just slightly above your current ability — not too easy, not too hard. Neuroscientist Andrew Huberman calls this \"the optimal challenge point.\" This is why leveling up keeps things engaging.",
+            subtitle = "Motivation peaks when a task is just slightly above your current ability, not too easy, not too hard. Neuroscientist Andrew Huberman calls this \"the optimal challenge point.\" This is why leveling up keeps things engaging.",
             emoji = "🎯",
             category = "science",
             gradientStart = "#B45309",
@@ -309,7 +309,7 @@ fun getCuratedTipStories(today: LocalDate): List<Story> {
         Story(
             id = "tip_decision_fatigue",
             title = "Decisions Drain You",
-            subtitle = "Decision fatigue is real — the more choices you make throughout the day, the worse your willpower gets. High performers automate low-stakes decisions (meals, outfits, routines) to save mental energy for what matters.",
+            subtitle = "Decision fatigue is real, the more choices you make throughout the day, the worse your willpower gets. High performers automate low-stakes decisions (meals, outfits, routines) to save mental energy for what matters.",
             emoji = "⚡",
             category = "science",
             gradientStart = "#7C3AED",

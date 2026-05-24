@@ -52,7 +52,7 @@ import org.koin.core.parameter.parametersOf
 import kotlin.math.roundToInt
 
 /**
- * D7 — the redesigned **Goal Detail**. Category-gradient hero + progress ring, the real Why-Chain
+ * D7, the redesigned **Goal Detail**. Category-gradient hero + progress ring, the real Why-Chain
  * (the value this goal serves, Pillar 1), checkable milestones, and Edit reusing the existing flow.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -127,7 +127,7 @@ fun GoalDetailScreen(
                         IconChip(PhosphorIcons.Regular.Compass, tint = c.secondary)
                         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                             Text(if (valueTitle != null) "Toward $valueTitle" else "Not linked to a value yet", style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = c.textPrimary)
-                            Text(if (valueTitle != null) "This goal serves what matters to you." else "Tap Edit to connect it to a value — your why.", style = MaterialTheme.typography.bodySmall, color = c.textSecondary)
+                            Text(if (valueTitle != null) "This goal serves what matters to you." else "Tap Edit to connect it to a value, your why.", style = MaterialTheme.typography.bodySmall, color = c.textSecondary)
                         }
                     }
                 }
@@ -152,7 +152,7 @@ fun GoalDetailScreen(
             if (g.milestones.isEmpty()) {
                 item {
                     Surface(Modifier.fillMaxWidth(), color = c.cardBackground, shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large)) {
-                        Text("No milestones yet — break this goal into a few steps from Edit.", style = MaterialTheme.typography.bodySmall, color = c.textTertiary, modifier = Modifier.padding(LifePlannerDesign.Padding.cardContent))
+                        Text("No milestones yet, break this goal into a few steps from Edit.", style = MaterialTheme.typography.bodySmall, color = c.textTertiary, modifier = Modifier.padding(LifePlannerDesign.Padding.cardContent))
                     }
                 }
             } else {

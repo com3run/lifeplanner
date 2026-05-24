@@ -2,7 +2,7 @@ package az.tribe.lifeplanner.domain.enum
 
 /**
  * The 7 stable goal categories. Enum constant names are load-bearing (DB, sync, mappers) and must
- * NOT change. [displayName] is the single source of truth for user-facing labels — the canonical
+ * NOT change. [displayName] is the single source of truth for user-facing labels, the canonical
  * spellings from `terminology.md` (Career / Financial / Physical / Social / Emotional / Spiritual /
  * Family). Do not derive labels from `name` (that yields "Money"/"Body"/etc., which are wrong).
  */

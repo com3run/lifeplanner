@@ -8,7 +8,7 @@ import az.tribe.lifeplanner.ui.navigation.Screen
 import az.tribe.lifeplanner.ui.onboarding.CoachOnboardingScreen
 
 internal fun NavGraphBuilder.appNavAuth(navController: NavController) {
-    // Coach Onboarding — entry point for unauthenticated users; embeds auth gate
+    // Coach Onboarding, entry point for unauthenticated users; embeds auth gate
     composable(Screen.CoachOnboarding.route) {
         CoachOnboardingScreen(
             onComplete = {
@@ -20,7 +20,7 @@ internal fun NavGraphBuilder.appNavAuth(navController: NavController) {
         )
     }
 
-    // Sign In Screen — standalone, accessible from other flows
+    // Sign In Screen, standalone, accessible from other flows
     composable("sign_in") {
         SignInScreen(
             onSignInSuccess = {

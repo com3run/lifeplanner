@@ -55,7 +55,7 @@ import com.adamglin.phosphoricons.regular.Star
 import org.koin.compose.koinInject
 
 /**
- * D7 — the redesigned **You** canvas (D2). Premium gradient header + grouped cards with colored
+ * D7, the redesigned **You** canvas (D2). Premium gradient header + grouped cards with colored
  * icon chips, replacing the flat junk-drawer. Delivers G2's user-facing **Appearance** toggle wired
  * live to [ThemeController]. Identity (Becoming/Wiring) + Decisions are honest Pillar 5/7/3 seams.
  */
@@ -104,8 +104,8 @@ fun YouScreen(
             item { SectionLabel("Identity") }
             item {
                 SectionCard {
-                    YouRow(PhosphorIcons.Regular.Brain, c.secondary, "Becoming", "Who you're becoming — values & identity") { onNavigate(Screen.Becoming.route) }
-                    YouRow(PhosphorIcons.Regular.Sliders, c.primary, "Your Wiring", "How you're wired — your decision profile", last = true) { onNavigate(Screen.YourWiring.route) }
+                    YouRow(PhosphorIcons.Regular.Brain, c.secondary, "Becoming", "Who you're becoming, values & identity") { onNavigate(Screen.Becoming.route) }
+                    YouRow(PhosphorIcons.Regular.Sliders, c.primary, "Your Wiring", "How you're wired, your decision profile", last = true) { onNavigate(Screen.YourWiring.route) }
                 }
             }
 

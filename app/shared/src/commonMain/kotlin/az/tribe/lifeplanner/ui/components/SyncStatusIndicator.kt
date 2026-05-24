@@ -88,7 +88,7 @@ fun SyncStatusIndicator(
                 IconButton(onClick = onRetryClick, modifier = Modifier.size(32.dp)) {
                     Icon(
                         imageVector = PhosphorIcons.Regular.WarningCircle,
-                        contentDescription = "Sync failed — tap to retry",
+                        contentDescription = "Sync failed, tap to retry",
                         modifier = Modifier.size(20.dp),
                         tint = MaterialTheme.colorScheme.error
                     )

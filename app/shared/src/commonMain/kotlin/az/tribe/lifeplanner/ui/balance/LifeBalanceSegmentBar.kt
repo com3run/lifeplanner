@@ -92,7 +92,7 @@ fun LifeBalanceSegmentBar(
 
             Spacer(Modifier.height(10.dp))
 
-            // Area emoji row — aligned above each segment
+            // Area emoji row, aligned above each segment
             Row(modifier = Modifier.fillMaxWidth()) {
                 arranged.forEach { areaScore ->
                     Box(
@@ -149,7 +149,7 @@ fun LifeBalanceSegmentBar(
 
             Spacer(Modifier.height(2.dp))
 
-            // Center indicator — arrow at highest-score segment, reference tick at 50%
+            // Center indicator, arrow at highest-score segment, reference tick at 50%
             BoxWithConstraints(
                 modifier = Modifier.fillMaxWidth().height(22.dp)
             ) {
@@ -178,7 +178,7 @@ fun LifeBalanceSegmentBar(
                     color = centerColor.copy(alpha = 0.85f * fraction)
                 )
 
-                // Label — centered under arrow
+                // Label, centered under arrow
                 Text(
                     text = centerArea.area.displayName,
                     modifier = Modifier
@@ -193,7 +193,7 @@ fun LifeBalanceSegmentBar(
 
             Spacer(Modifier.height(2.dp))
 
-            // Area name row — aligned below each segment
+            // Area name row, aligned below each segment
             Row(modifier = Modifier.fillMaxWidth()) {
                 arranged.forEach { areaScore ->
                     val color = getAreaColor(areaScore.area, isDark)

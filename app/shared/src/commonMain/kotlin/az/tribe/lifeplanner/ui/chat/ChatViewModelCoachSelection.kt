@@ -87,7 +87,7 @@ fun ChatViewModel.selectCouncil() {
                 val userName = _uiState.value.userContext?.userName?.takeIf { it.isNotBlank() }
                 val nameHint = if (userName != null) " The user's name is $userName." else ""
                 triggerWelcomeMessage(
-                    "[NEW SESSION]$nameHint You are The Council — all 7 coaches speaking together. Each coach introduces themselves briefly in one sentence. End with a unified invitation for the user to share their biggest goal or challenge."
+                    "[NEW SESSION]$nameHint You are The Council, all 7 coaches speaking together. Each coach introduces themselves briefly in one sentence. End with a unified invitation for the user to share their biggest goal or challenge."
                 )
             }
         } catch (e: Exception) {

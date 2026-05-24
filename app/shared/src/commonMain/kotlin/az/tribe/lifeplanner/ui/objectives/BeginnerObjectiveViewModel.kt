@@ -60,7 +60,7 @@ class BeginnerObjectiveViewModel(
     private val _isDismissed = MutableStateFlow(settings.getBoolean("objectives_completed", false))
     val isDismissed: StateFlow<Boolean> = _isDismissed
 
-    /** Emitted once when all objectives are completed — UI shows celebration. */
+    /** Emitted once when all objectives are completed, UI shows celebration. */
     private val _celebrationEvent = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     val celebrationEvent: SharedFlow<Unit> = _celebrationEvent
 
@@ -168,7 +168,7 @@ class BeginnerObjectiveViewModel(
 
     /**
      * Creates a "Getting Started" goal with beginner objectives as milestones.
-     * Only created once — skipped if it already exists.
+     * Only created once, skipped if it already exists.
      */
     private suspend fun createGettingStartedGoalIfNeeded() {
         try {
@@ -252,7 +252,7 @@ class BeginnerObjectiveViewModel(
     }
 
     /**
-     * Watch for all objectives completed — award Explorer badge, auto-complete goal,
+     * Watch for all objectives completed, award Explorer badge, auto-complete goal,
      * emit celebration event, and permanently dismiss the card.
      */
     private fun observeAllObjectivesComplete() {
@@ -263,9 +263,9 @@ class BeginnerObjectiveViewModel(
                 if (settings.getBoolean("objectives_completed", false)) return@collectLatest
 
                 // All done for the first time!
-                log.d { "All objectives completed — awarding Explorer badge" }
+                log.d { "All objectives completed, awarding Explorer badge" }
 
-                // Award badge (idempotent — hasBadge check inside)
+                // Award badge (idempotent, hasBadge check inside)
                 try {
                     if (!gamificationRepository.hasBadge(BadgeType.GETTING_STARTED)) {
                         gamificationRepository.awardBadge(BadgeType.GETTING_STARTED)
@@ -278,7 +278,7 @@ class BeginnerObjectiveViewModel(
                 // not gated on the user tapping the dismiss button.
                 Analytics.allObjectivesCompleted()
 
-                // Notify UI to show celebration — card stays visible so the user
+                // Notify UI to show celebration, card stays visible so the user
                 // can see the "All objectives complete!" state. The card is
                 // dismissed when the user taps the dismiss button.
                 _celebrationEvent.tryEmit(Unit)
@@ -288,7 +288,7 @@ class BeginnerObjectiveViewModel(
 
     /**
      * Scans existing data to auto-complete objectives that have already been achieved.
-     * Runs once on init — catches objectives the user completed before this feature existed.
+     * Runs once on init, catches objectives the user completed before this feature existed.
      */
     private suspend fun detectCompletedObjectives() {
         try {

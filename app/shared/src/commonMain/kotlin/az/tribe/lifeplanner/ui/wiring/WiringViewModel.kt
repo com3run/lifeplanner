@@ -14,9 +14,9 @@ import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 /**
- * Pillar 7 (Innate) — backs the "Your Wiring" screen: exposes the inferred [DecisionProfile]
+ * Pillar 7 (Innate), backs the "Your Wiring" screen: exposes the inferred [DecisionProfile]
  * and lets the user nudge a dial when the inference feels wrong. It's a description the user
- * owns, never a score — so a manual nudge is treated as strong, confident evidence.
+ * owns, never a score, so a manual nudge is treated as strong, confident evidence.
  */
 class WiringViewModel(
     private val repository: DecisionProfileRepository,

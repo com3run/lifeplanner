@@ -225,7 +225,7 @@ private fun CachedPersonaEntity.toFields(): CoachFields = CoachFields(
     imageUrl = image_url, avatarUrl = avatar_url, slug = slug,
     timezone = timezone ?: PersonaDefaults.TIMEZONE,
     city = city ?: "", countryFlag = country_flag ?: "",
-    // No clip_url column in SQLite cache — leave null so mergeMedia keeps the
+    // No clip_url column in SQLite cache, leave null so mergeMedia keeps the
     // builtin coach's real clipUrl unchanged.
     clipUrl = null,
     posterUrl = null,
@@ -242,7 +242,7 @@ private fun TribeBotPersonaDto.toFields(): CoachFields {
     // Top-level clip_url / video_url take priority; fallback to first reel in media[].
     val resolvedClipUrl = clipUrl ?: videoUrl ?: clipMedia?.url
     val resolvedPosterUrl = clipMedia?.thumbnailUrl ?: posterUrl ?: posterUrl(effectiveSlug)
-    // Skip format="reels" images — they are slide thumbnails for video reels, not standalone content.
+    // Skip format="reels" images, they are slide thumbnails for video reels, not standalone content.
     val coachMedia = media
         .filter { !(it.kind == MediaKind.IMAGE && it.format == MediaFormat.REELS) }
         .map { it.toCoachMedia() }
@@ -346,7 +346,7 @@ class PersonaApiFetcher(
     suspend fun fetch() {
         val fetched = fetchFromLifePlannerCache()
         if (fetched) return
-        log.i { "personas_cache empty — falling back to TribeBot API" }
+        log.i { "personas_cache empty, falling back to TribeBot API" }
         fetchFromTribeBot()
     }
 
@@ -375,7 +375,7 @@ class PersonaApiFetcher(
         }
     }
 
-    /** Direct call to TribeBot API — used as fallback when our cache is empty. */
+    /** Direct call to TribeBot API, used as fallback when our cache is empty. */
     private suspend fun fetchFromTribeBot() {
         try {
             val response = httpClient.get(TRIBEBOT_API_URL) {

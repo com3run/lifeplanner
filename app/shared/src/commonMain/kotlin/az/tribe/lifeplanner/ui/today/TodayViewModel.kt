@@ -20,8 +20,8 @@ import kotlinx.datetime.todayIn
 import kotlin.time.Clock
 
 /**
- * D7 — backs the redesigned **Today** agency surface (D2). Now wired to the real **Pillar 2**
- * `PossibilityEngine` (via [PossibilityContextProvider]) — "Right now you could…" is the genuine
+ * D7, backs the redesigned **Today** agency surface (D2). Now wired to the real **Pillar 2**
+ * `PossibilityEngine` (via [PossibilityContextProvider]), "Right now you could…" is the genuine
  * ranked [ActionOption]s, not a heuristic. Today's habits + inline check-in stay here.
  */
 class TodayViewModel(
@@ -30,13 +30,13 @@ class TodayViewModel(
     private val engine: PossibilityEngine,
 ) : ViewModel() {
 
-    /** Today's habits with their done-status — the daily check-in surface. */
+    /** Today's habits with their done-status, the daily check-in surface. */
     val habitsToday: StateFlow<List<HabitToday>> =
         habitRepository.observeHabitsWithTodayStatus()
             .map { list -> list.map { (h, done) -> HabitToday(h, done) } }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    /** "Right now you could…" — ranked options from the Pillar 2 engine. */
+    /** "Right now you could…", ranked options from the Pillar 2 engine. */
     private val _possibilities = MutableStateFlow<List<ActionOption>>(emptyList())
     val possibilities: StateFlow<List<ActionOption>> = _possibilities.asStateFlow()
 

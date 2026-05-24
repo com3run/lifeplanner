@@ -80,7 +80,7 @@ private sealed class ChatListItem(val sortKey: LocalDateTime?) {
 }
 
 /**
- * Extended coach list — chat-list style sorted by recent activity
+ * Extended coach list, chat-list style sorted by recent activity
  */
 @Composable
 fun CoachListContentExtended(
@@ -96,7 +96,7 @@ fun CoachListContentExtended(
     onCreateGroup: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // Build unified list — council is pinned separately, so exclude it here
+    // Build unified list, council is pinned separately, so exclude it here
     val councilSession = sessions[CoachPersona.COUNCIL_ID]
     val items = buildList {
         builtinCoaches.forEach { coach ->
@@ -165,7 +165,7 @@ fun CoachListContentExtended(
             }
         }) { item ->
             when (item) {
-                is ChatListItem.Council -> { /* never reached — council is pinned above */ }
+                is ChatListItem.Council -> { /* never reached, council is pinned above */ }
                 is ChatListItem.BuiltinCoach -> {
                     val lastMsg = item.session?.messages?.lastOrNull()
                     val available = item.coach.isAvailableNow()
@@ -230,7 +230,7 @@ fun CoachListContentExtended(
 }
 
 /**
- * A single chat list row — WhatsApp/Telegram style
+ * A single chat list row, WhatsApp/Telegram style
  */
 @Composable
 private fun ChatListRow(
@@ -342,7 +342,7 @@ private fun ChatListRow(
 }
 
 /**
- * Format timestamp for chat list — shows time for today, day name for this week, date otherwise
+ * Format timestamp for chat list, shows time for today, day name for this week, date otherwise
  */
 private fun formatChatTimestamp(dateTime: LocalDateTime): String {
     val hour = dateTime.hour.toString().padStart(2, '0')

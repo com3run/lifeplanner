@@ -180,7 +180,7 @@ internal fun InsightCard(
 ) {
     val isDark = true
 
-    // Vivid accent colors for the left bar — always punchy regardless of theme
+    // Vivid accent colors for the left bar, always punchy regardless of theme
     val priorityBarColor = when (insight.priority) {
         InsightPriority.HIGH -> Color(0xFFF44336)
         InsightPriority.MEDIUM -> Color(0xFFFFC107)
@@ -206,7 +206,7 @@ internal fun InsightCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
-            // Left priority accent bar — always vivid for maximum signalling
+            // Left priority accent bar, always vivid for maximum signalling
             Box(
                 modifier = Modifier
                     .width(4.dp)

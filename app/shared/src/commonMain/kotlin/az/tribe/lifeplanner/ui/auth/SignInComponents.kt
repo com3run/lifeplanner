@@ -101,7 +101,7 @@ internal fun EmailVerificationPendingSection(
 
         Spacer(Modifier.height(32.dp))
 
-        // "I've Verified — Sign Me In" button
+        // "I've Verified, Sign Me In" button
         Button(
             onClick = {
                 if (password.isNotBlank()) {
@@ -118,7 +118,7 @@ internal fun EmailVerificationPendingSection(
                 containerColor = MaterialTheme.modernColors.primary
             )
         ) {
-            Text("I've Verified — Sign Me In", style = MaterialTheme.typography.titleSmall)
+            Text("I've Verified, Sign Me In", style = MaterialTheme.typography.titleSmall)
         }
 
         Spacer(Modifier.height(12.dp))

@@ -120,7 +120,7 @@ fun SmartGoalGeneratorScreen(
                 currentStep = GeneratorStep.RESULTS
             }
             QuestionnaireStep.INPUT -> {
-                // Error happened — go back to selection
+                // Error happened, go back to selection
                 if (currentStep == GeneratorStep.GENERATING || currentStep == GeneratorStep.QUESTIONS) {
                     currentStep = GeneratorStep.SCENARIO_SELECT
                 }

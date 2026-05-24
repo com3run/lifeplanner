@@ -152,7 +152,7 @@ class HabitRepositoryImpl(
                 completed = true,
                 notes = notes
             )
-            // INSERT OR IGNORE: idempotent — won't duplicate if (habitId, date) already exists
+            // INSERT OR IGNORE: idempotent, won't duplicate if (habitId, date) already exists
             database.insertHabitCheckInOrIgnore(checkIn.toEntity())
         }
         updateStreakAfterCheckIn(habitId)

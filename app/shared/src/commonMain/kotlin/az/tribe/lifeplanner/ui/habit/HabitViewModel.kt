@@ -89,7 +89,7 @@ class HabitViewModel(
             val daysFromMonday = (today.dayOfWeek.ordinal - DayOfWeek.MONDAY.ordinal + 7) % 7
             val monday = today.minus(daysFromMonday, DateTimeUnit.DAY)
 
-            // Single batched query for all habits — avoids N separate DB calls per reactive update
+            // Single batched query for all habits, avoids N separate DB calls per reactive update
             val allWeeklyCheckIns = try {
                 habitRepository.getAllCheckInsInRange(monday, today)
             } catch (_: Exception) {
@@ -326,7 +326,7 @@ class HabitViewModel(
  * then past-scheduled (time already passed today), then completed.
  *
  * This way, at night, morning habits sink to the bottom and evening habits
- * float to the top — showing what's actually still relevant right now.
+ * float to the top, showing what's actually still relevant right now.
  */
 private fun timeAwareHabitComparator(nowMinutes: Int): Comparator<HabitWithStatus> {
     return Comparator { a, b ->
@@ -334,10 +334,10 @@ private fun timeAwareHabitComparator(nowMinutes: Int): Comparator<HabitWithStatu
         val completedCmp = a.isCompletedToday.compareTo(b.isCompletedToday)
         if (completedCmp != 0) return@Comparator completedCmp
 
-        // Both completed — keep stable order
+        // Both completed, keep stable order
         if (a.isCompletedToday) return@Comparator 0
 
-        // Both incomplete — assign a time group
+        // Both incomplete, assign a time group
         val aGroup = timeGroup(a.habit.reminderTime, nowMinutes)
         val bGroup = timeGroup(b.habit.reminderTime, nowMinutes)
 

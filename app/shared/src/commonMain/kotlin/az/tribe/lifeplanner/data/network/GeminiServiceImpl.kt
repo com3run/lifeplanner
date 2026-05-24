@@ -82,7 +82,7 @@ class GeminiServiceImpl(
 
             Create 3-7 goals total, focusing on what they originally wanted to achieve but now personalized based on their answers.
 
-            IMPORTANT: For each goal, include a "reasoning" field that explains in 2-3 sentences WHY this goal was suggested — the logic, research, or insight behind it.
+            IMPORTANT: For each goal, include a "reasoning" field that explains in 2-3 sentences WHY this goal was suggested, the logic, research, or insight behind it.
         """.trimIndent()
 
         val schema = buildGoalGenerationSchema()
@@ -110,7 +110,7 @@ class GeminiServiceImpl(
 
             Create 3-5 well-thought-out goals. Make each goal distinct and covering a different dimension of what the user wants to achieve. Use dueDate in YYYY-MM-DD format.
 
-            IMPORTANT: For each goal, include a "reasoning" field that explains in 2-3 sentences WHY this goal was suggested — the logic, research, or insight behind it. This helps the user understand the value of the goal.
+            IMPORTANT: For each goal, include a "reasoning" field that explains in 2-3 sentences WHY this goal was suggested, the logic, research, or insight behind it. This helps the user understand the value of the goal.
         """.trimIndent()
 
         val schema = buildGoalGenerationSchema()

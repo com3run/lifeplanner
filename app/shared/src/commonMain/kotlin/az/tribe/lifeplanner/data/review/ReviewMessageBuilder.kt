@@ -60,7 +60,7 @@ class ReviewMessageBuilder(
         val streak = userProgress?.currentStreak?.toInt() ?: 0
 
         return buildString {
-            append("I'd like my $periodLabel review for $periodStart – $today. ")
+            append("I'd like my $periodLabel review for $periodStart, $today. ")
             append("Here are my stats: ")
             append("${completedGoals.size} goals completed, ")
             append("${activeGoals.size} in progress, ")

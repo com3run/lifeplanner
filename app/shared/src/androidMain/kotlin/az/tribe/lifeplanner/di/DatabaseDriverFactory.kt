@@ -67,7 +67,7 @@ actual class DatabaseDriverFactory {
                     // crash on open. Recreate the local DB cleanly instead; synced data
                     // restores from the cloud on next sync.
                     Logger.w("DatabaseDriverFactory") {
-                        "Local DB v$oldVersion newer than app schema v$newVersion — recreating local database"
+                        "Local DB v$oldVersion newer than app schema v$newVersion, recreating local database"
                     }
                     val tables = buildList {
                         db.query(

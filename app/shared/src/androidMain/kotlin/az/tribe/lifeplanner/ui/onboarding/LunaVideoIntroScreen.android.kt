@@ -39,7 +39,7 @@ private const val LUNA_INTRO_VIDEO_URL =
     "https://rkdggdfabwgukspylybu.supabase.co/storage/v1/object/public/assets/coaches/luna-clip.mp4"
 
 private const val INTRO_TEXT =
-    "Hi, I'm Luna — your personal life coach.\n\nBefore we dive in, I'd love to get to know you a little. It'll only take 2 minutes."
+    "Hi, I'm Luna, your personal life coach.\n\nBefore we dive in, I'd love to get to know you a little. It'll only take 2 minutes."
 
 private val IndigoAccent = Color(0xFF6366F1)
 private val IndigoLight = Color(0xFF818CF8)

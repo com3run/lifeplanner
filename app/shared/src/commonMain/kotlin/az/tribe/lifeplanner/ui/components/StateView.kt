@@ -20,7 +20,7 @@ import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
 import az.tribe.lifeplanner.ui.theme.modernColors
 
 /**
- * D12 — the canonical empty / error / loading state. Designed states, never dead ends (P2/P6):
+ * D12, the canonical empty / error / loading state. Designed states, never dead ends (P2/P6):
  * friendly, warm, and (where useful) offering a way forward. Token-pure.
  */
 @Composable

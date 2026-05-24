@@ -152,7 +152,7 @@ class ChatViewModelStreamingTest {
 
     @Test
     fun flowCompletesWithoutTerminalEventSetsError() = runTest(testDispatcher) {
-        // Empty flow — completes without emitting PartialText, Completed, or Error
+        // Empty flow, completes without emitting PartialText, Completed, or Error
         mockChatRepo.streamingFlow = emptyFlow()
         mockChatRepo.messagesToReturn = emptyList()
 
@@ -208,7 +208,7 @@ class MockChatRepository : ChatRepository {
     override fun sendMessageStreaming(sessionId: String, userMessage: String, userContext: UserContext, relatedGoalId: String?) = streamingFlow
 }
 
-// Minimal stubs — only need to compile; not exercised by streaming tests.
+// Minimal stubs, only need to compile; not exercised by streaming tests.
 
 class StubGoalRepository : GoalRepository {
     override fun observeAllGoals(): Flow<List<Goal>> = flowOf(emptyList())

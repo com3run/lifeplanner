@@ -99,7 +99,7 @@ internal fun NavGraphBuilder.appNavCoach(navController: NavController) {
         )
     }
 
-    // Coach Intro Screen — full-screen video + mascot + typewriter text
+    // Coach Intro Screen, full-screen video + mascot + typewriter text
     composable(
         Screen.CoachIntro.route,
         arguments = listOf(navArgument("coachId") { type = NavType.StringType })

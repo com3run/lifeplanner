@@ -7,7 +7,7 @@ import az.tribe.lifeplanner.domain.model.TuningDial
 import kotlin.math.min
 
 /**
- * Pillar 7 (Innate) — pure, on-device inference of the user's six [TuningDial]s from observed
+ * Pillar 7 (Innate), pure, on-device inference of the user's six [TuningDial]s from observed
  * behaviour. NO AI, NO self-report: true to *Innate*'s point that it's the individual trajectory,
  * not a questionnaire, that reveals the wiring. Deterministic over its input → fully unit-testable.
  *
@@ -16,7 +16,7 @@ import kotlin.math.min
  * as evidence accrues and its [DialSetting.confidence] grows with the total observation count.
  * Feed [infer] successive *delta* windows to accumulate evidence over time.
  *
- * No dial value is "good" or "bad" — the engine describes the user, it never grades them.
+ * No dial value is "good" or "bad", the engine describes the user, it never grades them.
  */
 class TuningInferenceEngine(
     /** Total observations at which a dial reaches full confidence (1.0). */

@@ -8,7 +8,7 @@ import kotlinx.coroutines.launch
 import androidx.lifecycle.viewModelScope
 
 // ---------------------------------------------------------------------------
-// Pure XP calculations — no ViewModel state access needed
+// Pure XP calculations, no ViewModel state access needed
 // ---------------------------------------------------------------------------
 
 internal fun calculateXpForDuration(minutes: Int): Int {
@@ -31,7 +31,7 @@ internal fun calculatePartialXp(elapsedSeconds: Int): Int {
 }
 
 // ---------------------------------------------------------------------------
-// Extension functions — ViewModel helpers that load / refresh state
+// Extension functions, ViewModel helpers that load / refresh state
 // ---------------------------------------------------------------------------
 
 internal fun FocusViewModel.autoSuggestMood() {

@@ -34,7 +34,7 @@ interface AuthService {
 
 /**
  * Common Supabase Auth implementation (multiplatform).
- * Google OAuth is a stub here — platform-specific handling can be added later.
+ * Google OAuth is a stub here, platform-specific handling can be added later.
  */
 class SupabaseAuthService(
     private val supabase: SupabaseClient
@@ -98,7 +98,7 @@ class SupabaseAuthService(
             val currentUser = supabase.auth.currentUserOrNull()
             when {
                 currentUser != null -> {
-                    // Session established — no email verification needed
+                    // Session established, no email verification needed
                     AuthResult.Success(
                         FirebaseUser(
                             uid = currentUser.id,
@@ -110,11 +110,11 @@ class SupabaseAuthService(
                     )
                 }
                 signUpResult != null -> {
-                    // User was created but no session — email verification is pending
+                    // User was created but no session, email verification is pending
                     AuthResult.EmailVerificationPending(email)
                 }
                 else -> {
-                    AuthResult.Error("Sign up failed — please try again.")
+                    AuthResult.Error("Sign up failed, please try again.")
                 }
             }
         } catch (e: Exception) {
@@ -137,7 +137,7 @@ class SupabaseAuthService(
 
     override suspend fun signInWithGoogle(): AuthResult {
         // Google OAuth requires platform-specific handling
-        // For now, return error — will be implemented per-platform if needed
+        // For now, return error, will be implemented per-platform if needed
         return AuthResult.Error("Google Sign-In not yet configured for Supabase")
     }
 

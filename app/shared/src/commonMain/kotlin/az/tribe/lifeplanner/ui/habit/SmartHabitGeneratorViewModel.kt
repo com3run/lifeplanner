@@ -67,7 +67,7 @@ class SmartHabitGeneratorViewModel(
                         "frequency": "DAILY|WEEKDAYS|WEEKLY",
                         "type": "BUILD|BREAK_BAD_HABIT",
                         "emoji": "single emoji",
-                        "suggestedTime": "HH:MM in 24h format — the ideal time of day for this habit (e.g. 07:00 for morning exercise, 12:30 for a lunchtime walk, 21:00 for evening reading)"
+                        "suggestedTime": "HH:MM in 24h format, the ideal time of day for this habit (e.g. 07:00 for morning exercise, 12:30 for a lunchtime walk, 21:00 for evening reading)"
                       }
                     ]
                     Make habits specific, achievable, and directly tied to the goal.

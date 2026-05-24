@@ -135,7 +135,7 @@ fun RetrospectiveScreen(
                 // 2. Day Summary Card
                 item { DaySummaryCard(snapshot) }
 
-                // 3. AI Recap Card — always shown (loading, ready, or generate button)
+                // 3. AI Recap Card, always shown (loading, ready, or generate button)
                 item {
                     AiRecapCard(
                         recap = uiState.aiRecap,
@@ -144,7 +144,7 @@ fun RetrospectiveScreen(
                     )
                 }
 
-                // 4. Compare with Today — shown automatically for past dates when today has data
+                // 4. Compare with Today, shown automatically for past dates when today has data
                 val todaySnap = uiState.todaySnapshot
                 if (!isViewingToday && todaySnap?.hasAnyActivity == true) {
                     item {

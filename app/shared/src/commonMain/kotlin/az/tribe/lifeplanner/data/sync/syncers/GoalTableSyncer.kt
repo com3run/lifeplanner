@@ -147,7 +147,7 @@ class GoalTableSyncer(
                 .decodeList<GoalSyncDto>()
         }
 
-        // Filter out Getting Started goal — local-only system data
+        // Filter out Getting Started goal, local-only system data
         val filteredItems = remoteItems.filter { it.id != GETTING_STARTED_GOAL_ID }
         Logger.d("SyncEngine") { "Pull $tableName: got ${remoteItems.size} items (${remoteItems.size - filteredItems.size} getting_started skipped)" }
         var applied = 0

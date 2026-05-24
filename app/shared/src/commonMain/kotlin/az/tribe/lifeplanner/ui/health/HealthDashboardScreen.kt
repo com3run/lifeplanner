@@ -145,7 +145,7 @@ fun HealthDashboardScreen(
                     // Steps card with ring
                     StepsCard(todaySteps = todaySteps, stepsGoal = 10_000L)
 
-                    // Steps last 7 days — collapsed, just total
+                    // Steps last 7 days, collapsed, just total
                     if (stepsHistory.isNotEmpty()) {
                         val weeklyTotal = stepsHistory.sumOf { it.value }.toLong()
                         ExpandableMetricCard(
@@ -159,7 +159,7 @@ fun HealthDashboardScreen(
                         }
                     }
 
-                    // Heart rate — collapsed, just latest avg
+                    // Heart rate, collapsed, just latest avg
                     if (heartRateHistory.isNotEmpty() || latestHeartRate != null) {
                         ExpandableMetricCard(
                             title = "Heart Rate",
@@ -172,7 +172,7 @@ fun HealthDashboardScreen(
                         }
                     }
 
-                    // Sleep — collapsed, just last night
+                    // Sleep, collapsed, just last night
                     if (sleepHistory.isNotEmpty() || latestSleep != null) {
                         ExpandableMetricCard(
                             title = "Sleep",
@@ -192,7 +192,7 @@ fun HealthDashboardScreen(
                         onAddWeight = { viewModel.showAddWeightDialog() }
                     )
 
-                    // Weight trend — collapsed
+                    // Weight trend, collapsed
                     if (weightHistory.size >= 2) {
                         ExpandableMetricCard(
                             title = "Weight Trend",

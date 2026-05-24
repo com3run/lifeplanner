@@ -85,7 +85,7 @@ object AndroidNotificationScheduler : NotificationSchedulerInterface {
     }
 
     override fun cancelAll() {
-        Logger.i(TAG) { "cancelAll called — individual alarms must be cancelled by ID" }
+        Logger.i(TAG) { "cancelAll called, individual alarms must be cancelled by ID" }
     }
 
     private fun calculateNextTriggerTimeMillis(reminder: Reminder): Long? {

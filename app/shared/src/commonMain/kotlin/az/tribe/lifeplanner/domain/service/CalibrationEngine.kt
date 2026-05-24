@@ -2,7 +2,7 @@ package az.tribe.lifeplanner.domain.service
 
 import kotlin.math.round
 
-/** Pillar 4 — predicted-vs-actual completion calibration across the user's finished goals. */
+/** Pillar 4, predicted-vs-actual completion calibration across the user's finished goals. */
 data class Calibration(
     val ratio: Double,      // median actual/predicted; >1 = slower than estimated
     val sampleSize: Int,
@@ -10,7 +10,7 @@ data class Calibration(
 )
 
 /**
- * Pillar 4 — pure calibration stat. Given (predictedDays, actualDays) per completed goal,
+ * Pillar 4, pure calibration stat. Given (predictedDays, actualDays) per completed goal,
  * reports the median actual/predicted ratio as a plain statement. Median (not mean) so one
  * runaway goal doesn't dominate. Deterministic → unit-testable.
  */
@@ -29,7 +29,7 @@ class CalibrationEngine(private val minSamples: Int = 3) {
         val statement = when {
             median >= 1.15 -> "You finish goals about ${oneDecimal(median)}× slower than you estimate."
             median <= 0.87 -> "You finish goals about ${oneDecimal(1.0 / median)}× faster than you estimate."
-            else -> "Your goal time estimates are about right — within ~15%."
+            else -> "Your goal time estimates are about right, within ~15%."
         }
         return Calibration(ratio = median, sampleSize = ratios.size, statement = statement)
     }

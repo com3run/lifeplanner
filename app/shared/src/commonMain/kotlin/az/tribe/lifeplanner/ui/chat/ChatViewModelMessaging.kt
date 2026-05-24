@@ -21,7 +21,7 @@ internal suspend fun ChatViewModel.sendMessageStreaming(
         ).collect { event ->
             when (event) {
                 is StreamingChatEvent.UserMessageSaved -> {
-                    // User message is now in DB — add it to the UI with its real ID
+                    // User message is now in DB, add it to the UI with its real ID
                     _uiState.value = _uiState.value.copy(
                         messages = _uiState.value.messages + event.message,
                         isStreaming = true,
@@ -36,7 +36,7 @@ internal suspend fun ChatViewModel.sendMessageStreaming(
                 }
                 is StreamingChatEvent.Completed -> {
                     receivedCompletion = true
-                    // Load final messages from DB — correct IDs and order guaranteed
+                    // Load final messages from DB, correct IDs and order guaranteed
                     val dbMessages = chatRepository.getMessages(sessionId)
                     val executedIds = dbMessages
                         .mapNotNull { it.metadata?.executedSuggestionIds }
@@ -69,7 +69,7 @@ internal suspend fun ChatViewModel.sendMessageStreaming(
             }
         }
 
-        // Flow completed without Done/Error — reset state and reload messages
+        // Flow completed without Done/Error, reset state and reload messages
         if (!receivedCompletion) {
             Logger.w("ChatViewModel") { "Streaming flow completed without terminal event" }
             val dbMessages = chatRepository.getMessages(sessionId)

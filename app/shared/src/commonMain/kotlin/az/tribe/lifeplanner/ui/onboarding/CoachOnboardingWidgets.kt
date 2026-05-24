@@ -185,26 +185,26 @@ internal fun phaseMessage(phase: OnboardingPhase, vm: CoachOnboardingViewModel):
     val name = vm.userName.takeIf { it.isNotBlank() }?.let { "Hey $it!" } ?: "Hey!"
     return when (phase) {
         OnboardingPhase.LUNA_INTRO ->
-            "Hi, I'm Luna — your life coach! Before we dive in, I'd love to get to know you a little. It'll only take 2 minutes, and the more I know, the better I can help."
+            "Hi, I'm Luna, your life coach! Before we dive in, I'd love to get to know you a little. It'll only take 2 minutes, and the more I know, the better I can help."
         OnboardingPhase.LUNA_NAME ->
             "Let's start with the basics. What's your name, and how old are you? (You can skip either if you prefer.)"
         OnboardingPhase.LUNA_PRIORITY ->
             "$name Great! Which areas of life matter most to you right now? Select at least 3."
         OnboardingPhase.LUNA_WELLBEING ->
-            "Got it. How are you feeling lately? Be honest — this helps me calibrate your goals."
+            "Got it. How are you feeling lately? Be honest, this helps me calibrate your goals."
         OnboardingPhase.SPECIALIST_INTRO -> {
             val specialistName = runCatching { CoachPersona.getById(vm.specialistCoachId).name }.getOrElse { "Your coach" }
             val area = vm.topPriorities.firstOrNull()?.name?.lowercase()?.replaceFirstChar { it.uppercase() }
                 ?: vm.topPriority?.name?.lowercase()?.replaceFirstChar { it.uppercase() }
                 ?: "your goals"
-            "Great choices! I'm bringing in $specialistName — our $area specialist. They'll do a quick check-in so your $area goals are actually built for you."
+            "Great choices! I'm bringing in $specialistName, our $area specialist. They'll do a quick check-in so your $area goals are actually built for you."
         }
         OnboardingPhase.SPECIALIST_Q1 -> specialistQ1Message(vm)
         OnboardingPhase.SPECIALIST_Q2 -> specialistQ2Message(vm)
         OnboardingPhase.SPECIALIST_Q3 -> specialistQ3Message(vm)
         OnboardingPhase.SPECIALIST_Q4 -> specialistQ4Message(vm)
         OnboardingPhase.MIND_DUMP ->
-            "Last one — and my favourite. What do you actually want to change or achieve right now? Say it in your own words, no polish needed."
+            "Last one, and my favourite. What do you actually want to change or achieve right now? Say it in your own words, no polish needed."
         OnboardingPhase.MIND_QUESTIONS ->
             "I want to make sure I understand what's really driving you. A couple of quick questions."
         OnboardingPhase.MIND_VALIDATION ->
@@ -220,9 +220,9 @@ internal fun phaseMessage(phase: OnboardingPhase, vm: CoachOnboardingViewModel):
 
 private fun specialistQ1Message(vm: CoachOnboardingViewModel) = when (vm.specialistCoachId) {
     "alex_career" -> ageAdaptedCareerQ1(vm.userAge ?: 25)
-    "morgan_finance" -> "What's your rough income range? I keep everything private — this helps me tailor financial goals to your reality."
+    "morgan_finance" -> "What's your rough income range? I keep everything private, this helps me tailor financial goals to your reality."
     "kai_fitness" -> "How active are you day-to-day?"
-    "sam_social" -> "Are you more of an introvert, ambivert, or extrovert? No right answer — just helps me understand how you recharge."
+    "sam_social" -> "Are you more of an introvert, ambivert, or extrovert? No right answer, just helps me understand how you recharge."
     "river_wellness" -> "What are your top values? Pick up to 3. These are the compass for all your goals."
     "jamie_family" -> "What best describes your family situation right now?"
     else -> "What's on your mind?"
@@ -232,7 +232,7 @@ private fun specialistQ2Message(vm: CoachOnboardingViewModel) = when (vm.special
     "alex_career" -> ageBandedRoleQuestion(vm.userAge ?: 25)
     "morgan_finance" -> "How consistent are your savings habits?"
     "kai_fitness" -> "How many hours do you sleep on a typical night?"
-    "sam_social" -> "How big is your close social circle — people you'd actually call in a tough moment?"
+    "sam_social" -> "How big is your close social circle, people you'd actually call in a tough moment?"
     "river_wellness" -> "Do you have any mindfulness or meditation practice?"
     "jamie_family" -> "What's your biggest family challenge at the moment? Be as specific as you like."
     else -> ""
@@ -241,7 +241,7 @@ private fun specialistQ2Message(vm: CoachOnboardingViewModel) = when (vm.special
 private fun specialistQ3Message(vm: CoachOnboardingViewModel) = when (vm.specialistCoachId) {
     "alex_career" -> "Roughly how many years of work experience do you have?"
     "morgan_finance" -> "Do you currently have any debt you're managing?"
-    "kai_fitness" -> "On a scale of 1–10, how's your energy level on a typical day?"
+    "kai_fitness" -> "On a scale of 1-10, how's your energy level on a typical day?"
     "sam_social" -> "What's your relationship status? Helps me understand your support structure."
     "river_wellness" -> "In one sentence, what's your long-term vision for your life?"
     "jamie_family" -> "What would a calmer, happier home life look like for you in 3 months?"
@@ -260,7 +260,7 @@ private fun ageAdaptedCareerQ1(age: Int) = when {
     age in 13..17 -> "Which grade are you in? Any part-time work or side projects?"
     age in 18..22 -> "Are you studying, working, or doing both right now?"
     age in 23..35 -> "Are you employed full-time, freelancing, job-hunting, or running your own thing?"
-    age in 36..55 -> "Tell me about your current role — employed, self-employed, or something else?"
+    age in 36..55 -> "Tell me about your current role, employed, self-employed, or something else?"
     else -> "Are you still working, semi-retired, or fully retired?"
 }
 
@@ -295,15 +295,15 @@ internal fun employmentStatusFromLabel(label: String) = when {
 }
 
 internal fun incomeBandOptions() = listOf(
-    "Under \$15K", "\$15K–30K", "\$30K–60K", "\$60K–100K", "\$100K–200K", "Over \$200K"
+    "Under \$15K", "\$15K-30K", "\$30K-60K", "\$60K-100K", "\$100K-200K", "Over \$200K"
 )
 
 internal fun incomeBandFromLabel(label: String) = when {
     "Under" in label -> IncomeBand.UNDER_15K
-    "15K–30" in label -> IncomeBand.BAND_15_30K
-    "30K–60" in label -> IncomeBand.BAND_30_60K
-    "60K–100" in label -> IncomeBand.BAND_60_100K
-    "100K–200" in label -> IncomeBand.BAND_100_200K
+    "15K-30" in label -> IncomeBand.BAND_15_30K
+    "30K-60" in label -> IncomeBand.BAND_30_60K
+    "60K-100" in label -> IncomeBand.BAND_60_100K
+    "100K-200" in label -> IncomeBand.BAND_100_200K
     else -> IncomeBand.OVER_200K
 }
 

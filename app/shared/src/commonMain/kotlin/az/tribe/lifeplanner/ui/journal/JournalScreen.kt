@@ -77,7 +77,7 @@ fun JournalScreen(
     val habits = habitsWithStatus.map { it.habit }
     val abilities by abilityViewModel.abilities.collectAsState()
 
-    // Own tab state locally — the NavGraphBuilder closure captures selectedTab once at
+    // Own tab state locally, the NavGraphBuilder closure captures selectedTab once at
     // graph-build time, so the parent parameter is stale after first composition.
     // We call onTabSelected as a side-effect so App.kt's navContextAction FAB stays in sync.
     var currentTab by remember { mutableStateOf(selectedTab) }
@@ -290,7 +290,7 @@ fun JournalScreen(
             }
         }
 
-        // Journal entry sheet — accessible from any tab via FAB
+        // Journal entry sheet, accessible from any tab via FAB
         if (showNewEntryDialog) {
             NewJournalEntryBottomSheet(
                 onDismiss = { viewModel.hideNewEntryDialog() },

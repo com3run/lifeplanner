@@ -44,7 +44,7 @@ private fun BuiltinCoachDto.toCoachPersona(): CoachPersona? {
     val cat = try { GoalCategory.valueOf(category) } catch (_: Exception) { return null }
     val effectiveSlug = slug ?: id
     val resolvedAvatarUrl = avatarUrl ?: imageUrl ?: "${ASSET_BASE}coaches/$effectiveSlug.png"
-    // Only use clip_url from the DB row — don't auto-generate a URL that may not exist in storage
+    // Only use clip_url from the DB row, don't auto-generate a URL that may not exist in storage
     val resolvedPosterUrl = "${ASSET_BASE}coaches/$effectiveSlug-poster.jpg"
     return CoachPersona(
         id = id,

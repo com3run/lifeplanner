@@ -68,7 +68,7 @@ fun SwipeableGoalItem(
         confirmValueChange = { dismissValue ->
             when (dismissValue) {
                 SwipeToDismissBoxValue.StartToEnd -> {
-                    // Complete action — show celebration first, then complete
+                    // Complete action, show celebration first, then complete
                     if (!isCompleted) {
                         haptic.strongSuccess()
                         showCelebration = true

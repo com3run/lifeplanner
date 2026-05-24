@@ -449,7 +449,7 @@ SELECT * FROM HabitCheckInEntity WHERE date = ? AND is_deleted = 0;
 getCheckInByHabitAndDate:
 SELECT * FROM HabitCheckInEntity WHERE habitId = ? AND date = ? AND is_deleted = 0 LIMIT 1;
 
--- Get soft-deleted check-in for (habitId, date) — used to restore after undo
+-- Get soft-deleted check-in for (habitId, date), used to restore after undo
 getSoftDeletedCheckIn:
 SELECT * FROM HabitCheckInEntity WHERE habitId = ? AND date = ? AND is_deleted = 1 LIMIT 1;
 

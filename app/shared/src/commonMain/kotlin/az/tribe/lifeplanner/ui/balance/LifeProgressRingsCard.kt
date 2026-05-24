@@ -74,7 +74,7 @@ internal fun LifeProgressRingsCard(
     val weakest   = report.weakestAreas.firstOrNull()
     val insight = when {
         report.overallScore >= 80 ->
-            "You're thriving — all areas of your life are in motion."
+            "You're thriving, all areas of your life are in motion."
         strongest != null && weakest != null ->
             "${strongest.displayName} is your strongest area right now. ${weakest.displayName} could use a little more love this week."
         weakest != null ->
@@ -153,7 +153,7 @@ internal fun LifeProgressRingsCard(
                     RingLegendRow(
                         color = COLOR_HABITS,
                         label = "Habits today",
-                        value = if (totalHabits > 0) "$habitsCompleted / $totalHabits" else "—"
+                        value = if (totalHabits > 0) "$habitsCompleted / $totalHabits" else "-"
                     )
                     RingLegendRow(
                         color = COLOR_GOALS,
@@ -209,7 +209,7 @@ fun generateWeeklyInsight(report: LifeBalanceReport?): String? {
         report.overallScore >= 75 && strongest.isNotBlank() ->
             "You're showing up for $strongest. Keep that energy going."
         weakest != null && strongest.isNotBlank() ->
-            "Consistent in $strongest this week — $weakest still has room to grow."
+            "Consistent in $strongest this week, $weakest still has room to grow."
         weakest != null ->
             "$weakest is the area to focus on next. Small steps count."
         else -> null

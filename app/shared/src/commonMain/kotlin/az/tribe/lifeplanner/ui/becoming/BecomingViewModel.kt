@@ -20,8 +20,8 @@ import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 /**
- * Pillar 5 — the "Becoming" layer: the user's identity statements + how their actual choices
- * align to each value. Additive — XP/levels live on elsewhere; this answers "who am I becoming?"
+ * Pillar 5, the "Becoming" layer: the user's identity statements + how their actual choices
+ * align to each value. Additive, XP/levels live on elsewhere; this answers "who am I becoming?"
  */
 class BecomingViewModel(
     private val identityRepo: IdentityStatementRepository,

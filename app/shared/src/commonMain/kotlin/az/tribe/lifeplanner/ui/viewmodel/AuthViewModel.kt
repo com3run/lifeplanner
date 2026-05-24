@@ -92,7 +92,7 @@ class AuthViewModel(
      * When a new session is established externally (handleDeeplinks), refresh the auth state.
      */
     private fun observeSessionChanges() {
-        val client = supabaseClient ?: return // no Supabase client (e.g. unit tests) — nothing to observe
+        val client = supabaseClient ?: return // no Supabase client (e.g. unit tests), nothing to observe
         viewModelScope.launch {
             client.auth.sessionStatus.collect { status ->
                 Logger.d("AuthViewModel") { "Session status changed: $status" }
@@ -100,10 +100,10 @@ class AuthViewModel(
                     is SessionStatus.Authenticated -> authMutex.withLock {
                         // React to session changes unless already authenticated with matching user
                         val current = _authState.value
-                        // Skip if a login/linking operation is in progress — it will set
+                        // Skip if a login/linking operation is in progress, it will set
                         // the auth state itself once it finishes with the correct data.
                         if (current is AuthState.Loading) {
-                            Logger.d("AuthDebug") { "observeSession: Authenticated event while Loading — skipping (login in progress)" }
+                            Logger.d("AuthDebug") { "observeSession: Authenticated event while Loading, skipping (login in progress)" }
                             return@withLock
                         }
                         val supabaseUid = client.auth.currentUserOrNull()?.id
@@ -189,7 +189,7 @@ class AuthViewModel(
 
                 authMutex.withLock {
                     when {
-                        // Both exist and match — use local user (preserves onboarding data)
+                        // Both exist and match, use local user (preserves onboarding data)
                         supabaseUser != null && localUser != null && localUser.firebaseUid == supabaseUser.uid -> {
                             val reconciledEmail = supabaseUser.email
                             val reconciledGuest = supabaseUser.isAnonymous
@@ -212,7 +212,7 @@ class AuthViewModel(
                             identifyInPostHog(reconciledUser)
                             _authState.value = state
                         }
-                        // Supabase session exists but no matching local user — recreate locally
+                        // Supabase session exists but no matching local user, recreate locally
                         supabaseUser != null -> {
                             val recreated = User(
                                 id = supabaseUser.uid,
@@ -237,7 +237,7 @@ class AuthViewModel(
                             identifyInPostHog(recreated)
                             _authState.value = state
                         }
-                        // No Supabase session but local user exists — degraded (local-only) mode
+                        // No Supabase session but local user exists, degraded (local-only) mode
                         localUser != null -> {
                             _hasCompletedOnboarding.value = localUser.hasCompletedOnboarding
                             _isLocalOnlyGuest.value = true
@@ -248,7 +248,7 @@ class AuthViewModel(
                                 AuthState.Authenticated(localUser)
                             }
                         }
-                        // Neither — check for pending verification before showing Unauthenticated
+                        // Neither, check for pending verification before showing Unauthenticated
                         else -> {
                             _hasCompletedOnboarding.value = false
                             val pendingEmail = settings.getStringOrNull(PENDING_VERIFY_EMAIL_KEY)
@@ -323,7 +323,7 @@ class AuthViewModel(
             return updated
         }
 
-        // New user — cancel syncs and clear all old data first
+        // New user, cancel syncs and clear all old data first
         syncManager.onLogout()
         userRepository.clearAllLocalData()
         val user = User(

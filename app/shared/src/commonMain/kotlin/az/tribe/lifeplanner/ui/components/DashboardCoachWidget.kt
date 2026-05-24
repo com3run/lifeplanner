@@ -29,7 +29,7 @@ import androidx.compose.ui.unit.dp
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
 
 /**
- * Personal Coach card for HomeScreen — quick access to Luna AI coach.
+ * Personal Coach card for HomeScreen, quick access to Luna AI coach.
  */
 @Composable
 fun PersonalCoachCard(

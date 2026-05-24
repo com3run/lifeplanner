@@ -27,12 +27,12 @@ import az.tribe.lifeplanner.ui.theme.LifePlannerGradients
 import az.tribe.lifeplanner.ui.theme.modernColors
 
 /**
- * D7 — shared premium building blocks so the redesigned screens match the app's existing gradient/
+ * D7, shared premium building blocks so the redesigned screens match the app's existing gradient/
  * depth craft bar (not flat). Token-aware: gradients come from [LifePlannerGradients], spacing/radius
  * from [LifePlannerDesign].
  */
 
-/** A rounded gradient hero header — the premium banner pattern used across the home. White content. */
+/** A rounded gradient hero header, the premium banner pattern used across the home. White content. */
 @Composable
 fun GradientHero(
     title: String,
@@ -77,7 +77,7 @@ fun GradientHero(
     }
 }
 
-/** An icon inside a soft tinted rounded square — the "colored icon chip" used in list rows/cards. */
+/** An icon inside a soft tinted rounded square, the "colored icon chip" used in list rows/cards. */
 // (icon-chip helper below)
 @Composable
 fun IconChip(

@@ -1,11 +1,11 @@
 package az.tribe.lifeplanner.domain.model
 
 /**
- * Pillar 7 (Innate) — the user's "wiring". Kevin Mitchell's *Innate* argues personality
+ * Pillar 7 (Innate), the user's "wiring". Kevin Mitchell's *Innate* argues personality
  * bottoms out in a few independently-tuned decision-making parameters (Fig 6.2). The app
  * tunes *itself* to these dials rather than asking the user to fight their own nature.
  *
- * Each dial is a continuum. The pole names below are **descriptive, not evaluative** — no
+ * Each dial is a continuum. The pole names below are **descriptive, not evaluative**, no
  * value is "good" or "bad", and neither end is the failure case. [DecisionProfile] describes
  * the user; it never grades them.
  */
@@ -33,7 +33,7 @@ enum class TuningDial {
  * One dial's inferred setting.
  *
  * @param value the position on the dial, `0f..1f`, with `0.5f` the neutral midpoint. Neither
- *   pole is preferable — see the matching [TuningDial] entry for what each end describes.
+ *   pole is preferable, see the matching [TuningDial] entry for what each end describes.
  * @param confidence how sure the inference is, `0f..1f`. Stays low until enough behaviour has
  *   accrued, so the app can be honest about how little it may yet know the user.
  * @param sampleSize the number of behavioural observations behind the inference.
@@ -55,7 +55,7 @@ data class DialSetting(
 }
 
 /**
- * The user's six tuning dials — inferred from behaviour over time (never a self-report survey),
+ * The user's six tuning dials, inferred from behaviour over time (never a self-report survey),
  * maintained on-device, and fed into the Possibility ranking (Pillar 2), Choice Points (Pillar 3),
  * the Causal Model (Pillar 4), and the Becoming layer (Pillar 5). One profile per user.
  *
@@ -95,7 +95,7 @@ data class DecisionProfile(
     }
 
     companion object {
-        /** A fresh, fully-neutral profile — every dial at the midpoint with zero confidence. */
+        /** A fresh, fully-neutral profile, every dial at the midpoint with zero confidence. */
         fun neutral(id: String): DecisionProfile = DecisionProfile(id = id)
     }
 }

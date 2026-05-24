@@ -34,7 +34,7 @@ data class SyncResult(
  * Strategy:
  * - Max 2 daily recurring notifications: morning (habits overview) + evening (reflection)
  * - Goal/milestone deadlines are one-off and only fire when genuinely due
- * - No per-habit individual reminders — one bundled morning reminder covers all habits
+ * - No per-habit individual reminders, one bundled morning reminder covers all habits
  * - Weekly review on Sundays only
  */
 class SmartReminderManager(
@@ -155,7 +155,7 @@ class SmartReminderManager(
         try {
             val settings = reminderRepository.getSettings()
 
-            // 1) Morning reminder — habits & goals overview
+            // 1) Morning reminder, habits & goals overview
             val morningId = "auto-onboarding-morning"
             if (reminderRepository.getReminderById(morningId) == null) {
                 reminderRepository.createReminder(
@@ -173,7 +173,7 @@ class SmartReminderManager(
                 )
             }
 
-            // 2) Evening reflection — at user's preferred check-in time
+            // 2) Evening reflection, at user's preferred check-in time
             val reflectionId = "auto-onboarding-daily-reflection"
             if (reminderRepository.getReminderById(reflectionId) == null) {
                 reminderRepository.createReminder(
@@ -191,14 +191,14 @@ class SmartReminderManager(
                 )
             }
 
-            // 3) Weekly Review — Sunday only
+            // 3) Weekly Review, Sunday only
             val weeklyId = "auto-onboarding-weekly-review"
             if (reminderRepository.getReminderById(weeklyId) == null) {
                 reminderRepository.createReminder(
                     Reminder(
                         id = weeklyId,
                         title = "Weekly Review",
-                        message = "Review your week — celebrate wins, adjust plans, set intentions",
+                        message = "Review your week, celebrate wins, adjust plans, set intentions",
                         type = ReminderType.WEEKLY_REVIEW,
                         frequency = ReminderFrequency.WEEKLY,
                         scheduledTime = LocalTime(
@@ -229,7 +229,7 @@ class SmartReminderManager(
     // ── Private Helpers ─────────────────────────────────────────────────
 
     /**
-     * Goal deadline reminders are one-off — they only fire once when the deadline is near.
+     * Goal deadline reminders are one-off, they only fire once when the deadline is near.
      * These don't count toward the daily limit since they're rare and important.
      */
     private fun buildDesiredGoalReminders(goal: Goal): List<Reminder> {

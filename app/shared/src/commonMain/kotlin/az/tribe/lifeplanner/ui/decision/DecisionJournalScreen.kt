@@ -41,7 +41,7 @@ import com.adamglin.phosphoricons.regular.ArrowLeft
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
- * Pillar 3 — Decision Journal. Surfaces any pending [ChoicePoint]s at the top (tap to
+ * Pillar 3, Decision Journal. Surfaces any pending [ChoicePoint]s at the top (tap to
  * re-choose via [ChoicePointBottomSheet]), then lists logged [Decision]s with reasoning
  * and outcome status.
  */
@@ -94,7 +94,7 @@ fun DecisionJournalScreen(
             if (decisions.isEmpty()) {
                 item {
                     Text(
-                        "Decisions you make at choice points will show up here — what you chose, and why.",
+                        "Decisions you make at choice points will show up here, what you chose, and why.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.modernColors.textSecondary,
                         modifier = Modifier.padding(vertical = 12.dp)

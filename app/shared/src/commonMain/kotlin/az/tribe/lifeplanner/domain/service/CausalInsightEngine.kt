@@ -8,7 +8,7 @@ import kotlin.math.abs
 import kotlin.math.sqrt
 
 /**
- * Pillar 4 (Causal Model) — pure, on-device statistics (NO AI). Turns the user's own daily
+ * Pillar 4 (Causal Model), pure, on-device statistics (NO AI). Turns the user's own daily
  * history into plain-language causal insights:
  *  - correlations between signals (sleep × mood × focus × habits × energy × goal progress), and
  *  - the "innate" amplification spiral: a self-reinforcing weekly trajectory caught early.
@@ -37,22 +37,22 @@ class CausalInsightEngine(
     private val relationships = listOf(
         Relationship({ it.sleepHours }, { it.mood?.toDouble() },
             "On days you sleep more, your mood tends to run higher.",
-            "More sleep is linked to lower mood here — worth a closer look."),
+            "More sleep is linked to lower mood here, worth a closer look."),
         Relationship({ it.sleepHours }, { it.focusMinutes?.toDouble() },
             "More sleep, more focus time the same day.",
-            "More sleep coincides with less focus time — unexpected."),
+            "More sleep coincides with less focus time, unexpected."),
         Relationship({ it.focusMinutes?.toDouble() }, { it.habitsCompleted?.toDouble() },
             "On higher-focus days you also complete more habits.",
             "More focus time coincides with fewer habits done."),
         Relationship({ it.habitsCompleted?.toDouble() }, { it.mood?.toDouble() },
             "Days you complete more habits, your mood is higher.",
-            "More habits done coincides with lower mood — worth watching."),
+            "More habits done coincides with lower mood, worth watching."),
         Relationship({ it.energy?.toDouble() }, { it.focusMinutes?.toDouble() },
             "Higher-energy days bring more focus time.",
             "Higher energy coincides with less focus time."),
         Relationship({ it.sleepHours }, { it.energy?.toDouble() },
             "More sleep, higher energy.",
-            "More sleep coincides with lower energy — unusual."),
+            "More sleep coincides with lower energy, unusual."),
         Relationship({ it.focusMinutes?.toDouble() }, { it.goalProgressDelta },
             "More focus time, more goal progress.",
             "More focus time coincides with less goal progress.")
@@ -98,7 +98,7 @@ class CausalInsightEngine(
             strictlyDown && first > 0 -> listOf(
                 CausalInsight(
                     kind = InsightKind.AMPLIFICATION_SPIRAL,
-                    statement = "Your habit momentum has slipped ${recent.size} weeks running — " +
+                    statement = "Your habit momentum has slipped ${recent.size} weeks running, " +
                         "small now, but these losses compound. One win this week reverses the spiral.",
                     strength = (first - last) / first,
                     sampleSize = n,
@@ -108,7 +108,7 @@ class CausalInsightEngine(
             strictlyUp -> listOf(
                 CausalInsight(
                     kind = InsightKind.AMPLIFICATION_SPIRAL,
-                    statement = "Your habit momentum has climbed ${recent.size} weeks running — " +
+                    statement = "Your habit momentum has climbed ${recent.size} weeks running, " +
                         "it's compounding in your favour. Keep it fed.",
                     strength = if (first > 0) (last - first) / first else 1.0,
                     sampleSize = n,

@@ -10,7 +10,7 @@ import az.tribe.lifeplanner.domain.repository.GoalRepository
 import az.tribe.lifeplanner.domain.repository.LifeValueRepository
 
 /**
- * Pillar 5 (P5.2) — computes per-[LifeValue] alignment: how many completed goals and logged
+ * Pillar 5 (P5.2), computes per-[LifeValue] alignment: how many completed goals and logged
  * decisions served each value. The "becoming" progress signal.
  */
 class ComputeValueAlignmentUseCase(

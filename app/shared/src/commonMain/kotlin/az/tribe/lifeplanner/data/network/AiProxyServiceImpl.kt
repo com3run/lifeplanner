@@ -173,7 +173,7 @@ class AiProxyServiceImpl(
             // Verify response is SSE
             val contentType = response.headers["Content-Type"] ?: ""
             if (!contentType.contains("text/event-stream")) {
-                // Server returned non-SSE (e.g. JSON) — streaming not supported
+                // Server returned non-SSE (e.g. JSON), streaming not supported
                 log.w { "Expected text/event-stream but got: $contentType" }
                 val body = response.bodyAsText()
                 // Try to extract text from JSON response as fallback

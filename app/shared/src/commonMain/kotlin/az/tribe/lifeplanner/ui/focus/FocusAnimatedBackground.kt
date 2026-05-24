@@ -59,7 +59,7 @@ private fun Color.warmShift(amount: Float): Color {
 }
 
 // ============================================
-// DEFAULT — Plain background color, no effects
+// DEFAULT, Plain background color, no effects
 // ============================================
 
 @Composable
@@ -73,7 +73,7 @@ private fun DefaultGradientBackground(mood: Mood?, modifier: Modifier) {
 }
 
 // ============================================
-// RAIN — Blue-gray gradient + falling droplets
+// RAIN, Blue-gray gradient + falling droplets
 // ============================================
 
 private data class RainDrop(
@@ -140,7 +140,7 @@ private fun RainBackground(mood: Mood?, modifier: Modifier) {
 }
 
 // ============================================
-// FOREST — Green gradient + floating leaf particles
+// FOREST, Green gradient + floating leaf particles
 // ============================================
 
 private data class Leaf(
@@ -221,7 +221,7 @@ private fun ForestBackground(mood: Mood?, modifier: Modifier) {
 }
 
 // ============================================
-// FIREPLACE — Warm gradient + rising ember particles
+// FIREPLACE, Warm gradient + rising ember particles
 // ============================================
 
 private data class Ember(
@@ -314,7 +314,7 @@ private fun FireplaceBackground(mood: Mood?, modifier: Modifier) {
 }
 
 // ============================================
-// OCEAN — Deep blue gradient + wave motion
+// OCEAN, Deep blue gradient + wave motion
 // ============================================
 
 @Composable
@@ -363,7 +363,7 @@ private fun OceanBackground(mood: Mood?, modifier: Modifier) {
 }
 
 // ============================================
-// NIGHT SKY — Dark gradient + twinkling stars
+// NIGHT SKY, Dark gradient + twinkling stars
 // ============================================
 
 private data class Star(

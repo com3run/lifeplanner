@@ -26,7 +26,7 @@ import az.tribe.lifeplanner.domain.model.ChoicePoint
 import az.tribe.lifeplanner.ui.theme.modernColors
 
 /**
- * Pillar 3 — lightweight "re-choose" sheet for a [ChoicePoint]: keep / reschedule /
+ * Pillar 3, lightweight "re-choose" sheet for a [ChoicePoint]: keep / reschedule /
  * shrink / drop, with one optional line of reasoning. The chosen action + reasoning are
  * recorded as a [az.tribe.lifeplanner.domain.model.Decision].
  */

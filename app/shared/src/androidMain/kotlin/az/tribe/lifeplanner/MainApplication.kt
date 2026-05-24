@@ -51,7 +51,7 @@ open class MainApplication : Application(), KoinComponent {
             PostHogAnalytics.setup(BuildKonfig.POSTHOG_API_KEY, BuildKonfig.POSTHOG_HOST)
             Logger.i("PostHog") { "PostHog initialized with session replay" }
         } else {
-            Logger.w("PostHog") { "PostHog API key is empty — skipping init" }
+            Logger.w("PostHog") { "PostHog API key is empty, skipping init" }
         }
 
         initKoin {

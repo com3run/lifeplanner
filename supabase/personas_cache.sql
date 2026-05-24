@@ -1,7 +1,7 @@
 -- ────────────────────────────────────────────────────────────────────────────
 -- personas_cache
 -- Global public cache of TribeBot personas synced via webhook.
--- No user_id — one row per persona, shared by all LifePlanner users.
+-- No user_id, one row per persona, shared by all LifePlanner users.
 -- Write: service role only (via persona-sync-webhook Edge Function).
 -- Read:  public (anon key) so the app can fetch without auth.
 -- ────────────────────────────────────────────────────────────────────────────
@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS personas_cache (
     updated_at           TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Public read — all LifePlanner users share the same cache
+-- Public read, all LifePlanner users share the same cache
 ALTER TABLE personas_cache ENABLE ROW LEVEL SECURITY;
 CREATE POLICY personas_cache_public_read ON personas_cache
     FOR SELECT TO anon, authenticated USING (TRUE);

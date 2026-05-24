@@ -339,7 +339,7 @@ fun QuickActionsGrid(
 }
 
 /**
- * Contextual smart actions — shows up to 4 actions that change based on user state.
+ * Contextual smart actions, shows up to 4 actions that change based on user state.
  * Prioritizes what matters most right now.
  */
 @Composable

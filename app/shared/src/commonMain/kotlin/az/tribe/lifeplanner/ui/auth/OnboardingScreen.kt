@@ -312,7 +312,7 @@ private fun QuickTourPage() {
 
     val slides = listOf(
         "Set goals and track milestones",
-        "Build habits — streaks auto-count",
+        "Build habits, streaks auto-count",
         "Offline works. Online? AI helps."
     )
 

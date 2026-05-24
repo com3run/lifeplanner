@@ -10,7 +10,7 @@ import io.github.jan.supabase.postgrest.postgrest
 import kotlin.time.Clock
 
 /**
- * Pillar 7 — syncs the user's single [DecisionProfileEntity] (one row per user) to the
+ * Pillar 7, syncs the user's single [DecisionProfileEntity] (one row per user) to the
  * `decision_profiles` table. Mirrors the standard soft-delete syncer; the only quirk is
  * that this table holds at most one row per user.
  */

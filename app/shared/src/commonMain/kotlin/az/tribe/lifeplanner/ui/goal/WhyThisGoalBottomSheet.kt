@@ -28,7 +28,7 @@ import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.Check
 
 /**
- * Pillar 1 — "Why this goal?" picker. Lets the user link a goal to a [LifeValue]
+ * Pillar 1, "Why this goal?" picker. Lets the user link a goal to a [LifeValue]
  * (the reason it serves). Optional: a "No value yet" option is always offered.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -58,7 +58,7 @@ fun WhyThisGoalBottomSheet(
                 color = MaterialTheme.modernColors.textPrimary
             )
             Text(
-                "Connect this goal to a life value it serves. Optional — but goals tied to a reason are easier to stick with.",
+                "Connect this goal to a life value it serves. Optional, but goals tied to a reason are easier to stick with.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.modernColors.textSecondary
             )
@@ -82,7 +82,7 @@ fun WhyThisGoalBottomSheet(
 
             if (values.isEmpty()) {
                 Text(
-                    "You haven't defined any life values yet. They're created from your onboarding answers — or add them later.",
+                    "You haven't defined any life values yet. They're created from your onboarding answers, or add them later.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.modernColors.textSecondary
                 )

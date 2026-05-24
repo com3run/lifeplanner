@@ -173,7 +173,7 @@ class RetrospectiveViewModel(
             - Journal: $journalLine
             ${if (extras.isNotEmpty()) "- Also: $extras" else ""}
 
-            Write a warm, personal 2–3 sentence recap of their day. Be specific about what they did.
+            Write a warm, personal 2-3 sentence recap of their day. Be specific about what they did.
             If the day was productive, celebrate it. If not, be encouraging and forward-looking.
             Keep it under 80 words. Do not use bullet points. Write as if speaking directly to them.
         """.trimIndent()

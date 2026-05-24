@@ -21,7 +21,7 @@ actual class InAppReviewManager {
                 Analytics.appReviewCompleted(trigger)
                 Logger.i("InAppReview") { "Review requested via SKStoreReviewController for trigger: $trigger" }
             } else {
-                Logger.w("InAppReview") { "No UIWindowScene found — skipping review prompt" }
+                Logger.w("InAppReview") { "No UIWindowScene found, skipping review prompt" }
             }
         } catch (e: Exception) {
             Logger.e("InAppReview") { "Failed to request review: ${e.message}" }

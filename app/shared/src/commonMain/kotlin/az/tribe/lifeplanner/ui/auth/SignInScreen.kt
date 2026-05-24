@@ -63,7 +63,7 @@ fun SignInScreen(
     // Detect if user is currently a guest
     val isCurrentlyGuest = authState is AuthState.Guest
 
-    // Handle auth state changes — navigate on success (only on transitions, not initial state)
+    // Handle auth state changes, navigate on success (only on transitions, not initial state)
     LaunchedEffect(authState) {
         if (!hasSeenInitialState) {
             hasSeenInitialState = true
@@ -332,7 +332,7 @@ fun SignInScreen(
                         Text("Sign in with Magic Link", style = MaterialTheme.typography.titleMedium)
                     }
                 } else {
-                    // Magic link sent — show success + OTP entry
+                    // Magic link sent, show success + OTP entry
                     Surface(
                         shape = RoundedCornerShape(12.dp),
                         color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),

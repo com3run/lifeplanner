@@ -114,7 +114,7 @@ class MainActivity : ComponentActivity() {
      * so rewrite HTTPS URLs to the custom scheme before passing them.
      */
     private fun handleAuthDeeplink(intent: Intent) {
-        val uri = intent.data ?: return // No deep link — skip entirely
+        val uri = intent.data ?: return // No deep link, skip entirely
         Logger.d("MainActivity") { "handleAuthDeeplink: $uri" }
 
         // Check for error in the callback fragment (e.g. expired magic link)

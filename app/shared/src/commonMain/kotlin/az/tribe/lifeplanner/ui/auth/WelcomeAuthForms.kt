@@ -386,7 +386,7 @@ internal fun MagicLinkForm(
             InlineErrorBanner(error)
         }
     } else {
-        // Magic link sent — show OTP entry
+        // Magic link sent, show OTP entry
         Box(
             modifier = Modifier
                 .fillMaxWidth()

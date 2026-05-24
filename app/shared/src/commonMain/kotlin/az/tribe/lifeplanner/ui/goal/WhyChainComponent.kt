@@ -25,7 +25,7 @@ import androidx.compose.ui.unit.dp
 import az.tribe.lifeplanner.ui.theme.modernColors
 
 /**
- * Pillar 1 — renders the "Why-Chain" ladder for a goal: the [LifeValue] it serves
+ * Pillar 1, renders the "Why-Chain" ladder for a goal: the [LifeValue] it serves
  * at the top (the why), down through the goal and its milestones (the what). When
  * the goal has no value linked, the top node becomes a gentle "What's this for?"
  * nudge (a prompt, not a blocker) that opens the value picker.

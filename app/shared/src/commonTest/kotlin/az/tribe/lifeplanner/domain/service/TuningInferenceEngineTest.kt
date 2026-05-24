@@ -92,7 +92,7 @@ class TuningInferenceEngineTest {
     fun `a window with no signal for a dial preserves that dial's prior`() {
         val p1 = engine.infer(null, BehaviorWindow(safeGoalsChosen = 8, ambitiousGoalsChosen = 2), "p1")
         val before = p1.dial(TuningDial.RISK_AVERSION)
-        // A later window touches only novelty — risk aversion has no new evidence.
+        // A later window touches only novelty, risk aversion has no new evidence.
         val p2 = engine.infer(p1, BehaviorWindow(goalsStarted = 3, distinctCategoriesStarted = 1), "ignored")
         val after = p2.dial(TuningDial.RISK_AVERSION)
         assertEquals(before.value, after.value, 0.0001f)

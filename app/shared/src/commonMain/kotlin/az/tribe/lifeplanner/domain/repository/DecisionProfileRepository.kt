@@ -4,7 +4,7 @@ import az.tribe.lifeplanner.domain.model.DecisionProfile
 import kotlinx.coroutines.flow.Flow
 
 /**
- * Pillar 7 — persistence for the user's single [DecisionProfile] (one row per user).
+ * Pillar 7, persistence for the user's single [DecisionProfile] (one row per user).
  * Inferred and rewritten by the TuningInferenceEngine; read by the Possibility ranking,
  * Choice Points, and the "Your Wiring" screen.
  */

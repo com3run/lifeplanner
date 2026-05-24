@@ -23,7 +23,7 @@ data class Goal(
     val aiReasoning: String? = null,
     val valueId: String? = null,
     // Pillar 4 (Causal Model): the user's forecast captured at creation, kept separate from
-    // the live, editable dueDate — so we can later calibrate predicted vs actual.
+    // the live, editable dueDate, so we can later calibrate predicted vs actual.
     val predictedDueDate: LocalDate? = null
 )
 

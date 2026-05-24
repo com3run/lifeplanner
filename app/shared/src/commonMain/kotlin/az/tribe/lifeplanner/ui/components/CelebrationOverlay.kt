@@ -265,7 +265,7 @@ private fun ConfettiCanvas(type: CelebrationType) {
     val progress = remember { Animatable(0f) }
 
     LaunchedEffect(Unit) {
-        // Initialize particles — burst upward from bottom center
+        // Initialize particles, burst upward from bottom center
         particles = List(particleCount) {
             val angle = Random.nextFloat() * 180f // spread upward (0-180 degrees)
             val speed = Random.nextFloat() * 8f + 3f

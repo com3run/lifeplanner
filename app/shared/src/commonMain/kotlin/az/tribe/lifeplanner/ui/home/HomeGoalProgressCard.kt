@@ -274,7 +274,7 @@ private fun GoalProgressRow(goal: Goal, today: LocalDate) {
                 )
             }
 
-            // Dual-layer progress track — 10dp tall
+            // Dual-layer progress track, 10dp tall
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -282,14 +282,14 @@ private fun GoalProgressRow(goal: Goal, today: LocalDate) {
                     .clip(RoundedCornerShape(5.dp))
                     .background(color.copy(alpha = 0.08f))
             ) {
-                // Ideal position — muted fill up to target
+                // Ideal position, muted fill up to target
                 Box(
                     modifier = Modifier
                         .fillMaxWidth(fraction = animIdeal.value.coerceIn(0f, 1f))
                         .height(10.dp)
                         .background(color.copy(alpha = 0.22f), RoundedCornerShape(5.dp))
                 )
-                // Actual progress — gradient fill
+                // Actual progress, gradient fill
                 Box(
                     modifier = Modifier
                         .fillMaxWidth(fraction = animActual.value.coerceIn(0f, 1f))

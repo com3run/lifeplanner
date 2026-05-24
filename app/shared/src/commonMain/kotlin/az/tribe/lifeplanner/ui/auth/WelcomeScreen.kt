@@ -113,7 +113,7 @@ fun WelcomeScreen(
                 )
         )
 
-        // Typewriter headline — vertically centered, above buttons
+        // Typewriter headline, vertically centered, above buttons
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
@@ -124,7 +124,7 @@ fun WelcomeScreen(
             TypewriterHeadline()
         }
 
-        // Auth buttons — pinned to bottom
+        // Auth buttons, pinned to bottom
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -135,7 +135,7 @@ fun WelcomeScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Primary CTA — Get Started (guest)
+            // Primary CTA, Get Started (guest)
             Button(
                 onClick = {
                     if (!isLoadingGuest) {
@@ -166,7 +166,7 @@ fun WelcomeScreen(
                 }
             }
 
-            // Secondary — Sign In
+            // Secondary, Sign In
             OutlinedButton(
                 onClick = {
                     Analytics.signInStarted()

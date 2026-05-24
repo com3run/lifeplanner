@@ -73,7 +73,7 @@ internal fun AuthBottomSheet(
     var credSavePassword by remember { mutableStateOf("") }
 
     // Android: show saved-password picker when sign-in password form opens.
-    // iOS: no-op — system QuickType bar handles autofill natively via KeyboardType.Password.
+    // iOS: no-op, system QuickType bar handles autofill natively via KeyboardType.Password.
     val showSignInWithPassword = !showSignUp && usePasswordMode && !isVerifyingState
     LaunchedEffect(showSignInWithPassword) {
         if (showSignInWithPassword) {
@@ -98,7 +98,7 @@ internal fun AuthBottomSheet(
     )
 
     // Android: save credential after successful password sign-in or sign-up.
-    // iOS: no-op — iCloud Keychain save prompt is shown by the system automatically.
+    // iOS: no-op, iCloud Keychain save prompt is shown by the system automatically.
     SaveCredentialEffect(
         email = credSaveEmail,
         password = credSavePassword,
@@ -157,7 +157,7 @@ internal fun AuthBottomSheet(
     // Track which error we already handled so stale errors don't re-trigger on recomposition
     var lastHandledError by remember { mutableStateOf<String?>(null) }
 
-    // Map server errors to fields inline — no snackbar
+    // Map server errors to fields inline, no snackbar
     LaunchedEffect(authState) {
         if (authState is AuthState.Error) {
             val errorMsg = (authState as AuthState.Error).message
@@ -181,7 +181,7 @@ internal fun AuthBottomSheet(
         }
     }
 
-    // Watch for successful auth — only navigate when a real auth transition happens.
+    // Watch for successful auth, only navigate when a real auth transition happens.
     // Track the initial user ID so we don't auto-close when the sheet opens on an
     // already-authenticated screen (e.g. Guest opening sign-in from Profile).
     val initialUserId = remember {
