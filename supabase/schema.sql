@@ -65,6 +65,7 @@ CREATE TABLE goals (
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
     completion_rate REAL        NOT NULL DEFAULT 0.0,
     is_archived     BOOLEAN     NOT NULL DEFAULT FALSE,
+    value_id        TEXT,
     -- sync metadata
     updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
     is_deleted   BOOLEAN     NOT NULL DEFAULT FALSE,
@@ -780,6 +781,36 @@ CREATE TRIGGER trg_user_situations_sync
     FOR EACH ROW EXECUTE FUNCTION update_sync_metadata();
 
 -- ────────────────────────────────────────────────────────────
+-- 2.X life_values  (Pillar 1 — the "reason" layer above goals)
+-- ────────────────────────────────────────────────────────────
+
+CREATE TABLE life_values (
+    id           TEXT        PRIMARY KEY,
+    user_id      UUID        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    title        TEXT        NOT NULL,
+    description  TEXT        NOT NULL DEFAULT '',
+    is_active    BOOLEAN     NOT NULL DEFAULT TRUE,
+    sort_order   INTEGER     NOT NULL DEFAULT 0,
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    -- sync metadata
+    updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    is_deleted   BOOLEAN     NOT NULL DEFAULT FALSE,
+    sync_version BIGINT      NOT NULL DEFAULT 0
+);
+
+CREATE INDEX idx_life_values_user_id ON life_values(user_id);
+
+ALTER TABLE life_values ENABLE ROW LEVEL SECURITY;
+CREATE POLICY life_values_select ON life_values FOR SELECT TO authenticated USING ((select auth.uid()) = user_id);
+CREATE POLICY life_values_insert ON life_values FOR INSERT TO authenticated WITH CHECK ((select auth.uid()) = user_id);
+CREATE POLICY life_values_update ON life_values FOR UPDATE TO authenticated USING ((select auth.uid()) = user_id) WITH CHECK ((select auth.uid()) = user_id);
+CREATE POLICY life_values_delete ON life_values FOR DELETE TO authenticated USING ((select auth.uid()) = user_id);
+
+CREATE TRIGGER trg_life_values_sync
+    BEFORE UPDATE ON life_values
+    FOR EACH ROW EXECUTE FUNCTION update_sync_metadata();
+
+-- ────────────────────────────────────────────────────────────
 -- 7. Tombstone cleanup – hard-delete soft-deleted rows > 30 days
 -- ────────────────────────────────────────────────────────────
 
@@ -796,7 +827,8 @@ BEGIN
             'habits', 'habit_check_ins', 'journal_entries', 'badges', 'challenges',
             'goal_dependencies', 'chat_sessions', 'chat_messages', 'review_reports',
             'reminders', 'custom_coaches', 'coach_groups', 'coach_group_members',
-            'focus_sessions', 'coach_persona_overrides', 'user_situations'
+            'focus_sessions', 'coach_persona_overrides', 'user_situations',
+            'life_values'
         ])
     LOOP
         EXECUTE format(

@@ -20,6 +20,20 @@ data class GoalSyncDto(
     @SerialName("completion_rate") val completionRate: Double = 0.0,
     @SerialName("is_archived") val isArchived: Boolean = false,
     @SerialName("ai_reasoning") val aiReasoning: String? = null,
+    @SerialName("value_id") val valueId: String? = null,
+    @SerialName("updated_at") val updatedAt: String? = null,
+    @SerialName("is_deleted") val isDeleted: Boolean = false,
+    @SerialName("sync_version") val syncVersion: Long = 0
+)
+
+@Serializable
+data class LifeValueSyncDto(
+    val id: String,
+    @SerialName("user_id") val userId: String,
+    val title: String,
+    val description: String = "",
+    @SerialName("is_active") val isActive: Boolean = true,
+    @SerialName("sort_order") val sortOrder: Long = 0,
     @SerialName("updated_at") val updatedAt: String? = null,
     @SerialName("is_deleted") val isDeleted: Boolean = false,
     @SerialName("sync_version") val syncVersion: Long = 0

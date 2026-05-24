@@ -1,0 +1,2 @@
+-- 30: GoalEntity.valueId — links a Goal to a LifeValue (Pillar 1 Why-Chain)
+ALTER TABLE GoalEntity ADD COLUMN valueId TEXT;

@@ -46,6 +46,7 @@ suspend fun SharedDatabase.insertGoal(goal: GoalEntity) {
             completionRate = goal.completionRate ?: 0.0,
             isArchived = goal.isArchived,
             aiReasoning = goal.aiReasoning,
+            valueId = goal.valueId,
             sync_updated_at = nowTimestamp(),
             is_deleted = 0L,
             sync_version = 0L,
@@ -71,6 +72,7 @@ suspend fun SharedDatabase.insertGoals(goals: List<GoalEntity>) {
                 completionRate = goal.completionRate,
                 isArchived = goal.isArchived,
                 aiReasoning = goal.aiReasoning,
+                valueId = goal.valueId,
                 sync_updated_at = nowTimestamp(),
                 is_deleted = 0L,
                 sync_version = 0L,
@@ -115,6 +117,7 @@ suspend fun SharedDatabase.updateGoal(goal: GoalEntity) {
             completionRate = goal.completionRate,
             isArchived = goal.isArchived,
             aiReasoning = goal.aiReasoning,
+            valueId = goal.valueId,
             id = goal.id,
             createdAt = goal.createdAt
         )

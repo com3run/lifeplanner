@@ -231,6 +231,7 @@ class BackupRepositoryImpl(
                             completionRate = 0.0,
                             isArchived = 0L,
                             aiReasoning = null,
+                            valueId = null,
                             sync_updated_at = Clock.System.now().toString(),
                             is_deleted = 0L,
                             sync_version = 0L, last_synced_at = null

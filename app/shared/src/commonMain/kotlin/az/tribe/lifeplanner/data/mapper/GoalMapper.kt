@@ -174,7 +174,8 @@ fun GoalEntity.toDomain(milestones: List<Milestone> = emptyList()): Goal {
         createdAt = parseLocalDateTime(createdAt),
         completionRate = completionRate.toFloat() ?: 0f,
         isArchived = isArchived == 1L,
-        aiReasoning = aiReasoning
+        aiReasoning = aiReasoning,
+        valueId = valueId
     )
 }
 
@@ -193,6 +194,7 @@ fun Goal.toEntity(): GoalEntity {
         completionRate = completionRate.toDouble(),
         isArchived = if (isArchived) 1L else 0L,
         aiReasoning = aiReasoning,
+        valueId = valueId,
         sync_updated_at = Clock.System.now().toString(),
         is_deleted = 0L,
         sync_version = 0L,

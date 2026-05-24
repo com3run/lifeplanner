@@ -142,6 +142,12 @@ fun App(
                 syncManager.performFullSync()
             }
         }
+
+        // Pillar 1: one-time migration of onboarding topValues → LifeValue rows (idempotent)
+        val promoteTopValues: az.tribe.lifeplanner.usecases.PromoteTopValuesToLifeValuesUseCase = koinInject()
+        LaunchedEffect(authState) {
+            promoteTopValues()
+        }
         val lifecycleOwner = LocalLifecycleOwner.current
         DisposableEffect(lifecycleOwner) {
             val observer = LifecycleEventObserver { _, event ->
