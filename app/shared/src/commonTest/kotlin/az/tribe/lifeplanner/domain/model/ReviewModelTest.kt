@@ -91,7 +91,7 @@ class ReviewModelTest {
         assertEquals("sam_social", CoachPersona.getByCategory(GoalCategory.PEOPLE).id)
         assertEquals("luna_general", CoachPersona.getByCategory(GoalCategory.WELLBEING).id)
         assertEquals("river_wellness", CoachPersona.getByCategory(GoalCategory.PURPOSE).id)
-        assertEquals("jamie_family", CoachPersona.getByCategory(GoalCategory.PEOPLE).id)
+        assertEquals("jamie_family", CoachPersona.getByCategory(GoalCategory.FAMILY).id)
     }
 
     // ── CoachPersona.getById ─────────────────────────────────────────

@@ -811,6 +811,43 @@ CREATE TRIGGER trg_life_values_sync
     FOR EACH ROW EXECUTE FUNCTION update_sync_metadata();
 
 -- ────────────────────────────────────────────────────────────
+-- 2.X decisions  (Pillar 3 — decisions as first-class objects)
+-- ────────────────────────────────────────────────────────────
+
+CREATE TABLE decisions (
+    id                  TEXT        PRIMARY KEY,
+    user_id             UUID        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    question            TEXT        NOT NULL,
+    options_considered  TEXT        NOT NULL DEFAULT '',
+    chosen_option       TEXT        NOT NULL,
+    reasoning           TEXT        NOT NULL DEFAULT '',
+    related_goal_id     TEXT,
+    expected_outcome    TEXT        NOT NULL DEFAULT '',
+    confidence          INTEGER     NOT NULL DEFAULT 50,
+    decided_at          TEXT        NOT NULL,
+    actual_outcome      TEXT,
+    outcome_reviewed_at TEXT,
+    outcome_quality     TEXT,
+    -- sync metadata
+    updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    is_deleted   BOOLEAN     NOT NULL DEFAULT FALSE,
+    sync_version BIGINT      NOT NULL DEFAULT 0
+);
+
+CREATE INDEX idx_decisions_user_id ON decisions(user_id);
+CREATE INDEX idx_decisions_goal ON decisions(related_goal_id);
+
+ALTER TABLE decisions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY decisions_select ON decisions FOR SELECT TO authenticated USING ((select auth.uid()) = user_id);
+CREATE POLICY decisions_insert ON decisions FOR INSERT TO authenticated WITH CHECK ((select auth.uid()) = user_id);
+CREATE POLICY decisions_update ON decisions FOR UPDATE TO authenticated USING ((select auth.uid()) = user_id) WITH CHECK ((select auth.uid()) = user_id);
+CREATE POLICY decisions_delete ON decisions FOR DELETE TO authenticated USING ((select auth.uid()) = user_id);
+
+CREATE TRIGGER trg_decisions_sync
+    BEFORE UPDATE ON decisions
+    FOR EACH ROW EXECUTE FUNCTION update_sync_metadata();
+
+-- ────────────────────────────────────────────────────────────
 -- 7. Tombstone cleanup – hard-delete soft-deleted rows > 30 days
 -- ────────────────────────────────────────────────────────────
 
@@ -828,7 +865,7 @@ BEGIN
             'goal_dependencies', 'chat_sessions', 'chat_messages', 'review_reports',
             'reminders', 'custom_coaches', 'coach_groups', 'coach_group_members',
             'focus_sessions', 'coach_persona_overrides', 'user_situations',
-            'life_values'
+            'life_values', 'decisions'
         ])
     LOOP
         EXECUTE format(

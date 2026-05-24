@@ -27,6 +27,7 @@ import az.tribe.lifeplanner.data.repository.FocusRepositoryImpl
 import az.tribe.lifeplanner.data.repository.RetrospectiveRepositoryImpl
 import az.tribe.lifeplanner.data.repository.GoalRepositoryImpl
 import az.tribe.lifeplanner.data.repository.LifeValueRepositoryImpl
+import az.tribe.lifeplanner.data.repository.DecisionRepositoryImpl
 import az.tribe.lifeplanner.data.repository.AbilityRepositoryImpl
 import az.tribe.lifeplanner.data.repository.CoachOrchestrator
 import az.tribe.lifeplanner.data.repository.UserSituationRepositoryImpl
@@ -57,6 +58,7 @@ import az.tribe.lifeplanner.domain.repository.FocusRepository
 import az.tribe.lifeplanner.domain.repository.RetrospectiveRepository
 import az.tribe.lifeplanner.domain.repository.GoalRepository
 import az.tribe.lifeplanner.domain.repository.LifeValueRepository
+import az.tribe.lifeplanner.domain.repository.DecisionRepository
 import az.tribe.lifeplanner.domain.repository.AbilityRepository
 import az.tribe.lifeplanner.domain.repository.UserSituationRepository
 import az.tribe.lifeplanner.domain.repository.HealthRepository
@@ -226,6 +228,7 @@ val appModule = module {
 
     single<GoalRepository> { GoalRepositoryImpl(get(), get(), get()) }
     single<LifeValueRepository> { LifeValueRepositoryImpl(get(), get()) }
+    single<DecisionRepository> { DecisionRepositoryImpl(get(), get()) }
     single<GoalHistoryRepository> { GoalHistoryRepositoryImpl(get(), get()) }
     single<GamificationRepository> { GamificationRepositoryImpl(get(), get(), get(), get()) }
     single<UserRepository> { UserRepositoryImpl(get(), get()) }
@@ -234,6 +237,7 @@ val appModule = module {
     single<GoalDependencyRepository> { GoalDependencyRepositoryImpl(get(), get()) }
     single<CoachRepository> { CoachRepositoryImpl(get(), get()) }
     single<CoachPostRepository> { CoachPostRepositoryImpl(get()) }
+    single { az.tribe.lifeplanner.domain.service.ChoicePointDetector() }
     single { CoachOrchestrator() }
     single<ChatRepository> { ChatRepositoryImpl(get(), get<AiProxyService>(), get(), get(), get(), get()) }
     single { ReviewMessageBuilder(get()) }
@@ -336,6 +340,7 @@ val appModule = module {
     viewModelOf(::CoachViewModel)
     viewModelOf(::ReminderViewModel)
     viewModelOf(::LifeBalanceViewModel)
+    viewModel { az.tribe.lifeplanner.ui.decision.DecisionViewModel(get(), get(), get(), get()) }
     viewModelOf(::BackupViewModel)
     viewModelOf(::FocusViewModel)
     viewModelOf(::RetrospectiveViewModel)

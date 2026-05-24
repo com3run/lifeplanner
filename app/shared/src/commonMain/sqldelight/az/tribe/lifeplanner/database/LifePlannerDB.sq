@@ -2279,3 +2279,69 @@ DELETE FROM LifeValueEntity WHERE is_deleted = 1 AND last_synced_at IS NOT NULL;
 upsertLifeValueFromSync:
 INSERT OR REPLACE INTO LifeValueEntity(id, title, description, isActive, sortOrder, sync_updated_at, is_deleted, sync_version, last_synced_at)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+-- ============== DecisionEntity (Pillar 3: decisions as first-class objects) ==============
+-- optionsConsidered stored as a newline-delimited string; outcomeQuality as the enum name.
+CREATE TABLE DecisionEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    question TEXT NOT NULL,
+    optionsConsidered TEXT NOT NULL DEFAULT '',
+    chosenOption TEXT NOT NULL,
+    reasoning TEXT NOT NULL DEFAULT '',
+    relatedGoalId TEXT,
+    expectedOutcome TEXT NOT NULL DEFAULT '',
+    confidence INTEGER NOT NULL DEFAULT 50,
+    decidedAt TEXT NOT NULL,
+    actualOutcome TEXT,
+    outcomeReviewedAt TEXT,
+    outcomeQuality TEXT,
+    sync_updated_at TEXT,
+    is_deleted INTEGER NOT NULL DEFAULT 0,
+    sync_version INTEGER NOT NULL DEFAULT 0,
+    last_synced_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_decision_goal ON DecisionEntity(relatedGoalId);
+
+selectAllDecisions:
+SELECT * FROM DecisionEntity WHERE is_deleted = 0 ORDER BY decidedAt DESC;
+
+selectDecisionById:
+SELECT * FROM DecisionEntity WHERE id = ?;
+
+selectDecisionsByGoal:
+SELECT * FROM DecisionEntity WHERE relatedGoalId = ? AND is_deleted = 0 ORDER BY decidedAt DESC;
+
+insertDecision:
+INSERT OR REPLACE INTO DecisionEntity(id, question, optionsConsidered, chosenOption, reasoning, relatedGoalId, expectedOutcome, confidence, decidedAt, actualOutcome, outcomeReviewedAt, outcomeQuality, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+updateDecision:
+UPDATE DecisionEntity
+SET question = ?, optionsConsidered = ?, chosenOption = ?, reasoning = ?, relatedGoalId = ?,
+    expectedOutcome = ?, confidence = ?, decidedAt = ?, actualOutcome = ?, outcomeReviewedAt = ?, outcomeQuality = ?,
+    sync_updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+WHERE id = ?;
+
+softDeleteDecision:
+UPDATE DecisionEntity SET is_deleted = 1, sync_updated_at = ? WHERE id = ?;
+
+deleteAllDecisions:
+DELETE FROM DecisionEntity;
+
+-- Decision sync queries
+getUnsyncedDecisions:
+SELECT * FROM DecisionEntity WHERE (last_synced_at IS NULL OR sync_updated_at > last_synced_at) AND is_deleted = 0;
+
+getDeletedDecisions:
+SELECT * FROM DecisionEntity WHERE is_deleted = 1;
+
+markDecisionSynced:
+UPDATE DecisionEntity SET last_synced_at = ? WHERE id = ?;
+
+purgeDeletedDecisions:
+DELETE FROM DecisionEntity WHERE is_deleted = 1 AND last_synced_at IS NOT NULL;
+
+upsertDecisionFromSync:
+INSERT OR REPLACE INTO DecisionEntity(id, question, optionsConsidered, chosenOption, reasoning, relatedGoalId, expectedOutcome, confidence, decidedAt, actualOutcome, outcomeReviewedAt, outcomeQuality, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);

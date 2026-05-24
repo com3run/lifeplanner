@@ -43,6 +43,12 @@ class RetrospectiveViewModelTest {
 
     @Test
     fun `initial selected date is yesterday`() = runTest(testDispatcher) {
+        // The VM opens on yesterday only when yesterday has activity (else today),
+        // so seed an active snapshot for it.
+        fakeRepository.snapshotToReturn = testDaySnapshot(
+            date = today.minus(DatePeriod(days = 1)),
+            journalEntries = listOf(testJournalEntry())
+        )
         viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 

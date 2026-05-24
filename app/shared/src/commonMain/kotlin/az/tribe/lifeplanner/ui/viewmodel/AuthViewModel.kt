@@ -30,7 +30,8 @@ class AuthViewModel(
     internal val authService: AuthService,
     internal val userRepository: UserRepository,
     internal val syncManager: SyncManager,
-    internal val supabaseClient: SupabaseClient
+    internal val supabaseClient: SupabaseClient?,
+    internal val settings: Settings
 ) : ViewModel() {
 
     companion object {
@@ -43,7 +44,6 @@ class AuthViewModel(
         }
     }
 
-    internal val settings = Settings()
     internal val PENDING_VERIFY_EMAIL_KEY = "pending_verification_email"
 
     /** Serializes all auth state mutations to prevent race conditions between
@@ -92,8 +92,9 @@ class AuthViewModel(
      * When a new session is established externally (handleDeeplinks), refresh the auth state.
      */
     private fun observeSessionChanges() {
+        val client = supabaseClient ?: return // no Supabase client (e.g. unit tests) — nothing to observe
         viewModelScope.launch {
-            supabaseClient.auth.sessionStatus.collect { status ->
+            client.auth.sessionStatus.collect { status ->
                 Logger.d("AuthViewModel") { "Session status changed: $status" }
                 when (status) {
                     is SessionStatus.Authenticated -> authMutex.withLock {
@@ -105,8 +106,8 @@ class AuthViewModel(
                             Logger.d("AuthDebug") { "observeSession: Authenticated event while Loading — skipping (login in progress)" }
                             return@withLock
                         }
-                        val supabaseUid = supabaseClient.auth.currentUserOrNull()?.id
-                        val rawEmail = supabaseClient.auth.currentUserOrNull()?.email
+                        val supabaseUid = client.auth.currentUserOrNull()?.id
+                        val rawEmail = client.auth.currentUserOrNull()?.email
                         Logger.d("AuthDebug") { "observeSession: Authenticated event, uid=$supabaseUid, rawEmail='$rawEmail', currentState=${current::class.simpleName}" }
                         val currentUid = when (current) {
                             is AuthState.Authenticated -> current.user.firebaseUid
@@ -116,7 +117,7 @@ class AuthViewModel(
                         val alreadyMatchingAuth = currentUid != null && currentUid == supabaseUid
                         Logger.d("AuthDebug") { "observeSession: currentUid=$currentUid, alreadyMatching=$alreadyMatchingAuth" }
                         if (!alreadyMatchingAuth) {
-                            val user = supabaseClient.auth.currentUserOrNull()
+                            val user = client.auth.currentUserOrNull()
                             if (user != null) {
                                 val email = user.email?.takeIf { it.isNotBlank() }
                                 Logger.d("AuthDebug") { "observeSession: resolvedEmail=${email}, isGuest=${email == null}" }

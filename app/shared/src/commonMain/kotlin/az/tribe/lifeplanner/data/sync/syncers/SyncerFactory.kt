@@ -17,6 +17,7 @@ fun createAllSyncers(
         UserSituationTableSyncer(supabase, db),
         LifeValueTableSyncer(supabase, db),
         GoalTableSyncer(supabase, db),
+        DecisionTableSyncer(supabase, db),   // decisions.related_goal_id → goals (soft ref)
         BadgeTableSyncer(supabase, db),
         CustomCoachTableSyncer(supabase, db),
         CoachGroupTableSyncer(supabase, db),

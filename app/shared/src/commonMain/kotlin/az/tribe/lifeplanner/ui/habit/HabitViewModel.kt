@@ -64,10 +64,10 @@ class HabitViewModel(
     private val uncheckHabitUseCase: UncheckHabitUseCase,
     private val smartReminderManager: SmartReminderManager,
     private val awardAbilityXpUseCase: AwardAbilityXpUseCase,
-    private val gamificationRepository: GamificationRepository
+    private val gamificationRepository: GamificationRepository,
+    private val settings: Settings
 ) : ViewModel() {
 
-    private val settings = Settings()
 
     // Smart reminder events (one-shot, collected by UI for snackbar)
     private val _reminderEvent = MutableSharedFlow<String>()

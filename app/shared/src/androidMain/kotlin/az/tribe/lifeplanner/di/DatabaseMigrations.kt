@@ -707,3 +707,30 @@ internal fun migrateToVersion30(db: SupportSQLiteDatabase) {
     // Schema v30: GoalEntity.valueId (Pillar 1 Why-Chain) — matches migration 30.sqm
     addColumnSafe(db, "GoalEntity", "valueId", "TEXT")
 }
+
+internal fun migrateToVersion31(db: SupportSQLiteDatabase) {
+    // Schema v31: DecisionEntity table (Pillar 3) — matches migration 31.sqm
+    db.execSQL(
+        """
+        CREATE TABLE IF NOT EXISTS DecisionEntity (
+            id TEXT NOT NULL PRIMARY KEY,
+            question TEXT NOT NULL,
+            optionsConsidered TEXT NOT NULL DEFAULT '',
+            chosenOption TEXT NOT NULL,
+            reasoning TEXT NOT NULL DEFAULT '',
+            relatedGoalId TEXT,
+            expectedOutcome TEXT NOT NULL DEFAULT '',
+            confidence INTEGER NOT NULL DEFAULT 50,
+            decidedAt TEXT NOT NULL,
+            actualOutcome TEXT,
+            outcomeReviewedAt TEXT,
+            outcomeQuality TEXT,
+            sync_updated_at TEXT,
+            is_deleted INTEGER NOT NULL DEFAULT 0,
+            sync_version INTEGER NOT NULL DEFAULT 0,
+            last_synced_at TEXT
+        )
+        """.trimIndent()
+    )
+    db.execSQL("CREATE INDEX IF NOT EXISTS idx_decision_goal ON DecisionEntity(relatedGoalId)")
+}
