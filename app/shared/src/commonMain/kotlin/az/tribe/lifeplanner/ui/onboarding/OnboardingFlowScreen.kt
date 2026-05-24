@@ -29,7 +29,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.rememberCoroutineScope
 import az.tribe.lifeplanner.domain.enum.GoalCategory
+import az.tribe.lifeplanner.domain.model.LifeValue
+import az.tribe.lifeplanner.domain.repository.LifeValueRepository
+import org.koin.compose.koinInject
+import kotlinx.coroutines.launch
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 import az.tribe.lifeplanner.ui.components.AppButton
 import az.tribe.lifeplanner.ui.components.AppButtonVariant
 import az.tribe.lifeplanner.ui.components.GradientHero
@@ -44,10 +51,10 @@ import az.tribe.lifeplanner.ui.theme.modernColors
  * enough* (a few values — no interrogation), and reaches a meaningful first action fast. Warm and
  * non-pressuring (D9/D12), token-pure with the premium blocks, Crossfade step transitions (D10).
  *
- * Values selected here feed **Pillar 1** (`LifeValue`) when it lands on `main` — captured locally
- * for now (the integration seam).
+ * Values selected here are persisted as **Pillar 1** `LifeValue` rows on finish (the seam is wired
+ * now that Pillar 1 is on `main`).
  */
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalUuidApi::class)
 @Composable
 fun OnboardingFlowScreen(
     onFinish: () -> Unit,
@@ -55,6 +62,8 @@ fun OnboardingFlowScreen(
     var step by remember { mutableStateOf(0) }
     val selected = remember { mutableStateOf(setOf<GoalCategory>()) }
     val c = MaterialTheme.modernColors
+    val lifeValueRepository: LifeValueRepository = koinInject()
+    val scope = rememberCoroutineScope()
 
     Scaffold(containerColor = c.background) { padding ->
         Column(
@@ -92,7 +101,17 @@ fun OnboardingFlowScreen(
             }
             AppButton(
                 text = label,
-                onClick = { if (step < 2) step++ else onFinish() },
+                onClick = {
+                    if (step < 2) {
+                        step++
+                    } else {
+                        val values = selected.value.mapIndexed { i, cat ->
+                            LifeValue(id = Uuid.random().toString(), title = cat.displayName, order = i)
+                        }
+                        scope.launch { runCatching { lifeValueRepository.insertLifeValues(values) } }
+                        onFinish()
+                    }
+                },
                 enabled = enabled,
                 modifier = Modifier.fillMaxWidth().padding(vertical = LifePlannerDesign.Spacing.md),
             )

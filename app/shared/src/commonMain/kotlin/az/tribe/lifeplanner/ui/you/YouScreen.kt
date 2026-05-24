@@ -46,6 +46,7 @@ import com.adamglin.phosphoricons.regular.CaretRight
 import com.adamglin.phosphoricons.regular.ChartBar
 import com.adamglin.phosphoricons.regular.ChatCircleText
 import com.adamglin.phosphoricons.regular.ClockCounterClockwise
+import com.adamglin.phosphoricons.regular.Lightning
 import com.adamglin.phosphoricons.regular.CloudArrowUp
 import com.adamglin.phosphoricons.regular.Scales
 import com.adamglin.phosphoricons.regular.Sliders
@@ -103,18 +104,8 @@ fun YouScreen(
             item { SectionLabel("Identity") }
             item {
                 SectionCard {
-                    Row(
-                        Modifier.fillMaxWidth().padding(LifePlannerDesign.Padding.cardContent),
-                        horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        IconChip(PhosphorIcons.Regular.Brain, tint = c.secondary)
-                        Text(
-                            "Becoming & Your Wiring arrive with the next update — your values, identity, and how you're wired.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = c.textSecondary,
-                        )
-                    }
+                    YouRow(PhosphorIcons.Regular.Brain, c.secondary, "Becoming", "Who you're becoming — values & identity") { onNavigate(Screen.Becoming.route) }
+                    YouRow(PhosphorIcons.Regular.Sliders, c.primary, "Your Wiring", "How you're wired — your decision profile", last = true) { onNavigate(Screen.YourWiring.route) }
                 }
             }
 
@@ -124,7 +115,16 @@ fun YouScreen(
                     YouRow(PhosphorIcons.Regular.Scales, c.success, "Life Balance", "How your areas of life are tracking") { onNavigate(Screen.LifeBalance.route) }
                     YouRow(PhosphorIcons.Regular.ChartBar, c.primary, "Analytics", "Your goal & habit statistics") { onNavigate(Screen.Analytics.route) }
                     YouRow(PhosphorIcons.Regular.Sliders, c.secondary, "My Patterns", "How you use the app + tips") { onNavigate(Screen.ScreenTimeInsight.route) }
+                    YouRow(PhosphorIcons.Regular.Lightning, c.warning, "Causal Insights", "What actually drives your progress") { onNavigate(Screen.CausalInsights.route) }
                     YouRow(PhosphorIcons.Regular.ClockCounterClockwise, c.accent, "Reviews", "Your periodic retrospective", last = true) { onNavigate(Screen.Retrospective.route) }
+                }
+            }
+
+            item { SectionLabel("Decisions") }
+            item {
+                SectionCard {
+                    YouRow(PhosphorIcons.Regular.ClockCounterClockwise, c.primary, "Decision Journal", "Your choices, reasoning & outcomes") { onNavigate(Screen.DecisionJournal.route) }
+                    YouRow(PhosphorIcons.Regular.Scales, c.accent, "Review Decisions", "Grade your reasoning, not just outcomes", last = true) { onNavigate(Screen.DecisionReview.route) }
                 }
             }
 
