@@ -37,6 +37,7 @@ import az.tribe.lifeplanner.ui.components.AppButton
 import az.tribe.lifeplanner.ui.components.AppButtonVariant
 import az.tribe.lifeplanner.ui.components.GradientHero
 import az.tribe.lifeplanner.ui.components.IconChip
+import az.tribe.lifeplanner.ui.components.StateView
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
 import az.tribe.lifeplanner.ui.theme.backgroundColor
 import az.tribe.lifeplanner.ui.theme.bouncyClickable
@@ -103,13 +104,14 @@ fun GoalsScreen(
 
             if (state.active.isEmpty() && state.completed.isEmpty()) {
                 item {
-                    Surface(Modifier.fillMaxWidth(), color = c.cardBackground, shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large)) {
-                        Column(Modifier.fillMaxWidth().padding(LifePlannerDesign.Padding.cardContentLarge), verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm)) {
-                            Text("Nothing here yet", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = c.textPrimary)
-                            Text("A goal is something you're working toward — start with one that matters to you.", style = MaterialTheme.typography.bodyMedium, color = c.textSecondary)
-                            AppButton(text = "Create your first goal", onClick = onNewGoal, modifier = Modifier.fillMaxWidth())
-                        }
-                    }
+                    StateView(
+                        title = "Nothing here yet",
+                        message = "A goal is something you're working toward — start with one that matters to you.",
+                        icon = PhosphorIcons.Regular.Flag,
+                        actionLabel = "Create your first goal",
+                        onAction = onNewGoal,
+                        modifier = Modifier.padding(top = LifePlannerDesign.Spacing.lg),
+                    )
                 }
             }
 
