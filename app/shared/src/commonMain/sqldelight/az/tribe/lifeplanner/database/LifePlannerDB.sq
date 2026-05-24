@@ -2407,3 +2407,60 @@ DELETE FROM IdentityStatementEntity WHERE is_deleted = 1 AND last_synced_at IS N
 upsertIdentityStatementFromSync:
 INSERT OR REPLACE INTO IdentityStatementEntity(id, statement, valueId, isActive, sortOrder, createdAt, sync_updated_at, is_deleted, sync_version, last_synced_at)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+-- ============== DecisionProfileEntity (Pillar 7: the user's six "wiring" dials) ==============
+-- One row per user. Kevin Mitchell's six Innate decision-making dials (Fig 6.2), each with a
+-- value (0..1, neutral 0.5), an inference confidence (0..1), and a sample size. Inferred from
+-- behaviour by the TuningInferenceEngine; no dial value is "good" or "bad".
+CREATE TABLE DecisionProfileEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    confidenceThresholdValue REAL NOT NULL DEFAULT 0.5,
+    confidenceThresholdConfidence REAL NOT NULL DEFAULT 0.0,
+    confidenceThresholdSamples INTEGER NOT NULL DEFAULT 0,
+    noveltySalienceValue REAL NOT NULL DEFAULT 0.5,
+    noveltySalienceConfidence REAL NOT NULL DEFAULT 0.0,
+    noveltySalienceSamples INTEGER NOT NULL DEFAULT 0,
+    delayDiscountingValue REAL NOT NULL DEFAULT 0.5,
+    delayDiscountingConfidence REAL NOT NULL DEFAULT 0.0,
+    delayDiscountingSamples INTEGER NOT NULL DEFAULT 0,
+    punishmentSensitivityValue REAL NOT NULL DEFAULT 0.5,
+    punishmentSensitivityConfidence REAL NOT NULL DEFAULT 0.0,
+    punishmentSensitivitySamples INTEGER NOT NULL DEFAULT 0,
+    rewardSensitivityValue REAL NOT NULL DEFAULT 0.5,
+    rewardSensitivityConfidence REAL NOT NULL DEFAULT 0.0,
+    rewardSensitivitySamples INTEGER NOT NULL DEFAULT 0,
+    riskAversionValue REAL NOT NULL DEFAULT 0.5,
+    riskAversionConfidence REAL NOT NULL DEFAULT 0.0,
+    riskAversionSamples INTEGER NOT NULL DEFAULT 0,
+    sync_updated_at TEXT,
+    is_deleted INTEGER NOT NULL DEFAULT 0,
+    sync_version INTEGER NOT NULL DEFAULT 0,
+    last_synced_at TEXT
+);
+
+selectDecisionProfile:
+SELECT * FROM DecisionProfileEntity WHERE is_deleted = 0 LIMIT 1;
+
+upsertDecisionProfile:
+INSERT OR REPLACE INTO DecisionProfileEntity(id, confidenceThresholdValue, confidenceThresholdConfidence, confidenceThresholdSamples, noveltySalienceValue, noveltySalienceConfidence, noveltySalienceSamples, delayDiscountingValue, delayDiscountingConfidence, delayDiscountingSamples, punishmentSensitivityValue, punishmentSensitivityConfidence, punishmentSensitivitySamples, rewardSensitivityValue, rewardSensitivityConfidence, rewardSensitivitySamples, riskAversionValue, riskAversionConfidence, riskAversionSamples, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+deleteAllDecisionProfiles:
+DELETE FROM DecisionProfileEntity;
+
+-- DecisionProfile sync queries
+getUnsyncedDecisionProfiles:
+SELECT * FROM DecisionProfileEntity WHERE (last_synced_at IS NULL OR sync_updated_at > last_synced_at) AND is_deleted = 0;
+
+getDeletedDecisionProfiles:
+SELECT * FROM DecisionProfileEntity WHERE is_deleted = 1;
+
+markDecisionProfileSynced:
+UPDATE DecisionProfileEntity SET last_synced_at = ? WHERE id = ?;
+
+purgeDeletedDecisionProfiles:
+DELETE FROM DecisionProfileEntity WHERE is_deleted = 1 AND last_synced_at IS NOT NULL;
+
+upsertDecisionProfileFromSync:
+INSERT OR REPLACE INTO DecisionProfileEntity(id, confidenceThresholdValue, confidenceThresholdConfidence, confidenceThresholdSamples, noveltySalienceValue, noveltySalienceConfidence, noveltySalienceSamples, delayDiscountingValue, delayDiscountingConfidence, delayDiscountingSamples, punishmentSensitivityValue, punishmentSensitivityConfidence, punishmentSensitivitySamples, rewardSensitivityValue, rewardSensitivityConfidence, rewardSensitivitySamples, riskAversionValue, riskAversionConfidence, riskAversionSamples, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);

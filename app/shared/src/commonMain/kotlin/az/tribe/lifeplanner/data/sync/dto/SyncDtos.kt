@@ -75,6 +75,33 @@ data class IdentityStatementSyncDto(
 )
 
 @Serializable
+data class DecisionProfileSyncDto(
+    val id: String,
+    @SerialName("user_id") val userId: String,
+    @SerialName("confidence_threshold_value") val confidenceThresholdValue: Double = 0.5,
+    @SerialName("confidence_threshold_confidence") val confidenceThresholdConfidence: Double = 0.0,
+    @SerialName("confidence_threshold_samples") val confidenceThresholdSamples: Long = 0,
+    @SerialName("novelty_salience_value") val noveltySalienceValue: Double = 0.5,
+    @SerialName("novelty_salience_confidence") val noveltySalienceConfidence: Double = 0.0,
+    @SerialName("novelty_salience_samples") val noveltySalienceSamples: Long = 0,
+    @SerialName("delay_discounting_value") val delayDiscountingValue: Double = 0.5,
+    @SerialName("delay_discounting_confidence") val delayDiscountingConfidence: Double = 0.0,
+    @SerialName("delay_discounting_samples") val delayDiscountingSamples: Long = 0,
+    @SerialName("punishment_sensitivity_value") val punishmentSensitivityValue: Double = 0.5,
+    @SerialName("punishment_sensitivity_confidence") val punishmentSensitivityConfidence: Double = 0.0,
+    @SerialName("punishment_sensitivity_samples") val punishmentSensitivitySamples: Long = 0,
+    @SerialName("reward_sensitivity_value") val rewardSensitivityValue: Double = 0.5,
+    @SerialName("reward_sensitivity_confidence") val rewardSensitivityConfidence: Double = 0.0,
+    @SerialName("reward_sensitivity_samples") val rewardSensitivitySamples: Long = 0,
+    @SerialName("risk_aversion_value") val riskAversionValue: Double = 0.5,
+    @SerialName("risk_aversion_confidence") val riskAversionConfidence: Double = 0.0,
+    @SerialName("risk_aversion_samples") val riskAversionSamples: Long = 0,
+    @SerialName("updated_at") val updatedAt: String? = null,
+    @SerialName("is_deleted") val isDeleted: Boolean = false,
+    @SerialName("sync_version") val syncVersion: Long = 0
+)
+
+@Serializable
 data class MilestoneSyncDto(
     val id: String,
     @SerialName("user_id") val userId: String,

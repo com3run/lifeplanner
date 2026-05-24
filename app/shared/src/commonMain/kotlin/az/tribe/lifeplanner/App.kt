@@ -567,6 +567,7 @@ fun App(
                         appNavDecisions(navController = navController)
                         appNavCausal(navController = navController)
                         appNavBecoming(navController = navController)
+                        appNavWiring(navController = navController)
                     }
 
                     if (!useRail) {
