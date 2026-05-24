@@ -34,6 +34,7 @@ import az.tribe.lifeplanner.ui.components.GradientHero
 import az.tribe.lifeplanner.ui.components.IconChip
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
 import az.tribe.lifeplanner.ui.theme.LifePlannerGradients
+import az.tribe.lifeplanner.ui.theme.bouncyClickable
 import az.tribe.lifeplanner.ui.theme.modernColors
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
@@ -178,7 +179,7 @@ private fun PossibilityCard(title: String, reason: String, isHabit: Boolean, onA
 private fun HabitRow(title: String, done: Boolean, onToggle: () -> Unit) {
     val c = MaterialTheme.modernColors
     Surface(
-        modifier = Modifier.fillMaxWidth().clickable(enabled = !done, onClick = onToggle),
+        modifier = Modifier.fillMaxWidth().bouncyClickable(enabled = !done, onClick = onToggle),
         color = c.cardBackground,
         shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large),
     ) {

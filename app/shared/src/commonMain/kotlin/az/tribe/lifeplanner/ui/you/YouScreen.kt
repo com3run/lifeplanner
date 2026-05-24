@@ -35,6 +35,7 @@ import az.tribe.lifeplanner.ui.navigation.Screen
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
 import az.tribe.lifeplanner.ui.theme.ThemeController
 import az.tribe.lifeplanner.ui.theme.ThemeMode
+import az.tribe.lifeplanner.ui.theme.bouncyClickable
 import az.tribe.lifeplanner.ui.theme.modernColors
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
@@ -182,7 +183,7 @@ private fun SectionCard(content: @Composable () -> Unit) {
 private fun YouRow(icon: ImageVector, tint: Color, title: String, subtitle: String, last: Boolean = false, onClick: () -> Unit) {
     val c = MaterialTheme.modernColors
     Row(
-        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = LifePlannerDesign.Padding.cardContent, vertical = LifePlannerDesign.Spacing.sm),
+        Modifier.fillMaxWidth().bouncyClickable(onClick = onClick).padding(horizontal = LifePlannerDesign.Padding.cardContent, vertical = LifePlannerDesign.Spacing.sm),
         horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
         verticalAlignment = Alignment.CenterVertically,
     ) {

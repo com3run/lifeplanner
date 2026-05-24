@@ -39,6 +39,7 @@ import az.tribe.lifeplanner.ui.components.GradientHero
 import az.tribe.lifeplanner.ui.components.IconChip
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
 import az.tribe.lifeplanner.ui.theme.backgroundColor
+import az.tribe.lifeplanner.ui.theme.bouncyClickable
 import az.tribe.lifeplanner.ui.theme.modernColors
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
@@ -140,7 +141,7 @@ private fun GoalCard(goal: Goal, onClick: () -> Unit, dimmed: Boolean = false) {
     val accent = goal.category.backgroundColor()
     val rate = goal.completionRate.coerceIn(0f, 1f)
     Surface(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        modifier = Modifier.fillMaxWidth().bouncyClickable(onClick = onClick),
         color = c.cardBackground,
         shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large),
     ) {
