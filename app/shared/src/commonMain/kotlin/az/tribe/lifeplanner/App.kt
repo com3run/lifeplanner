@@ -55,6 +55,9 @@ import az.tribe.lifeplanner.ui.gamification.GamificationEvent
 import az.tribe.lifeplanner.ui.gamification.GamificationViewModel
 import az.tribe.lifeplanner.ui.navigation.Screen
 import az.tribe.lifeplanner.ui.theme.LifePlannerTheme
+import az.tribe.lifeplanner.ui.theme.ThemeController
+import az.tribe.lifeplanner.ui.theme.ThemeMode
+import androidx.compose.foundation.isSystemInDarkTheme
 import az.tribe.lifeplanner.ui.viewmodel.AuthState
 import az.tribe.lifeplanner.ui.viewmodel.AuthViewModel
 import az.tribe.lifeplanner.util.InAppUpdateEffect
@@ -88,7 +91,15 @@ fun App(
     authViewModel: AuthViewModel = koinInject(),
     promoRoute: String? = null
 ) {
-    LifePlannerTheme {
+    // D3 audit G2: appearance follows a persisted preference (defaults to System), not a hardcoded dark.
+    val themeController: ThemeController = koinInject()
+    val themeMode by themeController.mode.collectAsState()
+    val darkTheme = when (themeMode) {
+        ThemeMode.SYSTEM -> isSystemInDarkTheme()
+        ThemeMode.LIGHT -> false
+        ThemeMode.DARK -> true
+    }
+    LifePlannerTheme(darkTheme = darkTheme) {
         var myPushNotificationToken by remember { mutableStateOf("") }
 
         val hasCompletedOnboarding by authViewModel.hasCompletedOnboarding.collectAsState()

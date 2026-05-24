@@ -148,10 +148,24 @@ to system/user preference (§7).
 
 ## 7. Reconciliation findings & gaps (the audit)
 
-| # | Finding | Severity | Recommendation (owner) |
+| # | Finding | Severity | Status / Recommendation |
 |---|---|---|---|
-| G1 | **Category naming drift** — `tokens.json › category.*` uses `financial/physical/social/emotional/spiritual/learning/other`; code `GoalCategory` enum uses `MONEY/BODY/PEOPLE/WELLBEING/PURPOSE/…`. | **High** | Pick one canonical naming (terminology.md is authoritative) and map the other to it; document the table. (D4 / data) |
-| G2 | **Dark-mode is the hardcoded default** (`darkTheme = true`), not tied to system or a user setting. | High | Wire to system setting + a user override in Settings (You → ⚙︎). (D7/D12) |
+| G1 | **Category naming drift** — code showed "Money/Body/People/Wellbeing/Purpose" (incl. a buggy `name.lowercase()` derive and a duplicate hardcoded map) while `terminology.md` (canonical) + the Figma tokens say Financial/Physical/Social/Emotional/Spiritual. | **High** | ✅ **Done.** Added a canonical `GoalCategory.displayName` (single source of truth) and pointed `LifeArea`, `CoachPreviewCards`, onboarding, and the goal-generator at it. Enum constant/DB names unchanged. Cross-walk below. |
+| G2 | **Dark-mode is the hardcoded default** (`darkTheme = true`), not tied to system or a user setting. | High | ✅ **Done (backing).** Added `ThemeController` (persists `ThemeMode` System/Light/Dark via `Settings`, default **System**) + root wiring in `App.kt` → appearance now follows the OS. The visible toggle lands with the Settings screen (D7). |
+
+### Canonical category cross-walk (G1)
+
+| `GoalCategory` (enum / DB — stable) | `displayName` (canonical, terminology.md) | Figma token key | Base color |
+|---|---|---|---|
+| `CAREER` | Career | `career` | `#4A6FFF` |
+| `MONEY` | Financial | `financial` | `#28C76F` |
+| `BODY` | Physical | `physical` | `#FF9F43` |
+| `PEOPLE` | Social | `social` | `#7A5AF8` |
+| `WELLBEING` | Emotional | `emotional` | `#00CFE8` |
+| `PURPOSE` | Spiritual | `spiritual` | `#EA5455` |
+| `FAMILY` | Family | `family` | `#F57C00`* |
+
+\* `family` base color drifts between the Figma token (`#6236FF`) and `CategoryColors.FAMILY` (`#F57C00`) — a remaining minor color reconciliation for D4. Life Balance adds an 8th area, **Personal Growth**, mapping to Career.
 | G3 | **Type styles embed color** (`bodyMedium → textSecondary`, etc.). | Medium | Prefer color applied at usage (or via M3 `onSurface*`); keep type role purely typographic. (D4) |
 | G4 | **Two radius sources** (`ModernShapes` 3 steps vs `CornerRadius` 6). | Low | Treat `CornerRadius` as canonical; derive `ModernShapes` from it. (D4) |
 | G5 | **Dimensions are a static object**, not provided via the theme/CompositionLocal like colors. | Low | Fine for KMP; optionally expose `LocalSpacing` for parity/testability. (D4) |

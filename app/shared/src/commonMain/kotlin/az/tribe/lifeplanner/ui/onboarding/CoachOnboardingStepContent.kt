@@ -182,11 +182,11 @@ private fun PriorityStep(
 ) {
     val options = listOf(
         GoalCategory.CAREER to ("💼" to "Career"),
-        GoalCategory.MONEY to ("💰" to "Money"),
-        GoalCategory.BODY to ("💪" to "Body"),
-        GoalCategory.PEOPLE to ("👥" to "People"),
-        GoalCategory.WELLBEING to ("🧘" to "Wellbeing"),
-        GoalCategory.PURPOSE to ("🎯" to "Purpose"),
+        GoalCategory.MONEY to ("💰" to "Financial"),
+        GoalCategory.BODY to ("💪" to "Physical"),
+        GoalCategory.PEOPLE to ("👥" to "Social"),
+        GoalCategory.WELLBEING to ("🧘" to "Emotional"),
+        GoalCategory.PURPOSE to ("🎯" to "Spiritual"),
         GoalCategory.FAMILY to ("🏡" to "Family")
     )
 

@@ -1,4 +1,4 @@
-# D1 — Design Principles & Competitive Benchmark Study
+  # D1 — Design Principles & Competitive Benchmark Study
 
 > **TRI-48** · anchor document for the Design Overhaul (**TRI-47**).
 > Every other design sub-issue (D2–D13) should trace back to a principle here. If a screen,

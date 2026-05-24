@@ -247,7 +247,7 @@ internal fun GeneratedGoalCard(
                         color = categoryColor.copy(alpha = 0.1f)
                     ) {
                         Text(
-                            text = goal.category.displayName(),
+                            text = goal.category.displayName,
                             style = MaterialTheme.typography.labelSmall,
                             color = categoryColor,
                             fontWeight = FontWeight.Medium,
@@ -339,5 +339,3 @@ internal fun GoalCategory.toColor(): Color = when (this) {
     GoalCategory.PURPOSE -> Color(0xFF8E54E9)
     GoalCategory.FAMILY -> Color(0xFFF57C00)
 }
-
-internal fun GoalCategory.displayName(): String = name.lowercase().replaceFirstChar { it.uppercase() }
