@@ -60,6 +60,7 @@ fun ProfileScreen(
     onNavigateToRetrospective: () -> Unit = {},
     onNavigateToScreenTimeInsight: () -> Unit = {},
     onNavigateToDecisions: () -> Unit = {},
+    onNavigateToCausalInsights: () -> Unit = {},
     onNavigateToAICoach: () -> Unit,
     onNavigateToSignIn: () -> Unit = {},
     onNavigateToFeedback: () -> Unit = {},
@@ -201,6 +202,7 @@ fun ProfileScreen(
             item { ProfileMenuItem(icon = PhosphorIcons.Regular.CloudArrowUp, title = "Backup & Sync", subtitle = "Export and restore your data", onClick = onNavigateToBackup) }
             item { ProfileMenuItem(icon = PhosphorIcons.Regular.ClockCounterClockwise, title = "Day Retrospective", subtitle = "Browse past days and activity", onClick = onNavigateToRetrospective) }
             item { ProfileMenuItem(icon = PhosphorIcons.Regular.ClockCounterClockwise, title = "Decision Journal", subtitle = "Your choices, reasoning, and outcomes", onClick = onNavigateToDecisions) }
+            item { ProfileMenuItem(icon = PhosphorIcons.Regular.ChartBar, title = "Causal Insights", subtitle = "What actually drives your progress", onClick = onNavigateToCausalInsights) }
             item { ProfileMenuItem(icon = PhosphorIcons.Regular.ChartBar, title = "My Patterns", subtitle = "See how you use the app + personalized tips", onClick = onNavigateToScreenTimeInsight) }
             item { ProfileMenuItem(icon = PhosphorIcons.Regular.ChatCircleText, title = "Send Feedback", subtitle = "Report bugs, request features", onClick = onNavigateToFeedback) }
 

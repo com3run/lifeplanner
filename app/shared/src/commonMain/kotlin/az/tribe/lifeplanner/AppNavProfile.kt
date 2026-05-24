@@ -85,6 +85,11 @@ internal fun NavGraphBuilder.appNavProfile(
                     launchSingleTop = true
                 }
             },
+            onNavigateToCausalInsights = {
+                navController.navigate(Screen.CausalInsights.route) {
+                    launchSingleTop = true
+                }
+            },
             onNavigateToRetrospective = {
                 navController.navigate(Screen.Retrospective.route) {
                     launchSingleTop = true

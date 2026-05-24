@@ -734,3 +734,9 @@ internal fun migrateToVersion31(db: SupportSQLiteDatabase) {
     )
     db.execSQL("CREATE INDEX IF NOT EXISTS idx_decision_goal ON DecisionEntity(relatedGoalId)")
 }
+
+internal fun migrateToVersion32(db: SupportSQLiteDatabase) {
+    // Schema v32: Goal.predictedDueDate + Milestone.estimatedEffort (Pillar 4 Causal Model) — matches migration 32.sqm
+    addColumnSafe(db, "GoalEntity", "predictedDueDate", "TEXT")
+    addColumnSafe(db, "MilestoneEntity", "estimatedEffort", "INTEGER")
+}

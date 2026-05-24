@@ -238,6 +238,11 @@ val appModule = module {
     single<CoachRepository> { CoachRepositoryImpl(get(), get()) }
     single<CoachPostRepository> { CoachPostRepositoryImpl(get()) }
     single { az.tribe.lifeplanner.domain.service.ChoicePointDetector() }
+    single { az.tribe.lifeplanner.domain.service.CausalInsightEngine() }
+    single { az.tribe.lifeplanner.domain.service.CausalInsightProvider(get(), get(), get(), get(), get()) }
+    single { az.tribe.lifeplanner.domain.service.CalibrationEngine() }
+    single { az.tribe.lifeplanner.domain.service.CalibrationProvider(get(), get(), get()) }
+    single<az.tribe.lifeplanner.core.PremiumGate> { az.tribe.lifeplanner.core.DefaultPremiumGate() }
     single { CoachOrchestrator() }
     single<ChatRepository> { ChatRepositoryImpl(get(), get<AiProxyService>(), get(), get(), get(), get()) }
     single { ReviewMessageBuilder(get()) }
@@ -341,6 +346,7 @@ val appModule = module {
     viewModelOf(::ReminderViewModel)
     viewModelOf(::LifeBalanceViewModel)
     viewModel { az.tribe.lifeplanner.ui.decision.DecisionViewModel(get(), get(), get(), get()) }
+    viewModel { az.tribe.lifeplanner.ui.causal.CausalInsightsViewModel(get(), get(), get()) }
     viewModelOf(::BackupViewModel)
     viewModelOf(::FocusViewModel)
     viewModelOf(::RetrospectiveViewModel)
