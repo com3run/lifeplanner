@@ -28,10 +28,10 @@ sealed class BottomNavItem(
     val unselectedIcon: ImageVector
 ) {
     data object Home : BottomNavItem(
-        route = Screen.Today.route,
+        route = Screen.ForYou.route,
         title = "Today",
-        selectedIcon = PhosphorIcons.Regular.Flower,
-        unselectedIcon = PhosphorIcons.Regular.Flower
+        selectedIcon = PhosphorIcons.Fill.House,
+        unselectedIcon = PhosphorIcons.Regular.House
     )
 
     data object Goals : BottomNavItem(
