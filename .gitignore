@@ -27,7 +27,8 @@ supabase/.temp/
 app/androidApp/google-services.json
 iosApp/iosApp/GoogleService-Info.plist
 .vercel
-.claude/
+.claude/*
+!.claude/skills/
 .postman/
 CLAUDE.md
 *.aab
