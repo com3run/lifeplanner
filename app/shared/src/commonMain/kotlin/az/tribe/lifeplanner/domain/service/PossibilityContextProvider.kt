@@ -3,6 +3,7 @@ package az.tribe.lifeplanner.domain.service
 import az.tribe.lifeplanner.domain.model.MilestoneCandidate
 import az.tribe.lifeplanner.domain.model.PossibilityContext
 import az.tribe.lifeplanner.domain.model.TimeOfDay
+import az.tribe.lifeplanner.domain.repository.DecisionProfileRepository
 import az.tribe.lifeplanner.domain.repository.GoalRepository
 import az.tribe.lifeplanner.domain.repository.HabitRepository
 import az.tribe.lifeplanner.domain.repository.UserSituationRepository
@@ -25,6 +26,7 @@ class PossibilityContextProvider(
     private val goalRepository: GoalRepository,
     private val habitRepository: HabitRepository,
     private val userSituationRepository: UserSituationRepository,
+    private val decisionProfileRepository: DecisionProfileRepository,
 ) {
     suspend fun currentContext(
         now: LocalDateTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
@@ -32,6 +34,9 @@ class PossibilityContextProvider(
         val today = now.date
 
         val situation = runCatching { userSituationRepository.observe().firstOrNull() }.getOrNull()
+
+        // Pillar 7: the user's wiring, fed into ranking (engine only adapts on reliable dials).
+        val profile = runCatching { decisionProfileRepository.getProfile() }.getOrNull()
 
         val pendingHabits = runCatching { habitRepository.observeHabitsWithTodayStatus().firstOrNull() }
             .getOrNull()
@@ -65,6 +70,7 @@ class PossibilityContextProvider(
             pendingHabits = pendingHabits,
             openMilestones = openMilestones,
             dueOrStalledGoals = dueOrStalledGoals,
+            profile = profile,
         )
     }
 }

@@ -5,12 +5,19 @@ import az.tribe.lifeplanner.domain.model.ActionOptionType
 import az.tribe.lifeplanner.domain.model.Goal
 import az.tribe.lifeplanner.domain.model.PossibilityContext
 import az.tribe.lifeplanner.domain.model.TimeOfDay
+import az.tribe.lifeplanner.domain.model.TuningDial
 import kotlinx.datetime.daysUntil
 
 /**
  * Pillar 2, a pure, on-device ranker (no AI, no I/O). Turns a [PossibilityContext]
  * into up to 5 ranked [ActionOption]s, each with a one-line fit reason. Deterministic,
  * so it is fully covered by unit tests.
+ *
+ * Pillar 7 (TRI-65): when the context carries a [PossibilityContext.profile], the ranking adapts to
+ * the user's wiring, but only for dials that are reliable (enough behaviour observed):
+ * - high DELAY_DISCOUNTING (impatient) surfaces quick wins and near payoffs, de-prioritises far ones;
+ * - low NOVELTY_SALIENCE (routine-preferring) lifts streak habits over new things;
+ * - high PUNISHMENT_SENSITIVITY stops pushing overdue items and softens the copy.
  */
 class PossibilityEngine {
 
@@ -26,17 +33,36 @@ class PossibilityEngine {
             .take(limit.coerceIn(1, 5))
     }
 
+    /** A dial value in 0f..1f only when the inference is reliable; null means "do not adapt yet". */
+    private fun PossibilityContext.reliableDial(dial: TuningDial): Float? =
+        profile?.dial(dial)?.takeIf { it.isReliable }?.value
+
     private fun habitOptions(ctx: PossibilityContext): List<ActionOption> =
         ctx.pendingHabits.map { habit ->
             var score = 45.0
             if (ctx.timeOfDay == TimeOfDay.MORNING) score += 15
             if ((ctx.energy ?: 3) <= 2) score += 12 // low energy → easy win
             score += minOf(habit.currentStreak, 10).toDouble()
-            val reason = when {
+            var reason = when {
                 habit.currentStreak > 0 -> "Keep your ${habit.currentStreak}-day streak alive"
                 ctx.timeOfDay == TimeOfDay.MORNING -> "A morning habit to start strong"
                 else -> "A quick win you can do right now"
             }
+
+            // Impatient users value the immediate payoff a habit gives.
+            ctx.reliableDial(TuningDial.DELAY_DISCOUNTING)?.let { v ->
+                val k = (v - 0.5f) * 2 // -1..1, positive = impatient
+                score += k * 12
+                if (k > 0.35f) reason = "A quick win with a payoff right now"
+            }
+            // Routine-preferring users want continuity; lift their established streaks.
+            ctx.reliableDial(TuningDial.NOVELTY_SALIENCE)?.let { v ->
+                if (v < 0.5f && habit.currentStreak > 0) {
+                    score += (0.5f - v) * 2 * 16
+                    reason = "Your routine, keep the rhythm going"
+                }
+            }
+
             ActionOption(
                 type = ActionOptionType.HABIT,
                 refId = habit.id,
@@ -53,6 +79,16 @@ class PossibilityEngine {
             val deepFocus = highEnergy && ctx.timeOfDay != TimeOfDay.NIGHT
             var score = 40.0 + dueBoost(goal, ctx)
             if (highEnergy) score += 15
+
+            // Novelty seekers are drawn to fresh, concrete next steps.
+            ctx.reliableDial(TuningDial.NOVELTY_SALIENCE)?.let { v ->
+                if (v > 0.5f) score += (v - 0.5f) * 2 * 12
+            }
+            // Impatient users discount far-off goal payoffs.
+            ctx.reliableDial(TuningDial.DELAY_DISCOUNTING)?.let { v ->
+                val k = (v - 0.5f) * 2
+                if (k > 0 && ctx.now.date.daysUntil(goal.dueDate) > 7) score -= k * 10
+            }
 
             val parts = mutableListOf<String>()
             ctx.freeMinutes?.let { parts.add("$it min free") }
@@ -74,13 +110,27 @@ class PossibilityEngine {
 
     private fun goalOptions(ctx: PossibilityContext): List<ActionOption> =
         ctx.dueOrStalledGoals.map { goal ->
-            val score = 35.0 + dueBoost(goal, ctx)
+            var score = 35.0 + dueBoost(goal, ctx)
             val daysLeft = ctx.now.date.daysUntil(goal.dueDate)
-            val reason = when {
+            var reason = when {
                 daysLeft < 0 -> "Overdue, a small step gets it moving"
                 daysLeft <= 7 -> "Due in $daysLeft day${if (daysLeft == 1) "" else "s"}, make progress"
                 else -> "Hasn’t moved lately, nudge it forward"
             }
+
+            // Punishment-sensitive users should not be pushed about misses; de-emphasise + soften.
+            ctx.reliableDial(TuningDial.PUNISHMENT_SENSITIVITY)?.let { v ->
+                if (v > 0.5f && daysLeft < 0) {
+                    score -= (v - 0.5f) * 2 * 22
+                    reason = "A small step forward, whenever you are ready"
+                }
+            }
+            // Impatient users discount goals whose payoff is far away.
+            ctx.reliableDial(TuningDial.DELAY_DISCOUNTING)?.let { v ->
+                val k = (v - 0.5f) * 2
+                if (k > 0 && daysLeft > 7) score -= k * 10
+            }
+
             ActionOption(
                 type = ActionOptionType.GOAL,
                 refId = goal.id,

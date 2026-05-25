@@ -257,7 +257,7 @@ val appModule = module {
     single<ReminderRepository> { ReminderRepositoryImpl(get(), get(), get()) }
     single { SmartReminderManager(get()) }
     single { az.tribe.lifeplanner.domain.service.PossibilityEngine() }
-    single { az.tribe.lifeplanner.domain.service.PossibilityContextProvider(get(), get(), get()) }
+    single { az.tribe.lifeplanner.domain.service.PossibilityContextProvider(get(), get(), get(), get()) }
     single<FocusRepository> { FocusRepositoryImpl(get(), get()) }
     single<AiUsageRepository> { AiUsageRepositoryImpl(get()) }
     single<RetrospectiveRepository> { RetrospectiveRepositoryImpl(get()) }
