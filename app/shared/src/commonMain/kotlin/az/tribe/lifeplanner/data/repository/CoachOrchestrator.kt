@@ -29,7 +29,7 @@ class CoachOrchestrator {
     fun buildSituationContext(situation: UserSituation, coach: CoachPersona?): String {
         val lines = mutableListOf<String>()
 
-        // Meta slice — always included if known
+        // Meta slice, always included if known
         val meta = situation.meta
         if (meta.confidence > 0f) {
             buildList {
@@ -42,7 +42,7 @@ class CoachOrchestrator {
             }.let { if (it.isNotEmpty()) lines.add("About: ${it.joinToString(", ")}") }
         }
 
-        // Coach-specific slice — each coach sees their own slice + full meta
+        // Coach-specific slice, each coach sees their own slice + full meta
         when (coach?.id) {
             "alex_career" -> situation.career.toPromptLine()?.let { lines.add("Career: $it") }
             "morgan_finance" -> situation.money.toPromptLine()?.let { lines.add("Money: $it") }
@@ -51,7 +51,7 @@ class CoachOrchestrator {
             "river_wellness" -> situation.purpose.toPromptLine()?.let { lines.add("Purpose: $it") }
             "jamie_family"   -> situation.people.toPromptLine()?.let { lines.add("People: $it") }
             else -> {
-                // Luna or unknown — show highest-confidence slices
+                // Luna or unknown, show highest-confidence slices
                 listOfNotNull(
                     situation.career.takeIf { it.confidence > 0.4f }?.toPromptLine()?.let { "Career: $it" },
                     situation.body.takeIf { it.confidence > 0.4f }?.toPromptLine()?.let { "Body: $it" },
@@ -61,7 +61,7 @@ class CoachOrchestrator {
         }
 
         return if (lines.isEmpty()) "" else buildString {
-            appendLine("USER PROFILE (use to personalize — do NOT re-ask what you already know here):")
+            appendLine("USER PROFILE (use to personalize, do NOT re-ask what you already know here):")
             lines.forEach { appendLine("• $it") }
         }.trimEnd()
     }

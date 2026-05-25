@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.asStateFlow
  *
  * Defaults to [ThemeMode.SYSTEM] so the app follows the OS, replacing the old hardcoded dark
  * default (D3 audit G2). The visible Light / Dark / System control lands with the Settings screen
- * (D7, under You → ⚙︎); this is its backing — call [setMode] from that toggle.
+ * (D7, under You → ⚙︎); this is its backing, call [setMode] from that toggle.
  */
 class ThemeController(private val settings: Settings) {
 

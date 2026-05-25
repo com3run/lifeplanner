@@ -7,7 +7,7 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.daysUntil
 
 /**
- * Pillar 4 — builds calibration samples from completed goals. Actual completion is inferred
+ * Pillar 4, builds calibration samples from completed goals. Actual completion is inferred
  * from the goal's status→COMPLETED entry in GoalHistory (we deliberately didn't add a
  * completedAt column); goals without a predictedDueDate or a logged completion are skipped.
  */

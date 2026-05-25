@@ -25,7 +25,7 @@ import kotlin.time.Clock
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-/** Pillar 3 — the user's response to a [ChoicePoint]: a deliberate re-choice. */
+/** Pillar 3, the user's response to a [ChoicePoint]: a deliberate re-choice. */
 enum class ChoicePointAction(val label: String) {
     KEEP("Keep"),
     RESCHEDULE("Reschedule"),
@@ -34,7 +34,7 @@ enum class ChoicePointAction(val label: String) {
 }
 
 /**
- * Pillar 3 — drives the Decision Journal: the logged [Decision]s plus the currently
+ * Pillar 3, drives the Decision Journal: the logged [Decision]s plus the currently
  * pending [ChoicePoint]s, and resolves a choice point into a recorded [Decision].
  */
 class DecisionViewModel(

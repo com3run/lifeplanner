@@ -47,8 +47,8 @@ import az.tribe.lifeplanner.ui.theme.containerColor
 import az.tribe.lifeplanner.ui.theme.modernColors
 
 /**
- * D11 — redesigned first-run. Establishes the agency-first promise in minute one, collects *just
- * enough* (a few values — no interrogation), and reaches a meaningful first action fast. Warm and
+ * D11, redesigned first-run. Establishes the agency-first promise in minute one, collects *just
+ * enough* (a few values, no interrogation), and reaches a meaningful first action fast. Warm and
  * non-pressuring (D9/D12), token-pure with the premium blocks, Crossfade step transitions (D10).
  *
  * Values selected here are persisted as **Pillar 1** `LifeValue` rows on finish (the seam is wired
@@ -126,11 +126,11 @@ private fun PromiseStep() {
         GradientHero(
             eyebrow = "Welcome",
             title = "You're the one steering",
-            subtitle = "LifePlanner helps you see your real options and choose deliberately. It never decides for you — and never makes you feel like the failure case.",
+            subtitle = "LifePlanner helps you see your real options and choose deliberately. It never decides for you, and never makes you feel like the failure case.",
         )
-        PromiseBullet("See what you could do right now — not a pile of obligations.")
+        PromiseBullet("See what you could do right now, not a pile of obligations.")
         PromiseBullet("Every goal connects to a reason that's yours.")
-        PromiseBullet("It gets more useful the more you live — no heavy setup.")
+        PromiseBullet("It gets more useful the more you live, no heavy setup.")
     }
 }
 
@@ -149,7 +149,7 @@ private fun ValuesStep(selected: Set<GoalCategory>, onToggle: (GoalCategory) -> 
     val c = MaterialTheme.modernColors
     Column(verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm)) {
         Text("What matters most to you?", style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold), color = c.textPrimary)
-        Text("Pick a few — we'll connect your goals to them. You can change these anytime.", style = MaterialTheme.typography.bodyMedium, color = c.textSecondary)
+        Text("Pick a few, we'll connect your goals to them. You can change these anytime.", style = MaterialTheme.typography.bodyMedium, color = c.textSecondary)
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.xs),
             verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.xs),

@@ -205,7 +205,7 @@ fun AuthViewModel.linkGuestAccount(email: String, password: String, displayName:
                     // Reset PostHog to cleanly separate guest session from authenticated session
                     PostHogAnalytics.reset()
                     _pendingVerificationEmail.value = email
-                    // Update EXISTING local user — same ID preserved
+                    // Update EXISTING local user, same ID preserved
                     val currentUser = userRepository.getCurrentUser()
                     if (currentUser != null) {
                         val updatedUser = currentUser.copy(
@@ -461,7 +461,7 @@ fun AuthViewModel.updateDisplayName(newName: String) {
 }
 
 /**
- * Sign out — clears all local user records and Supabase session.
+ * Sign out, clears all local user records and Supabase session.
  * Always transitions to Unauthenticated so navigation to Welcome fires even on errors.
  */
 fun AuthViewModel.signOut() {
@@ -480,7 +480,7 @@ fun AuthViewModel.signOut() {
             Logger.e("AuthViewModel", e) { "Sign-out error: ${e.message}" }
         } finally {
             settings.remove(PENDING_VERIFY_EMAIL_KEY)
-            // Coach onboarding is per-account, not per-device — clear so next login always re-onboards
+            // Coach onboarding is per-account, not per-device, clear so next login always re-onboards
             settings.remove("coach_onboarding_complete")
             _isLocalOnlyGuest.value = false
             _hasCompletedOnboarding.value = false

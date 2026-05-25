@@ -283,7 +283,7 @@ fun EditGoalScreen(
                 )
             }
 
-            // Why this goal? (Pillar 1 — link the goal to a life value)
+            // Why this goal? (Pillar 1, link the goal to a life value)
             item {
                 FormSectionHeader(title = "Why this goal?", icon = null)
                 Spacer(modifier = Modifier.height(8.dp))

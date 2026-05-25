@@ -30,10 +30,10 @@ internal fun buildCouncilNotes(
     val lowerTitle = option.title.lowercase()
 
     if ((body.sleepHours != null && body.sleepHours < 6f) || (body.energyRating != null && body.energyRating < 5)) {
-        notes.add("Kai 💪" to "Your energy and sleep are limited right now. I'd start at 60% of whatever pace feels right — recovery is how you win long-term.")
+        notes.add("Kai 💪" to "Your energy and sleep are limited right now. I'd start at 60% of whatever pace feels right, recovery is how you win long-term.")
     }
     if (category == GoalCategory.CAREER && (meta.stressLevel != null && meta.stressLevel >= 7)) {
-        notes.add("Luna ✨" to "Your stress is high. Let's pace this goal so it doesn't add to your load — sustainable > aggressive.")
+        notes.add("Luna ✨" to "Your stress is high. Let's pace this goal so it doesn't add to your load, sustainable > aggressive.")
     }
     if (category != GoalCategory.MONEY && (lowerTitle.contains("promot") || lowerTitle.contains("job") || lowerTitle.contains("career") || lowerTitle.contains("salary"))) {
         notes.add("Morgan 💰" to "A career move often comes with a pay jump. Want me to open a parallel money goal to capture that?")

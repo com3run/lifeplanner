@@ -1,5 +1,5 @@
 -- ============================================================
--- Life Planner – Supabase Cloud Sync Schema
+-- Life Planner, Supabase Cloud Sync Schema
 -- ============================================================
 -- Run this file once in the Supabase SQL Editor to bootstrap
 -- all tables, RLS policies, triggers, and indexes.
@@ -89,7 +89,7 @@ CREATE TABLE milestones (
     sync_version BIGINT      NOT NULL DEFAULT 0
 );
 
--- 2.4  goal_history  (no FK to goals – history persists after goal deletion)
+-- 2.4  goal_history  (no FK to goals, history persists after goal deletion)
 CREATE TABLE goal_history (
     id         TEXT        PRIMARY KEY,
     user_id    UUID        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -444,7 +444,7 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- ────────────────────────────────────────────────────────────
--- 3. Triggers – auto-update sync metadata on every UPDATE
+-- 3. Triggers, auto-update sync metadata on every UPDATE
 -- ────────────────────────────────────────────────────────────
 
 CREATE TRIGGER trg_users_sync           BEFORE UPDATE ON users              FOR EACH ROW EXECUTE FUNCTION update_sync_metadata();
@@ -783,7 +783,7 @@ CREATE TRIGGER trg_user_situations_sync
     FOR EACH ROW EXECUTE FUNCTION update_sync_metadata();
 
 -- ────────────────────────────────────────────────────────────
--- 2.X life_values  (Pillar 1 — the "reason" layer above goals)
+-- 2.X life_values  (Pillar 1, the "reason" layer above goals)
 -- ────────────────────────────────────────────────────────────
 
 CREATE TABLE life_values (
@@ -813,7 +813,7 @@ CREATE TRIGGER trg_life_values_sync
     FOR EACH ROW EXECUTE FUNCTION update_sync_metadata();
 
 -- ────────────────────────────────────────────────────────────
--- 2.X decisions  (Pillar 3 — decisions as first-class objects)
+-- 2.X decisions  (Pillar 3, decisions as first-class objects)
 -- ────────────────────────────────────────────────────────────
 
 CREATE TABLE decisions (
@@ -850,7 +850,7 @@ CREATE TRIGGER trg_decisions_sync
     FOR EACH ROW EXECUTE FUNCTION update_sync_metadata();
 
 -- ────────────────────────────────────────────────────────────
--- 2.X identity_statements  (Pillar 5 — "I'm becoming someone who…")
+-- 2.X identity_statements  (Pillar 5, "I'm becoming someone who…")
 -- ────────────────────────────────────────────────────────────
 
 CREATE TABLE identity_statements (
@@ -881,7 +881,7 @@ CREATE TRIGGER trg_identity_statements_sync
     FOR EACH ROW EXECUTE FUNCTION update_sync_metadata();
 
 -- ────────────────────────────────────────────────────────────
--- 2.X decision_profiles  (Pillar 7 — the user's six Innate "wiring" dials)
+-- 2.X decision_profiles  (Pillar 7, the user's six Innate "wiring" dials)
 -- One row per user. Each dial: value (0..1, neutral 0.5), inference confidence (0..1),
 -- and sample size. Inferred from behaviour; no dial value is "good" or "bad".
 -- ────────────────────────────────────────────────────────────
@@ -927,7 +927,7 @@ CREATE TRIGGER trg_decision_profiles_sync
     FOR EACH ROW EXECUTE FUNCTION update_sync_metadata();
 
 -- ────────────────────────────────────────────────────────────
--- 7. Tombstone cleanup – hard-delete soft-deleted rows > 30 days
+-- 7. Tombstone cleanup, hard-delete soft-deleted rows > 30 days
 -- ────────────────────────────────────────────────────────────
 
 CREATE OR REPLACE FUNCTION cleanup_tombstones()

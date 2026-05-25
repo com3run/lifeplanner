@@ -244,7 +244,7 @@ internal fun CheckInBurstOverlay(
 }
 
 /**
- * Category icon badge — shows the category symbol.
+ * Category icon badge, shows the category symbol.
  * When completed, shows a green background with check overlay.
  */
 @Composable
@@ -286,7 +286,7 @@ internal fun CategoryIconBadge(
 
 /**
  * Tappable circle for check-in.
- * Uncompleted: outline ring + ghost check icon — clearly "tap to complete".
+ * Uncompleted: outline ring + ghost check icon, clearly "tap to complete".
  * Completed: solid green filled circle with animated checkmark.
  */
 @Composable
@@ -332,7 +332,7 @@ internal fun CheckInCircle(
                 )
         ) {
             if (!isCompleted) {
-                // Empty ring — no check icon so it clearly reads as "not done yet"
+                // Empty ring, no check icon so it clearly reads as "not done yet"
             } else {
                 AnimatedVisibility(
                     visible = true,
@@ -353,7 +353,7 @@ internal fun CheckInCircle(
 }
 
 /**
- * Mini weekly completion dots — 7 dots for Mon through Sun.
+ * Mini weekly completion dots, 7 dots for Mon through Sun.
  * Completed days are filled with the category color, future/incomplete days are hollow.
  */
 @Composable

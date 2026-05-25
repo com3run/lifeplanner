@@ -10,7 +10,7 @@ import az.tribe.lifeplanner.domain.model.UserContext
 import az.tribe.lifeplanner.domain.model.UserSituation
 
 // ============================================================================
-// SYSTEM PROMPT CONSTANTS (hardcoded defaults — overridden by SystemPromptStore)
+// SYSTEM PROMPT CONSTANTS (hardcoded defaults, overridden by SystemPromptStore)
 // ============================================================================
 
 internal fun getCoachPersona(): String = SystemPromptStore.getOrDefault("coach_persona", COACH_PERSONA_DEFAULT)
@@ -87,12 +87,12 @@ private const val STREAMING_INSTRUCTIONS_DEFAULT = """INSTRUCTIONS:
 - Ask at most 1 follow-up question, and only if truly needed.
 - If the user already provided details in the conversation history, don't re-ask.
 - NEVER claim you have created, added, or set up a goal, habit, or journal entry. You cannot do that directly. The user will see action buttons to create items themselves.
-- SUGGESTION TAGS: Only append a hidden suggestion tag when the user EXPLICITLY asks to create, add, or start a goal, habit, or journal entry. Do NOT suggest on casual mentions — just have a conversation. If unsure whether they want to create something, ask first. Use at most 1 tag per response, placed at the very end:
+- SUGGESTION TAGS: Only append a hidden suggestion tag when the user EXPLICITLY asks to create, add, or start a goal, habit, or journal entry. Do NOT suggest on casual mentions, just have a conversation. If unsure whether they want to create something, ask first. Use at most 1 tag per response, placed at the very end:
   For a goal: [SUGGEST_GOAL:title|description|CATEGORY|TIMELINE]
   For a habit: [SUGGEST_HABIT:title|description|CATEGORY|FREQUENCY|goalId|targetCount|targetUnit]
     - goalId: the goal ID from ACTIVE GOALS this habit supports (leave empty if not linked to a goal)
-    - targetCount: numeric target (e.g. 2, 8, 10) — use 1 if no specific quantity
-    - targetUnit: unit for the target (e.g. L, min, times, glasses, pages, steps) — leave empty if no unit
+    - targetCount: numeric target (e.g. 2, 8, 10), use 1 if no specific quantity
+    - targetUnit: unit for the target (e.g. L, min, times, glasses, pages, steps), leave empty if no unit
     - Example: [SUGGEST_HABIT:Drink water daily|Stay hydrated|BODY|DAILY|goal-abc123|2|L]
     - Example: [SUGGEST_HABIT:Morning meditation|10 min mindfulness|WELLBEING|DAILY||10|min]
   For a journal entry: [SUGGEST_JOURNAL:title|content|MOOD]

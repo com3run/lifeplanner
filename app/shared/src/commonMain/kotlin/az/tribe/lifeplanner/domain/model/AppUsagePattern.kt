@@ -1,8 +1,8 @@
 package az.tribe.lifeplanner.domain.model
 
 data class AppUsagePattern(
-    val mostActiveHours: List<Int>,           // hour-of-day (0–23), sorted by activity
-    val mostActiveDays: List<String>,          // "MON"–"SUN", sorted by activity
+    val mostActiveHours: List<Int>,           // hour-of-day (0-23), sorted by activity
+    val mostActiveDays: List<String>,          // "MON"-"SUN", sorted by activity
     val featureEngagement: Map<String, Long>,  // screen route → avg duration ms
     val sessionAvgMinutes: Double,
     val sessionsPerWeek: Double,

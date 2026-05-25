@@ -6,7 +6,7 @@ internal fun getCoachTipStories(): List<Story> = listOf(
     Story(
         id = "coach_tip_luna_balance",
         title = "Balance is a Practice",
-        subtitle = "I used to think balance meant giving equal time to everything. It doesn't. It means giving the right energy to the right things. Notice one area that feels heavy today — and lighten it intentionally.\n\n— Luna",
+        subtitle = "I used to think balance meant giving equal time to everything. It doesn't. It means giving the right energy to the right things. Notice one area that feels heavy today, and lighten it intentionally.\n\n- Luna",
         emoji = "✨",
         category = "coach_tip",
         gradientStart = "#6366F1",
@@ -18,7 +18,7 @@ internal fun getCoachTipStories(): List<Story> = listOf(
     Story(
         id = "coach_tip_alex_career",
         title = "Your Next Move is Closer",
-        subtitle = "The best career moves aren't big leaps — they're consistent micro-skills built daily. Set one professional goal this week. Just one. Consistency beats intensity every single time.\n\n— Alex",
+        subtitle = "The best career moves aren't big leaps, they're consistent micro-skills built daily. Set one professional goal this week. Just one. Consistency beats intensity every single time.\n\n- Alex",
         emoji = "💼",
         category = "coach_tip",
         gradientStart = "#1976D2",
@@ -30,7 +30,7 @@ internal fun getCoachTipStories(): List<Story> = listOf(
     Story(
         id = "coach_tip_morgan_money",
         title = "The 1% Money Rule",
-        subtitle = "Save 1% more than you did last month. That's it. Most people try to overhaul their finances at once and burn out. Small, consistent improvements compound into real wealth over time.\n\n— Morgan",
+        subtitle = "Save 1% more than you did last month. That's it. Most people try to overhaul their finances at once and burn out. Small, consistent improvements compound into real wealth over time.\n\n- Morgan",
         emoji = "💰",
         category = "coach_tip",
         gradientStart = "#388E3C",
@@ -42,7 +42,7 @@ internal fun getCoachTipStories(): List<Story> = listOf(
     Story(
         id = "coach_tip_kai_fitness",
         title = "Movement is Medicine",
-        subtitle = "You don't need 2 hours at the gym. 15 minutes of intentional movement beats an hour of dreading it. Start one streak this week and watch your energy shift completely.\n\n— Kai",
+        subtitle = "You don't need 2 hours at the gym. 15 minutes of intentional movement beats an hour of dreading it. Start one streak this week and watch your energy shift completely.\n\n- Kai",
         emoji = "💪",
         category = "coach_tip",
         gradientStart = "#E53935",
@@ -54,7 +54,7 @@ internal fun getCoachTipStories(): List<Story> = listOf(
     Story(
         id = "coach_tip_sam_social",
         title = "Invest in One Relationship",
-        subtitle = "Relationships compound like interest. One genuine message, one real conversation, one act of presence — they matter more than you think. Who haven't you reached out to in a while?\n\n— Sam",
+        subtitle = "Relationships compound like interest. One genuine message, one real conversation, one act of presence, they matter more than you think. Who haven't you reached out to in a while?\n\n- Sam",
         emoji = "🤝",
         category = "coach_tip",
         gradientStart = "#7B1FA2",
@@ -66,7 +66,7 @@ internal fun getCoachTipStories(): List<Story> = listOf(
     Story(
         id = "coach_tip_river_wellness",
         title = "Rest is Productive",
-        subtitle = "In a world that glorifies hustle, choosing rest is radical. Your brain consolidates learning, processes emotions, and resets energy during downtime. Protect your recovery — it's not optional.\n\n— River",
+        subtitle = "In a world that glorifies hustle, choosing rest is radical. Your brain consolidates learning, processes emotions, and resets energy during downtime. Protect your recovery, it's not optional.\n\n- River",
         emoji = "🧘",
         category = "coach_tip",
         gradientStart = "#00796B",

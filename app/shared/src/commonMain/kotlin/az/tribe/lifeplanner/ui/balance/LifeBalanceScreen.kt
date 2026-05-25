@@ -167,17 +167,17 @@ fun LifeBalanceScreen(
                 ) {
                     val report = uiState.report
                     if (report != null) {
-                        // Life Constellation — score + animated web + AI cross-area insight
+                        // Life Constellation, score + animated web + AI cross-area insight
                         item { LifeWebCard(report = report) }
 
-                        // Life Spectrum — proportional segment bar, focused areas in center
+                        // Life Spectrum, proportional segment bar, focused areas in center
                         item { LifeBalanceSegmentBar(areaScores = report.areaScores) }
 
                         // Life areas grid
                         item { SectionHeader("Life Areas") }
                         item { AreaGrid(areaScores = report.areaScores) }
 
-                        // Life Discovery — AI question flow → personalized goals
+                        // Life Discovery, AI question flow → personalized goals
                         item { SectionHeader("Life Discovery") }
                         item {
                             DiscoverySection(
@@ -191,7 +191,7 @@ fun LifeBalanceScreen(
                         }
                     }
 
-                    // Coach tips feed — with seen tracking and "all caught up"
+                    // Coach tips feed, with seen tracking and "all caught up"
                     item { SectionHeader("From Your Coaches") }
                     item {
                         CoachPostFeed(
@@ -206,7 +206,7 @@ fun LifeBalanceScreen(
                         )
                     }
 
-                    // Body & Health — embedded health dashboard
+                    // Body & Health, embedded health dashboard
                     item { SectionHeader("Body & Health") }
                     item {
                         HealthSection(

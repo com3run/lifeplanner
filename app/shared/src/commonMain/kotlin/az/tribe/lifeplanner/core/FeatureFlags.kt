@@ -8,6 +8,6 @@ package az.tribe.lifeplanner.core
  * so disabled features add zero runtime overhead.
  */
 object FeatureFlags {
-    /** Abilities — habit-XP → skill leveling system. Hidden until ready for release. */
+    /** Abilities, habit-XP → skill leveling system. Hidden until ready for release. */
     const val ABILITIES_ENABLED = false
 }

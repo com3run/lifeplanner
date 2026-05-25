@@ -15,7 +15,7 @@ import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Clock
 
 /**
- * Pillar 5 (P5.4) — metacognitive review: surfaces logged Decisions for the user to grade
+ * Pillar 5 (P5.4), metacognitive review: surfaces logged Decisions for the user to grade
  * their *reasoning* (process), separate from how it turned out (result). Sets [Decision.outcomeQuality].
  */
 class MetacognitiveReviewViewModel(

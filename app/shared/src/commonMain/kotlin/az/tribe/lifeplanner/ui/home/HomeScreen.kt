@@ -348,7 +348,7 @@ fun HomeScreen(
                 }
             }
 
-            // ── 3b. Life Discovery (primary entry — always visible at top) ─────
+            // ── 3b. Life Discovery (primary entry, always visible at top) ─────
             item(key = "life_discovery") {
                 DiscoverySection(
                     state = balanceUiState.discovery,
@@ -390,7 +390,7 @@ fun HomeScreen(
                 }
             }
 
-            // ── 5. Next action (most actionable — high up) ──────────────────────
+            // ── 5. Next action (most actionable, high up) ──────────────────────
             if (displayedNextAction !is NextAction.AllCaughtUp || goals.isNotEmpty() || habits.isNotEmpty()) {
                 item(key = "next_action") {
                     Box(Modifier.padding(horizontal = LifePlannerDesign.Padding.screenHorizontal)) {

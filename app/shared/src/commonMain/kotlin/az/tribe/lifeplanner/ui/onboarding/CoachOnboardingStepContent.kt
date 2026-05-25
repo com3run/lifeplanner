@@ -228,7 +228,7 @@ private fun PriorityStep(
         }
     }
     Spacer(modifier = Modifier.height(8.dp))
-    // Row 2: 3 items — center them by adding spacers
+    // Row 2: 3 items, center them by adding spacers
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -272,7 +272,7 @@ private fun WellbeingStep(
 private fun SpecialistIntroStep(coachId: String, priority: GoalCategory?, onContinue: () -> Unit) {
     val area = priority?.name?.lowercase()?.replaceFirstChar { it.uppercase() } ?: "your goals"
     Text(
-        text = "They'll ask you a few quick questions about $area — 5 max, totally safe to skip any.",
+        text = "They'll ask you a few quick questions about $area, 5 max, totally safe to skip any.",
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center,
@@ -442,7 +442,7 @@ private fun SpecialistQ2(vm: CoachOnboardingViewModel, onAdvance: () -> Unit) {
             TextButton(onClick = onAdvance) { Text("Skip") }
         }
         "sam_social" -> ChipQuestion(
-            options = listOf("Solo", "Small (1–3)", "Medium (4–8)", "Large (9+)"),
+            options = listOf("Solo", "Small (1-3)", "Medium (4-8)", "Large (9+)"),
             selected = vm.closeCircleSize?.name,
             onSelect = { label ->
                 vm.closeCircleSize = when {

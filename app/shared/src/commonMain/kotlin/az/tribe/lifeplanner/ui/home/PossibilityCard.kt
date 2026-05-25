@@ -24,7 +24,7 @@ import az.tribe.lifeplanner.domain.model.ActionOptionType
 import az.tribe.lifeplanner.ui.theme.modernColors
 
 /**
- * Pillar 2 — "Right now you could…" card. Surfaces the engine's 3–5 ranked
+ * Pillar 2, "Right now you could…" card. Surfaces the engine's 3-5 ranked
  * [ActionOption]s with their fit reasons at the top of Home. Hidden when empty.
  */
 @Composable

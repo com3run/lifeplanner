@@ -222,7 +222,7 @@ internal fun EditHabitBottomSheet(
                                     val dh = when { h == 0 -> 12; h > 12 -> h - 12; else -> h }
                                     val slot = when (h) { in 5..11 -> "Morning"; in 12..16 -> "Afternoon"; else -> "Evening" }
                                     "$slot · $dh:${m.toString().padStart(2, '0')} $period"
-                                } else "Tap to set — used for habit grouping",
+                                } else "Tap to set, used for habit grouping",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = if (reminderTime != null) MaterialTheme.colorScheme.onSurface
                                         else MaterialTheme.colorScheme.onSurfaceVariant

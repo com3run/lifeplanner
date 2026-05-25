@@ -8,7 +8,7 @@ import az.tribe.lifeplanner.domain.model.TimeOfDay
 import kotlinx.datetime.daysUntil
 
 /**
- * Pillar 2 — a pure, on-device ranker (no AI, no I/O). Turns a [PossibilityContext]
+ * Pillar 2, a pure, on-device ranker (no AI, no I/O). Turns a [PossibilityContext]
  * into up to 5 ranked [ActionOption]s, each with a one-line fit reason. Deterministic,
  * so it is fully covered by unit tests.
  */
@@ -57,7 +57,7 @@ class PossibilityEngine {
             val parts = mutableListOf<String>()
             ctx.freeMinutes?.let { parts.add("$it min free") }
             energyWord(ctx.energy)?.let { parts.add(it) }
-            val prefix = if (parts.isNotEmpty()) parts.joinToString(", ") + " — " else ""
+            val prefix = if (parts.isNotEmpty()) parts.joinToString(", ") + ", " else ""
             val due = dueClause(goal, ctx)
             val reason = prefix + "milestone “${milestone.title}” fits" + (due?.let { " ($it)" } ?: "")
 
@@ -77,9 +77,9 @@ class PossibilityEngine {
             val score = 35.0 + dueBoost(goal, ctx)
             val daysLeft = ctx.now.date.daysUntil(goal.dueDate)
             val reason = when {
-                daysLeft < 0 -> "Overdue — a small step gets it moving"
-                daysLeft <= 7 -> "Due in $daysLeft day${if (daysLeft == 1) "" else "s"} — make progress"
-                else -> "Hasn’t moved lately — nudge it forward"
+                daysLeft < 0 -> "Overdue, a small step gets it moving"
+                daysLeft <= 7 -> "Due in $daysLeft day${if (daysLeft == 1) "" else "s"}, make progress"
+                else -> "Hasn’t moved lately, nudge it forward"
             }
             ActionOption(
                 type = ActionOptionType.GOAL,

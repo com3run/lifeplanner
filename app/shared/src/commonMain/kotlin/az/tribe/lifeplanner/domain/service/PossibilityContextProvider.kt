@@ -14,10 +14,10 @@ import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Clock
 
 /**
- * Pillar 2 — aggregates current context (time, energy/sleep/stress, what's pending /
+ * Pillar 2, aggregates current context (time, energy/sleep/stress, what's pending /
  * due / stalled) into a [PossibilityContext] for the [PossibilityEngine] to rank.
  *
- * NOTE: "open calendar slot" (`freeMinutes`) is left null — there is no calendar
+ * NOTE: "open calendar slot" (`freeMinutes`) is left null, there is no calendar
  * free/busy API yet (only a permission launcher). That's a follow-up; the engine
  * degrades gracefully when it's null.
  */

@@ -48,7 +48,7 @@ object VideoCache {
      */
     /**
      * Resolves remote URLs to local file paths where possible.
-     * Returns raw paths (not file:// URIs) — the video player library handles them correctly.
+     * Returns raw paths (not file:// URIs), the video player library handles them correctly.
      * Falls back to remote URL if download fails (works on Android, may fail on iOS due to TLS).
      */
     suspend fun resolveUrls(urls: List<String>, httpClient: HttpClient): List<String> {

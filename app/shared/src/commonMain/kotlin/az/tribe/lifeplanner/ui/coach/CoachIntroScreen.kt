@@ -93,7 +93,7 @@ fun CoachIntroScreen(config: CoachIntroConfig, onAction: () -> Unit) {
             VideoBackground(urls = listOf(config.videoUrl), modifier = Modifier.fillMaxSize())
         }
 
-        // ── Cinematic dark vignette — heavier at bottom for readability ───────
+        // ── Cinematic dark vignette, heavier at bottom for readability ───────
         Box(
             Modifier.fillMaxSize().background(
                 Brush.verticalGradient(
@@ -105,7 +105,7 @@ fun CoachIntroScreen(config: CoachIntroConfig, onAction: () -> Unit) {
             )
         )
 
-        // ── Coach name badge — top-left, street-tag style ────────────────────
+        // ── Coach name badge, top-left, street-tag style ────────────────────
         Text(
             text = config.coachLabel,
             style = MaterialTheme.typography.labelLarge,
@@ -122,7 +122,7 @@ fun CoachIntroScreen(config: CoachIntroConfig, onAction: () -> Unit) {
         // ── Mascot + speech bubble stage ─────────────────────────────────────
         Box(Modifier.fillMaxSize()) {
 
-            // Mascot — slides in from the left like a street character walking by
+            // Mascot, slides in from the left like a street character walking by
             if (config.mascotImageUrl != null) {
                 AsyncImage(
                     model = config.mascotImageUrl,
@@ -137,7 +137,7 @@ fun CoachIntroScreen(config: CoachIntroConfig, onAction: () -> Unit) {
                 )
             }
 
-            // Speech bubble — pops in above mascot's head, to the right
+            // Speech bubble, pops in above mascot's head, to the right
             AnimatedVisibility(
                 visible = bubbleIn,
                 enter = fadeIn() + scaleIn(
@@ -155,7 +155,7 @@ fun CoachIntroScreen(config: CoachIntroConfig, onAction: () -> Unit) {
             }
         }
 
-        // ── Action button — appears after typewriter finishes ─────────────────
+        // ── Action button, appears after typewriter finishes ─────────────────
         AnimatedVisibility(
             visible = showButton,
             enter = fadeIn() + slideInVertically { it / 2 },
@@ -201,13 +201,13 @@ private fun SpeechBubble(text: String) {
                 lineHeight = 22.sp,
             )
         }
-        // Triangle tail — tip points down-left toward the mascot
+        // Triangle tail, tip points down-left toward the mascot
         Canvas(Modifier.size(20.dp, 13.dp)) {
             drawPath(
                 Path().apply {
-                    moveTo(0f, 0f)           // top-left — flush with bubble bottom-left
+                    moveTo(0f, 0f)           // top-left, flush with bubble bottom-left
                     lineTo(size.width, 0f)   // top-right
-                    lineTo(0f, size.height)  // bottom-left — the pointing tip
+                    lineTo(0f, size.height)  // bottom-left, the pointing tip
                     close()
                 },
                 color = Color.White,

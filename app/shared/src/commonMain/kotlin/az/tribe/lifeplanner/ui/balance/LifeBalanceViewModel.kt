@@ -186,7 +186,7 @@ class LifeBalanceViewModel(
         val areasText = if (insight.relatedAreas.isNotEmpty())
             " Related areas: ${insight.relatedAreas.joinToString(", ") { it.displayName }}." else ""
         return "I'd like your advice on this insight from my Life Balance assessment: " +
-                "**${insight.title}** — ${insight.description}$areasText What steps do you recommend?"
+                "**${insight.title}**, ${insight.description}$areasText What steps do you recommend?"
     }
 
     fun selectArea(area: LifeArea?) { _uiState.value = _uiState.value.copy(selectedArea = area) }
@@ -444,7 +444,7 @@ class LifeBalanceViewModel(
         LifeArea.MONEY -> "When you think about your finances, what's the one change that would bring you the most peace of mind?"
         LifeArea.BODY -> "What does your ideal relationship with your health and energy look like day-to-day?"
         LifeArea.PEOPLE -> "Which relationship in your life would benefit most from more of your presence and attention?"
-        LifeArea.WELLBEING -> "When do you feel most at ease and mentally clear — what makes those moments different?"
+        LifeArea.WELLBEING -> "When do you feel most at ease and mentally clear, what makes those moments different?"
         LifeArea.PURPOSE -> "What activity makes you lose track of time, and how often does it show up in your week?"
     }
 }

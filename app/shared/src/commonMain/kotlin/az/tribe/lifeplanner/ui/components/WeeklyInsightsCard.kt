@@ -125,7 +125,7 @@ fun WeeklyInsightsCard(
     }
     val todaySnap = snapshots.lastOrNull() ?: return
 
-    // Not enough data for a week chart — show today only
+    // Not enough data for a week chart, show today only
     if (activeDays < 2) {
         TodayOnlyCard(
             snap = todaySnap,
@@ -234,7 +234,7 @@ fun WeeklyInsightsCard(
                             textAlign = TextAlign.Center
                         )
 
-                        // Bar area — fixed height, grows from bottom
+                        // Bar area, fixed height, grows from bottom
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -270,7 +270,7 @@ fun WeeklyInsightsCard(
                                         )
                                 )
                             }
-                            // Focus stripe — thin, right edge
+                            // Focus stripe, thin, right edge
                             if (anyFocus && focusRate * fraction > 0.02f) {
                                 Box(
                                     modifier = Modifier
@@ -281,7 +281,7 @@ fun WeeklyInsightsCard(
                                         .background(COLOR_FOCUS.copy(alpha = if (isToday) 1f else 0.78f))
                                 )
                             }
-                            // Steps dot — fixed position inside bar when steps present
+                            // Steps dot, fixed position inside bar when steps present
                             if (anySteps && stepsRate * fraction > 0.08f) {
                                 Box(
                                     modifier = Modifier
@@ -292,7 +292,7 @@ fun WeeklyInsightsCard(
                                         .background(COLOR_STEPS)
                                 )
                             }
-                            // Journal dot — top of track
+                            // Journal dot, top of track
                             if (snap.journalEntries.isNotEmpty()) {
                                 Box(
                                     modifier = Modifier
@@ -405,14 +405,14 @@ private fun TodayOnlyCard(
             ) {
                 // Habits
                 TodayStatTile(
-                    value = if (habitsTotal > 0) "$habitsDone/$habitsTotal" else "—",
+                    value = if (habitsTotal > 0) "$habitsDone/$habitsTotal" else "-",
                     label = "habits",
                     color = COLOR_HABIT,
                     modifier = Modifier.weight(1f)
                 )
                 // Focus
                 TodayStatTile(
-                    value = if (snap.totalFocusMinutes > 0) "${snap.totalFocusMinutes}m" else "—",
+                    value = if (snap.totalFocusMinutes > 0) "${snap.totalFocusMinutes}m" else "-",
                     label = "focus",
                     color = COLOR_FOCUS,
                     modifier = Modifier.weight(1f)
@@ -440,7 +440,7 @@ private fun TodayOnlyCard(
             // Motivational line based on today's completion
             val habitRate = if (habitsTotal > 0) habitsDone.toFloat() / habitsTotal else 0f
             val motivation = when {
-                habitRate >= 1f -> "Perfect day — all habits done! 🏆"
+                habitRate >= 1f -> "Perfect day, all habits done! 🏆"
                 habitRate >= 0.6f -> "Great progress today. Keep going!"
                 habitsDone > 0 -> "Good start. More to check off."
                 snap.totalFocusMinutes > 0 -> "Focus session done. Track your habits too."

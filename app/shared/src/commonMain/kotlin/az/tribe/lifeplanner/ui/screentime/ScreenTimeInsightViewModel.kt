@@ -188,6 +188,6 @@ class ScreenTimeInsightViewModel(
     companion object {
         private const val RECS_SYSTEM_PROMPT = """You are a life coaching assistant analyzing in-app usage patterns.
 Give concrete, actionable personalized recommendations. Be warm and encouraging.
-Always respond with valid JSON array only — no markdown, no extra text."""
+Always respond with valid JSON array only, no markdown, no extra text."""
     }
 }

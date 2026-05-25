@@ -821,7 +821,7 @@ Deno.serve(async (req: Request) => {
     const supabase = createUserClient(jwt);
     const { data: { user }, error } = await supabase.auth.getUser(jwt);
     if (error || !user) {
-      console.warn("AUTH: getUser failed —", error?.message ?? "no user returned");
+      console.warn("AUTH: getUser failed -", error?.message ?? "no user returned");
       return new Response(
         JSON.stringify({
           jsonrpc: "2.0",
@@ -838,7 +838,7 @@ Deno.serve(async (req: Request) => {
     }
   } catch (authErr) {
     console.warn(
-      "AUTH: getUser threw —",
+      "AUTH: getUser threw -",
       authErr instanceof Error ? authErr.message : authErr
     );
     return new Response(

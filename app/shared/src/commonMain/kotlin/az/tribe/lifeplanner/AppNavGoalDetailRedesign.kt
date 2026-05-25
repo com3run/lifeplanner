@@ -9,7 +9,7 @@ import androidx.savedstate.read
 import az.tribe.lifeplanner.ui.goals.GoalDetailScreen
 import az.tribe.lifeplanner.ui.navigation.Screen
 
-/** D7 — the redesigned Goal Detail; opened from the redesigned Goals tab. Edit reuses the existing flow. */
+/** D7, the redesigned Goal Detail; opened from the redesigned Goals tab. Edit reuses the existing flow. */
 internal fun NavGraphBuilder.appNavGoalDetailRedesign(navController: NavController) {
     composable(
         route = Screen.GoalDetailRedesign.route,

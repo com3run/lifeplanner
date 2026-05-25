@@ -91,7 +91,7 @@ class HealthRepositoryImpl(
             val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
             val thirtyDaysAgo = today.minus(DatePeriod(days = 30))
 
-            // Sync steps — aggregate by date since readSteps returns individual records
+            // Sync steps, aggregate by date since readSteps returns individual records
             val stepsData = healthDataManager.readStepsForDateRange(thirtyDaysAgo, today)
             val stepsMetrics = stepsData
                 .groupBy { it.date }
@@ -105,7 +105,7 @@ class HealthRepositoryImpl(
                 }
             insertMetrics(stepsMetrics)
 
-            // Sync weight — try 30 days first, fallback to 90 then 365 if empty
+            // Sync weight, try 30 days first, fallback to 90 then 365 if empty
             val weightData = healthDataManager.readRecentWeight(days = 30).ifEmpty {
                 healthDataManager.readRecentWeight(days = 90)
             }.ifEmpty {
@@ -123,7 +123,7 @@ class HealthRepositoryImpl(
                 }
             insertMetrics(weightMetrics)
 
-            // Sync heart rate — average per day
+            // Sync heart rate, average per day
             val heartRateData = healthDataManager.readHeartRate(days = 30)
             val heartRateMetrics = heartRateData
                 .groupBy { it.date }
@@ -137,7 +137,7 @@ class HealthRepositoryImpl(
                 }
             insertMetrics(heartRateMetrics)
 
-            // Sync sleep — total hours per night
+            // Sync sleep, total hours per night
             val sleepData = healthDataManager.readSleep(days = 30)
             val sleepMetrics = sleepData
                 .groupBy { it.date }

@@ -67,22 +67,22 @@ private enum class EnergyBlock(
     val subtitle: String,
     val color: Color
 ) {
-    MORNING("Morning Peak", "5am – 12pm", "Deep work window", Color(0xFFF59E0B)),
-    AFTERNOON("Afternoon Flow", "12pm – 5pm", "Collaboration zone", Color(0xFFEF4444)),
-    EVENING("Evening Reset", "5pm – 11pm", "Reflection mode", Color(0xFF6366F1)),
+    MORNING("Morning Peak", "5am, 12pm", "Deep work window", Color(0xFFF59E0B)),
+    AFTERNOON("Afternoon Flow", "12pm, 5pm", "Collaboration zone", Color(0xFFEF4444)),
+    EVENING("Evening Reset", "5pm, 11pm", "Reflection mode", Color(0xFF6366F1)),
     ANYTIME("Flexible", "Anytime", "On your schedule", Color(0xFF6B7280))
 }
 
 private data class PlannerInsight(val concept: String, val body: String, val source: String)
 
 private val INSIGHTS = listOf(
-    PlannerInsight("90-min focus cycles", "Align deep work to your natural alert window — brains cycle every ~90 min.", "Kleitman & Lavie"),
-    PlannerInsight("Implementation intentions", "Naming when + where you'll act makes follow-through 2–3× more likely.", "Gollwitzer, 1999"),
+    PlannerInsight("90-min focus cycles", "Align deep work to your natural alert window, brains cycle every ~90 min.", "Kleitman & Lavie"),
+    PlannerInsight("Implementation intentions", "Naming when + where you'll act makes follow-through 2-3× more likely.", "Gollwitzer, 1999"),
     PlannerInsight("Weekly review ritual", "A 30-min weekly review reduces decision fatigue and sharpens priorities.", "Allen, GTD"),
     PlannerInsight("Time blocking", "Scheduling deep work in advance shields it from shallow-task drift.", "Cal Newport"),
-    PlannerInsight("Energy over time", "Managing energy — not just hours — sustains high performance long-term.", "Loehr & Schwartz"),
+    PlannerInsight("Energy over time", "Managing energy, not just hours, sustains high performance long-term.", "Loehr & Schwartz"),
     PlannerInsight("Habit stacking", "Anchoring a new habit to an existing cue cuts friction to start by ~50%.", "BJ Fogg"),
-    PlannerInsight("Ultradian rhythms", "Post-lunch dips are biology, not laziness — schedule creative work earlier.", "Circadian research"),
+    PlannerInsight("Ultradian rhythms", "Post-lunch dips are biology, not laziness, schedule creative work earlier.", "Circadian research"),
 )
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -195,7 +195,7 @@ private fun WeekHeader(weekStart: LocalDate, onPrevious: () -> Unit, onNext: () 
     val label = if (weekStart.month == weekEnd.month) {
         "$startMonthName ${weekStart.year}"
     } else {
-        "$startMonthName – $endMonthName ${weekStart.year}"
+        "$startMonthName, $endMonthName ${weekStart.year}"
     }
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         IconButton(onClick = onPrevious, modifier = Modifier.size(36.dp)) {

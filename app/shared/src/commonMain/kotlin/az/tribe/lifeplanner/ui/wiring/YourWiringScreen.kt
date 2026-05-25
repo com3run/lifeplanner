@@ -42,7 +42,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import kotlin.math.roundToInt
 
 /**
- * Pillar 7 (Innate) — "Your Wiring". Shows the user their inferred [DecisionProfile] in plain,
+ * Pillar 7 (Innate), "Your Wiring". Shows the user their inferred [DecisionProfile] in plain,
  * non-judgmental language: every dial is a neutral trait with trade-offs, never a deficiency.
  * Inference confidence is shown honestly, and the user can nudge a dial if it feels wrong.
  */
@@ -82,7 +82,7 @@ fun YourWiringScreen(
         ) {
             item {
                 Text(
-                    "How you're wired — learned from what you do, not a quiz. None of these is good or " +
+                    "How you're wired, learned from what you do, not a quiz. None of these is good or " +
                         "bad; each is just you, with its own strengths. If one feels off, nudge it.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.modernColors.textSecondary,
@@ -133,12 +133,12 @@ private fun confidenceLabel(s: DialSetting): String =
         "Confidence ${(s.confidence * 100).roundToInt()}%"
     }
 
-/** Plain-language framing for a dial — descriptive poles, never evaluative. */
+/** Plain-language framing for a dial, descriptive poles, never evaluative. */
 private data class DialLabels(val title: String, val lowLabel: String, val highLabel: String, val low: String, val high: String) {
     fun describe(value: Float): String = when {
         value < 0.4f -> low
         value > 0.6f -> high
-        else -> "You sit somewhere in the middle here — it depends on the day."
+        else -> "You sit somewhere in the middle here, it depends on the day."
     }
 }
 
@@ -146,19 +146,19 @@ private fun TuningDial.labels(): DialLabels = when (this) {
     TuningDial.CONFIDENCE_THRESHOLD -> DialLabels(
         "How you commit", "Decide on the fly", "Like to be sure",
         "You tend to act fast and decide on the fly.",
-        "You like to be sure before you commit — measure twice, cut once.")
+        "You like to be sure before you commit, measure twice, cut once.")
     TuningDial.NOVELTY_SALIENCE -> DialLabels(
         "Novelty vs. routine", "Routine", "Variety",
         "You thrive on routine and continuity.",
         "You're drawn to variety and trying new things.")
     TuningDial.DELAY_DISCOUNTING -> DialLabels(
         "Near vs. long term", "Patient", "Quick wins",
-        "You're patient — happy to play the long game.",
+        "You're patient, happy to play the long game.",
         "You're pulled toward quick wins and near-term payoff.")
     TuningDial.PUNISHMENT_SENSITIVITY -> DialLabels(
         "How setbacks land", "Roll off", "Feel them",
         "Missed days and setbacks roll off you easily.",
-        "Setbacks land hard — a missed day really registers.")
+        "Setbacks land hard, a missed day really registers.")
     TuningDial.REWARD_SENSITIVITY -> DialLabels(
         "Pull of wins", "Indifferent", "Energized",
         "Wins and streaks don't move you much.",

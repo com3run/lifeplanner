@@ -87,7 +87,7 @@ internal fun AreaGridCard(areaScore: LifeAreaScore, modifier: Modifier = Modifie
             )
 
             Box(modifier = Modifier.fillMaxWidth().padding(14.dp)) {
-                // Mini arc ring — top-right
+                // Mini arc ring, top-right
                 HeartProgress(
                     score = areaScore.score,
                     color = color,

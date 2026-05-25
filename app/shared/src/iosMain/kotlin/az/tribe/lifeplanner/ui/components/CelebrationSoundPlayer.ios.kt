@@ -23,7 +23,7 @@ actual class CelebrationSoundPlayer {
         CelebrationType.LEVEL_UP to "celebration_level_up"
     )
 
-    // Load sounds lazily — only when first celebration plays, not on app launch
+    // Load sounds lazily, only when first celebration plays, not on app launch
     private fun ensureLoaded() {
         if (loaded) return
         loaded = true
@@ -39,7 +39,7 @@ actual class CelebrationSoundPlayer {
     }
 
     actual fun play(type: CelebrationType) {
-        // Use Ambient category — mixes with Spotify/podcasts instead of stopping them
+        // Use Ambient category, mixes with Spotify/podcasts instead of stopping them
         try {
             val session = AVAudioSession.sharedInstance()
             session.setCategory(AVAudioSessionCategoryAmbient, error = null)

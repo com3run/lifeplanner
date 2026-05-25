@@ -36,8 +36,8 @@ import com.adamglin.phosphoricons.regular.ArrowLeft
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
- * Pillar 5 (P5.4) — metacognitive review. Surfaces logged Decisions and asks the user to grade
- * their *reasoning* (process) separately from the *result* — the "good decision vs. good luck"
+ * Pillar 5 (P5.4), metacognitive review. Surfaces logged Decisions and asks the user to grade
+ * their *reasoning* (process) separately from the *result*, the "good decision vs. good luck"
  * distinction. Grading sets [Decision.outcomeQuality].
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -77,7 +77,7 @@ fun MetacognitiveReviewScreen(
             item {
                 Text(
                     "Grade your reasoning, not the outcome. A sound decision can turn out badly " +
-                        "(and a flawed one can get lucky) — what matters long-term is the process.",
+                        "(and a flawed one can get lucky), what matters long-term is the process.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.modernColors.textSecondary,
                     modifier = Modifier.padding(vertical = 4.dp)

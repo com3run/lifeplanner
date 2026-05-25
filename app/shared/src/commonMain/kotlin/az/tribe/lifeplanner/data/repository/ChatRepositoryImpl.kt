@@ -350,7 +350,7 @@ class ChatRepositoryImpl(
                         // Write back any profile updates the AI extracted
                         persistMemoryUpdate(rawText, situation)
 
-                        // Parse inline suggestion tags directly — no second API call needed
+                        // Parse inline suggestion tags directly, no second API call needed
                         val (cleanedText, suggestions) = parseInlineSuggestions(
                             rawText.replace(Regex("""\[UPDATE_SITUATION:[^\]]+\]"""), "")
                         )

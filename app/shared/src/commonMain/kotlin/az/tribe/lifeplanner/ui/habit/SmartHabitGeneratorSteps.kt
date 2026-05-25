@@ -331,7 +331,7 @@ internal fun HabitResultsStep(
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     shape = RoundedCornerShape(16.dp)
                 ) {
-                    Text(if (addedTitles.isNotEmpty()) "Done — View My Habits" else "Skip for Now", fontWeight = FontWeight.SemiBold)
+                    Text(if (addedTitles.isNotEmpty()) "Done, View My Habits" else "Skip for Now", fontWeight = FontWeight.SemiBold)
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))

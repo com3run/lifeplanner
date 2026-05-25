@@ -26,7 +26,7 @@ class MilestoneTableSyncer(
 
     override suspend fun getUnsyncedLocal(): List<MilestoneEntity> {
         // Single DB access: fetch milestones and validate goal FKs in one block
-        // Skip "Getting Started" goal milestones — local-only system data
+        // Skip "Getting Started" goal milestones, local-only system data
         return db { d ->
             val milestones = d.lifePlannerDBQueries.getUnsyncedMilestones().executeAsList()
             if (milestones.isEmpty()) return@db emptyList()
@@ -120,7 +120,7 @@ class MilestoneTableSyncer(
                 .select { filter { eq("user_id", userId) } }
                 .decodeList<MilestoneSyncDto>()
         }
-        // Skip Getting Started goal milestones — local-only system data
+        // Skip Getting Started goal milestones, local-only system data
         val filtered = remoteItems.filter { it.goalId != GETTING_STARTED_GOAL_ID }
         filtered.forEach { upsertLocal(remoteToLocal(it)) }
         setLastPullTimestamp(now)

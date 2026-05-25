@@ -64,7 +64,7 @@ data class SearchResults(
 
 // ── Static settings catalogue ─────────────────────────────────────────────────
 
-// Goals, Habits, Journal, Coaches are now filter chips — kept here only as external nav shortcuts
+// Goals, Habits, Journal, Coaches are now filter chips, kept here only as external nav shortcuts
 private val ALL_SETTINGS = listOf(
     SettingsItem("AI Coach", "Chat with your personal coach", "🤖",
         listOf("coach", "ai", "chat", "assistant", "advice", "luna"), SearchDestination.AI_COACH),
@@ -135,7 +135,7 @@ class SearchViewModel(
                         else -> goals.filter { it.matchesQuery(lower) }
                     },
                     milestones = when {
-                        // Don't show all milestones in browse mode — too noisy
+                        // Don't show all milestones in browse mode, too noisy
                         filters.isNotEmpty() && SearchFilter.GOALS !in filters -> emptyList()
                         q.isBlank() -> emptyList()
                         else -> goals.flatMap { goal ->

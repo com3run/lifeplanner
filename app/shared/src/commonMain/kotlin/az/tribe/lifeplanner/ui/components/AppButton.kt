@@ -23,12 +23,12 @@ import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
 import az.tribe.lifeplanner.ui.theme.modernColors
 
 /**
- * D4 — canonical button primitive. The single source of truth for buttons, replacing ~345 ad-hoc
+ * D4, canonical button primitive. The single source of truth for buttons, replacing ~345 ad-hoc
  * `Button`/`OutlinedButton`/`TextButton` call sites. Token-pure: every color/size/shape/type comes
  * from the D3 tokens, never a raw value.
  *
  * States covered (D4 matrix): default · pressed (M3 ripple) · focused (M3) · disabled · loading.
- * (`empty`/`error` are container-level states, not button states — see the D4 spec.)
+ * (`empty`/`error` are container-level states, not button states, see the D4 spec.)
  */
 enum class AppButtonVariant { PRIMARY, SECONDARY, TERTIARY, DESTRUCTIVE }
 

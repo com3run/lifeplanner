@@ -408,7 +408,7 @@ function formatUserContext(
     );
   }
 
-  // Goals — split by status
+  // Goals, split by status
   const activeGoals = goals.filter(
     (g) => g.status !== "COMPLETED" && g.status !== "ABANDONED"
   );
@@ -523,7 +523,7 @@ Deno.serve(async (req: Request) => {
   }
 
   if (jwt === SUPABASE_ANON_KEY) {
-    console.warn("AUTH: Client sent anon key instead of user JWT — session likely expired");
+    console.warn("AUTH: Client sent anon key instead of user JWT, session likely expired");
     return new Response(
       JSON.stringify({ error: "Session expired. Please sign in again." }),
       { status: 401, headers: { "Content-Type": "application/json" } }
@@ -531,11 +531,11 @@ Deno.serve(async (req: Request) => {
   }
 
   // JWT is already validated by the Supabase gateway (verify_jwt: true).
-  // Parse the user ID from the payload directly — no extra auth server round-trip.
+  // Parse the user ID from the payload directly, no extra auth server round-trip.
   const userId = parseUserIdFromJwt(jwt);
   console.log(`AUTH: userId=${userId ?? "null"}`);
   if (!userId) {
-    console.warn("AUTH: could not parse sub from JWT — jwt.split('.').length=" + jwt.split(".").length);
+    console.warn("AUTH: could not parse sub from JWT, jwt.split('.').length=" + jwt.split(".").length);
     return new Response(
       JSON.stringify({ error: "Invalid token" }),
       { status: 401, headers: { "Content-Type": "application/json" } }
@@ -586,6 +586,11 @@ Deno.serve(async (req: Request) => {
         console.warn("Context enrichment error (non-fatal):", err);
       }
     }
+
+    // Global writing-style directive: keep output plain and human. Applies to every request,
+    // every provider, every coach. The model must not produce the long dash punctuation.
+    body.systemPrompt = (body.systemPrompt ?? "") +
+      "\n\nWriting style: write like a real person in plain, natural language. Never use the long dash punctuation (the em dash or en dash) anywhere in your replies. Use commas, periods, colons, parentheses, or separate sentences instead.";
 
     // ── Streaming path ──────────────────────────────────────────────────
     if (body.stream === true && body.messages) {
@@ -802,7 +807,7 @@ function buildOpenAIMessages(
         : "";
       messages.push({
         role: "system",
-        content: `Respond with a JSON object containing actual DATA values. Do NOT use JSON Schema keywords ("type", "properties", "items", "required", "$schema") as keys in your response — those are schema metadata, not data. ${keyHint} Schema:\n${JSON.stringify(body.responseSchema)}`,
+        content: `Respond with a JSON object containing actual DATA values. Do NOT use JSON Schema keywords ("type", "properties", "items", "required", "$schema") as keys in your response, those are schema metadata, not data. ${keyHint} Schema:\n${JSON.stringify(body.responseSchema)}`,
       });
     }
     for (const msg of body.messages) {

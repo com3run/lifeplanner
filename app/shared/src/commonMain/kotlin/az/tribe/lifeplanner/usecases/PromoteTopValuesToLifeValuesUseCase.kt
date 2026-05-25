@@ -33,7 +33,7 @@ class PromoteTopValuesToLifeValuesUseCase(
                 .filter { it.isNotBlank() }
                 .distinct()
 
-            // Nothing to migrate yet (e.g. onboarding not done) — retry next launch.
+            // Nothing to migrate yet (e.g. onboarding not done), retry next launch.
             if (topValues.isEmpty()) return
 
             val existingTitles = lifeValueRepository.getAllLifeValues()

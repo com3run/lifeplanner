@@ -341,7 +341,7 @@ fun App(
                 if (hasCompletedOnboarding == true && !CoachOnboardingViewModel.isComplete(settings)) {
                     settings.putBoolean(CoachOnboardingViewModel.COACH_ONBOARDING_KEY, true)
                 }
-                if (CoachOnboardingViewModel.isComplete(settings)) Screen.Today.route
+                if (CoachOnboardingViewModel.isComplete(settings)) Screen.ForYou.route
                 else Screen.CoachOnboarding.route
             }
             else -> Screen.CoachOnboarding.route
@@ -361,7 +361,7 @@ fun App(
                             if (hasCompletedOnboarding == true && !CoachOnboardingViewModel.isComplete(settings)) {
                                 settings.putBoolean(CoachOnboardingViewModel.COACH_ONBOARDING_KEY, true)
                             }
-                            val next = if (CoachOnboardingViewModel.isComplete(settings)) Screen.Today.route
+                            val next = if (CoachOnboardingViewModel.isComplete(settings)) Screen.ForYou.route
                                        else Screen.CoachOnboarding.route
                             navController.navigate(next) { popUpTo(0) { inclusive = true } }
                         }
@@ -427,14 +427,14 @@ fun App(
 
         // Routes where bottom navigation should be visible
         val mainRoutes = buildList {
-            add(Screen.Today.route)
+            add(Screen.ForYou.route)
             add(Screen.GoalsRedesign.route)
             add(Screen.Profile.route)
         }
 
         // Tab index for directional slide transitions between bottom nav tabs
         val tabIndex = mapOf(
-            Screen.Today.route to 0,
+            Screen.ForYou.route to 0,
             Screen.GoalsRedesign.route to 1,
             Screen.Profile.route to 2
         )
@@ -565,6 +565,7 @@ fun App(
                         appNavHabits(navController = navController)
                         appNavHabitDetailRedesign(navController = navController)
                         appNavToday(navController = navController)
+                        appNavForYou(navController = navController)
                         appNavGoalsRedesign(navController = navController)
                         appNavGoalDetailRedesign(navController = navController)
                         appNavYouRedesign(navController = navController)

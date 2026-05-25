@@ -134,8 +134,8 @@ internal fun GoalOptionCard(option: GoalOption, onSelect: () -> Unit) {
         GoalTimeline.LONG_TERM -> Color(0xFF9C27B0)
     }
     val timelineLabel = when (option.timeline) {
-        GoalTimeline.SHORT_TERM -> "1–3 months"
-        GoalTimeline.MID_TERM -> "3–9 months"
+        GoalTimeline.SHORT_TERM -> "1-3 months"
+        GoalTimeline.MID_TERM -> "3-9 months"
         GoalTimeline.LONG_TERM -> "9+ months"
     }
 
@@ -403,9 +403,9 @@ internal fun TimelineStep(
         Spacer(modifier = Modifier.height(28.dp))
 
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            TimelineCard("\uD83C\uDFAF", "Quick Win", "1 – 3 months", "Build early momentum and see results fast", GoalTimeline.SHORT_TERM, selectedTimeline == GoalTimeline.SHORT_TERM) { onTimelineSelect(GoalTimeline.SHORT_TERM) }
-            TimelineCard("\uD83D\uDCC8", "Growth Journey", "3 – 9 months", "Steady, meaningful progress over time", GoalTimeline.MID_TERM, selectedTimeline == GoalTimeline.MID_TERM) { onTimelineSelect(GoalTimeline.MID_TERM) }
-            TimelineCard("\uD83C\uDFD4", "Big Vision", "9 months – 2 years", "A life-changing, transformational goal", GoalTimeline.LONG_TERM, selectedTimeline == GoalTimeline.LONG_TERM) { onTimelineSelect(GoalTimeline.LONG_TERM) }
+            TimelineCard("\uD83C\uDFAF", "Quick Win", "1, 3 months", "Build early momentum and see results fast", GoalTimeline.SHORT_TERM, selectedTimeline == GoalTimeline.SHORT_TERM) { onTimelineSelect(GoalTimeline.SHORT_TERM) }
+            TimelineCard("\uD83D\uDCC8", "Growth Journey", "3, 9 months", "Steady, meaningful progress over time", GoalTimeline.MID_TERM, selectedTimeline == GoalTimeline.MID_TERM) { onTimelineSelect(GoalTimeline.MID_TERM) }
+            TimelineCard("\uD83C\uDFD4", "Big Vision", "9 months, 2 years", "A life-changing, transformational goal", GoalTimeline.LONG_TERM, selectedTimeline == GoalTimeline.LONG_TERM) { onTimelineSelect(GoalTimeline.LONG_TERM) }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -430,7 +430,7 @@ internal fun TimelineStep(
                 Icon(PhosphorIcons.Regular.Sparkle, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
             }
         }
-        Text("Auto-suggested — tap to change.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 6.dp))
+        Text("Auto-suggested, tap to change.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 6.dp))
 
         Spacer(modifier = Modifier.height(32.dp))
 
@@ -495,7 +495,7 @@ internal fun MilestonesStep(
 
         Text("Break it into steps", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
         Text(
-            "Milestones make big goals achievable. Optional — you can add more later.",
+            "Milestones make big goals achievable. Optional, you can add more later.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 4.dp)
@@ -507,7 +507,7 @@ internal fun MilestonesStep(
             Surface(shape = RoundedCornerShape(50), color = Color(0xFF7C4DFF).copy(alpha = 0.1f)) {
                 Row(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(PhosphorIcons.Regular.Sparkle, null, tint = Color(0xFF7C4DFF), modifier = Modifier.size(14.dp))
-                    Text("AI suggested — tap to toggle", style = MaterialTheme.typography.labelSmall, color = Color(0xFF7C4DFF), fontWeight = FontWeight.Medium)
+                    Text("AI suggested, tap to toggle", style = MaterialTheme.typography.labelSmall, color = Color(0xFF7C4DFF), fontWeight = FontWeight.Medium)
                 }
             }
             Spacer(modifier = Modifier.height(12.dp))

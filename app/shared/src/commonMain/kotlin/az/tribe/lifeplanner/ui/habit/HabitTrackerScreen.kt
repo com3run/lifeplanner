@@ -65,7 +65,7 @@ fun HabitTrackerScreen(
         }
     }
 
-    // Auto-show reflection sheet after habit check-in — no snackbar intermediary
+    // Auto-show reflection sheet after habit check-in, no snackbar intermediary
     LaunchedEffect(recentCheckIn) {
         recentCheckIn?.let { checkIn ->
             habitForReflection = checkIn.habit

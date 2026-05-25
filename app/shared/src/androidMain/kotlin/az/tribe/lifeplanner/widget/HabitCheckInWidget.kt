@@ -142,7 +142,7 @@ private fun AllDoneView(totalCount: Int) {
         )
         Spacer(modifier = GlanceModifier.height(4.dp))
         Text(
-            text = "Great job today — keep it up!",
+            text = "Great job today, keep it up!",
             style = TextStyle(
                 fontSize = 12.sp,
                 color = GlanceTheme.colors.onSurfaceVariant
@@ -204,7 +204,7 @@ private fun HabitRow(habit: WidgetHabitData, showStreak: Boolean) {
             .padding(horizontal = 8.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Checkbox — always uncompleted since we filter above
+        // Checkbox, always uncompleted since we filter above
         Text(
             text = "\u2B1C",
             style = TextStyle(fontSize = 18.sp),
@@ -219,7 +219,7 @@ private fun HabitRow(habit: WidgetHabitData, showStreak: Boolean) {
 
         Spacer(modifier = GlanceModifier.width(8.dp))
 
-        // Habit title — tap opens app
+        // Habit title, tap opens app
         Text(
             text = habit.title,
             style = TextStyle(

@@ -39,7 +39,7 @@ import com.adamglin.phosphoricons.regular.ArrowLeft
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
- * Pillar 4 — Causal Insights: the user's own causal model, computed on-device. Shows the
+ * Pillar 4, Causal Insights: the user's own causal model, computed on-device. Shows the
  * predicted-vs-actual calibration stat, correlations, and amplification-spiral warnings.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -159,7 +159,7 @@ private fun ConfidenceChip(confidence: InsightConfidence) {
     val (label, color) = when (confidence) {
         InsightConfidence.HIGH -> "High confidence" to MaterialTheme.modernColors.success
         InsightConfidence.MODERATE -> "Moderate" to MaterialTheme.modernColors.primary
-        InsightConfidence.LOW -> "Low — early signal" to MaterialTheme.modernColors.textSecondary
+        InsightConfidence.LOW -> "Low, early signal" to MaterialTheme.modernColors.textSecondary
     }
     Surface(shape = RoundedCornerShape(50), color = color.copy(alpha = 0.18f)) {
         Text(
@@ -174,7 +174,7 @@ private fun ConfidenceChip(confidence: InsightConfidence) {
 @Composable
 private fun EmptyState() {
     Text(
-        "Not enough history yet. Keep logging habits, mood, focus, and sleep — once there's " +
+        "Not enough history yet. Keep logging habits, mood, focus, and sleep, once there's " +
             "enough, your personal patterns and estimation calibration show up here.",
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.modernColors.textSecondary,
@@ -192,7 +192,7 @@ private fun UpsellCard() {
                 color = MaterialTheme.modernColors.textPrimary
             )
             Text(
-                "Discover what actually drives your progress — correlations across sleep, mood, " +
+                "Discover what actually drives your progress, correlations across sleep, mood, " +
                     "focus and habits, plus how accurate your time estimates are. All computed " +
                     "privately on your device.",
                 style = MaterialTheme.typography.bodyMedium,

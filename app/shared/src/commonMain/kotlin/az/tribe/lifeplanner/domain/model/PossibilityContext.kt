@@ -23,7 +23,7 @@ data class MilestoneCandidate(
 )
 
 /**
- * Pillar 2 — an ephemeral snapshot of "right now" that the
+ * Pillar 2, an ephemeral snapshot of "right now" that the
  * [az.tribe.lifeplanner.domain.service.PossibilityEngine] ranks over. Pure value
  * object: it carries `now` and pre-fetched candidates so the engine needs no clock or I/O.
  */

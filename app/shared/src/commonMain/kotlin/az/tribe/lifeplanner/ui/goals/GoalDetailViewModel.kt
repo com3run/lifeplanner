@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 /**
- * D7 — backs the redesigned **Goal Detail** screen. Reactive over the goal (so milestone toggles
+ * D7, backs the redesigned **Goal Detail** screen. Reactive over the goal (so milestone toggles
  * reflect immediately) and resolves the goal's **value** (Pillar 1 Why-Chain) from `valueId`.
  */
 class GoalDetailViewModel(

@@ -49,7 +49,7 @@ class FocusViewModel(
     // Independent scope for cleanup work that must survive ViewModel cancellation
     private val cleanupScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
-    // Setup state — milestone-first selection
+    // Setup state, milestone-first selection
     private val _activeGoals = MutableStateFlow<List<Goal>>(emptyList())
     val activeGoals: StateFlow<List<Goal>> = _activeGoals.asStateFlow()
 

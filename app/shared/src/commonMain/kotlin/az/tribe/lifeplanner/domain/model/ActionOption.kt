@@ -5,7 +5,7 @@ import az.tribe.lifeplanner.domain.enum.GoalCategory
 enum class ActionOptionType { HABIT, MILESTONE, FOCUS, GOAL }
 
 /**
- * Pillar 2 — an ephemeral (never persisted) action suggestion surfaced by the
+ * Pillar 2, an ephemeral (never persisted) action suggestion surfaced by the
  * [az.tribe.lifeplanner.domain.service.PossibilityEngine]: a goal / milestone /
  * habit / focus option plus a one-line, human-readable fit reason.
  */

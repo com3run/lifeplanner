@@ -27,7 +27,7 @@ import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Clock
 
 /**
- * D7 — backs the redesigned **Habit Detail** screen. Reactive over the habit + today's status (so a
+ * D7, backs the redesigned **Habit Detail** screen. Reactive over the habit + today's status (so a
  * check-in reflects instantly), resolves the linked **goal** ("supports" chain), and loads the last
  * five weeks of check-ins for the consistency heatmap. Check-in / undo go through the canonical
  * [CheckInHabitUseCase] / [UncheckHabitUseCase] so streaks stay correct.
@@ -47,7 +47,7 @@ class HabitDetailViewModel(
     /** The number of weeks shown in the consistency grid. */
     private val weeks = 5
 
-    /** Reactive source of truth — re-emits on every check-in/mutation, refreshing history below. */
+    /** Reactive source of truth, re-emits on every check-in/mutation, refreshing history below. */
     private val statusFlow = habitRepository.observeHabitsWithTodayStatus()
         .onEach { loadHistory() }
 
@@ -65,7 +65,7 @@ class HabitDetailViewModel(
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     private val _completedDates = MutableStateFlow<Set<LocalDate>>(emptySet())
-    /** Dates (within the last [weeks] weeks) the habit was completed — drives the heatmap. */
+    /** Dates (within the last [weeks] weeks) the habit was completed, drives the heatmap. */
     val completedDates: StateFlow<Set<LocalDate>> = _completedDates.asStateFlow()
 
     private val _completionRate = MutableStateFlow(0f)

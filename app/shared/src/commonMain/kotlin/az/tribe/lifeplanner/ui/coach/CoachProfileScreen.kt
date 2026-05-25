@@ -234,7 +234,7 @@ fun CoachProfileScreen(
                 Spacer(Modifier.height(16.dp))
             }
 
-            // ── Personality traits (API — skip if empty) ───────────────────────
+            // ── Personality traits (API, skip if empty) ───────────────────────
             if (personalityTraits.isNotEmpty()) {
                 item {
                     Row(
@@ -250,7 +250,7 @@ fun CoachProfileScreen(
                 }
             }
 
-            // ── Bio (API — skip if blank) ──────────────────────────────────────
+            // ── Bio (API, skip if blank) ──────────────────────────────────────
             if (coach.profile.bio.isNotBlank()) {
                 item {
                     QuoteBlock(
@@ -262,7 +262,7 @@ fun CoachProfileScreen(
                 }
             }
 
-            // ── Specialties (API — skip if empty) ─────────────────────────────
+            // ── Specialties (API, skip if empty) ─────────────────────────────
             if (coach.specialties.isNotEmpty()) {
                 item {
                     SpecialtiesSection(
@@ -274,7 +274,7 @@ fun CoachProfileScreen(
                 }
             }
 
-            // ── Media grid (TribeBot — the main content section) ──────────────
+            // ── Media grid (TribeBot, the main content section) ──────────────
             if (coach.media.isNotEmpty()) {
                 item {
                     MediaGridSection(
@@ -288,7 +288,7 @@ fun CoachProfileScreen(
                 }
             }
 
-            // ── Fun Fact (API — skip if blank) ────────────────────────────────
+            // ── Fun Fact (API, skip if blank) ────────────────────────────────
             if (coach.profile.funFact.isNotBlank()) {
                 item {
                     FunFactBubble(

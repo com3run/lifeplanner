@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-/** Pillar 4 — drives the Causal Insights screen: correlations + spirals + the calibration stat. */
+/** Pillar 4, drives the Causal Insights screen: correlations + spirals + the calibration stat. */
 class CausalInsightsViewModel(
     private val causalProvider: CausalInsightProvider,
     private val calibrationProvider: CalibrationProvider,

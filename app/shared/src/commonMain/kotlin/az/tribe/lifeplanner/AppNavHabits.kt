@@ -82,7 +82,7 @@ internal fun NavGraphBuilder.appNavHabits(navController: NavController) {
         )
     }
 
-    // Life Balance Screen — primary bottom nav tab; no back button in TopAppBar
+    // Life Balance Screen, primary bottom nav tab; no back button in TopAppBar
     composable(Screen.LifeBalance.route) {
         LifeBalanceScreen(
             onNavigateBack = { navController.popBackStack() },

@@ -18,11 +18,11 @@ internal fun generateHealthStories(
         val (emoji, title, subtitle) = when {
             percent >= 100 -> Triple(
                 "🏆", "Goal Crushed!",
-                "You hit $stepsLabel steps today — that's your 10k goal!\n\nConsistency like this builds lasting fitness habits."
+                "You hit $stepsLabel steps today, that's your 10k goal!\n\nConsistency like this builds lasting fitness habits."
             )
             percent >= 70 -> Triple(
                 "🔥", "$stepsLabel Steps",
-                "You're at $percent% of your daily goal.\n\nJust a short walk away from hitting 10k — keep it going!"
+                "You're at $percent% of your daily goal.\n\nJust a short walk away from hitting 10k, keep it going!"
             )
             percent >= 40 -> Triple(
                 "👟", "$stepsLabel Steps",
@@ -51,15 +51,15 @@ internal fun generateHealthStories(
         val (emoji, title, subtitle) = when {
             bpm < 60 -> Triple(
                 "💙", "Athlete's Heart",
-                "Your resting heart rate is $bpm bpm — that's excellent.\n\nLow resting HR is a strong indicator of cardiovascular fitness."
+                "Your resting heart rate is $bpm bpm, that's excellent.\n\nLow resting HR is a strong indicator of cardiovascular fitness."
             )
             bpm < 80 -> Triple(
                 "❤️", "$bpm BPM",
-                "Your heart rate is in a healthy range.\n\nKeep up the regular activity and rest — your heart is happy."
+                "Your heart rate is in a healthy range.\n\nKeep up the regular activity and rest, your heart is happy."
             )
             bpm < 100 -> Triple(
                 "🫀", "$bpm BPM",
-                "Your heart rate is slightly elevated.\n\nCheck in on stress and sleep — they're the biggest drivers of resting HR."
+                "Your heart rate is slightly elevated.\n\nCheck in on stress and sleep, they're the biggest drivers of resting HR."
             )
             else -> Triple(
                 "⚠️", "$bpm BPM",
@@ -84,19 +84,19 @@ internal fun generateHealthStories(
         val (emoji, title, subtitle) = when {
             latestSleep >= 8.0 -> Triple(
                 "😴", "$label Sleep",
-                "You got a full night's rest — well done.\n\nQuality sleep powers your mood, memory, and recovery more than any supplement."
+                "You got a full night's rest, well done.\n\nQuality sleep powers your mood, memory, and recovery more than any supplement."
             )
             latestSleep >= 6.5 -> Triple(
                 "🌙", "$label Sleep",
-                "Decent rest last night.\n\nAiming for 7–9 hours will keep your energy and focus sharp throughout the day."
+                "Decent rest last night.\n\nAiming for 7-9 hours will keep your energy and focus sharp throughout the day."
             )
             latestSleep >= 5.0 -> Triple(
                 "😪", "$label Sleep",
-                "You may be running a sleep debt.\n\nTry to protect your wind-down time tonight — your body does its best work when rested."
+                "You may be running a sleep debt.\n\nTry to protect your wind-down time tonight, your body does its best work when rested."
             )
             else -> Triple(
                 "🥱", "$label Sleep",
-                "That's not enough recovery time.\n\nPrioritize sleep tonight — it's one of the highest-leverage health decisions you can make."
+                "That's not enough recovery time.\n\nPrioritize sleep tonight, it's one of the highest-leverage health decisions you can make."
             )
         }
         stories.add(Story(
@@ -116,7 +116,7 @@ internal fun generateHealthStories(
         stories.add(Story(
             id = "health_weight",
             title = "Weight: ${"%.1f".format(latestWeight)} kg",
-            subtitle = "You're actively tracking your weight — that alone puts you ahead.\n\nConsistent data points are what make trends visible over time.",
+            subtitle = "You're actively tracking your weight, that alone puts you ahead.\n\nConsistent data points are what make trends visible over time.",
             emoji = "⚖️",
             category = "health",
             gradientStart = "#1B5E20",

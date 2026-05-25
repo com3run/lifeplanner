@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
 /**
- * D7 — backs the redesigned **Goals** canvas (D2: "what am I working toward, and why?"). Splits the
+ * D7, backs the redesigned **Goals** canvas (D2: "what am I working toward, and why?"). Splits the
  * user's goals into active (work in progress) and completed, sorted by nearest due date.
  *
  * The "why" tag (value laddering / Why-Chain) is a **Pillar 1 seam**: `Goal.valueId` doesn't exist

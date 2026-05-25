@@ -69,7 +69,7 @@ import kotlin.math.roundToInt
 import kotlin.time.Clock
 
 /**
- * D7 — the redesigned **Habit Detail**. Category-gradient hero + consistency ring, the signature
+ * D7, the redesigned **Habit Detail**. Category-gradient hero + consistency ring, the signature
  * one-tap today check-in, streak stat tiles, a five-week consistency heatmap, the goal it supports
  * (Pillar-1 "why" chain), and Edit reusing the existing bottom sheet.
  */
@@ -168,7 +168,7 @@ fun HabitDetailScreen(
                 ConsistencyCard(completedDates = completedDates, accent = h.category.gradientColors().first())
             }
 
-            // Supports — the goal this habit serves (Pillar 1 "why")
+            // Supports, the goal this habit serves (Pillar 1 "why")
             goalTitle?.let { gt ->
                 item {
                     Surface(Modifier.fillMaxWidth(), color = c.cardBackground, shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large)) {

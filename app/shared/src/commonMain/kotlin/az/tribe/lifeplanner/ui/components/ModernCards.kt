@@ -38,7 +38,7 @@ import kotlinx.coroutines.FlowPreview
  * Modern Glass-style Card with subtle transparency and border.
  *
  * Light mode: frosted white glass effect with subtle overlay.
- * Dark mode: clean solid elevated surface — no gradient overlay to avoid visual noise.
+ * Dark mode: clean solid elevated surface, no gradient overlay to avoid visual noise.
  */
 @Composable
 fun GlassCard(

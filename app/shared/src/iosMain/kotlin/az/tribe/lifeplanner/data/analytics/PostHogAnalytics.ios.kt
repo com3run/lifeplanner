@@ -1,7 +1,7 @@
 package az.tribe.lifeplanner.data.analytics
 
 /**
- * iOS PostHog bridge — delegates to native PostHog Swift SDK via bridge interface.
+ * iOS PostHog bridge, delegates to native PostHog Swift SDK via bridge interface.
  * The bridge is set in iOSApp.swift during app initialization.
  */
 interface PostHogBridge {

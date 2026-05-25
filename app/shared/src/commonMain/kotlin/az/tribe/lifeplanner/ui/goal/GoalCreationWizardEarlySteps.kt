@@ -197,7 +197,7 @@ internal fun IntentStep(
         )
         Spacer(modifier = Modifier.height(6.dp))
         Text(
-            text = "Describe it in your own words — no need to be perfect",
+            text = "Describe it in your own words, no need to be perfect",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center

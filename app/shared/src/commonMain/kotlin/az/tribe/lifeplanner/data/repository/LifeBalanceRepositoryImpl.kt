@@ -66,7 +66,7 @@ class LifeBalanceRepositoryImpl(
                     val recs = cached.recommendations.map { it.toBalanceRecommendation() }
                     return buildReport(areaScores, insights, recs)
                 } catch (_: Exception) {
-                    // Cache corrupt — fall through to regenerate
+                    // Cache corrupt, fall through to regenerate
                 }
             }
         }
@@ -506,7 +506,7 @@ class LifeBalanceRepositoryImpl(
                 )
             }
         } catch (_: Exception) {
-            // Return empty map — caller will use fallback
+            // Return empty map, caller will use fallback
         }
 
         return result

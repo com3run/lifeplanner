@@ -48,7 +48,7 @@ import kotlin.test.*
 class GamificationReviewReminderMapperTest {
 
     // ════════════════════════════════════════════════════════════════
-    // GamificationMapper — Badge
+    // GamificationMapper, Badge
     // ════════════════════════════════════════════════════════════════
 
     @Test
@@ -171,7 +171,7 @@ class GamificationReviewReminderMapperTest {
     }
 
     // ════════════════════════════════════════════════════════════════
-    // GamificationMapper — Challenge
+    // GamificationMapper, Challenge
     // ════════════════════════════════════════════════════════════════
 
     @Test
@@ -352,7 +352,7 @@ class GamificationReviewReminderMapperTest {
     }
 
     // ════════════════════════════════════════════════════════════════
-    // GamificationMapper — UserProgress
+    // GamificationMapper, UserProgress
     // ════════════════════════════════════════════════════════════════
 
     @Test

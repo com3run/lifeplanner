@@ -92,7 +92,7 @@ Timelines: SHORT_TERM (30 days), MID_TERM (90 days), LONG_TERM (1 year)
 Frequencies: DAILY, WEEKLY
 
 CRITICAL: title and description MUST contain real content derived from the user's message. Never use placeholder text like "Goal title" or "Description". If you don't have enough context, ask a clarifying question first instead of suggesting.
-IMPORTANT: If user explained what they want to achieve, include the goal/habit in the suggestions array immediately. In your messages, say you're suggesting it — never claim you created it. The user will see action buttons to create items themselves.
+IMPORTANT: If user explained what they want to achieve, include the goal/habit in the suggestions array immediately. In your messages, say you're suggesting it, never claim you created it. The user will see action buttons to create items themselves.
     """.trimIndent()
 
     // Log the full prompt for debugging

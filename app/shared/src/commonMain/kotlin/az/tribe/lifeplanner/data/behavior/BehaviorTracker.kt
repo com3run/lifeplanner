@@ -14,7 +14,7 @@ class BehaviorTracker(private val repository: BehaviorRepository) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val log = Logger.withTag("BehaviorTracker")
 
-    // Single ref swap is atomic — callers (App.kt LaunchedEffect + LifecycleEventObserver)
+    // Single ref swap is atomic, callers (App.kt LaunchedEffect + LifecycleEventObserver)
     // are main-thread, but this also keeps exit/enter writes pairable per nav event.
     private var session: ScreenSession? = null
 

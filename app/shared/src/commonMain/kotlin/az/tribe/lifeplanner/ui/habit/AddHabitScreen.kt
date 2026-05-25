@@ -446,7 +446,7 @@ fun AddHabitScreen(
                                         else -> "Evening"
                                     }
                                     "$slot · $dh:${m.toString().padStart(2, '0')} $period"
-                                } else "Tap to set — used for habit grouping",
+                                } else "Tap to set, used for habit grouping",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = if (reminderTime != null) MaterialTheme.colorScheme.onSurface
                                 else MaterialTheme.colorScheme.onSurfaceVariant

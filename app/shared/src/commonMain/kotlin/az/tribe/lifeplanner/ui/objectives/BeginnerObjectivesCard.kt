@@ -148,7 +148,7 @@ fun BeginnerObjectivesCard(
                 trackColor = MaterialTheme.colorScheme.surfaceVariant
             )
 
-            // Next step spotlight — always visible unless all done
+            // Next step spotlight, always visible unless all done
             if (!allDone && nextObjective != null) {
                 Spacer(Modifier.height(12.dp))
                 NextObjectiveSpotlight(
@@ -159,7 +159,7 @@ fun BeginnerObjectivesCard(
                 )
             }
 
-            // Full list — shown when expanded
+            // Full list, shown when expanded
             AnimatedVisibility(
                 visible = isExpanded,
                 enter = expandVertically(),
@@ -186,7 +186,7 @@ fun BeginnerObjectivesCard(
                 }
             }
 
-            // Dismiss button — visible only when all objectives are complete
+            // Dismiss button, visible only when all objectives are complete
             if (allComplete) {
                 Spacer(Modifier.height(8.dp))
                 Box(

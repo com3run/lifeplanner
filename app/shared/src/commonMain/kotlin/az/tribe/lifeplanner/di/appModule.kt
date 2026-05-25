@@ -164,7 +164,7 @@ val appModule = module {
     single { NetworkConnectivityObserver() }
     single<NotificationSchedulerInterface> { getNotificationScheduler() }
 
-    // Auth Service (Supabase — multiplatform, no platform-specific needed)
+    // Auth Service (Supabase, multiplatform, no platform-specific needed)
     single<AuthService> { SupabaseAuthService(get()) }
 
     // Auth token provider (Supabase session → JWT, with auto-refresh)
@@ -180,10 +180,10 @@ val appModule = module {
                 val now = kotlinx.datetime.Clock.System.now()
                 val timeUntilExpiry = session.expiresAt - now
                 if (timeUntilExpiry.inWholeSeconds <= 30) {
-                    // Serialize refresh attempts — if another call already refreshed, reuse it
+                    // Serialize refresh attempts, if another call already refreshed, reuse it
                     refreshMutex.lock()
                     try {
-                        // Re-check after acquiring lock — another call may have refreshed already
+                        // Re-check after acquiring lock, another call may have refreshed already
                         val currentSession = supabase.auth.currentSessionOrNull()
                         if (currentSession != null) {
                             val freshExpiry = currentSession.expiresAt - kotlinx.datetime.Clock.System.now()
@@ -191,7 +191,7 @@ val appModule = module {
                                 return@AuthTokenProvider currentSession.accessToken
                             }
                         }
-                        // Still expired — refresh with retry
+                        // Still expired, refresh with retry
                         var lastException: Exception? = null
                         for (attempt in 1..3) {
                             try {
@@ -364,6 +364,8 @@ val appModule = module {
     viewModelOf(::BackupViewModel)
     viewModelOf(::FocusViewModel)
     viewModel { az.tribe.lifeplanner.ui.today.TodayViewModel(get(), get(), get()) }
+    single { az.tribe.lifeplanner.ui.foryou.HomeFeedBuilder(get(), get(), get(), get(), get(), get(), get()) }
+    viewModel { az.tribe.lifeplanner.ui.foryou.ForYouViewModel(get(), get(), get()) }
     viewModel { az.tribe.lifeplanner.ui.goals.GoalsViewModel(get()) }
     viewModel { params -> az.tribe.lifeplanner.ui.goals.GoalDetailViewModel(params.get(), get(), get()) }
     viewModel { params -> az.tribe.lifeplanner.ui.habit.HabitDetailViewModel(params.get(), get(), get(), get(), get(), get()) }

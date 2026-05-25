@@ -128,7 +128,7 @@ private fun StoryCircle(
             modifier = Modifier.size(68.dp),
             contentAlignment = Alignment.Center
         ) {
-            // Outer ring — gradient if new, grey if seen
+            // Outer ring, gradient if new, grey if seen
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -200,7 +200,7 @@ internal fun StoryFullReader(
         }
     }
 
-    // Auto-advance: duration scales with subtitle length (250ms/word, clamped 3–7s)
+    // Auto-advance: duration scales with subtitle length (250ms/word, clamped 3-7s)
     LaunchedEffect(currentIndex) {
         val wordCount = stories[currentIndex].subtitle.split(" ").size
         val durationMs = (wordCount * 250L).coerceIn(3000L, 7000L)
@@ -367,7 +367,7 @@ internal fun StoryFullReader(
 
             Spacer(Modifier.weight(1f))
 
-            // CTA button + nav hint — sits outside the tap zones, no interference
+            // CTA button + nav hint, sits outside the tap zones, no interference
             Column(
                 modifier = Modifier
                     .fillMaxWidth()

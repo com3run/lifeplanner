@@ -36,7 +36,7 @@ actual fun SaveCredentialEffect(
             )
             Logger.d("CredentialManager") { "Password saved for $email" }
         } catch (e: Exception) {
-            // User cancelled or save not supported — not an error worth surfacing
+            // User cancelled or save not supported, not an error worth surfacing
             Logger.d("CredentialManager") { "Password save skipped: ${e.message}" }
         }
         onComplete()

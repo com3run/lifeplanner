@@ -208,8 +208,8 @@ fun GoalCreationWizardScreen(
                     ${if (profileContext.isNotBlank()) "\n$profileContext\nUse this profile to SKIP questions about information already known. Do NOT ask about known facts." else ""}
 
                     Generate exactly 9 clarifying questions to deeply understand and personalise their goal.
-                    Every question must be directly specific to their stated intent — not generic filler.
-                    Each question must allow multiple answers and have 5–6 options tailored to their goal.
+                    Every question must be directly specific to their stated intent, not generic filler.
+                    Each question must allow multiple answers and have 5-6 options tailored to their goal.
                     For each question include at least one "tricky" or unexpected option that reveals hidden priorities or challenges.
                     Always include "None of the above" as the final option for every question.
                     Cover: motivation/why, prior experience, current obstacles, timeline preferences,
@@ -320,7 +320,7 @@ fun GoalCreationWizardScreen(
                     ${contextLines.trim()}
                     ${if (profileContext.isNotBlank()) "\n$profileContext\nCalibrate ambition and timeline to the user's stress level, sleep quality, and life stage shown above." else ""}
 
-                    Generate exactly 3 goal options for the user — each with a different ambition level:
+                    Generate exactly 3 goal options for the user, each with a different ambition level:
                     - "Quick win": SHORT_TERM (1-3 months), achievable fast, builds confidence
                     - "Steady climb": MID_TERM (3-9 months), balanced effort and reward
                     - "Full transformation": LONG_TERM (9+ months), ambitious and life-changing

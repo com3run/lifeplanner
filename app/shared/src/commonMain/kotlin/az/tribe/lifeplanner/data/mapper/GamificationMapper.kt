@@ -18,7 +18,7 @@ import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 /**
- * Badge Entity to Domain mapper — returns null for unknown badge types
+ * Badge Entity to Domain mapper, returns null for unknown badge types
  */
 fun BadgeEntity.toDomain(): Badge? = try {
     Badge(
@@ -46,7 +46,7 @@ fun Badge.toEntity(): BadgeEntity = BadgeEntity(
 )
 
 /**
- * Challenge Entity to Domain mapper — returns null for unknown challenge types
+ * Challenge Entity to Domain mapper, returns null for unknown challenge types
  */
 fun ChallengeEntity.toDomain(): Challenge? = try {
     Challenge(

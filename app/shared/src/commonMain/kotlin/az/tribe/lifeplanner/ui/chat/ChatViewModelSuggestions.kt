@@ -140,7 +140,7 @@ fun ChatViewModel.executeCoachSuggestion(suggestion: CoachSuggestion) {
                 }
 
                 is CoachSuggestion.AskQuestion -> {
-                    // Mark the question as answered — the selected option is sent
+                    // Mark the question as answered, the selected option is sent
                     // as a regular message via the onAnswerQuestion callback in the UI
                     _uiState.value = _uiState.value.copy(
                         executingAction = false,

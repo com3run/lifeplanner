@@ -51,7 +51,7 @@ import com.adamglin.phosphoricons.regular.Trash
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
- * Pillar 5 — the "Becoming" view. Identity statements + value-alignment, shown alongside (not
+ * Pillar 5, the "Becoming" view. Identity statements + value-alignment, shown alongside (not
  * replacing) XP/levels: who the user is becoming, evidenced by their actual choices.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -96,7 +96,7 @@ fun BecomingScreen(
         ) {
             item {
                 Text(
-                    "Beyond points and levels — who you're choosing to become, evidenced by your own choices.",
+                    "Beyond points and levels, who you're choosing to become, evidenced by your own choices.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.modernColors.textSecondary,
                     modifier = Modifier.padding(vertical = 4.dp)
@@ -107,7 +107,7 @@ fun BecomingScreen(
             if (state.statements.isEmpty()) {
                 item {
                     Text(
-                        "Add an identity you're growing into — tie it to a value to track it.",
+                        "Add an identity you're growing into, tie it to a value to track it.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.modernColors.textSecondary
                     )

@@ -110,7 +110,7 @@ internal fun WeeklyEngagementCard(
                         )
                         Spacer(Modifier.height(6.dp))
                         Text(
-                            "Check in on habits, write in your journal, or set a new goal — your weekly stats will appear here.",
+                            "Check in on habits, write in your journal, or set a new goal, your weekly stats will appear here.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center

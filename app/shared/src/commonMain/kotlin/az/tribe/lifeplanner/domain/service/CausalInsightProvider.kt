@@ -16,7 +16,7 @@ import kotlin.math.roundToInt
 import kotlin.time.Clock
 
 /**
- * Pillar 4 — aggregates the user's recent history from the repos into [DayMetrics] and runs
+ * Pillar 4, aggregates the user's recent history from the repos into [DayMetrics] and runs
  * the pure [CausalInsightEngine] over it. Energy has no per-day time series today (only a
  * UserSituation snapshot) so it's left null; the engine simply skips energy relationships.
  */

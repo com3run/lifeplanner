@@ -87,7 +87,7 @@ internal fun HabitsStep(
                 ) {
                     Icon(PhosphorIcons.Regular.Sparkle, null, tint = Color(0xFF7C4DFF), modifier = Modifier.size(14.dp))
                     Text(
-                        "AI suggested — tap to toggle",
+                        "AI suggested, tap to toggle",
                         style = MaterialTheme.typography.labelSmall,
                         color = Color(0xFF7C4DFF),
                         fontWeight = FontWeight.Medium

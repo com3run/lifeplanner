@@ -12,7 +12,7 @@ actual class InAppReviewManager {
         val context = MainApplication.appContext
         val activity = findActivity(context)
         if (activity == null) {
-            Logger.w("InAppReview") { "No activity found — skipping review prompt" }
+            Logger.w("InAppReview") { "No activity found, skipping review prompt" }
             return
         }
 

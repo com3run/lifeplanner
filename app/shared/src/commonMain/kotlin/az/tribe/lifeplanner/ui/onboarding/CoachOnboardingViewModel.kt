@@ -111,7 +111,7 @@ class CoachOnboardingViewModel(
      * during onboarding.
      *
      * This is fire-and-forget: a failure here must never block onboarding
-     * completion. Idempotent — SmartReminderManager null-checks existing IDs.
+     * completion. Idempotent, SmartReminderManager null-checks existing IDs.
      */
     private suspend fun scheduleOnboardingReminders() {
         try {
@@ -175,7 +175,7 @@ class CoachOnboardingViewModel(
     var familyChallenge by mutableStateOf("")
     var familyVision by mutableStateOf("")
 
-    // ── Mind dump — free-text first goal seed ─────────────────────────────────
+    // ── Mind dump, free-text first goal seed ─────────────────────────────────
 
     var mindDump by mutableStateOf("")
 
@@ -566,7 +566,7 @@ class CoachOnboardingViewModel(
             Name: ${userName.takeIf { it.isNotBlank() } ?: "unknown"}
 
             Generate exactly 2 short, warm, conversational follow-up questions to understand their specific goals better.
-            Make each question specific to what they said — not generic.
+            Make each question specific to what they said, not generic.
             Keep questions under 15 words each.
         """.trimIndent()
         val schema = buildJsonObject {
@@ -594,11 +594,11 @@ class CoachOnboardingViewModel(
                 A new user just started their life planning journey and shared this thought:
                 "${mindDump.trim()}"
 
-                User context — name: ${userName.takeIf { it.isNotBlank() } ?: "unknown"}, priority area: ${topPriority?.name ?: "general"}
+                User context, name: ${userName.takeIf { it.isNotBlank() } ?: "unknown"}, priority area: ${topPriority?.name ?: "general"}
 
                 Generate a single specific, achievable goal directly based on what they shared.
                 The title should be concise and motivating (max 60 chars).
-                The description should be 1–2 sentences explaining the goal clearly.
+                The description should be 1-2 sentences explaining the goal clearly.
                 The category must be one of: CAREER, MONEY, BODY, PEOPLE, WELLBEING, PURPOSE, FAMILY
                 Generate 3 concrete, actionable milestones for this goal. Each milestone title should be short (max 50 chars), specific, and represent a meaningful step toward the goal.
             """.trimIndent()

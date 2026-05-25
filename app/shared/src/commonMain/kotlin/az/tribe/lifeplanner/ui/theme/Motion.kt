@@ -15,7 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 
 /**
- * D10 — the motion system. Calm by default, alive on purpose (D1 P6): motion is reserved for
+ * D10, the motion system. Calm by default, alive on purpose (D1 P6): motion is reserved for
  * transitions that aid understanding and for tactile feedback, never decoration. Durations + easing
  * are tokens so every animation in the app shares one feel.
  */
@@ -30,10 +30,10 @@ object Motion {
     /** Standard easing for most transitions (Material's decelerate). */
     val standard: Easing = FastOutSlowInEasing
 
-    /** Emphasized easing for entrances / important moves — a confident settle. */
+    /** Emphasized easing for entrances / important moves, a confident settle. */
     val emphasized: Easing = CubicBezierEasing(0.2f, 0f, 0f, 1f)
 
-    /** How far a pressed, tappable surface scales down — subtle, tactile. */
+    /** How far a pressed, tappable surface scales down, subtle, tactile. */
     const val pressScale = 0.97f
 }
 

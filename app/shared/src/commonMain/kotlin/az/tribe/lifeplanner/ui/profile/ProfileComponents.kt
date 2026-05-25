@@ -160,7 +160,7 @@ internal fun HealthConnectionCard(
                 Text("Health", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                 Text(
                     when (permissionState) {
-                        HealthPermissionState.GRANTED -> "Connected — data syncing to dashboard"
+                        HealthPermissionState.GRANTED -> "Connected, data syncing to dashboard"
                         HealthPermissionState.DENIED -> "Connect to see steps, sleep & more on your dashboard"
                         HealthPermissionState.NOT_AVAILABLE -> "Health not available on this device"
                         HealthPermissionState.UNKNOWN -> "Checking health access..."
@@ -219,7 +219,7 @@ internal fun CalendarIntegrationCard(
                 Text("Calendar", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                 Text(
                     when (permissionState) {
-                        CalendarPermissionState.GRANTED -> "Connected — events syncing with your goals"
+                        CalendarPermissionState.GRANTED -> "Connected, events syncing with your goals"
                         CalendarPermissionState.DENIED -> "Connect to surface upcoming events in your plan"
                         CalendarPermissionState.NOT_AVAILABLE -> "Calendar not available on this device"
                         CalendarPermissionState.UNKNOWN -> "Checking calendar access..."

@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 /**
- * Pillar 2 — drives the "Right now you could…" Home card. Pulls the current
+ * Pillar 2, drives the "Right now you could…" Home card. Pulls the current
  * [az.tribe.lifeplanner.domain.model.PossibilityContext] and ranks it on demand.
  */
 class PossibilityViewModel(

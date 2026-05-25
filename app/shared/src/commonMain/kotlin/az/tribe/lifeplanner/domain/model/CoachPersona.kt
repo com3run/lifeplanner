@@ -51,9 +51,9 @@ data class CoachPersona(
     val countryFlag: String = "",
     /** Supabase Storage public URL for the coach portrait image */
     val imageUrl: String? = null,
-    /** Static thumbnail / video poster frame — coaches/{slug}-poster.jpg */
+    /** Static thumbnail / video poster frame, coaches/{slug}-poster.jpg */
     val posterUrl: String? = null,
-    /** Short intro clip — coaches/{slug}-clip.mp4 */
+    /** Short intro clip, coaches/{slug}-clip.mp4 */
     val clipUrl: String? = null,
     /** TribeBot-generated media (reels + images) shown as highlights */
     val media: List<CoachMedia> = emptyList(),
@@ -249,7 +249,7 @@ data class CoachPersona(
                     iconName = "home"
                 ),
                 profile = CoachProfile(
-                    bio = "Every family is different — I help you find the approach that actually works for yours.",
+                    bio = "Every family is different, I help you find the approach that actually works for yours.",
                     funFact = "I believe the best family meetings happen over a meal!",
                     xpToUnlock = 350,
                     isDefaultUnlocked = true

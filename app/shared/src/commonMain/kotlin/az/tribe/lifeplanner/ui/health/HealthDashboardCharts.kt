@@ -216,7 +216,7 @@ internal fun HeartRateDetailView(data: List<HealthMetric>) {
         val lineColor = Color(0xFFE57373)
 
         if (data.size == 1) {
-            // Single data point — just show the value centered
+            // Single data point, just show the value centered
             Box(
                 modifier = Modifier.fillMaxWidth().height(160.dp),
                 contentAlignment = Alignment.Center
