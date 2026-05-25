@@ -70,9 +70,13 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         NotifierManager.onCreateOrOnNewIntent(intent)
         handleAuthDeeplink(intent)
+        // Warm start (TRI-10): the App is already composed, so the promoRoute param is never re-read.
+        // Resolve this intent's route fresh and push it to the live nav graph via DeepLinkNavigator.
+        pendingPromoRoute = null
         handlePromoDeeplink(intent)
         handleGoalDeeplink(intent)
         handleShortcutDeeplink(intent)
+        pendingPromoRoute?.let { az.tribe.lifeplanner.util.DeepLinkNavigator.navigate(it) }
     }
 
     private fun handleShortcutDeeplink(intent: Intent) {
