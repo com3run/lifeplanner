@@ -182,9 +182,11 @@ class FocusViewModelTest {
 
         viewModel.selectMilestoneWithGoal(milestone, goal)
         viewModel.startTimer()
-        testDispatcher.scheduler.advanceUntilIdle()
-
+        // startTimer sets RUNNING synchronously. Do NOT advanceUntilIdle while running: the tick loop
+        // is an infinite delay loop and would spin virtual time forever. Cancel it to end cleanly.
         assertEquals(TimerState.RUNNING, viewModel.timerState.value)
+        viewModel.cancelTimer()
+        testDispatcher.scheduler.advanceUntilIdle()
     }
 
     @Test
@@ -205,9 +207,10 @@ class FocusViewModelTest {
 
         viewModel.setTimerMode(true)
         viewModel.startTimer()
-        testDispatcher.scheduler.advanceUntilIdle()
-
+        // See note above: assert the synchronously-set state, then cancel the infinite tick loop.
         assertEquals(TimerState.RUNNING, viewModel.timerState.value)
+        viewModel.cancelTimer()
+        testDispatcher.scheduler.advanceUntilIdle()
     }
 
     @Test
@@ -221,12 +224,15 @@ class FocusViewModelTest {
 
         viewModel.selectMilestoneWithGoal(milestone, goal)
         viewModel.startTimer()
-        testDispatcher.scheduler.advanceUntilIdle()
+        // runCurrent runs the session-insert coroutine without draining the infinite tick loop.
+        testDispatcher.scheduler.runCurrent()
 
         // The fake repository should have the inserted session
         val sessions = fakeFocusRepository.getCompletedSessions()
         // Session was inserted but not yet completed
         assertEquals(TimerState.RUNNING, viewModel.timerState.value)
+        viewModel.cancelTimer()
+        testDispatcher.scheduler.advanceUntilIdle()
     }
 
     @Test
@@ -240,10 +246,11 @@ class FocusViewModelTest {
 
         viewModel.selectMilestoneWithGoal(milestone, goal)
         viewModel.startTimer()
-        testDispatcher.scheduler.advanceUntilIdle()
-
+        // No advanceUntilIdle while running (infinite tick loop). pauseTimer reads state synchronously.
         viewModel.pauseTimer()
         assertEquals(TimerState.PAUSED, viewModel.timerState.value)
+        viewModel.cancelTimer()
+        testDispatcher.scheduler.advanceUntilIdle()
     }
 
     @Test
@@ -266,13 +273,14 @@ class FocusViewModelTest {
 
         viewModel.selectMilestoneWithGoal(milestone, goal)
         viewModel.startTimer()
-        testDispatcher.scheduler.advanceUntilIdle()
-
+        // No advanceUntilIdle while running (infinite tick loop); pause/resume read state synchronously.
         viewModel.pauseTimer()
         assertEquals(TimerState.PAUSED, viewModel.timerState.value)
 
         viewModel.resumeTimer()
         assertEquals(TimerState.RUNNING, viewModel.timerState.value)
+        viewModel.cancelTimer()
+        testDispatcher.scheduler.advanceUntilIdle()
     }
 
     @Test
@@ -295,8 +303,7 @@ class FocusViewModelTest {
 
         viewModel.selectMilestoneWithGoal(milestone, goal)
         viewModel.startTimer()
-        testDispatcher.scheduler.advanceUntilIdle()
-
+        // No advanceUntilIdle while running; cancelTimer cancels the tick-loop job, then we drain.
         viewModel.cancelTimer()
         testDispatcher.scheduler.advanceUntilIdle()
 
