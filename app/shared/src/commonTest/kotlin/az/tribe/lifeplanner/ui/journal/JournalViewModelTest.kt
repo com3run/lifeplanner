@@ -89,11 +89,14 @@ class JournalViewModelTest {
     fun `isLoading becomes false after entries emit`() = runTest(testDispatcher) {
         fakeRepository.setEntries(listOf(testJournalEntry()))
         viewModel = createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
 
-        viewModel.isLoading.test {
-            val loading = awaitItem()
-            assertFalse(loading)
+        // isLoading clears in the entries flow's onEach, and entries is WhileSubscribed, so it only
+        // runs once something collects entries (the screen always does). Await the real emission
+        // (past the StateFlow's initial emptyList), by which point onEach has cleared loading.
+        viewModel.entries.test {
+            var items = awaitItem()
+            if (items.isEmpty()) items = awaitItem()
+            assertFalse(viewModel.isLoading.value)
             cancelAndIgnoreRemainingEvents()
         }
     }
