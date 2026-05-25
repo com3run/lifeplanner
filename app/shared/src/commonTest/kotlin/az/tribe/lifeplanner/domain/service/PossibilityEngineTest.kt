@@ -1,9 +1,12 @@
 package az.tribe.lifeplanner.domain.service
 
 import az.tribe.lifeplanner.domain.model.ActionOptionType
+import az.tribe.lifeplanner.domain.model.DecisionProfile
+import az.tribe.lifeplanner.domain.model.DialSetting
 import az.tribe.lifeplanner.domain.model.MilestoneCandidate
 import az.tribe.lifeplanner.domain.model.PossibilityContext
 import az.tribe.lifeplanner.domain.model.TimeOfDay
+import az.tribe.lifeplanner.domain.model.TuningDial
 import az.tribe.lifeplanner.testutil.testGoal
 import az.tribe.lifeplanner.testutil.testHabit
 import az.tribe.lifeplanner.testutil.testMilestone
@@ -13,6 +16,7 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.plus
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class PossibilityEngineTest {
@@ -28,6 +32,7 @@ class PossibilityEngineTest {
         pendingHabits: List<az.tribe.lifeplanner.domain.model.Habit> = emptyList(),
         openMilestones: List<MilestoneCandidate> = emptyList(),
         dueOrStalledGoals: List<az.tribe.lifeplanner.domain.model.Goal> = emptyList(),
+        profile: DecisionProfile? = null,
     ) = PossibilityContext(
         now = now,
         timeOfDay = timeOfDay,
@@ -38,7 +43,14 @@ class PossibilityEngineTest {
         pendingHabits = pendingHabits,
         openMilestones = openMilestones,
         dueOrStalledGoals = dueOrStalledGoals,
+        profile = profile,
     )
+
+    /** A dial setting reliable enough that the engine acts on it (confidence + samples over the bar). */
+    private fun reliable(value: Float) = DialSetting(value = value, confidence = 0.8f, sampleSize = 20)
+
+    private fun profileWith(dial: TuningDial, setting: DialSetting) =
+        DecisionProfile.neutral("p").withDial(dial, setting)
 
     @Test
     fun `low-energy morning ranks a streak habit first`() {
@@ -116,5 +128,45 @@ class PossibilityEngineTest {
     @Test
     fun `empty context yields no options`() {
         assertTrue(engine.rank(context()).isEmpty())
+    }
+
+    // ── Pillar 7: DecisionProfile-aware ranking (TRI-65) ────────────────────
+
+    @Test
+    fun `impatient user sees a habit framed for an immediate payoff`() {
+        val profile = profileWith(TuningDial.DELAY_DISCOUNTING, reliable(0.95f))
+        val opt = engine.rank(
+            context(pendingHabits = listOf(testHabit(id = "h1", title = "Stretch")), profile = profile)
+        ).single()
+        assertTrue(opt.fitReason.contains("right now"), "was: ${opt.fitReason}")
+    }
+
+    @Test
+    fun `routine-preferring user sees a streak framed as routine`() {
+        val profile = profileWith(TuningDial.NOVELTY_SALIENCE, reliable(0.05f))
+        val opt = engine.rank(
+            context(pendingHabits = listOf(testHabit(id = "h1", title = "Read", currentStreak = 4)), profile = profile)
+        ).single()
+        assertTrue(opt.fitReason.contains("routine", ignoreCase = true), "was: ${opt.fitReason}")
+    }
+
+    @Test
+    fun `punishment-sensitive user is not pushed about an overdue goal`() {
+        val overdue = testGoal(id = "o", title = "Taxes", dueDate = today.plus(DatePeriod(days = -5)))
+        val profile = profileWith(TuningDial.PUNISHMENT_SENSITIVITY, reliable(0.95f))
+        val opt = engine.rank(context(dueOrStalledGoals = listOf(overdue), profile = profile)).single()
+        assertFalse(opt.fitReason.contains("Overdue"), "should soften: ${opt.fitReason}")
+        assertTrue(opt.fitReason.contains("ready"), "was: ${opt.fitReason}")
+    }
+
+    @Test
+    fun `a low-confidence dial does not change the baseline ranking`() {
+        val overdue = testGoal(id = "o", title = "Taxes", dueDate = today.plus(DatePeriod(days = -5)))
+        val weak = profileWith(
+            TuningDial.PUNISHMENT_SENSITIVITY,
+            DialSetting(value = 0.95f, confidence = 0.2f, sampleSize = 3), // below the reliability bar
+        )
+        val opt = engine.rank(context(dueOrStalledGoals = listOf(overdue), profile = weak)).single()
+        assertTrue(opt.fitReason.contains("Overdue"), "unreliable dial should not adapt: ${opt.fitReason}")
     }
 }

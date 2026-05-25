@@ -36,5 +36,6 @@ data class PossibilityContext(
     val freeMinutes: Int?,       // open calendar-slot estimate; null when unknown (no calendar API yet)
     val pendingHabits: List<Habit> = emptyList(),         // active habits not yet done today
     val openMilestones: List<MilestoneCandidate> = emptyList(),
-    val dueOrStalledGoals: List<Goal> = emptyList()       // due/stalled goals with no open milestone
+    val dueOrStalledGoals: List<Goal> = emptyList(),      // due/stalled goals with no open milestone
+    val profile: DecisionProfile? = null                  // Pillar 7 wiring; null = adapt nothing
 )
