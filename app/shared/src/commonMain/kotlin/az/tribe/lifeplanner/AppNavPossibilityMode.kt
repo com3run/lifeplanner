@@ -6,21 +6,19 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import androidx.savedstate.read
-import az.tribe.lifeplanner.ui.goals.GoalDetailScreen
 import az.tribe.lifeplanner.ui.navigation.Screen
+import az.tribe.lifeplanner.ui.possibility.PossibilityModeScreen
 
-/** D7, the redesigned Goal Detail; opened from the redesigned Goals tab. Edit reuses the existing flow. */
-internal fun NavGraphBuilder.appNavGoalDetailRedesign(navController: NavController) {
+/** Pillar 6 (TRI-20) — Possibility Mode, opened for a stuck goal from Goal Detail or the For You feed. */
+internal fun NavGraphBuilder.appNavPossibilityMode(navController: NavController) {
     composable(
-        route = Screen.GoalDetailRedesign.route,
+        route = Screen.PossibilityMode.route,
         arguments = listOf(navArgument("goalId") { type = NavType.StringType }),
     ) { backStackEntry ->
         val goalId = backStackEntry.arguments?.read { getStringOrNull("goalId") } ?: return@composable
-        GoalDetailScreen(
+        PossibilityModeScreen(
             goalId = goalId,
             onBackClick = { navController.popBackStack() },
-            onEdit = { navController.navigate("edit_goal/$goalId") { launchSingleTop = true } },
-            onExplorePossibilities = { navController.navigate("possibility_mode/$goalId") { launchSingleTop = true } },
         )
     }
 }

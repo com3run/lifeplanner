@@ -47,6 +47,7 @@ import com.adamglin.phosphoricons.regular.CheckCircle
 import com.adamglin.phosphoricons.regular.Circle
 import com.adamglin.phosphoricons.regular.Compass
 import com.adamglin.phosphoricons.regular.Pencil
+import com.adamglin.phosphoricons.regular.Sparkle
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import kotlin.math.roundToInt
@@ -61,6 +62,7 @@ fun GoalDetailScreen(
     goalId: String,
     onBackClick: () -> Unit,
     onEdit: () -> Unit,
+    onExplorePossibilities: () -> Unit = {},
     viewModel: GoalDetailViewModel = koinViewModel { parametersOf(goalId) },
 ) {
     val goal by viewModel.goal.collectAsState()
@@ -158,6 +160,19 @@ fun GoalDetailScreen(
             } else {
                 items(g.milestones, key = { it.id }) { m ->
                     MilestoneRow(m, onToggle = { viewModel.toggleMilestone(m.id, !m.isCompleted) })
+                }
+            }
+
+            // Pillar 6: the divergent way out when an in-progress goal stalls.
+            if (rate < 1f) {
+                item {
+                    AppButton(
+                        text = "Feeling stuck? Explore possibilities",
+                        onClick = onExplorePossibilities,
+                        variant = AppButtonVariant.PRIMARY,
+                        leadingIcon = PhosphorIcons.Regular.Sparkle,
+                        modifier = Modifier.fillMaxWidth().padding(top = LifePlannerDesign.Spacing.xs),
+                    )
                 }
             }
 

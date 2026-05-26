@@ -566,6 +566,7 @@ fun App(
                         appNavHabitDetailRedesign(navController = navController)
                         appNavToday(navController = navController)
                         appNavForYou(navController = navController)
+                        appNavPossibilityMode(navController = navController)
                         appNavGoalsRedesign(navController = navController)
                         appNavGoalDetailRedesign(navController = navController)
                         appNavYouRedesign(navController = navController)
