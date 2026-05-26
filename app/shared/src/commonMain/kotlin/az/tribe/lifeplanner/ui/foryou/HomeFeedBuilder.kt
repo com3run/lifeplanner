@@ -16,6 +16,7 @@ import az.tribe.lifeplanner.usecases.ComputeValueAlignmentUseCase
 import co.touchlab.kermit.Logger
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.daysUntil
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Clock
 
@@ -28,7 +29,7 @@ enum class FeedSection(val label: String) {
 
 fun FeedKind.section(): FeedSection = when (this) {
     FeedKind.DO_NEXT -> FeedSection.DO
-    FeedKind.INSIGHT, FeedKind.BECOMING, FeedKind.PATTERN, FeedKind.MOMENTUM -> FeedSection.REFLECT
+    FeedKind.INSIGHT, FeedKind.BECOMING, FeedKind.PATTERN, FeedKind.MOMENTUM, FeedKind.POSSIBILITY -> FeedSection.REFLECT
     FeedKind.KNOWLEDGE -> FeedSection.LEARN
 }
 
@@ -51,12 +52,14 @@ class HomeFeedBuilder(
     suspend fun build(): List<FeedItem> {
         val progress = runCatching { gamificationRepository.getUserProgress().first() }.getOrNull()
         val level = progress?.currentLevel ?: 1
-        val daySeed = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.dayOfYear
+        val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+        val daySeed = today.dayOfYear
 
         val items = mutableListOf<FeedItem>()
+        val ctx = runCatching { possibilityContextProvider.currentContext() }.getOrNull()
 
         // ── Right now: the single best next moves ───────────────────────────
-        runCatching { possibilityEngine.rank(possibilityContextProvider.currentContext(), limit = 2) }
+        runCatching { ctx?.let { possibilityEngine.rank(it, limit = 2) } ?: emptyList() }
             .getOrDefault(emptyList())
             .forEachIndexed { i, o ->
                 items += FeedItem(
@@ -75,6 +78,21 @@ class HomeFeedBuilder(
                             o.goalId?.let { "goal_detail_redesign/$it" }
                     },
                     score = 100.0 - i,
+                )
+            }
+
+        // Pillar 6 stall trigger: surface the most stalled goal as a Possibility Mode prompt.
+        ctx?.dueOrStalledGoals
+            ?.firstOrNull { (it.progress ?: 0L) < 25L && it.createdAt.date.daysUntil(today) > 14 }
+            ?.let { g ->
+                items += FeedItem(
+                    id = "possibility_${g.id}",
+                    kind = FeedKind.POSSIBILITY,
+                    eyebrow = "FEELING STUCK?",
+                    title = "\"${g.title}\" has not moved lately",
+                    body = "Widen the options instead of forcing the same path. Tap to explore possibilities.",
+                    route = "possibility_mode/${g.id}",
+                    score = 90.0,
                 )
             }
 

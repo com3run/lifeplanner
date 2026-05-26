@@ -189,6 +189,7 @@ private fun FeedCard(item: FeedItem, onAction: () -> Unit, onOpen: () -> Unit) {
         FeedKind.PATTERN -> c.accent
         FeedKind.MOMENTUM -> c.warning
         FeedKind.KNOWLEDGE -> c.primary
+        FeedKind.POSSIBILITY -> c.secondary
     }
     Surface(
         modifier = Modifier.fillMaxWidth().bouncyClickable(enabled = item.route != null, onClick = onOpen),
@@ -241,6 +242,7 @@ private fun LeadingVisual(item: FeedItem, accent: Color) {
             FeedKind.PATTERN -> PhosphorIcons.Regular.ClockCounterClockwise
             FeedKind.MOMENTUM -> PhosphorIcons.Regular.Fire
             FeedKind.KNOWLEDGE -> PhosphorIcons.Regular.Sparkle
+            FeedKind.POSSIBILITY -> PhosphorIcons.Regular.Sparkle
         }
         IconChip(icon, tint = accent)
     }

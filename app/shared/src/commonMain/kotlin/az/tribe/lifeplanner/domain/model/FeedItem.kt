@@ -45,4 +45,7 @@ enum class FeedKind {
 
     /** A timing/usage pattern observed from how the user actually uses the app. */
     PATTERN,
+
+    /** A stalled goal worth widening with Possibility Mode (Pillar 6). Routes to possibility_mode. */
+    POSSIBILITY,
 }
