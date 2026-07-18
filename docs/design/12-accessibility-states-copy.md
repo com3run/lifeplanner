@@ -60,4 +60,4 @@ Microcopy is part of design, not a fill-in-later: write it with the screen.
 - Copy voice here governs D11 onboarding and every new string.
 
 *Next: **D9** (motivation & emotional design), **D6** (signature interaction), **D11** (onboarding),
-the **D5** Figma visual identity, or **D13** (handoff specs — last).*
+**D13** (handoff specs — last). **D5** (visual identity) shipped: `ui/theme/VisualIdentity.kt`.*

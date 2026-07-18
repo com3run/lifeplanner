@@ -78,7 +78,9 @@ no per-platform UI code. Tokens map to one `Theme`; iOS gets the redesign for fr
 
 ## 8. What's still open (seams & follow-ups)
 
-- **D5 — visual identity** (custom icons, illustration, brand warmth): needs Figma; today we use
+- **D5 — visual identity**: **delivered** as `ui/theme/VisualIdentity.kt` (Warm Ink shipped; Sage
+  built; Classic retained for exact rollback), driving both the modern tokens and the Material3
+  scheme, plus a time-of-day hero gradient. Custom icons and illustration remain open; today we use
   Phosphor icons + gradients.
 - **D6 — signature interaction** (Why-Chain reveal): needs **Pillar 1** on `main`.
 - **Pillar integration seams:** Today's "Right now you could…" → Pillar 2 `PossibilityEngine`;

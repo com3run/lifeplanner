@@ -39,7 +39,7 @@ exist, and they are referenced by name in eight of the others:
 
 | Doc | What it owned | Status per `13-handoff.md` |
 |---|---|---|
-| **D5 Visual Identity** | iconography, illustration, brand warmth, the whole look-and-feel layer | `13:81` "needs Figma; today we use Phosphor icons + gradients" |
+| **D5 Visual Identity** | iconography, illustration, brand warmth, the whole look-and-feel layer | **DELIVERED 2026-07-18** as `ui/theme/VisualIdentity.kt`. Was blocked on Figma; done in code instead. Icons/illustration still open. |
 | **D6 Signature Interaction** | the one moment a user screenshots and a competitor cannot copy | `13:83` "needs Pillar 1 on `main`" |
 
 The epic shipped D1 to D4 and D7 to D13, which is architecture, plumbing and screen re-layout,
@@ -119,7 +119,7 @@ Phase 0 below and should land before any further v3 testing.
 | **D10 Motion** | **PARTIAL, minimal** | `Motion.kt` exists; only 1 of 7 catalogued motions shipped (press-scale). Screen transitions still hand-rolled `tween(380)`/`tween(280)` in `App.kt:512-527`, violating `10:§2.3`. Reduce-motion not wired. |
 | **D11 Onboarding** | **NOT PROMOTED** | See 1.3. New users see v2 onboarding. |
 | **D12 A11y / States / Copy** | **NOT STARTED** | No WCAG audit, no reduce-motion, no semantics pass. |
-| **D5 Visual Identity** | **DOES NOT EXIST** | The single biggest cause of "looks the same." |
+| **D5 Visual Identity** | **DELIVERED 2026-07-18** | `ui/theme/VisualIdentity.kt`. Warm Ink active, Sage built, Classic = exact rollback. Was the single biggest cause of "looks the same." Icons/illustration still open. |
 | **D6 Signature Interaction** | **DOES NOT EXIST** | Blocked on Pillar 1 per `13:83`. |
 
 ---
@@ -173,21 +173,27 @@ confirm cards and nav bar actually change, confirm "+" appears on Today and Goal
 
 ### Phase 2: D5 visual identity (the actual fix)
 
-**Nothing before this point changes the palette, type or shape language.** Until D5 lands, every
-other phase is rearranging identical looking boxes, which is exactly the complaint.
+> **DONE 2026-07-18.** The product decision was made (new identity, yes) and D5 shipped as
+> `ui/theme/VisualIdentity.kt`. It never needed Figma; Figma has since been dropped entirely in
+> favour of Claude Design.
 
-This needs a product decision before any code: whether v3 gets a new visual identity at all, or
-whether D3's "keep the mature system" call stands. If it stands, then "the UI looks the same" is
-not a bug and the plan should stop pretending otherwise.
+**Warm Ink** is the active identity: warm paper and ink neutrals with a brass primary, the Oura read
+of D1. **Sage** (the Finch read) is built and verified but inactive. **Classic** preserves the v2
+palette byte for byte, so `ACTIVE_VISUAL_IDENTITY = VisualIdentity.CLASSIC` is an exact rollback.
 
-If a new identity is wanted, D5 has to be written first (it needs Figma per `13:81`). Scope:
-color, iconography, illustration, brand warmth, carrying P3 "warmth without childishness."
+The move that made it reach the whole app: `createColorScheme` now derives the Material3
+`ColorScheme` from `ModernColorScheme` instead of hardcoding `ModernColors`. Without that, an
+identity swap would have restyled only the 44 files using `modernColors` and missed the 164 using
+`MaterialTheme.colorScheme`.
 
-**Gate:** side by side screenshots of v2 and v3 on the same screen, where the difference is
-obvious to someone who has never seen the app.
+The hero gradient also shifts by time of day (dawn / day / dusk / night). Only that surface moves,
+so contrast ratios cannot drift; every gradient end holds white headline text at 3:1 or better.
 
-**Risk:** high blast radius by definition. Do it behind a theme-level flag so it can be reverted
-wholesale.
+**Gate met:** verified on device in light and dark, phone and tablet, with per-identity screenshots
+compared before choosing.
+
+**Still open from D5's original scope:** custom iconography and illustration. Today the app uses
+Phosphor icons plus the identity gradients.
 
 ### Phase 3: promotion and token migration
 

@@ -249,7 +249,7 @@ and a new user meets the app a few features at a time. Calmer *and* more capable
 ## 12. Handoff
 
 - **D3 (tokens)** — unblocked, independent; build the Compose theme next (reconcile with the existing
-  `tokens.json` / `figma-variables-*.json`).
+  `tokens.json`, which is generated from `ui/theme/VisualIdentity.kt`).
 - **D7 (core screens)** — Today, Goals, You are the three canvases; build the surface/revealed tiers
   from §4.
 - **D9/D11 (motivation, onboarding)** — own the §5 reveal schedule and the minute-one "why."

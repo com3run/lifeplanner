@@ -48,5 +48,5 @@ first-run is untouched until we promote it).
   lands, so step 2 writes real `LifeValue`s.
 - Copy follows the D12 voice; motion follows D10; visuals upgrade with the D5 identity pass.
 
-*Remaining design sub-issues: **D5** (Figma visual identity), **D6** (signature interaction — needs
+*Remaining design sub-issues: **D6** (signature interaction — needs
 Pillar 1 for the Why-Chain), **D13** (handoff specs — the capstone).*

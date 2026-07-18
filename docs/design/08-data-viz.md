@@ -54,4 +54,4 @@ All token-pure (D3), animate via D10's `Motion`.
   chart has a text equivalent.
 
 *Next: **D9** (motivation & emotional design), **D12** (a11y, empty/error, copy), **D6** (signature
-interaction), or the **D5** Figma visual-identity pass.*
+interaction). **D5** (visual identity) is delivered: `ui/theme/VisualIdentity.kt`.*
