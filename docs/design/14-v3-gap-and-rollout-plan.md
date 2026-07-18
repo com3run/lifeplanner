@@ -191,14 +191,64 @@ wholesale.
 
 ### Phase 3: promotion and token migration
 
-1. **Promote `OnboardingFlowScreen`** over `CoachOnboardingScreen` at `App.kt:353`. Highest
-   leverage remaining item for new-user perception.
-2. **Migrate the top 8 high-traffic screens off `colorScheme` and raw hex.** All currently at 0%
-   token adoption: `HomeScreen`, `JournalScreen`, `HabitTrackerScreen`, `ProfileComponents`,
-   `CoachProfileScreen`, `LifeBalanceScreen`, `AnalyticsDashboard`, `GoalCreationWizardScreen`.
-3. Build the six missing D4 primitives, then migrate the 221 ad-hoc button call sites.
+> **Revised 2026-07-18 after investigation. Both items in the original Phase 3 were wrong.**
+> Recorded here rather than deleted, because the reasoning matters.
 
-**Gate:** new-user run through onboarding start to finish; token adoption counts re-measured.
+**3.1 Onboarding promotion is not a swap, and would regress the product.**
+
+The original plan said to point `App.kt:353` at `OnboardingFlowScreen` instead of
+`CoachOnboardingScreen`. That is unsafe. The two flows are not equivalent:
+
+| | `CoachOnboardingScreen` (live) | `OnboardingFlowScreen` (D11) |
+|---|---|---|
+| Size | 622 lines, 15 phases (`OnboardingPhase`) | 198 lines, 3 steps |
+| Collects | name, priority, wellbeing, 4 specialist questions, mind dump | a few `LifeValue`s |
+| Produces | coach/persona selection, seeded first goals + habits | `LifeValue` rows |
+| Owns | `COACH_ONBOARDING_KEY`, which gates the start destination | nothing |
+
+Swapping would drop coach selection, name capture, and the initial goal/habit seeding, landing
+every new user on an empty For You feed. D11 §4 says to replace the `welcome`/`onboarding`
+routes; it never mentions `CoachOnboarding`, because the real first-run became the coach flow
+after D11 was written. **The spec and the product diverged, and the spec is the stale side.**
+
+Three options, needs a product decision:
+- **(a) Chain them.** `OnboardingFlowScreen` (promise + values) first, then the coach flow. Keeps
+  everything, gives new users the v3 first impression. Costs a longer first run, which cuts
+  against D11 §1.3 "reach value fast."
+- **(b) Merge.** Fold the D11 promise + values steps into `CoachOnboardingViewModel` as its first
+  two phases. Best result, most work.
+- **(c) Leave it.** New users keep seeing the v2 first-run.
+
+**3.2 The token migration is craft, not perceptible change. Deprioritized.**
+
+The original plan called for migrating 8 screens off `colorScheme` and raw hex, on the assumption
+this was high visual impact. Measured and driven on device, it is not:
+
+- `MaterialTheme.colorScheme` **is** correctly wired to the theme
+  (`LifePlannerTheme.kt:79` `createColorScheme(darkTheme)`), so the 164 files using it already
+  respond to Light/Dark. They are not broken, just not on the richer `modernColors` token set.
+- The raw hex literals in the high-traffic screens are **semantic accents**, not hardcoded
+  text-on-background pairs: green for "granted"/"available", amber for morning, indigo gradients.
+  A green success dot is green in both themes.
+- Verified on device in Light mode after the Phase 1 fix: Life Balance and Causal Insights render
+  correctly, readable, no contrast failures.
+
+So this work is a large diff with real regression risk and close to zero visible change. It is
+consistency work worth doing eventually, but it does **not** answer "the UI looks the same" and
+should not be mistaken for progress on that. Same reasoning applies to the six D4 primitives and
+the 221 ad-hoc buttons.
+
+**What is actually left that changes what the user sees: D5 (Phase 2), and the onboarding
+decision above.** There is no third option that avoids both.
+
+**Smaller genuine items found along the way:**
+- `ui/causal/CausalInsightsScreen.kt` empty state is bare body text, no `StateView`, no icon or
+  title (D12 wants all three states on every screen).
+- The Home tab label says "Today" (`BottomNavItem.kt:34`) while the screen header says "For You"
+  (`ForYouScreen.kt:87`).
+- Legacy `ProfileScreen` is now reachable only from the legacy Home, which is itself off unless
+  `USE_LEGACY_HOME_TAB` is flipped. Its "Preview" rows pointing at the You and Onboarding
+  redesigns are now stale. Harmless, but it is dead surface to clean up.
 
 ### Phase 4: D6 signature interaction
 
