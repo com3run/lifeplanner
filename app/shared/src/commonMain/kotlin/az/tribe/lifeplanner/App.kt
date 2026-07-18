@@ -333,6 +333,13 @@ fun App(
             currentRoute?.let { Analytics.screenViewed(it) }
         }
 
+        // v3 rollout: Home tab destination. Default (flags false) = For You feed,
+        // i.e. today's behavior. Flip USE_LEGACY_HOME_TAB for the Phase 1 interim
+        // (restyled legacy Home) until the For You feed engines are proven.
+        val homeRoute =
+            if (FeatureFlags.USE_LEGACY_HOME_TAB) Screen.Home.route
+            else Screen.ForYou.route
+
         // Determine start destination based on auth state
         val startDestination = when (authState) {
             is AuthState.Loading -> return@LifePlannerTheme // Still loading
@@ -341,7 +348,7 @@ fun App(
                 if (hasCompletedOnboarding == true && !CoachOnboardingViewModel.isComplete(settings)) {
                     settings.putBoolean(CoachOnboardingViewModel.COACH_ONBOARDING_KEY, true)
                 }
-                if (CoachOnboardingViewModel.isComplete(settings)) Screen.ForYou.route
+                if (CoachOnboardingViewModel.isComplete(settings)) homeRoute
                 else Screen.CoachOnboarding.route
             }
             else -> Screen.CoachOnboarding.route
@@ -361,7 +368,7 @@ fun App(
                             if (hasCompletedOnboarding == true && !CoachOnboardingViewModel.isComplete(settings)) {
                                 settings.putBoolean(CoachOnboardingViewModel.COACH_ONBOARDING_KEY, true)
                             }
-                            val next = if (CoachOnboardingViewModel.isComplete(settings)) Screen.ForYou.route
+                            val next = if (CoachOnboardingViewModel.isComplete(settings)) homeRoute
                                        else Screen.CoachOnboarding.route
                             navController.navigate(next) { popUpTo(0) { inclusive = true } }
                         }
@@ -425,17 +432,23 @@ fun App(
             }
         }
 
+        // D2: the third tab is the grouped You screen. Keep the legacy Profile route in
+        // mainRoutes so reaching it any other way still shows the bottom nav.
+        val youRoute = Screen.YouRedesign.route
+
         // Routes where bottom navigation should be visible
         val mainRoutes = buildList {
-            add(Screen.ForYou.route)
+            add(homeRoute)
             add(Screen.GoalsRedesign.route)
+            add(youRoute)
             add(Screen.Profile.route)
         }
 
         // Tab index for directional slide transitions between bottom nav tabs
         val tabIndex = mapOf(
-            Screen.ForYou.route to 0,
+            homeRoute to 0,
             Screen.GoalsRedesign.route to 1,
+            youRoute to 2,
             Screen.Profile.route to 2
         )
         // Slide offset = 25% of width for a subtle directional hint
@@ -444,13 +457,22 @@ fun App(
         val showBottomNav = currentRoute in mainRoutes
 
         // Contextual circle button action, changes per screen and hub tab
+        // D2 §7: one context-aware "+" whose default action matches the tab.
+        // Today -> capture, Goals -> new goal, You -> hidden (no capture verb there).
         val navContextAction: NavContextAction? = when (currentRoute) {
-            Screen.Home.route -> NavContextAction(
-                icon = PhosphorIcons.Regular.MagnifyingGlass,
-                contentDescription = "Search"
+            homeRoute -> NavContextAction(
+                icon = PhosphorIcons.Regular.PencilSimple,
+                contentDescription = "Capture"
             ) {
-                navController.navigate(Screen.Search.route) { launchSingleTop = true }
+                navController.navigate("journal_wizard") { launchSingleTop = true }
             }
+            Screen.GoalsRedesign.route -> NavContextAction(
+                icon = PhosphorIcons.Regular.Flag,
+                contentDescription = "Add Goal"
+            ) {
+                navController.navigate(Screen.GoalWizard.route) { launchSingleTop = true }
+            }
+            youRoute -> null
             Screen.Journal.route -> when (hubSelectedTab) {
                 1 -> NavContextAction(
                     icon = PhosphorIcons.Regular.Flag,
@@ -566,7 +588,7 @@ fun App(
                         appNavHabitDetailRedesign(navController = navController)
                         appNavToday(navController = navController)
                         appNavForYou(navController = navController)
-                        appNavPossibilityMode(navController = navController)
+                        if (FeatureFlags.PILLAR_POSSIBILITY) appNavPossibilityMode(navController = navController)
                         appNavGoalsRedesign(navController = navController)
                         appNavGoalDetailRedesign(navController = navController)
                         appNavYouRedesign(navController = navController)
@@ -574,9 +596,9 @@ fun App(
                         appNavCoach(navController = navController)
                         appNavAuth(navController = navController)
                         appNavDecisions(navController = navController)
-                        appNavCausal(navController = navController)
-                        appNavBecoming(navController = navController)
-                        appNavWiring(navController = navController)
+                        if (FeatureFlags.PILLAR_CAUSAL) appNavCausal(navController = navController)
+                        if (FeatureFlags.PILLAR_BECOMING) appNavBecoming(navController = navController)
+                        if (FeatureFlags.PILLAR_WIRING) appNavWiring(navController = navController)
                     }
 
                     if (!useRail) {

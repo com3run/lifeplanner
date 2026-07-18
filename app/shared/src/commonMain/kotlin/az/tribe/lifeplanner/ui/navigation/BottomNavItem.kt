@@ -1,5 +1,7 @@
 package az.tribe.lifeplanner.ui.navigation
 
+import az.tribe.lifeplanner.core.FeatureFlags
+
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Fill
@@ -28,7 +30,7 @@ sealed class BottomNavItem(
     val unselectedIcon: ImageVector
 ) {
     data object Home : BottomNavItem(
-        route = Screen.ForYou.route,
+        route = if (FeatureFlags.USE_LEGACY_HOME_TAB) Screen.Home.route else Screen.ForYou.route,
         title = "Today",
         selectedIcon = PhosphorIcons.Fill.House,
         unselectedIcon = PhosphorIcons.Regular.House
@@ -63,7 +65,8 @@ sealed class BottomNavItem(
     )
 
     data object Profile : BottomNavItem(
-        route = Screen.Profile.route,
+        // D2: the third tab is the grouped You screen, not the old flat settings list.
+        route = Screen.YouRedesign.route,
         title = "You",
         selectedIcon = PhosphorIcons.Fill.User,
         unselectedIcon = PhosphorIcons.Regular.User

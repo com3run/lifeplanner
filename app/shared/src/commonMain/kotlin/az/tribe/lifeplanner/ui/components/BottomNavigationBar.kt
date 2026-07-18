@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import az.tribe.lifeplanner.ui.navigation.BottomNavItem
+import az.tribe.lifeplanner.ui.theme.LocalIsDarkTheme
 import az.tribe.lifeplanner.ui.theme.LifePlannerGradients
 
 /**
@@ -69,7 +70,7 @@ fun BottomNavigationBar(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     val pillShape = RoundedCornerShape(50)
-    val isDark = true
+    val isDark = LocalIsDarkTheme.current
     val pillBackground = if (isDark) LifePlannerGradients.glassNavDark else LifePlannerGradients.glassOverlayHigh
     val pillBorder = if (isDark) LifePlannerGradients.glassBorderDark else LifePlannerGradients.glassBorder
 

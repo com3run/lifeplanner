@@ -1,5 +1,7 @@
 package az.tribe.lifeplanner.ui.foryou
 
+import az.tribe.lifeplanner.core.FeatureFlags
+
 import az.tribe.lifeplanner.domain.model.ActionOptionType
 import az.tribe.lifeplanner.domain.model.FeedItem
 import az.tribe.lifeplanner.domain.model.FeedKind
@@ -83,6 +85,7 @@ class HomeFeedBuilder(
 
         // Pillar 6 stall trigger: surface the most stalled goal as a Possibility Mode prompt.
         ctx?.dueOrStalledGoals
+            ?.takeIf { FeatureFlags.PILLAR_POSSIBILITY }
             ?.firstOrNull { (it.progress ?: 0L) < 25L && it.createdAt.date.daysUntil(today) > 14 }
             ?.let { g ->
                 items += FeedItem(
@@ -99,7 +102,7 @@ class HomeFeedBuilder(
         // ── Reflect: insights about you (deep-link to the full You screens) ──
         runCatching { causalInsightProvider.insights(windowDays = 90) }
             .getOrDefault(emptyList())
-            .filter { it.confidence != InsightConfidence.LOW }
+            .filter { FeatureFlags.PILLAR_CAUSAL && it.confidence != InsightConfidence.LOW }
             .take(2)
             .forEachIndexed { i, ins ->
                 items += FeedItem(
@@ -118,6 +121,7 @@ class HomeFeedBuilder(
         val topAlign = alignments.firstOrNull { it.completedGoalCount > 0 }
         val statements = runCatching { identityRepo.getAll() }.getOrDefault(emptyList()).filter { it.isActive }
         when {
+            !FeatureFlags.PILLAR_BECOMING -> Unit
             topAlign != null -> items += FeedItem(
                 id = "becoming_${topAlign.valueId}",
                 kind = FeedKind.BECOMING,

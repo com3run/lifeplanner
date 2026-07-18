@@ -9,6 +9,13 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 
+/**
+ * Whether the active theme is dark. Components that pick their own surface treatment (glass
+ * cards, the nav pill) must read this instead of hardcoding, or the Light / Dark / System
+ * control in [ThemeController] cannot actually reach them.
+ */
+val LocalIsDarkTheme = staticCompositionLocalOf { true }
+
 // Static composition local for providing modern colors throughout the app
 val LocalModernColors = staticCompositionLocalOf {
     ModernColorScheme(
@@ -87,7 +94,8 @@ fun LifePlannerTheme(
 
     // Provide the modern colors to the composition
     CompositionLocalProvider(
-        LocalModernColors provides modernColorScheme
+        LocalModernColors provides modernColorScheme,
+        LocalIsDarkTheme provides darkTheme
     ) {
         MaterialTheme(
             colorScheme = colorScheme,

@@ -1,5 +1,7 @@
 package az.tribe.lifeplanner.ui.profile
 
+import az.tribe.lifeplanner.core.FeatureFlags
+
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -219,10 +221,16 @@ fun ProfileScreen(
             item { ProfileMenuItem(icon = PhosphorIcons.Regular.CloudArrowUp, title = "Backup & Sync", subtitle = "Export and restore your data", onClick = onNavigateToBackup) }
             item { ProfileMenuItem(icon = PhosphorIcons.Regular.ClockCounterClockwise, title = "Day Retrospective", subtitle = "Browse past days and activity", onClick = onNavigateToRetrospective) }
             item { ProfileMenuItem(icon = PhosphorIcons.Regular.ClockCounterClockwise, title = "Decision Journal", subtitle = "Your choices, reasoning, and outcomes", onClick = onNavigateToDecisions) }
-            item { ProfileMenuItem(icon = PhosphorIcons.Regular.ChartBar, title = "Causal Insights", subtitle = "What actually drives your progress", onClick = onNavigateToCausalInsights) }
-            item { ProfileMenuItem(icon = PhosphorIcons.Regular.Brain, title = "Becoming", subtitle = "Who you're becoming, values & identity", onClick = onNavigateToBecoming) }
+            if (FeatureFlags.PILLAR_CAUSAL) {
+                item { ProfileMenuItem(icon = PhosphorIcons.Regular.ChartBar, title = "Causal Insights", subtitle = "What actually drives your progress", onClick = onNavigateToCausalInsights) }
+            }
+            if (FeatureFlags.PILLAR_BECOMING) {
+                item { ProfileMenuItem(icon = PhosphorIcons.Regular.Brain, title = "Becoming", subtitle = "Who you're becoming, values & identity", onClick = onNavigateToBecoming) }
+            }
             item { ProfileMenuItem(icon = PhosphorIcons.Regular.Scales, title = "Review Decisions", subtitle = "Grade your reasoning, not just outcomes", onClick = onNavigateToDecisionReview) }
-            item { ProfileMenuItem(icon = PhosphorIcons.Regular.Sliders, title = "Your Wiring", subtitle = "How you're wired, your decision-making profile", onClick = onNavigateToYourWiring) }
+            if (FeatureFlags.PILLAR_WIRING) {
+                item { ProfileMenuItem(icon = PhosphorIcons.Regular.Sliders, title = "Your Wiring", subtitle = "How you're wired, your decision-making profile", onClick = onNavigateToYourWiring) }
+            }
             item { ProfileMenuItem(icon = PhosphorIcons.Regular.ChartBar, title = "My Patterns", subtitle = "See how you use the app + personalized tips", onClick = onNavigateToScreenTimeInsight) }
             item { ProfileMenuItem(icon = PhosphorIcons.Regular.ChatCircleText, title = "Send Feedback", subtitle = "Report bugs, request features", onClick = onNavigateToFeedback) }
 

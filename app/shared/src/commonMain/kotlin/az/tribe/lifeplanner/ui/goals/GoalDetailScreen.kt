@@ -1,5 +1,7 @@
 package az.tribe.lifeplanner.ui.goals
 
+import az.tribe.lifeplanner.core.FeatureFlags
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -164,7 +166,7 @@ fun GoalDetailScreen(
             }
 
             // Pillar 6: the divergent way out when an in-progress goal stalls.
-            if (rate < 1f) {
+            if (FeatureFlags.PILLAR_POSSIBILITY && rate < 1f) {
                 item {
                     AppButton(
                         text = "Feeling stuck? Explore possibilities",
