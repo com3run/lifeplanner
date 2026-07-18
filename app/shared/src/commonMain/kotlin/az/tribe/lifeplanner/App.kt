@@ -4,6 +4,8 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
@@ -537,19 +539,41 @@ fun App(
                         navController = navController,
                         startDestination = startDestination,
                         modifier = Modifier.fillMaxSize(),
+                        // Restored from v2.2 (production): a directional horizontal slide keyed on
+                        // tab order, uniform tween(300). The redesign had replaced this with a
+                        // vertical slide-up, which reads like a modal sheet on every navigation and
+                        // loses the left/right sense of place between tabs.
                         enterTransition = {
-                            slideInVertically(tween(380, easing = FastOutSlowInEasing)) { it } +
-                                fadeIn(tween(280))
+                            val fromIndex = tabIndex[initialState.destination.route]
+                            val toIndex = tabIndex[targetState.destination.route]
+                            if (fromIndex != null && toIndex != null) {
+                                slideInHorizontally(tween(300)) { w -> if (fromIndex > toIndex) -slideOffset(w) else slideOffset(w) } +
+                                    fadeIn(tween(300))
+                            } else fadeIn(tween(300))
                         },
                         exitTransition = {
-                            fadeOut(tween(200))
+                            val fromIndex = tabIndex[initialState.destination.route]
+                            val toIndex = tabIndex[targetState.destination.route]
+                            if (fromIndex != null && toIndex != null) {
+                                slideOutHorizontally(tween(300)) { w -> if (fromIndex < toIndex) -slideOffset(w) else slideOffset(w) } +
+                                    fadeOut(tween(300))
+                            } else fadeOut(tween(300))
                         },
                         popEnterTransition = {
-                            fadeIn(tween(200))
+                            val fromIndex = tabIndex[initialState.destination.route]
+                            val toIndex = tabIndex[targetState.destination.route]
+                            if (fromIndex != null && toIndex != null) {
+                                slideInHorizontally(tween(300)) { w -> if (fromIndex > toIndex) -slideOffset(w) else slideOffset(w) } +
+                                    fadeIn(tween(300))
+                            } else fadeIn(tween(300))
                         },
                         popExitTransition = {
-                            slideOutVertically(tween(350, easing = FastOutSlowInEasing)) { it } +
-                                fadeOut(tween(250))
+                            val fromIndex = tabIndex[initialState.destination.route]
+                            val toIndex = tabIndex[targetState.destination.route]
+                            if (fromIndex != null && toIndex != null) {
+                                slideOutHorizontally(tween(300)) { w -> if (fromIndex < toIndex) -slideOffset(w) else slideOffset(w) } +
+                                    fadeOut(tween(300))
+                            } else fadeOut(tween(300))
                         }
                     ) {
                         appNavHome(
