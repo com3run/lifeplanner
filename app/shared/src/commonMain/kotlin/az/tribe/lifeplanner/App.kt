@@ -48,6 +48,7 @@ import az.tribe.lifeplanner.domain.service.UpdateState
 import az.tribe.lifeplanner.ui.ForceUpdateScreen
 import az.tribe.lifeplanner.ui.goal.GoalViewModel
 import az.tribe.lifeplanner.ui.onboarding.CoachOnboardingViewModel
+import az.tribe.lifeplanner.ui.onboarding.IntroFlow
 import az.tribe.lifeplanner.ui.components.BottomNavigationBar
 import az.tribe.lifeplanner.ui.components.NavigationRailBar
 import az.tribe.lifeplanner.ui.components.CelebrationOverlay
@@ -342,6 +343,15 @@ fun App(
             if (FeatureFlags.USE_LEGACY_HOME_TAB) Screen.Home.route
             else Screen.ForYou.route
 
+        // D11: first run is a chain, intro (promise + values) then the coach flow. The intro seeds
+        // LifeValues; the coach flow captures the name, picks the coach, and seeds the first goals
+        // and habits. Both must run, so the intro is prepended rather than swapped in.
+        // Existing users skip both (COACH_ONBOARDING_KEY already true), and anyone who finished the
+        // intro but dropped out mid-coach-flow resumes at the coach flow, not back at the intro.
+        val firstRunRoute =
+            if (IntroFlow.isComplete(settings)) Screen.CoachOnboarding.route
+            else Screen.OnboardingRedesign.route
+
         // Determine start destination based on auth state
         val startDestination = when (authState) {
             is AuthState.Loading -> return@LifePlannerTheme // Still loading
@@ -351,7 +361,7 @@ fun App(
                     settings.putBoolean(CoachOnboardingViewModel.COACH_ONBOARDING_KEY, true)
                 }
                 if (CoachOnboardingViewModel.isComplete(settings)) homeRoute
-                else Screen.CoachOnboarding.route
+                else firstRunRoute
             }
             else -> Screen.CoachOnboarding.route
         }
@@ -371,16 +381,25 @@ fun App(
                                 settings.putBoolean(CoachOnboardingViewModel.COACH_ONBOARDING_KEY, true)
                             }
                             val next = if (CoachOnboardingViewModel.isComplete(settings)) homeRoute
-                                       else Screen.CoachOnboarding.route
+                                       else firstRunRoute
                             navController.navigate(next) { popUpTo(0) { inclusive = true } }
                         }
                         // On a main app screen but onboarding not done, force it.
                         // NOTE: do NOT run the legacy auto-upgrade here, it fires on every
                         // auth-state refresh (e.g. sync updating lastSyncedAt) and would set
                         // COACH_ONBOARDING_KEY mid-onboarding, causing premature navigation.
+                        // NOTE: the intro handoff for users arriving via the auth gate is NOT done
+                        // here. The gate lives inside CoachOnboardingScreen and `signInAsGuest()`
+                        // resolves in that screen's own LaunchedEffect, so an outer observer races
+                        // it and loses. That screen calls `onNeedsIntro` instead.
+                        //
+                        // The intro route must be excluded here, or this fires while the user is
+                        // partway through it (coach onboarding is legitimately incomplete then)
+                        // and yanks them straight out of first run.
                         !CoachOnboardingViewModel.isComplete(settings) && current != null
-                                && current != Screen.CoachOnboarding.route -> {
-                            navController.navigate(Screen.CoachOnboarding.route) {
+                                && current != Screen.CoachOnboarding.route
+                                && current != Screen.OnboardingRedesign.route -> {
+                            navController.navigate(firstRunRoute) {
                                 popUpTo(0) { inclusive = true }
                             }
                         }
@@ -616,9 +635,9 @@ fun App(
                         appNavGoalsRedesign(navController = navController)
                         appNavGoalDetailRedesign(navController = navController)
                         appNavYouRedesign(navController = navController)
-                        appNavOnboardingRedesign(navController = navController)
+                        appNavOnboardingRedesign(navController = navController, homeRoute = homeRoute)
                         appNavCoach(navController = navController)
-                        appNavAuth(navController = navController)
+                        appNavAuth(navController = navController, homeRoute = homeRoute)
                         appNavDecisions(navController = navController)
                         if (FeatureFlags.PILLAR_CAUSAL) appNavCausal(navController = navController)
                         if (FeatureFlags.PILLAR_BECOMING) appNavBecoming(navController = navController)

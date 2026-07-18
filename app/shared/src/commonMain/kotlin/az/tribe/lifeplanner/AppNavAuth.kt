@@ -7,13 +7,25 @@ import az.tribe.lifeplanner.ui.auth.SignInScreen
 import az.tribe.lifeplanner.ui.navigation.Screen
 import az.tribe.lifeplanner.ui.onboarding.CoachOnboardingScreen
 
-internal fun NavGraphBuilder.appNavAuth(navController: NavController) {
+/**
+ * @param homeRoute where first run and sign-in land. Both were hardcoded to [Screen.Home], the
+ *   legacy home, which is not in `mainRoutes` — so finishing onboarding dropped the user on a
+ *   screen with no bottom navigation.
+ */
+internal fun NavGraphBuilder.appNavAuth(navController: NavController, homeRoute: String) {
     // Coach Onboarding, entry point for unauthenticated users; embeds auth gate
     composable(Screen.CoachOnboarding.route) {
         CoachOnboardingScreen(
             onComplete = {
-                navController.navigate(Screen.Home.route) {
-                    popUpTo(Screen.CoachOnboarding.route) { inclusive = true }
+                navController.navigate(homeRoute) {
+                    popUpTo(0) { inclusive = true }
+                }
+            },
+            // D11 chain: past the auth gate but the intro has not run yet.
+            onNeedsIntro = {
+                navController.navigate(Screen.OnboardingRedesign.route) {
+                    popUpTo(0) { inclusive = true }
+                    launchSingleTop = true
                 }
             },
             onBack = { navController.popBackStack() }
@@ -24,7 +36,7 @@ internal fun NavGraphBuilder.appNavAuth(navController: NavController) {
     composable("sign_in") {
         SignInScreen(
             onSignInSuccess = {
-                navController.navigate(Screen.Home.route) {
+                navController.navigate(homeRoute) {
                     popUpTo("sign_in") { inclusive = true }
                 }
             },

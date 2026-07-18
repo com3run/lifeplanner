@@ -251,6 +251,12 @@ private fun CoachOnboardingViewModel.specialistQ4Answer() = when (specialistCoac
 fun CoachOnboardingScreen(
     onComplete: () -> Unit,
     onBack: () -> Unit = {},
+    /**
+     * D11 chain: called once the user is past the auth gate but has not seen the intro
+     * (promise + values). The intro cannot be routed from `App.kt`'s auth observer, because the
+     * gate lives *inside* this screen and `signInAsGuest()` resolves here first.
+     */
+    onNeedsIntro: () -> Unit = {},
     viewModel: CoachOnboardingViewModel = koinViewModel()
 ) {
     val authViewModel: AuthViewModel = koinInject()
@@ -273,6 +279,12 @@ fun CoachOnboardingScreen(
                     viewModel.resetForNewSession()
                 } else if (CoachOnboardingViewModel.isComplete(settings)) {
                     onComplete()
+                }
+                // D11 chain: the intro runs *between* the auth gate and the coach flow. The
+                // session above is reset first, so returning from the intro starts the coach flow
+                // cleanly at LUNA_INTRO.
+                if (!CoachOnboardingViewModel.isComplete(settings) && !IntroFlow.isComplete(settings)) {
+                    onNeedsIntro()
                 }
             }
             is AuthState.Error, is AuthState.Unauthenticated -> isLoadingGuest = false
