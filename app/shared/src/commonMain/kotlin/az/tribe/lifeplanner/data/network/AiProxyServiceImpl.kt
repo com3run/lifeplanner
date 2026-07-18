@@ -68,6 +68,11 @@ class AiProxyServiceImpl(
         if (!response.status.isSuccess()) {
             val errorBody = response.bodyAsText()
             log.e { "Edge function error ${response.status}: $errorBody" }
+            // 401 means no valid user session, not a network problem. Typed so the UI can say
+            // "sign in" instead of sending the user off to check their connection.
+            if (response.status.value == 401) {
+                throw AiAuthRequiredException("AI proxy auth error 401: $errorBody")
+            }
             throw IllegalStateException("AI proxy error ${response.status.value}: $errorBody")
         }
 
@@ -166,7 +171,15 @@ class AiProxyServiceImpl(
             if (!response.status.isSuccess()) {
                 val errorBody = response.bodyAsText()
                 log.e { "Stream error ${response.status}: $errorBody" }
-                emit(AiProxyService.StreamEvent.Error("AI proxy error ${response.status.value}: $errorBody"))
+                // The stream path reports errors as text rather than throwing, so surface the
+                // user-facing auth wording here directly.
+                val message =
+                    if (response.status.value == 401) {
+                        AiAuthRequiredException(errorBody).toUserFacingAiMessage("stream a reply")
+                    } else {
+                        "AI proxy error ${response.status.value}: $errorBody"
+                    }
+                emit(AiProxyService.StreamEvent.Error(message))
                 return@execute
             }
 
