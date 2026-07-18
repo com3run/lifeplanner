@@ -1,5 +1,7 @@
 package az.tribe.lifeplanner.ui.goal
 
+import az.tribe.lifeplanner.data.network.toUserFacingAiMessage
+
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -65,12 +67,20 @@ import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
 import kotlinx.serialization.json.add
 import org.koin.compose.koinInject
+import az.tribe.lifeplanner.domain.model.DecisionProfile
+import az.tribe.lifeplanner.domain.repository.DecisionProfileRepository
+import az.tribe.lifeplanner.domain.service.AdherenceForecastEngine
+import az.tribe.lifeplanner.domain.service.GoalPlan
+import az.tribe.lifeplanner.infrastructure.SharedDatabase
+import az.tribe.lifeplanner.infrastructure.upsertGoalForecast
+import az.tribe.lifeplanner.infrastructure.upsertPreMortemPlan
+import kotlinx.datetime.daysUntil
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 // ─── Step enum ────────────────────────────────────────────────────────────────
 
-enum class GoalWizardStep { INTENT, QUESTIONS, GENERATING, SELECTION, DETAILS, TIMELINE, MILESTONES, HABITS }
+enum class GoalWizardStep { INTENT, QUESTIONS, GENERATING, SELECTION, DETAILS, TIMELINE, MILESTONES, HABITS, FORECAST, CRYSTAL_BALL }
 
 // ─── Data classes ─────────────────────────────────────────────────────────────
 
@@ -113,6 +123,8 @@ fun GoalCreationWizardScreen(
     userSituationRepo: UserSituationRepository = koinInject(),
     userRepo: UserRepository = koinInject(),
     orchestrator: CoachOrchestrator = koinInject(),
+    decisionProfileRepo: DecisionProfileRepository = koinInject(),
+    sharedDb: SharedDatabase = koinInject(),
     habitViewModel: HabitViewModel = koinViewModel()
 ) {
     val scope = rememberCoroutineScope()
@@ -162,6 +174,14 @@ fun GoalCreationWizardScreen(
     var councilNotes by remember { mutableStateOf<List<Pair<String, String>>>(emptyList()) }
     val aiSuggestedHabits = remember { mutableStateListOf<Pair<SuggestedHabit, Boolean>>() }
 
+    // Crystal Ball: pre-mortem drafts + the engine behind the follow-through forecast
+    val preMortemDrafts = remember { mutableStateListOf(PreMortemDraft(), PreMortemDraft(), PreMortemDraft()) }
+    val forecastEngine = remember { AdherenceForecastEngine() }
+    var decisionProfile by remember { mutableStateOf<DecisionProfile?>(null) }
+    LaunchedEffect(Unit) {
+        decisionProfile = runCatching { decisionProfileRepo.getProfile() }.getOrNull()
+    }
+
     LaunchedEffect(intentText) {
         detectedCategory = detectCategoryFromText(intentText)
     }
@@ -189,6 +209,8 @@ fun GoalCreationWizardScreen(
             GoalWizardStep.TIMELINE -> GoalWizardStep.DETAILS
             GoalWizardStep.MILESTONES -> GoalWizardStep.TIMELINE
             GoalWizardStep.HABITS -> GoalWizardStep.MILESTONES
+            GoalWizardStep.FORECAST -> GoalWizardStep.HABITS
+            GoalWizardStep.CRYSTAL_BALL -> GoalWizardStep.FORECAST
             else -> GoalWizardStep.INTENT
         }
     }
@@ -261,8 +283,8 @@ fun GoalCreationWizardScreen(
                     isGeneratingQuestions = false
                     return@launch
                 }
-            } catch (_: Exception) {
-                generationError = "Couldn't generate questions. Check your connection and try again."
+            } catch (e: Exception) {
+                generationError = e.toUserFacingAiMessage("generate questions")
                 isGeneratingQuestions = false
                 return@launch
             }
@@ -296,6 +318,8 @@ fun GoalCreationWizardScreen(
             GoalWizardStep.TIMELINE -> step = GoalWizardStep.DETAILS
             GoalWizardStep.MILESTONES -> step = GoalWizardStep.TIMELINE
             GoalWizardStep.HABITS -> step = GoalWizardStep.MILESTONES
+            GoalWizardStep.FORECAST -> step = GoalWizardStep.HABITS
+            GoalWizardStep.CRYSTAL_BALL -> step = GoalWizardStep.FORECAST
             else -> step = GoalWizardStep.INTENT
         }
     }
@@ -427,8 +451,8 @@ fun GoalCreationWizardScreen(
                 parsedHabits.forEach { aiSuggestedHabits.add(it to true) }
 
                 step = GoalWizardStep.SELECTION
-            } catch (_: Exception) {
-                generationError = "Couldn't generate goal. Check your connection and try again."
+            } catch (e: Exception) {
+                generationError = e.toUserFacingAiMessage("generate goal")
                 step = GoalWizardStep.QUESTIONS
             }
         }
@@ -449,6 +473,19 @@ fun GoalCreationWizardScreen(
             val uid = userRepo.getCurrentUser()?.id ?: return@launch
             userSituation = persistGoalSelectionMemory(option, uid, sit, userSituationRepo)
         }
+    }
+
+    fun currentPlan(): GoalPlan {
+        val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+        val moves = aiMilestones.count { it.second } +
+            customMilestones.count { it.isNotBlank() } +
+            aiSuggestedHabits.count { it.second }
+        return GoalPlan(
+            horizonDays = maxOf(1, today.daysUntil(goalDueDate)),
+            majorMoveCount = moves,
+            hasNearTermWins = aiSuggestedHabits.any { it.second } || goalTimeline == GoalTimeline.SHORT_TERM,
+            mitigationCount = preMortemDrafts.count { it.isComplete },
+        )
     }
 
     @Suppress("NAME_SHADOWING")
@@ -492,7 +529,29 @@ fun GoalCreationWizardScreen(
                 type = HabitType.BUILD
             )
         }
-        onGoalCreated(goalId)
+        val forecast = forecastEngine.forecast(decisionProfile, currentPlan())
+        scope.launch {
+            runCatching {
+                sharedDb.upsertGoalForecast(
+                    goalId = goalId,
+                    adherencePct = forecast.adherencePercent.toLong(),
+                    bandPct = forecast.bandPercent.toLong(),
+                    confidence = forecast.confidence.name,
+                    isColdStart = if (forecast.isColdStart) 1L else 0L,
+                )
+                preMortemDrafts.filter { it.isComplete }.forEach { d ->
+                    sharedDb.upsertPreMortemPlan(
+                        id = Uuid.random().toString(),
+                        goalId = goalId,
+                        obstacle = d.obstacle.trim(),
+                        ifCondition = d.obstacle.trim(),
+                        thenAction = d.thenAction.trim(),
+                        triggerType = d.trigger.storageName,
+                    )
+                }
+            }
+            onGoalCreated(goalId)
+        }
     }
 
     val progress = when (step) {
@@ -503,7 +562,9 @@ fun GoalCreationWizardScreen(
         GoalWizardStep.DETAILS -> 0.65f
         GoalWizardStep.TIMELINE -> 0.78f
         GoalWizardStep.MILESTONES -> 0.90f
-        GoalWizardStep.HABITS -> 1f
+        GoalWizardStep.HABITS -> 0.93f
+        GoalWizardStep.FORECAST -> 0.97f
+        GoalWizardStep.CRYSTAL_BALL -> 1f
     }
     val stepLabel = when (step) {
         GoalWizardStep.INTENT -> "New Goal"
@@ -514,6 +575,8 @@ fun GoalCreationWizardScreen(
         GoalWizardStep.TIMELINE -> "Timeline"
         GoalWizardStep.MILESTONES -> "Milestones"
         GoalWizardStep.HABITS -> "Daily habits"
+        GoalWizardStep.FORECAST -> "Your odds"
+        GoalWizardStep.CRYSTAL_BALL -> "Crystal Ball"
     }
 
     Scaffold(
@@ -619,13 +682,26 @@ fun GoalCreationWizardScreen(
                     onToggle = { idx ->
                         aiSuggestedHabits[idx] = aiSuggestedHabits[idx].copy(second = !aiSuggestedHabits[idx].second)
                     },
-                    onCreateWithHabits = { createGoal() },
+                    onCreateWithHabits = { step = GoalWizardStep.FORECAST },
                     onSkip = {
                         for (i in aiSuggestedHabits.indices) {
                             aiSuggestedHabits[i] = aiSuggestedHabits[i].copy(second = false)
                         }
-                        createGoal()
+                        step = GoalWizardStep.FORECAST
                     }
+                )
+
+                GoalWizardStep.FORECAST -> ForecastStep(
+                    forecast = forecastEngine.forecast(decisionProfile, currentPlan()),
+                    onCrystalBall = { step = GoalWizardStep.CRYSTAL_BALL },
+                    onSkipAndCreate = { createGoal() }
+                )
+
+                GoalWizardStep.CRYSTAL_BALL -> CrystalBallStep(
+                    drafts = preMortemDrafts,
+                    adherenceNow = forecastEngine.forecast(decisionProfile, currentPlan()).adherencePercent,
+                    onDraftChange = { idx, draft -> preMortemDrafts[idx] = draft },
+                    onFinish = { createGoal() }
                 )
             }
         }

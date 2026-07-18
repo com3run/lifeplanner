@@ -1,5 +1,6 @@
 package az.tribe.lifeplanner.ui.balance
 
+import az.tribe.lifeplanner.ui.theme.LocalIsDarkTheme
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -65,7 +66,7 @@ internal fun AreaGrid(areaScores: List<LifeAreaScore>, modifier: Modifier = Modi
 
 @Composable
 internal fun AreaGridCard(areaScore: LifeAreaScore, modifier: Modifier = Modifier) {
-    val isDark = true
+    val isDark = LocalIsDarkTheme.current
     val color = getAreaColor(areaScore.area, isDark)
 
     Card(

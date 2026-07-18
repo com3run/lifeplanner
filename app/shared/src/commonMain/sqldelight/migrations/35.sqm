@@ -1,0 +1,33 @@
+-- 35: Crystal Ball — PreMortemPlanEntity (if-then fixes captured at goal creation)
+--     + GoalForecastEntity (follow-through forecast snapshot per goal)
+CREATE TABLE IF NOT EXISTS PreMortemPlanEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    goalId TEXT NOT NULL,
+    obstacle TEXT NOT NULL,
+    ifCondition TEXT NOT NULL DEFAULT '',
+    thenAction TEXT NOT NULL,
+    triggerType TEXT NOT NULL DEFAULT 'OTHER',
+    timesSurfaced INTEGER NOT NULL DEFAULT 0,
+    timesActedOn INTEGER NOT NULL DEFAULT 0,
+    createdAt TEXT NOT NULL,
+    sync_updated_at TEXT,
+    is_deleted INTEGER NOT NULL DEFAULT 0,
+    sync_version INTEGER NOT NULL DEFAULT 0,
+    last_synced_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_premortem_goal ON PreMortemPlanEntity(goalId);
+CREATE INDEX IF NOT EXISTS idx_premortem_trigger ON PreMortemPlanEntity(triggerType);
+
+CREATE TABLE IF NOT EXISTS GoalForecastEntity (
+    goalId TEXT NOT NULL PRIMARY KEY,
+    adherencePct INTEGER NOT NULL,
+    bandPct INTEGER NOT NULL,
+    confidence TEXT NOT NULL,
+    isColdStart INTEGER NOT NULL DEFAULT 0,
+    computedAt TEXT NOT NULL,
+    sync_updated_at TEXT,
+    is_deleted INTEGER NOT NULL DEFAULT 0,
+    sync_version INTEGER NOT NULL DEFAULT 0,
+    last_synced_at TEXT
+);

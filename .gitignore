@@ -35,3 +35,9 @@ CLAUDE.md
 *.ipa
 *.xcarchive
 **/.DS_Store
+
+# local safety backups (not tracked)
+.backups/
+
+# umbrella symlink to ../lifeplanner-assets (docs, design, screenshots, postman, scripts)
+assets

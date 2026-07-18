@@ -794,3 +794,71 @@ internal fun migrateToVersion34(db: SupportSQLiteDatabase) {
         """.trimIndent()
     )
 }
+
+internal fun migrateHealthMetricEntity(db: SupportSQLiteDatabase) {
+    // Backfill for Android upgraders: HealthMetricEntity was introduced in 17.sqm (Apple Health /
+    // Health Connect). iOS applies it through the .sqm chain, but the Android onOpen path never had
+    // a matching runtime migration, so long-standing Android installs were missing the table and any
+    // health / Life-Balance query would fail with "no such table". Idempotent; safe on every open.
+    db.execSQL(
+        """
+        CREATE TABLE IF NOT EXISTS HealthMetricEntity (
+            id TEXT PRIMARY KEY NOT NULL,
+            metricType TEXT NOT NULL,
+            value_ REAL NOT NULL,
+            unit TEXT NOT NULL,
+            date TEXT NOT NULL,
+            source TEXT NOT NULL DEFAULT 'PLATFORM',
+            recordedAt TEXT NOT NULL,
+            createdAt TEXT NOT NULL,
+            sync_updated_at TEXT,
+            is_deleted INTEGER NOT NULL DEFAULT 0,
+            sync_version INTEGER NOT NULL DEFAULT 0,
+            last_synced_at TEXT
+        )
+        """.trimIndent()
+    )
+    db.execSQL("CREATE INDEX IF NOT EXISTS idx_health_metric_type ON HealthMetricEntity(metricType)")
+    db.execSQL("CREATE INDEX IF NOT EXISTS idx_health_metric_date ON HealthMetricEntity(date)")
+}
+
+internal fun migrateToVersion35(db: SupportSQLiteDatabase) {
+    // Schema v35: Crystal Ball — PreMortemPlanEntity + GoalForecastEntity, matches migration 35.sqm.
+    db.execSQL(
+        """
+        CREATE TABLE IF NOT EXISTS PreMortemPlanEntity (
+            id TEXT NOT NULL PRIMARY KEY,
+            goalId TEXT NOT NULL,
+            obstacle TEXT NOT NULL,
+            ifCondition TEXT NOT NULL DEFAULT '',
+            thenAction TEXT NOT NULL,
+            triggerType TEXT NOT NULL DEFAULT 'OTHER',
+            timesSurfaced INTEGER NOT NULL DEFAULT 0,
+            timesActedOn INTEGER NOT NULL DEFAULT 0,
+            createdAt TEXT NOT NULL,
+            sync_updated_at TEXT,
+            is_deleted INTEGER NOT NULL DEFAULT 0,
+            sync_version INTEGER NOT NULL DEFAULT 0,
+            last_synced_at TEXT
+        )
+        """.trimIndent()
+    )
+    db.execSQL("CREATE INDEX IF NOT EXISTS idx_premortem_goal ON PreMortemPlanEntity(goalId)")
+    db.execSQL("CREATE INDEX IF NOT EXISTS idx_premortem_trigger ON PreMortemPlanEntity(triggerType)")
+    db.execSQL(
+        """
+        CREATE TABLE IF NOT EXISTS GoalForecastEntity (
+            goalId TEXT NOT NULL PRIMARY KEY,
+            adherencePct INTEGER NOT NULL,
+            bandPct INTEGER NOT NULL,
+            confidence TEXT NOT NULL,
+            isColdStart INTEGER NOT NULL DEFAULT 0,
+            computedAt TEXT NOT NULL,
+            sync_updated_at TEXT,
+            is_deleted INTEGER NOT NULL DEFAULT 0,
+            sync_version INTEGER NOT NULL DEFAULT 0,
+            last_synced_at TEXT
+        )
+        """.trimIndent()
+    )
+}

@@ -11,7 +11,12 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import az.tribe.lifeplanner.ui.goal.GoalViewModel
 import az.tribe.lifeplanner.util.ShortcutHelper
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import android.os.Build
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import az.tribe.lifeplanner.ui.theme.ThemeController
+import az.tribe.lifeplanner.ui.theme.ThemeMode
 import com.mmk.kmpnotifier.extensions.onCreateOrOnNewIntent
 import com.mmk.kmpnotifier.notification.NotifierManager
 import android.net.Uri
@@ -44,22 +49,26 @@ class MainActivity : ComponentActivity() {
         handleShortcutDeeplink(intent)
 
         setContent {
-            val systemUiController = rememberSystemUiController()
-
-            val isDark = true
-
-
-            SideEffect {
-                systemUiController.setStatusBarColor(
-                    color = androidx.compose.ui.graphics.Color.Transparent,
-                    darkIcons = !isDark
-                )
-                systemUiController.setNavigationBarColor(
-                    color = androidx.compose.ui.graphics.Color.Transparent,
-                    darkIcons = !isDark, navigationBarContrastEnforced = false
-                )
-
+            val themeMode by koinInject<ThemeController>().mode.collectAsState()
+            val isDark = when (themeMode) {
+                ThemeMode.SYSTEM -> isSystemInDarkTheme()
+                ThemeMode.LIGHT -> false
+                ThemeMode.DARK -> true
             }
+
+            // Edge-to-edge system bars, correct for Android 15/16 + One UI 8.5.
+            // Accompanist setNavigationBarColor is a no-op on API 35+, so disable the OS
+            // nav-bar contrast scrim at the window level (the mismatched band) and drive
+            // icon appearance through the insets controller instead.
+            SideEffect {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    window.isNavigationBarContrastEnforced = false
+                }
+                val insetsController = WindowCompat.getInsetsController(window, window.decorView)
+                insetsController.isAppearanceLightStatusBars = !isDark
+                insetsController.isAppearanceLightNavigationBars = !isDark
+            }
+
             val mainViewModel = koinInject<GoalViewModel>()
 
             App(viewModel = mainViewModel, promoRoute = pendingPromoRoute)

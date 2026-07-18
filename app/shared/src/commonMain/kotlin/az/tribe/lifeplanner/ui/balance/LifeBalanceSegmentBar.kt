@@ -1,5 +1,6 @@
 package az.tribe.lifeplanner.ui.balance
 
+import az.tribe.lifeplanner.ui.theme.LocalIsDarkTheme
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -43,7 +44,7 @@ fun LifeBalanceSegmentBar(
     modifier: Modifier = Modifier
 ) {
     if (areaScores.isEmpty()) return
-    val isDark = true
+    val isDark = LocalIsDarkTheme.current
 
     // Highest score in the center, lowest on the edges
     val scoreSorted = areaScores.sortedByDescending { it.score }

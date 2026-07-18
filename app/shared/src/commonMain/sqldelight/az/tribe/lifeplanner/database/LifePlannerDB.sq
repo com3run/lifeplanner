@@ -2464,3 +2464,60 @@ DELETE FROM DecisionProfileEntity WHERE is_deleted = 1 AND last_synced_at IS NOT
 upsertDecisionProfileFromSync:
 INSERT OR REPLACE INTO DecisionProfileEntity(id, confidenceThresholdValue, confidenceThresholdConfidence, confidenceThresholdSamples, noveltySalienceValue, noveltySalienceConfidence, noveltySalienceSamples, delayDiscountingValue, delayDiscountingConfidence, delayDiscountingSamples, punishmentSensitivityValue, punishmentSensitivityConfidence, punishmentSensitivitySamples, rewardSensitivityValue, rewardSensitivityConfidence, rewardSensitivitySamples, riskAversionValue, riskAversionConfidence, riskAversionSamples, sync_updated_at, is_deleted, sync_version, last_synced_at)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+-- ─── Crystal Ball (schema v35): pre-mortem if-then plans + follow-through forecast ───
+
+CREATE TABLE IF NOT EXISTS PreMortemPlanEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    goalId TEXT NOT NULL,
+    obstacle TEXT NOT NULL,
+    ifCondition TEXT NOT NULL DEFAULT '',
+    thenAction TEXT NOT NULL,
+    triggerType TEXT NOT NULL DEFAULT 'OTHER',
+    timesSurfaced INTEGER NOT NULL DEFAULT 0,
+    timesActedOn INTEGER NOT NULL DEFAULT 0,
+    createdAt TEXT NOT NULL,
+    sync_updated_at TEXT,
+    is_deleted INTEGER NOT NULL DEFAULT 0,
+    sync_version INTEGER NOT NULL DEFAULT 0,
+    last_synced_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_premortem_goal ON PreMortemPlanEntity(goalId);
+CREATE INDEX IF NOT EXISTS idx_premortem_trigger ON PreMortemPlanEntity(triggerType);
+
+CREATE TABLE IF NOT EXISTS GoalForecastEntity (
+    goalId TEXT NOT NULL PRIMARY KEY,
+    adherencePct INTEGER NOT NULL,
+    bandPct INTEGER NOT NULL,
+    confidence TEXT NOT NULL,
+    isColdStart INTEGER NOT NULL DEFAULT 0,
+    computedAt TEXT NOT NULL,
+    sync_updated_at TEXT,
+    is_deleted INTEGER NOT NULL DEFAULT 0,
+    sync_version INTEGER NOT NULL DEFAULT 0,
+    last_synced_at TEXT
+);
+
+upsertPreMortemPlan:
+INSERT OR REPLACE INTO PreMortemPlanEntity(id, goalId, obstacle, ifCondition, thenAction, triggerType, timesSurfaced, timesActedOn, createdAt, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+getPreMortemPlansForGoal:
+SELECT * FROM PreMortemPlanEntity WHERE goalId = ? AND is_deleted = 0 ORDER BY createdAt ASC;
+
+getPreMortemPlansForGoalAndTrigger:
+SELECT * FROM PreMortemPlanEntity WHERE goalId = ? AND triggerType = ? AND is_deleted = 0;
+
+incrementPreMortemSurfaced:
+UPDATE PreMortemPlanEntity SET timesSurfaced = timesSurfaced + 1, sync_updated_at = ? WHERE id = ?;
+
+incrementPreMortemActedOn:
+UPDATE PreMortemPlanEntity SET timesActedOn = timesActedOn + 1, sync_updated_at = ? WHERE id = ?;
+
+upsertGoalForecast:
+INSERT OR REPLACE INTO GoalForecastEntity(goalId, adherencePct, bandPct, confidence, isColdStart, computedAt, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+getGoalForecast:
+SELECT * FROM GoalForecastEntity WHERE goalId = ? AND is_deleted = 0;

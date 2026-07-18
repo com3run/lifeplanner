@@ -70,7 +70,6 @@ kotlin {
             implementation(libs.ktor.client.cio)
             implementation(libs.koin.android)
 
-            implementation(libs.accompanist.systemuicontroller)
 
             implementation(libs.firebase.common.ktx)
 
@@ -188,7 +187,7 @@ sqldelight {
         create("LifePlannerDB") {
             packageName.set("az.tribe.lifeplanner.database")
             schemaOutputDirectory = file("src/commonMain/sqldelight/databases")
-            version = 34 // 22: HabitEntity.unit, 23: CachedPersonaEntity, 24: HabitCheckInEntity.count, 26: CachedPersonaEntity.slug+avatar_url, 27: UserSituationEntity, 28: ScreenTimeEventEntity + UserActivityPattern behavioral columns, 29: LifeValueEntity table, 30: GoalEntity.valueId, 31: DecisionEntity table, 32: Goal.predictedDueDate + Milestone.estimatedEffort, 33: IdentityStatementEntity table, 34: DecisionProfileEntity table
+            version = 35 // 22: HabitEntity.unit, 23: CachedPersonaEntity, 24: HabitCheckInEntity.count, 26: CachedPersonaEntity.slug+avatar_url, 27: UserSituationEntity, 28: ScreenTimeEventEntity + UserActivityPattern behavioral columns, 29: LifeValueEntity table, 30: GoalEntity.valueId, 31: DecisionEntity table, 32: Goal.predictedDueDate + Milestone.estimatedEffort, 33: IdentityStatementEntity table, 34: DecisionProfileEntity table, 35: PreMortemPlanEntity + GoalForecastEntity (Crystal Ball)
             generateAsync.set(true)
         }
     }
