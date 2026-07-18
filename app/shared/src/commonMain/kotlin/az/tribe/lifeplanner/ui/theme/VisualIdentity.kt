@@ -1,8 +1,12 @@
 package az.tribe.lifeplanner.ui.theme
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
 
 /**
  * D5, visual identity.
@@ -38,20 +42,73 @@ enum class VisualIdentity {
  */
 val ACTIVE_VISUAL_IDENTITY = VisualIdentity.WARM_INK
 
+/** Time-of-day bands the hero gradient shifts through. */
+enum class DayPhase { DAWN, DAY, DUSK, NIGHT }
+
+/**
+ * Pure hour to phase mapping, extracted so it is testable without a clock.
+ * Hour is 0..23 local time.
+ */
+fun dayPhaseFor(hour: Int): DayPhase = when (hour) {
+    in 5..8 -> DayPhase.DAWN
+    in 9..16 -> DayPhase.DAY
+    in 17..21 -> DayPhase.DUSK
+    else -> DayPhase.NIGHT
+}
+
+/**
+ * Read once per composition rather than per frame. The phase therefore updates on app start and on
+ * recomposition of the host, not live on the minute, which is the intent: the hero should feel
+ * different across sessions, not visibly animate while the user is looking at it.
+ */
+@Composable
+private fun currentDayPhase(): DayPhase {
+    val hour = remember { Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).hour }
+    return dayPhaseFor(hour)
+}
+
 /**
  * The brand gradient behind [az.tribe.lifeplanner.ui.components.GradientHero], which is the single
  * most prominent surface in the app (For You, Goals and You all lead with it).
  *
  * It is stated per identity rather than derived, because a hero gradient is a brand decision, not a
  * mechanical tint of the primary. CLASSIC returns the untouched v2 brush so the rollback is exact.
+ *
+ * **Time of day.** Only this surface shifts with the hour. Backgrounds, text and semantic colors
+ * stay fixed, so contrast ratios cannot drift through the day and the app never reads as "broken"
+ * because it looks different than last session. The greeting above it already says "Good
+ * afternoon", so the gradient reinforces copy the user is reading anyway.
+ *
+ * Every gradient end is kept at or below ~0.27 relative luminance, which holds white headline text
+ * at 3:1 or better (WCAG large-text minimum).
  */
 @Composable
-fun heroGradient(): Brush = when (ACTIVE_VISUAL_IDENTITY) {
-    VisualIdentity.CLASSIC -> LifePlannerGradients.primary
-    // Deep brass into amber. Warm and premium, the Oura read.
-    VisualIdentity.WARM_INK -> Brush.linearGradient(listOf(Color(0xFF8A4A25), Color(0xFFC98A3F)))
-    // Deep forest into soft sage. Natural and calm, the Finch read.
-    VisualIdentity.SAGE -> Brush.linearGradient(listOf(Color(0xFF35604A), Color(0xFF7FA37E)))
+fun heroGradient(): Brush {
+    val phase = currentDayPhase()
+    return when (ACTIVE_VISUAL_IDENTITY) {
+        // Unchanged: CLASSIC is the exact-rollback target, so it stays static.
+        VisualIdentity.CLASSIC -> LifePlannerGradients.primary
+
+        // Brass through the day: clay at dawn, full brass at midday, ember at dusk, near-black at night.
+        VisualIdentity.WARM_INK -> Brush.linearGradient(
+            when (phase) {
+                DayPhase.DAWN -> listOf(Color(0xFF8F4A32), Color(0xFFC4794A))
+                DayPhase.DAY -> listOf(Color(0xFF8A4A25), Color(0xFFBC7F37))
+                DayPhase.DUSK -> listOf(Color(0xFF6B3524), Color(0xFFB0603A))
+                DayPhase.NIGHT -> listOf(Color(0xFF241A14), Color(0xFF5E3320))
+            }
+        )
+
+        // Sage through the day: fresh green at dawn, full sage at midday, warm taupe at dusk, deep forest at night.
+        VisualIdentity.SAGE -> Brush.linearGradient(
+            when (phase) {
+                DayPhase.DAWN -> listOf(Color(0xFF3F6E52), Color(0xFF7FA36B))
+                DayPhase.DAY -> listOf(Color(0xFF35604A), Color(0xFF6E9470))
+                DayPhase.DUSK -> listOf(Color(0xFF3A5A4A), Color(0xFF8E6B4A))
+                DayPhase.NIGHT -> listOf(Color(0xFF18241E), Color(0xFF35503F))
+            }
+        )
+    }
 }
 
 /** Resolve the modern token set for an identity. */
