@@ -1,5 +1,6 @@
 package az.tribe.lifeplanner.ui.balance
 
+import az.tribe.lifeplanner.ui.theme.LocalIsDarkTheme
 import androidx.compose.animation.core.EaseInOutSine
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -60,7 +61,7 @@ fun LifeWebCard(
     var streamText by remember { mutableStateOf("") }
     var isStreaming by remember { mutableStateOf(false) }
     var hasInsight by remember { mutableStateOf(false) }
-    val isDark = true
+    val isDark = LocalIsDarkTheme.current
 
     val inf = rememberInfiniteTransition(label = "webcard")
     val dotPulse by inf.animateFloat(

@@ -27,6 +27,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import az.tribe.lifeplanner.data.network.AiProxyService
+import az.tribe.lifeplanner.data.network.toUserFacingAiMessage
 import az.tribe.lifeplanner.data.repository.CoachOrchestrator
 import az.tribe.lifeplanner.domain.enum.GoalCategory
 import az.tribe.lifeplanner.domain.enum.GoalStatus
@@ -261,8 +262,8 @@ fun GoalCreationWizardScreen(
                     isGeneratingQuestions = false
                     return@launch
                 }
-            } catch (_: Exception) {
-                generationError = "Couldn't generate questions. Check your connection and try again."
+            } catch (e: Exception) {
+                generationError = e.toUserFacingAiMessage("generate questions")
                 isGeneratingQuestions = false
                 return@launch
             }
@@ -427,8 +428,8 @@ fun GoalCreationWizardScreen(
                 parsedHabits.forEach { aiSuggestedHabits.add(it to true) }
 
                 step = GoalWizardStep.SELECTION
-            } catch (_: Exception) {
-                generationError = "Couldn't generate goal. Check your connection and try again."
+            } catch (e: Exception) {
+                generationError = e.toUserFacingAiMessage("generate goal")
                 step = GoalWizardStep.QUESTIONS
             }
         }

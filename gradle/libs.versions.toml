@@ -23,7 +23,6 @@ koin = "4.2.0"
 coroutines = "1.10.1"
 navigationCompose = "2.9.1"
 core-splashscreen = "1.0.1"
-accompanistSystemuicontroller = "0.30.1"
 
 buildkonfig = "0.17.1"
 
@@ -68,7 +67,6 @@ supabase-compose-auth = { module = "io.github.jan-tennert.supabase:compose-auth"
 
 navigation-compose = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
 core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "core-splashscreen" }
-accompanist-systemuicontroller = { module = "com.google.accompanist:accompanist-systemuicontroller", version.ref = "accompanistSystemuicontroller" }
 
 firebase-common-ktx = { module = "com.google.firebase:firebase-common-ktx", version.ref = "firebaseCommonKtx" }
 

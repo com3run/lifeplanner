@@ -1,5 +1,6 @@
 package az.tribe.lifeplanner.ui.balance
 
+import az.tribe.lifeplanner.ui.theme.LocalIsDarkTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -123,7 +124,7 @@ internal fun HeroScoreCard(report: LifeBalanceReport) {
                 )
             }
             Spacer(Modifier.height(16.dp))
-            val isDark = true
+            val isDark = LocalIsDarkTheme.current
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
@@ -178,7 +179,7 @@ internal fun InsightCard(
     insight: BalanceInsight,
     onGetAdvice: (BalanceInsight) -> Unit
 ) {
-    val isDark = true
+    val isDark = LocalIsDarkTheme.current
 
     // Vivid accent colors for the left bar, always punchy regardless of theme
     val priorityBarColor = when (insight.priority) {
@@ -311,7 +312,7 @@ internal fun RecommendationCard(
     onCreateGoal: () -> Unit,
     onCreateHabit: () -> Unit
 ) {
-    val isDark = true
+    val isDark = LocalIsDarkTheme.current
     val areaColor = getAreaColor(recommendation.targetArea, isDark)
 
     Card(
