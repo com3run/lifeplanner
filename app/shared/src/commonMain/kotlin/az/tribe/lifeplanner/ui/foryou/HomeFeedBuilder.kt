@@ -8,6 +8,8 @@ import az.tribe.lifeplanner.domain.model.FeedKind
 import az.tribe.lifeplanner.domain.model.InsightConfidence
 import az.tribe.lifeplanner.domain.repository.BehaviorRepository
 import az.tribe.lifeplanner.domain.repository.GamificationRepository
+import az.tribe.lifeplanner.domain.repository.GoalRepository
+import az.tribe.lifeplanner.domain.repository.LifeValueRepository
 import az.tribe.lifeplanner.domain.repository.IdentityStatementRepository
 import az.tribe.lifeplanner.domain.service.CausalInsightProvider
 import az.tribe.lifeplanner.domain.service.KnowledgeLibrary
@@ -49,6 +51,8 @@ class HomeFeedBuilder(
     private val possibilityContextProvider: PossibilityContextProvider,
     private val gamificationRepository: GamificationRepository,
     private val behaviorRepository: BehaviorRepository,
+    private val goalRepository: GoalRepository,
+    private val lifeValueRepository: LifeValueRepository,
 ) {
 
     suspend fun build(): List<FeedItem> {
@@ -60,6 +64,18 @@ class HomeFeedBuilder(
         val items = mutableListOf<FeedItem>()
         val ctx = runCatching { possibilityContextProvider.currentContext() }.getOrNull()
 
+        // Pillar 1 lookup: goal -> the value it serves. This is what turns the feed's most
+        // prominent card from a task ("fits (overdue)") into a reason ("Toward Family"), which is
+        // D1's P4 (always show the why) and the difference between this and a generic planner.
+        val goals = runCatching { goalRepository.getAllGoals() }.getOrDefault(emptyList())
+        val valueTitleById = runCatching { lifeValueRepository.getAllLifeValues() }
+            .getOrDefault(emptyList())
+            .associate { it.id to it.title }
+        fun whyFor(goalId: String?): String? = goalId
+            ?.let { id -> goals.firstOrNull { it.id == id } }
+            ?.valueId
+            ?.let { valueTitleById[it] }
+
         // ── Right now: the single best next moves ───────────────────────────
         runCatching { ctx?.let { possibilityEngine.rank(it, limit = 2) } ?: emptyList() }
             .getOrDefault(emptyList())
@@ -69,7 +85,11 @@ class HomeFeedBuilder(
                     kind = FeedKind.DO_NEXT,
                     eyebrow = "DO NEXT",
                     title = o.title,
-                    body = o.fitReason,
+                    // Lead with the why when the goal has one, and drop fitReason entirely there:
+                    // it restates the title and ends in "(overdue)", which is scheduling logic
+                    // plus a guilt note that D1's P3 rejects. Without a value link there is no why
+                    // to show yet, so the fit reason still earns its place.
+                    body = whyFor(o.goalId)?.let { "Toward $it." } ?: o.fitReason,
                     category = o.category,
                     actionLabel = if (o.type == ActionOptionType.HABIT) "Check in" else null,
                     actionHabitId = if (o.type == ActionOptionType.HABIT) o.refId else null,
@@ -170,6 +190,60 @@ class HomeFeedBuilder(
                 score = 60.0,
             )
         }
+
+        // ── Cold start: invitations where a pillar has no data yet ──────────
+        //
+        // Every distinctive card above is gated behind history a new user does not have
+        // (Possibility needs a 14-day stall, Insight needs samples, Becoming needs a completed
+        // goal, Pattern needs enough data). Without this block the only cards that can fire in
+        // week one are DO_NEXT and KNOWLEDGE, so the app introduces itself as a to-do list with a
+        // blog and the pillars are invisible exactly when the impression forms.
+        //
+        // An invitation is not filler: it is the pillar asking for the one input that switches it
+        // on. Capped at two so the feed never becomes a chore list of setup prompts.
+        val present = items.map { it.kind }.toSet()
+        val invitations = mutableListOf<FeedItem>()
+
+        // Pillar 1: a goal with no value is the orphaned-goal nudge D1 P4 calls for.
+        goals.firstOrNull { it.valueId == null }?.let { orphan ->
+            invitations += FeedItem(
+                id = "why_invite_${orphan.id}",
+                kind = FeedKind.INSIGHT,
+                eyebrow = "YOUR WHY",
+                title = "What is \"${orphan.title}\" really for?",
+                body = "Connect it to something you value. Goals with a why are the ones you finish.",
+                route = "goal_detail_redesign/${orphan.id}",
+                score = 86.0,
+            )
+        }
+
+        // Pillar 5: no completed goals and no identity statement yet.
+        if (FeatureFlags.PILLAR_BECOMING && FeedKind.BECOMING !in present) {
+            invitations += FeedItem(
+                id = "becoming_invite",
+                kind = FeedKind.BECOMING,
+                eyebrow = "BECOMING",
+                title = "Who are you becoming?",
+                body = "Name the person your goals are building toward. Every action becomes a vote for it.",
+                route = Screen.Becoming.route,
+                score = 76.0,
+            )
+        }
+
+        // Pillar 7: no decision profile inferred yet.
+        if (FeatureFlags.PILLAR_WIRING && ctx?.profile == null) {
+            invitations += FeedItem(
+                id = "wiring_invite",
+                kind = FeedKind.INSIGHT,
+                eyebrow = "YOUR WIRING",
+                title = "How do you actually decide?",
+                body = "The app learns your decision profile as you log choices, then adapts what it suggests.",
+                route = Screen.YourWiring.route,
+                score = 68.0,
+            )
+        }
+
+        items += invitations.take(2)
 
         // ── Learn: curated, leveled knowledge ───────────────────────────────
         KnowledgeLibrary.forLevel(level, daySeed, count = 3).forEachIndexed { i, k ->

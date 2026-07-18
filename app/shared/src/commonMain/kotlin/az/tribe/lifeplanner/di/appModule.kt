@@ -364,7 +364,7 @@ val appModule = module {
     viewModelOf(::BackupViewModel)
     viewModelOf(::FocusViewModel)
     viewModel { az.tribe.lifeplanner.ui.today.TodayViewModel(get(), get(), get()) }
-    single { az.tribe.lifeplanner.ui.foryou.HomeFeedBuilder(get(), get(), get(), get(), get(), get(), get()) }
+    single { az.tribe.lifeplanner.ui.foryou.HomeFeedBuilder(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel { az.tribe.lifeplanner.ui.foryou.ForYouViewModel(get(), get(), get()) }
     single { az.tribe.lifeplanner.usecases.GeneratePossibilitiesUseCase(get()) }
     viewModel { params -> az.tribe.lifeplanner.ui.possibility.PossibilityModeViewModel(params.get(), get(), get(), get(), get()) }
