@@ -218,7 +218,7 @@ internal fun phaseMessage(phase: OnboardingPhase, vm: CoachOnboardingViewModel):
     }
 }
 
-private fun specialistQ1Message(vm: CoachOnboardingViewModel) = when (vm.specialistCoachId) {
+internal fun specialistQ1Message(vm: CoachOnboardingViewModel) = when (vm.specialistCoachId) {
     "alex_career" -> ageAdaptedCareerQ1(vm.userAge ?: 25)
     "morgan_finance" -> "What's your rough income range? I keep everything private, this helps me tailor financial goals to your reality."
     "kai_fitness" -> "How active are you day-to-day?"
@@ -228,7 +228,7 @@ private fun specialistQ1Message(vm: CoachOnboardingViewModel) = when (vm.special
     else -> "What's on your mind?"
 }
 
-private fun specialistQ2Message(vm: CoachOnboardingViewModel) = when (vm.specialistCoachId) {
+internal fun specialistQ2Message(vm: CoachOnboardingViewModel) = when (vm.specialistCoachId) {
     "alex_career" -> ageBandedRoleQuestion(vm.userAge ?: 25)
     "morgan_finance" -> "How consistent are your savings habits?"
     "kai_fitness" -> "How many hours do you sleep on a typical night?"
@@ -238,7 +238,7 @@ private fun specialistQ2Message(vm: CoachOnboardingViewModel) = when (vm.special
     else -> ""
 }
 
-private fun specialistQ3Message(vm: CoachOnboardingViewModel) = when (vm.specialistCoachId) {
+internal fun specialistQ3Message(vm: CoachOnboardingViewModel) = when (vm.specialistCoachId) {
     "alex_career" -> "Roughly how many years of work experience do you have?"
     "morgan_finance" -> "Do you currently have any debt you're managing?"
     "kai_fitness" -> "On a scale of 1-10, how's your energy level on a typical day?"
@@ -248,7 +248,7 @@ private fun specialistQ3Message(vm: CoachOnboardingViewModel) = when (vm.special
     else -> ""
 }
 
-private fun specialistQ4Message(vm: CoachOnboardingViewModel) = when (vm.specialistCoachId) {
+internal fun specialistQ4Message(vm: CoachOnboardingViewModel) = when (vm.specialistCoachId) {
     "alex_career" -> "What's your main career ambition right now? (One sentence is fine.)"
     "morgan_finance" -> "What's your main financial goal? Build savings? Pay off debt? Invest?"
     else -> ""

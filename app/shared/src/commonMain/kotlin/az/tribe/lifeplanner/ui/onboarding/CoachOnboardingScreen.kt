@@ -86,10 +86,16 @@ private fun rememberChatHistory(
 private fun buildChatHistory(phase: OnboardingPhase, vm: CoachOnboardingViewModel): List<ChatMessage> {
     val messages = mutableListOf<ChatMessage>()
 
-    fun coachMsg(text: String, coachName: String = "Luna", coachEmoji: String = "🌟") =
-        messages.add(ChatMessage(isCoach = true, text = text, coachName = coachName, coachEmoji = coachEmoji))
-    fun userMsg(text: String) =
-        messages.add(ChatMessage(isCoach = false, text = text))
+    // Never add an empty bubble. A blank message means the step was skipped or has no copy for
+    // this coach, and rendering it produced the empty chat bubbles a user would otherwise see.
+    fun coachMsg(text: String, coachName: String = "Luna", coachEmoji: String = "🌟") {
+        if (text.isNotBlank()) {
+            messages.add(ChatMessage(isCoach = true, text = text, coachName = coachName, coachEmoji = coachEmoji))
+        }
+    }
+    fun userMsg(text: String) {
+        if (text.isNotBlank()) messages.add(ChatMessage(isCoach = false, text = text))
+    }
 
     val luna = "🌟"
     val specialistEmoji = when (vm.specialistCoachId) {
@@ -134,17 +140,21 @@ private fun buildChatHistory(phase: OnboardingPhase, vm: CoachOnboardingViewMode
         coachMsg("I'm bringing in $specialistName, our $area specialist.", "Luna", luna)
         userMsg("Let's meet them!")
     }
-    if (OnboardingPhase.SPECIALIST_Q1.isBefore(phase)) {
-        coachMsg(specialistQSummary(vm, 1), specialistName, specialistEmoji); userMsg(vm.specialistQ1Answer())
+    // Specialists ask a variable number of questions (3 for kai/sam/river, 4 for alex/morgan), and
+    // the flow skips straight to MIND_DUMP once they run out. The transcript has to respect that
+    // count, otherwise it renders a bubble for a question that was never asked. Question text comes
+    // from the same specialistQ*Message functions the live step uses, so the two cannot drift.
+    if (OnboardingPhase.SPECIALIST_Q1.isBefore(phase) && vm.specialistQuestionCount >= 1) {
+        coachMsg(specialistQ1Message(vm), specialistName, specialistEmoji); userMsg(vm.specialistQ1Answer())
     }
-    if (OnboardingPhase.SPECIALIST_Q2.isBefore(phase)) {
-        coachMsg(specialistQSummary(vm, 2), specialistName, specialistEmoji); userMsg(vm.specialistQ2Answer())
+    if (OnboardingPhase.SPECIALIST_Q2.isBefore(phase) && vm.specialistQuestionCount >= 2) {
+        coachMsg(specialistQ2Message(vm), specialistName, specialistEmoji); userMsg(vm.specialistQ2Answer())
     }
-    if (OnboardingPhase.SPECIALIST_Q3.isBefore(phase)) {
-        coachMsg(specialistQSummary(vm, 3), specialistName, specialistEmoji); userMsg(vm.specialistQ3Answer())
+    if (OnboardingPhase.SPECIALIST_Q3.isBefore(phase) && vm.specialistQuestionCount >= 3) {
+        coachMsg(specialistQ3Message(vm), specialistName, specialistEmoji); userMsg(vm.specialistQ3Answer())
     }
-    if (OnboardingPhase.SPECIALIST_Q4.isBefore(phase)) {
-        coachMsg(specialistQSummary(vm, 4), specialistName, specialistEmoji); userMsg(vm.specialistQ4Answer())
+    if (OnboardingPhase.SPECIALIST_Q4.isBefore(phase) && vm.specialistQuestionCount >= 4) {
+        coachMsg(specialistQ4Message(vm), specialistName, specialistEmoji); userMsg(vm.specialistQ4Answer())
     }
     if (OnboardingPhase.MIND_DUMP.isBefore(phase)) {
         coachMsg("What do you actually want to change or achieve right now?", "Luna", luna)
@@ -169,44 +179,6 @@ private fun buildChatHistory(phase: OnboardingPhase, vm: CoachOnboardingViewMode
     }
 
     return messages
-}
-
-private fun specialistQSummary(vm: CoachOnboardingViewModel, q: Int): String {
-    val id = vm.specialistCoachId
-    return when (q) {
-        1 -> when (id) {
-            "alex_career" -> "What's your work situation?"
-            "morgan_finance" -> "What's your rough income range?"
-            "kai_fitness" -> "How active are you day-to-day?"
-            "sam_social" -> "Are you more of an introvert or extrovert?"
-            "river_wellness" -> "What are your top values?"
-            "jamie_family" -> "What best describes your family situation?"
-            else -> "Quick question"
-        }
-        2 -> when (id) {
-            "alex_career" -> "What's your current role?"
-            "morgan_finance" -> "How consistent are your savings?"
-            "kai_fitness" -> "How many hours do you sleep?"
-            "sam_social" -> "How big is your close circle?"
-            "river_wellness" -> "Do you have a mindfulness practice?"
-            "jamie_family" -> "What's your biggest family challenge?"
-            else -> ""
-        }
-        3 -> when (id) {
-            "alex_career" -> "Years of experience?"
-            "morgan_finance" -> "Any debt you're managing?"
-            "kai_fitness" -> "How's your energy level?"
-            "sam_social" -> "What's your relationship status?"
-            "river_wellness" -> "What's your long-term vision?"
-            "jamie_family" -> "What would a happier home look like?"
-            else -> ""
-        }
-        else -> when (id) {
-            "alex_career" -> "What's your main career ambition?"
-            "morgan_finance" -> "What's your main financial goal?"
-            else -> ""
-        }
-    }
 }
 
 private fun CoachOnboardingViewModel.specialistQ1Answer() = when (specialistCoachId) {

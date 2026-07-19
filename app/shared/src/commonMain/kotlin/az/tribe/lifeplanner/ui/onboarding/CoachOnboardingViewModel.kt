@@ -213,7 +213,11 @@ class CoachOnboardingViewModel(
             else -> "luna_general"
         }
 
-    private val specialistQuestionCount: Int
+    /**
+     * How many questions this specialist actually asks. The chat transcript must respect this:
+     * rendering a bubble for a question that was never asked is what produced the empty bubbles.
+     */
+    internal val specialistQuestionCount: Int
         get() = when (specialistCoachId) {
             "alex_career" -> 4
             "morgan_finance" -> 4
