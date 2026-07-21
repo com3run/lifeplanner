@@ -217,7 +217,40 @@ val appModule = module {
                     session.accessToken
                 }
             } else {
-                throw IllegalStateException("Not authenticated. Please sign in.")
+                // No session at all. This is the guest case, and it is recoverable.
+                //
+                // signInAsGuest() is meant to create a real Supabase *anonymous* session, which
+                // carries a JWT the ai-proxy accepts, so guests are entitled to AI. But that call
+                // has a 10s timeout, and when it expires (flaky network on first launch) the app
+                // silently falls back to a local-only guest with no session. Previously that state
+                // was permanent for the whole install: every AI call threw here, before reaching
+                // the network, so the coach produced nothing and onboarding seeded no goals.
+                //
+                // Heal it instead: establish the anonymous session on demand. Mutex-guarded so
+                // concurrent AI calls do not each start their own sign-in.
+                refreshMutex.lock()
+                try {
+                    supabase.auth.currentSessionOrNull()?.let { existing ->
+                        return@AuthTokenProvider existing.accessToken
+                    }
+                    co.touchlab.kermit.Logger.i("AuthTokenProvider") {
+                        "No session; establishing an anonymous one so this guest can use AI"
+                    }
+                    supabase.auth.signInAnonymously()
+                    supabase.auth.currentSessionOrNull()?.accessToken
+                        ?: throw IllegalStateException("Not authenticated. Please sign in.")
+                } catch (e: IllegalStateException) {
+                    throw e
+                } catch (e: Exception) {
+                    // Offline, or anonymous sign-ups disabled on the project. Genuinely cannot
+                    // reach AI, so surface it as an auth problem rather than a silent nothing.
+                    co.touchlab.kermit.Logger.w("AuthTokenProvider") {
+                        "Anonymous sign-in for guest failed: ${e.message}"
+                    }
+                    throw IllegalStateException("Not authenticated. Please sign in.")
+                } finally {
+                    refreshMutex.unlock()
+                }
             }
         }
     }
