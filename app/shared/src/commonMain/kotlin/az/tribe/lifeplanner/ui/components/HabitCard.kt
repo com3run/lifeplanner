@@ -259,18 +259,9 @@ fun HabitCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .then(
-                    if (isCompletedToday) {
-                        Modifier.background(
-                            Brush.horizontalGradient(
-                                colors = listOf(
-                                    Color(0xFF4CAF50).copy(alpha = 0.08f),
-                                    Color(0xFF4CAF50).copy(alpha = 0.03f)
-                                )
-                            )
-                        )
-                    } else Modifier
-                )
+                // No green wash on completion. The strikethrough title + gray check are enough;
+                // the card should quietly recede, not light up.
+
                 .padding(LifePlannerDesign.Padding.standard)
         ) {
             // Top row: icon + title + check circle

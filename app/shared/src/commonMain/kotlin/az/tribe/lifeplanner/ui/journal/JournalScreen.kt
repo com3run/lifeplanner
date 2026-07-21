@@ -91,8 +91,23 @@ fun JournalScreen(
     val habitsTotal = habitsWithStatus.size
     val activeGoalCount = goals.count { it.status != GoalStatus.COMPLETED }
 
-    val habitGroups = remember(habitsWithStatus) {
-        val grouped = habitsWithStatus.groupBy { habitTimeSlot(it.habit.reminderTime) }
+    // Declutter on revisit: habits already done *before* this visit are hidden, so the list
+    // shows what is still left. Habits completed *during* this visit stay in place (with the
+    // muted done styling) so the tap has visible feedback; they drop off next time the screen
+    // is opened. Snapshot is taken once, the first time habits load after entering.
+    var completedAtEntry by remember { mutableStateOf<Set<String>?>(null) }
+    LaunchedEffect(habitsWithStatus) {
+        if (completedAtEntry == null && habitsWithStatus.isNotEmpty()) {
+            completedAtEntry = habitsWithStatus.filter { it.isCompletedToday }.map { it.habit.id }.toSet()
+        }
+    }
+    val hiddenHabitIds = completedAtEntry ?: emptySet()
+    val visibleHabits = habitsWithStatus.filter { it.habit.id !in hiddenHabitIds }
+    // Non-empty habit list but nothing left to show = everything was already done before this visit.
+    val allHabitsCaughtUp = habitsWithStatus.isNotEmpty() && visibleHabits.isEmpty()
+
+    val habitGroups = remember(visibleHabits) {
+        val grouped = visibleHabits.groupBy { habitTimeSlot(it.habit.reminderTime) }
         listOf(HabitTimeSlot.MORNING, HabitTimeSlot.AFTERNOON, HabitTimeSlot.EVENING, HabitTimeSlot.ANYTIME)
             .mapNotNull { slot -> grouped[slot]?.takeIf { it.isNotEmpty() }?.let { slot to it } }
     }
@@ -249,6 +264,14 @@ fun JournalScreen(
                             Text("No habits yet", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
                             Spacer(Modifier.height(6.dp))
                             Text("Tap New Habit to start building consistency", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
+                        }
+                    }
+                } else if (allHabitsCaughtUp) {
+                    item(key = "habits_caught_up") {
+                        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 48.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("All done for today", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
+                            Spacer(Modifier.height(6.dp))
+                            Text("You completed every habit. Enjoy the space.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
                         }
                     }
                 } else {

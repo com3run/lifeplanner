@@ -254,14 +254,18 @@ internal fun CategoryIconBadge(
 ) {
     val categoryColor = category.backgroundColor()
 
+    // Done reads as a calm, muted gray, not a celebratory green. The whole card is meant to
+    // recede once completed, not compete for attention.
+    val doneGray = MaterialTheme.colorScheme.onSurfaceVariant
+
     val bgColor by animateColorAsState(
-        targetValue = if (isCompleted) Color(0xFF4CAF50) else categoryColor.copy(alpha = 0.12f),
+        targetValue = if (isCompleted) doneGray.copy(alpha = 0.14f) else categoryColor.copy(alpha = 0.12f),
         animationSpec = tween(300),
         label = "iconBgColor"
     )
 
     val iconTint by animateColorAsState(
-        targetValue = if (isCompleted) Color.White else categoryColor,
+        targetValue = if (isCompleted) doneGray else categoryColor,
         animationSpec = tween(300),
         label = "iconTint"
     )
@@ -305,8 +309,9 @@ internal fun CheckInCircle(
         label = "checkScale"
     )
 
+    // Muted gray "done", not green. The check still reads clearly; it just does not shout.
     val fillColor by animateColorAsState(
-        targetValue = if (isCompleted) Color(0xFF4CAF50) else Color.Transparent,
+        targetValue = if (isCompleted) MaterialTheme.colorScheme.onSurfaceVariant else Color.Transparent,
         animationSpec = tween(200),
         label = "fillColor"
     )
@@ -341,7 +346,8 @@ internal fun CheckInCircle(
                     Icon(
                         imageVector = PhosphorIcons.Regular.Check,
                         contentDescription = "Completed",
-                        tint = Color.White,
+                        // Contrast against the gray fill in both light and dark.
+                        tint = MaterialTheme.colorScheme.surface,
                         modifier = Modifier
                             .size(16.dp)
                             .scale(checkScale)
