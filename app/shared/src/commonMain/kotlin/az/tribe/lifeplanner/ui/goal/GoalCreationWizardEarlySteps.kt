@@ -52,10 +52,13 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -366,6 +369,21 @@ internal fun QuestionsStep(
     val currentSelections = answers.getOrElse(currentIndex) { emptyList() }
     val hasSelection = currentSelections.isNotEmpty()
 
+    // Tapping an answer advances the step; no separate "Next" tap needed. A short debounce keeps
+    // "select all that apply" working, each tap resets the timer, so the user can pick several and
+    // it moves on once they pause. The last question never auto-advances (Generate is an
+    // expensive AI call and must stay an explicit tap). Going Back does not bounce forward because
+    // the tick did not change.
+    var answerTick by remember(questions.size) { mutableIntStateOf(0) }
+    LaunchedEffect(answerTick) {
+        if (answerTick == 0 || isLastQuestion) return@LaunchedEffect
+        val idxAtTap = currentIndex
+        delay(600)
+        if (currentIndex == idxAtTap && answers.getOrElse(idxAtTap) { emptyList() }.isNotEmpty()) {
+            currentIndex++
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -463,7 +481,7 @@ internal fun QuestionsStep(
                                             },
                                             shape = RoundedCornerShape(14.dp)
                                         )
-                                        .clickable { onAnswerToggle(idx, option) },
+                                        .clickable { onAnswerToggle(idx, option); answerTick++ },
                                     color = when {
                                         isSelected && isNoneOption -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                                         isSelected -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
@@ -557,14 +575,15 @@ internal fun QuestionsStep(
                         Text("Generate my goal →", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
                     }
                 } else {
-                    Button(
-                        onClick = { currentIndex++ },
-                        enabled = hasSelection,
-                        modifier = Modifier.weight(1f).height(52.dp),
-                        shape = RoundedCornerShape(14.dp)
-                    ) {
-                        Text("Next →", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
-                    }
+                    // No Next button: a tap on an answer advances the step on its own. This is just
+                    // a quiet hint of that, and it fades in only once there is a selection.
+                    Text(
+                        text = if (hasSelection) "Moving on…" else "Tap an answer to continue",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.End,
+                        modifier = Modifier.weight(1f)
+                    )
                 }
             }
         }
