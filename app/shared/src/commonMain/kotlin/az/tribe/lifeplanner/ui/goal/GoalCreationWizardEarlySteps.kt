@@ -36,6 +36,7 @@ import com.adamglin.phosphoricons.regular.ArrowLeft
 import com.adamglin.phosphoricons.regular.CheckCircle
 import com.adamglin.phosphoricons.regular.Circle
 import com.adamglin.phosphoricons.regular.Sparkle
+import com.adamglin.phosphoricons.regular.X
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -44,6 +45,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -237,6 +239,9 @@ internal fun IntentStep(
             }
         }
 
+        // The field picks up the detected category's color, so the input, the category chip
+        // below, and the coach all read as one thing rather than repeating the category twice.
+        val fieldAccent = if (bgColor != Color.Unspecified) bgColor else MaterialTheme.colorScheme.primary
         OutlinedTextField(
             value = intentText,
             onValueChange = onIntentChange,
@@ -246,10 +251,26 @@ internal fun IntentStep(
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                 )
             },
+            // Easy clear: an X on the right once there is text.
+            trailingIcon = if (intentText.isNotEmpty()) {
+                {
+                    IconButton(onClick = { onIntentChange("") }) {
+                        Icon(
+                            imageVector = PhosphorIcons.Regular.X,
+                            contentDescription = "Clear",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            } else null,
             modifier = Modifier.fillMaxWidth(),
             minLines = 3,
             maxLines = 5,
             shape = RoundedCornerShape(16.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = fieldAccent,
+                cursorColor = fieldAccent,
+            ),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default)
         )
 
