@@ -24,18 +24,21 @@ object FeatureFlags {
 
     // Pillar kill switches. Each one guards every entry point AND the nav registration
     // for its feature, so flipping it to `false` both hides the entry point and makes the
-    // route unreachable by a stale deep link. They ship `true`: the features are live.
-    // Flip one to `false` to pull that pillar without a hotfix.
+    // route unreachable by a stale deep link.
+    //
+    // 2026-07-21: product owner reverted to a v2 feature set. All pillars OFF. The For You feed
+    // stays home (USE_LEGACY_HOME_TAB = false above) but shows only its v2-safe cards, since every
+    // pillar feed card is gated on these flags. Flip one back to `true` to restore that pillar.
 
     /** Your Wiring (DecisionProfile / TuningInferenceEngine). */
-    const val PILLAR_WIRING = true
+    const val PILLAR_WIRING = false
 
     /** Causal Insights (CausalInsightEngine). */
-    const val PILLAR_CAUSAL = true
+    const val PILLAR_CAUSAL = false
 
     /** Becoming (IdentityStatement). */
-    const val PILLAR_BECOMING = true
+    const val PILLAR_BECOMING = false
 
     /** Possibility Mode. */
-    const val PILLAR_POSSIBILITY = true
+    const val PILLAR_POSSIBILITY = false
 }

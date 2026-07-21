@@ -40,7 +40,7 @@ enum class VisualIdentity {
  * The identity the app ships with. **This is the D5 switch**: change this one value to restyle
  * the entire app, then rebuild. Reverting to [VisualIdentity.CLASSIC] restores v2 exactly.
  */
-val ACTIVE_VISUAL_IDENTITY = VisualIdentity.WARM_INK
+val ACTIVE_VISUAL_IDENTITY = VisualIdentity.CLASSIC
 
 /** Time-of-day bands the hero gradient shifts through. */
 enum class DayPhase { DAWN, DAY, DUSK, NIGHT }

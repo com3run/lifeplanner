@@ -65,8 +65,10 @@ sealed class BottomNavItem(
     )
 
     data object Profile : BottomNavItem(
-        // D2: the third tab is the grouped You screen, not the old flat settings list.
-        route = Screen.YouRedesign.route,
+        // 2026-07-21: reverted to v2. Third tab is the legacy Profile, whose pillar rows are
+        // FeatureFlags-gated (so they vanish with the pillars). The redesigned YouScreen links
+        // to Becoming/Wiring/Causal without guards, which would be dead taps once pillars are off.
+        route = Screen.Profile.route,
         title = "You",
         selectedIcon = PhosphorIcons.Fill.User,
         unselectedIcon = PhosphorIcons.Regular.User
