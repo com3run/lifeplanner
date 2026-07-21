@@ -681,7 +681,7 @@ async function callWithFallback(body: AiRequest, preferredProvider: string): Pro
 // ── Gemini ──────────────────────────────────────────────────────────────────
 
 async function callGemini(body: AiRequest): Promise<AiResponse> {
-  const model = "gemini-2.0-flash";
+  const model = "gemini-2.5-flash";
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
 
   const contents = buildGeminiContents(body);
@@ -842,7 +842,7 @@ function getModelForProvider(provider: string): string {
     case "OPENAI": return "gpt-4o-mini";
     case "GROK": return "grok-4-1-fast-non-reasoning";
     case "GEMINI":
-    default: return "gemini-2.0-flash";
+    default: return "gemini-2.5-flash";
   }
 }
 
