@@ -141,6 +141,8 @@ CREATE TABLE habits (
     reminder_time     TEXT,
     type              TEXT        NOT NULL DEFAULT 'BUILD',
     unit              TEXT,
+    health_metric_type TEXT,
+    health_target     DOUBLE PRECISION,
     -- sync metadata
     updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
     is_deleted   BOOLEAN     NOT NULL DEFAULT FALSE,

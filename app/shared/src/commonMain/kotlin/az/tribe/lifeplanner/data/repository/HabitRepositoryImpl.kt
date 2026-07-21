@@ -88,7 +88,9 @@ class HabitRepositoryImpl(
             linkedGoalId = habit.linkedGoalId,
             reminderTime = habit.reminderTime,
             type = habit.type.name,
-            unit = habit.unit
+            unit = habit.unit,
+            healthMetricType = habit.healthMetricType?.name,
+            healthTarget = habit.healthTarget
         )
         notifyWidgets()
         syncManager.requestSync()

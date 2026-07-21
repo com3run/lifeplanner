@@ -271,6 +271,8 @@ class BackupRepositoryImpl(
                             reminderTime = habitBackup.reminderTime,
                             type = "BUILD",
                             unit = null,
+                            healthMetricType = null,
+                            healthTarget = null,
                             sync_updated_at = Clock.System.now().toString(),
                             is_deleted = 0L,
                             sync_version = 0L,

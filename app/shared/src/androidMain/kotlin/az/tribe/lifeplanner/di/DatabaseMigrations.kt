@@ -794,3 +794,9 @@ internal fun migrateToVersion34(db: SupportSQLiteDatabase) {
         """.trimIndent()
     )
 }
+
+internal fun migrateToVersion35(db: SupportSQLiteDatabase) {
+    // Schema v35: health-to-habit auto-complete linkage, matches migration 35.sqm
+    addColumnSafe(db, "HabitEntity", "healthMetricType", "TEXT")
+    addColumnSafe(db, "HabitEntity", "healthTarget", "REAL")
+}

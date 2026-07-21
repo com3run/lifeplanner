@@ -51,7 +51,9 @@ suspend fun SharedDatabase.insertHabit(habit: HabitEntity) {
             sync_version = 0L,
             last_synced_at = null,
             type = habit.type,
-            unit = habit.unit
+            unit = habit.unit,
+            healthMetricType = habit.healthMetricType,
+            healthTarget = habit.healthTarget
         )
     }
 }
@@ -66,7 +68,9 @@ suspend fun SharedDatabase.updateHabit(
     linkedGoalId: String?,
     reminderTime: String?,
     type: String,
-    unit: String? = null
+    unit: String? = null,
+    healthMetricType: String? = null,
+    healthTarget: Double? = null
 ) {
     this { db ->
         db.lifePlannerDBQueries.updateHabit(
@@ -79,6 +83,8 @@ suspend fun SharedDatabase.updateHabit(
             reminderTime = reminderTime,
             type = type,
             unit = unit,
+            healthMetricType = healthMetricType,
+            healthTarget = healthTarget,
             id = id
         )
     }

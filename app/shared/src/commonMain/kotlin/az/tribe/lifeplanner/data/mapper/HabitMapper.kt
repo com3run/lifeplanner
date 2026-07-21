@@ -5,6 +5,7 @@ import az.tribe.lifeplanner.database.HabitEntity
 import az.tribe.lifeplanner.domain.enum.GoalCategory
 import az.tribe.lifeplanner.domain.enum.HabitFrequency
 import az.tribe.lifeplanner.domain.enum.HabitType
+import az.tribe.lifeplanner.domain.enum.HealthMetricType
 import az.tribe.lifeplanner.domain.model.Habit
 import az.tribe.lifeplanner.domain.model.HabitCheckIn
 import kotlin.time.Clock
@@ -33,7 +34,9 @@ fun HabitEntity.toDomain(): Habit {
         isActive = isActive == 1L,
         createdAt = parseLocalDateTime(createdAt),
         reminderTime = reminderTime,
-        type = try { HabitType.valueOf(type) } catch (_: Exception) { HabitType.BUILD }
+        type = try { HabitType.valueOf(type) } catch (_: Exception) { HabitType.BUILD },
+        healthMetricType = healthMetricType?.let { t -> try { HealthMetricType.valueOf(t) } catch (_: Exception) { null } },
+        healthTarget = healthTarget
     )
 }
 
@@ -59,7 +62,9 @@ fun Habit.toEntity(): HabitEntity {
         is_deleted = 0L,
         sync_version = 0L,
         last_synced_at = null,
-        type = type.name
+        type = type.name,
+        healthMetricType = healthMetricType?.name,
+        healthTarget = healthTarget
     )
 }
 
@@ -107,7 +112,9 @@ fun createNewHabit(
     unit: String? = null,
     linkedGoalId: String? = null,
     reminderTime: String? = null,
-    type: HabitType = HabitType.BUILD
+    type: HabitType = HabitType.BUILD,
+    healthMetricType: HealthMetricType? = null,
+    healthTarget: Double? = null
 ): Habit {
     return Habit(
         id = Uuid.random().toString(),
@@ -126,7 +133,9 @@ fun createNewHabit(
         isActive = true,
         createdAt = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()),
         reminderTime = reminderTime,
-        type = type
+        type = type,
+        healthMetricType = healthMetricType,
+        healthTarget = healthTarget
     )
 }
 

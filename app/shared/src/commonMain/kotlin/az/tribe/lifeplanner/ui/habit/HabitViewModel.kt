@@ -7,6 +7,7 @@ import az.tribe.lifeplanner.data.mapper.createNewHabit
 import az.tribe.lifeplanner.domain.enum.GoalCategory
 import az.tribe.lifeplanner.domain.enum.HabitFrequency
 import az.tribe.lifeplanner.domain.enum.HabitType
+import az.tribe.lifeplanner.domain.enum.HealthMetricType
 import az.tribe.lifeplanner.domain.model.Habit
 import az.tribe.lifeplanner.domain.repository.HabitRepository
 import az.tribe.lifeplanner.domain.service.SmartReminderManager
@@ -140,7 +141,9 @@ class HabitViewModel(
         targetCount: Int = 1,
         linkedGoalId: String? = null,
         reminderTime: String? = null,
-        type: HabitType = HabitType.BUILD
+        type: HabitType = HabitType.BUILD,
+        healthMetricType: HealthMetricType? = null,
+        healthTarget: Double? = null
     ) {
         if (isCreatingHabit) return
 
@@ -158,7 +161,9 @@ class HabitViewModel(
                     targetCount = targetCount,
                     linkedGoalId = linkedGoalId,
                     reminderTime = reminderTime,
-                    type = type
+                    type = type,
+                    healthMetricType = healthMetricType,
+                    healthTarget = healthTarget
                 )
                 createHabitUseCase(habit)
                 Analytics.habitCreated(frequency.name, linkedGoalId != null)

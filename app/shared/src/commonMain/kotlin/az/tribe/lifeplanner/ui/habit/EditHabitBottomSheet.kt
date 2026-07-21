@@ -9,8 +9,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 import az.tribe.lifeplanner.domain.enum.GoalCategory
 import az.tribe.lifeplanner.domain.enum.HabitFrequency
+import az.tribe.lifeplanner.domain.enum.HealthMetricType
 import az.tribe.lifeplanner.domain.model.Habit
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
@@ -31,6 +34,12 @@ internal fun EditHabitBottomSheet(
     var expandedCategory by remember { mutableStateOf(false) }
     var reminderTime by remember { mutableStateOf(habit.reminderTime) }
     var showTimePicker by remember { mutableStateOf(false) }
+    var healthMetric by remember { mutableStateOf(habit.healthMetricType) }
+    var healthTargetText by remember {
+        mutableStateOf(habit.healthTarget?.let {
+            if (it == it.toLong().toDouble()) it.toLong().toString() else it.toString()
+        } ?: "")
+    }
     val timePickerState = rememberTimePickerState(
         initialHour = habit.reminderTime?.split(":")?.firstOrNull()?.toIntOrNull() ?: 8,
         initialMinute = habit.reminderTime?.split(":")?.getOrNull(1)?.toIntOrNull() ?: 0,
@@ -243,6 +252,67 @@ internal fun EditHabitBottomSheet(
                     }
                 }
 
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Sync with Health
+                Text(
+                    "Sync with Health",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = healthMetric == null,
+                        onClick = { healthMetric = null; healthTargetText = "" },
+                        label = { Text("None") }
+                    )
+                    listOf(HealthMetricType.STEPS, HealthMetricType.SLEEP).forEach { metric ->
+                        FilterChip(
+                            selected = healthMetric == metric,
+                            onClick = {
+                                healthMetric = metric
+                                healthTargetText = when (metric) {
+                                    HealthMetricType.STEPS -> "10000"
+                                    HealthMetricType.SLEEP -> "8"
+                                    else -> ""
+                                }
+                            },
+                            label = { Text(metric.displayName) }
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    listOf(HealthMetricType.HEART_RATE, HealthMetricType.WEIGHT).forEach { metric ->
+                        FilterChip(
+                            selected = healthMetric == metric,
+                            onClick = { healthMetric = metric; healthTargetText = "" },
+                            label = { Text(metric.displayName) }
+                        )
+                    }
+                }
+                if (healthMetric == HealthMetricType.STEPS || healthMetric == HealthMetricType.SLEEP) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = healthTargetText,
+                        onValueChange = { healthTargetText = it.filter { c -> c.isDigit() || c == '.' } },
+                        label = {
+                            Text(if (healthMetric == HealthMetricType.STEPS) "Daily step target" else "Hours of sleep")
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(32.dp))
 
                 Button(
@@ -254,7 +324,9 @@ internal fun EditHabitBottomSheet(
                                     description = description,
                                     category = selectedCategory,
                                     frequency = selectedFrequency,
-                                    reminderTime = reminderTime
+                                    reminderTime = reminderTime,
+                                    healthMetricType = healthMetric,
+                                    healthTarget = healthTargetText.toDoubleOrNull()
                                 )
                             )
                         }

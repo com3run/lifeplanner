@@ -13,7 +13,8 @@ import java.util.Calendar
 object AndroidNotificationScheduler : NotificationSchedulerInterface {
 
     private const val TAG = "NotificationScheduler"
-    private var appContext: Context? = null
+    internal var appContext: Context? = null
+        private set
 
     fun init(context: Context) {
         appContext = context.applicationContext

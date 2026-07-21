@@ -16,9 +16,12 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 import az.tribe.lifeplanner.domain.enum.GoalCategory
 import az.tribe.lifeplanner.domain.enum.HabitFrequency
 import az.tribe.lifeplanner.domain.enum.HabitType
+import az.tribe.lifeplanner.domain.enum.HealthMetricType
 import az.tribe.lifeplanner.ui.theme.modernColors
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
@@ -44,6 +47,8 @@ fun AddHabitScreen(
     var reminderTime by remember { mutableStateOf<String?>(null) }
     var showTimePicker by remember { mutableStateOf(false) }
     var showTemplates by remember { mutableStateOf(false) }
+    var healthMetric by remember { mutableStateOf<HealthMetricType?>(null) }
+    var healthTargetText by remember { mutableStateOf("") }
     val timePickerState = rememberTimePickerState(initialHour = 8, initialMinute = 0, is24Hour = false)
     var selectedTemplateCategory by remember { mutableStateOf<GoalCategory?>(null) }
 
@@ -250,7 +255,9 @@ fun AddHabitScreen(
                             category = selectedCategory,
                             frequency = selectedFrequency,
                             type = selectedHabitType,
-                            reminderTime = reminderTime
+                            reminderTime = reminderTime,
+                            healthMetricType = healthMetric,
+                            healthTarget = healthTargetText.toDoubleOrNull()
                         )
                         onHabitSaved()
                     }
@@ -465,6 +472,79 @@ fun AddHabitScreen(
                             }
                         }
                     }
+                }
+            }
+
+            // ── Sync with Health ─────────────────────────────────────────────
+            item {
+                Text(
+                    "Sync with Health",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    "Linked habits check themselves off when your health data hits the target.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = healthMetric == null,
+                        onClick = { healthMetric = null; healthTargetText = "" },
+                        label = { Text("None") }
+                    )
+                    listOf(HealthMetricType.STEPS, HealthMetricType.SLEEP).forEach { metric ->
+                        FilterChip(
+                            selected = healthMetric == metric,
+                            onClick = {
+                                healthMetric = metric
+                                healthTargetText = when (metric) {
+                                    HealthMetricType.STEPS -> "10000"
+                                    HealthMetricType.SLEEP -> "8"
+                                    else -> ""
+                                }
+                            },
+                            label = { Text(metric.displayName) }
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    listOf(HealthMetricType.HEART_RATE, HealthMetricType.WEIGHT).forEach { metric ->
+                        FilterChip(
+                            selected = healthMetric == metric,
+                            onClick = { healthMetric = metric; healthTargetText = "" },
+                            label = { Text(metric.displayName) }
+                        )
+                    }
+                }
+                if (healthMetric == HealthMetricType.STEPS || healthMetric == HealthMetricType.SLEEP) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = healthTargetText,
+                        onValueChange = { healthTargetText = it.filter { c -> c.isDigit() || c == '.' } },
+                        label = {
+                            Text(if (healthMetric == HealthMetricType.STEPS) "Daily step target" else "Hours of sleep")
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                } else if (healthMetric != null) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        "Completes when any ${healthMetric!!.displayName.lowercase()} reading is recorded that day.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
 

@@ -76,9 +76,11 @@ import az.tribe.lifeplanner.notification.NotificationSchedulerInterface
 import az.tribe.lifeplanner.notification.getNotificationScheduler
 import az.tribe.lifeplanner.util.NetworkConnectivityObserver
 import az.tribe.lifeplanner.widget.WidgetDataSyncService
+import az.tribe.lifeplanner.data.calendar.CalendarReader
 import az.tribe.lifeplanner.data.health.HealthDataManager
 import az.tribe.lifeplanner.ui.ability.AbilityDetailViewModel
 import az.tribe.lifeplanner.ui.ability.AbilityViewModel
+import az.tribe.lifeplanner.ui.calendar.CalendarViewModel
 import az.tribe.lifeplanner.ui.health.HealthViewModel
 import az.tribe.lifeplanner.ui.goal.GoalViewModel
 import az.tribe.lifeplanner.ui.chat.ChatViewModel
@@ -106,6 +108,7 @@ import az.tribe.lifeplanner.usecases.journal.GetJournalEntriesByGoalUseCase
 import az.tribe.lifeplanner.usecases.journal.GetRecentJournalEntriesUseCase
 import az.tribe.lifeplanner.usecases.journal.UpdateJournalEntryUseCase
 import az.tribe.lifeplanner.usecases.ability.AwardAbilityXpUseCase
+import az.tribe.lifeplanner.usecases.health.AutoCompleteHealthHabitsUseCase
 import az.tribe.lifeplanner.usecases.health.SyncHealthDataUseCase
 import az.tribe.lifeplanner.usecases.habit.CheckInHabitUseCase
 import az.tribe.lifeplanner.usecases.habit.CreateHabitUseCase
@@ -299,6 +302,7 @@ val appModule = module {
     single<UserSituationRepository> { UserSituationRepositoryImpl(get(), get()) }
     single { HealthDataManager() }
     single<HealthRepository> { HealthRepositoryImpl(get(), get(), get()) }
+    single { CalendarReader() }
 
     // Behavior tracking
     single<BehaviorRepository> { BehaviorRepositoryImpl(get()) }
@@ -349,7 +353,8 @@ val appModule = module {
     factory { AwardAbilityXpUseCase(get()) }
 
     // Health Use Cases
-    factory { SyncHealthDataUseCase(get()) }
+    factory { AutoCompleteHealthHabitsUseCase(get(), get(), get()) }
+    factory { SyncHealthDataUseCase(get(), get()) }
 
     // Habit Use Cases
     factory { GetAllHabitsUseCase(get()) }
@@ -409,6 +414,7 @@ val appModule = module {
     viewModelOf(::AbilityViewModel)
     viewModel { params -> AbilityDetailViewModel(params.get(), get(), get(), get(), get()) }
     viewModelOf(::HealthViewModel)
+    viewModelOf(::CalendarViewModel)
     viewModelOf(::HomeViewModel)
     viewModel { az.tribe.lifeplanner.ui.home.PossibilityViewModel(get(), get()) }
     viewModelOf(::WeeklyEngagementViewModel)
