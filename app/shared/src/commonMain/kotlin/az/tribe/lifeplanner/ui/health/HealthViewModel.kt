@@ -21,7 +21,11 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlin.time.Clock
+import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.isoDayNumber
+import kotlinx.datetime.minus
 import kotlinx.datetime.toLocalDateTime
 
 class HealthViewModel(
@@ -57,6 +61,26 @@ class HealthViewModel(
         .map { metrics -> metrics.sortedBy { it.date }.takeLast(7) }
         .catch { emit(emptyList()) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /** Steps summed over the current calendar week (Monday start). */
+    val stepsWeekTotal: StateFlow<Long> = healthRepository.observeMetricsByType(HealthMetricType.STEPS)
+        .map { metrics ->
+            val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+            val weekStart = today.minus(DatePeriod(days = today.dayOfWeek.isoDayNumber - 1))
+            metrics.filter { it.date in weekStart..today }.sumOf { it.value }.toLong()
+        }
+        .catch { emit(0L) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0L)
+
+    /** Steps summed over the current calendar month. */
+    val stepsMonthTotal: StateFlow<Long> = healthRepository.observeMetricsByType(HealthMetricType.STEPS)
+        .map { metrics ->
+            val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+            val monthStart = LocalDate(today.year, today.month, 1)
+            metrics.filter { it.date in monthStart..today }.sumOf { it.value }.toLong()
+        }
+        .catch { emit(0L) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0L)
 
     val weightHistory: StateFlow<List<HealthMetric>> = healthRepository.observeMetricsByType(HealthMetricType.WEIGHT)
         .map { metrics -> metrics.sortedBy { it.date } }

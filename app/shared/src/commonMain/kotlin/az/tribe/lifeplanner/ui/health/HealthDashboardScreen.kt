@@ -60,6 +60,8 @@ fun HealthDashboardScreen(
     val permissionState by viewModel.permissionState.collectAsState()
     val todaySteps by viewModel.todaySteps.collectAsState()
     val stepsHistory by viewModel.stepsHistory.collectAsState()
+    val stepsWeekTotal by viewModel.stepsWeekTotal.collectAsState()
+    val stepsMonthTotal by viewModel.stepsMonthTotal.collectAsState()
     val weightHistory by viewModel.weightHistory.collectAsState()
     val latestWeight by viewModel.latestWeight.collectAsState()
     val heartRateHistory by viewModel.heartRateHistory.collectAsState()
@@ -163,8 +165,13 @@ fun HealthDashboardScreen(
                         .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // Steps card with ring
-                    StepsCard(todaySteps = todaySteps, stepsGoal = 10_000L)
+                    // Steps card with ring + week/month pills
+                    StepsCard(
+                        todaySteps = todaySteps,
+                        stepsGoal = 10_000L,
+                        weekTotal = stepsWeekTotal,
+                        monthTotal = stepsMonthTotal
+                    )
 
                     // Steps last 7 days, collapsed, just total
                     if (stepsHistory.isNotEmpty()) {

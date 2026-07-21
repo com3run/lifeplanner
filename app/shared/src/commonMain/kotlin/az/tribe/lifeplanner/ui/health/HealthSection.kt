@@ -30,6 +30,8 @@ fun HealthSection(
     onRequestPermissions: () -> Unit,
     onAddWeight: () -> Unit,
     modifier: Modifier = Modifier,
+    stepsWeekTotal: Long? = null,
+    stepsMonthTotal: Long? = null,
 ) {
     when {
         permissionState == HealthPermissionState.NOT_AVAILABLE -> {}
@@ -42,7 +44,12 @@ fun HealthSection(
         }
         else -> {
             Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                StepsCard(todaySteps = todaySteps, stepsGoal = 10_000L)
+                StepsCard(
+                    todaySteps = todaySteps,
+                    stepsGoal = 10_000L,
+                    weekTotal = stepsWeekTotal,
+                    monthTotal = stepsMonthTotal
+                )
 
                 if (stepsHistory.isNotEmpty()) {
                     ExpandableMetricCard(

@@ -142,7 +142,12 @@ internal fun ExpandableMetricCard(
 }
 
 @Composable
-internal fun StepsCard(todaySteps: Long?, stepsGoal: Long) {
+internal fun StepsCard(
+    todaySteps: Long?,
+    stepsGoal: Long,
+    weekTotal: Long? = null,
+    monthTotal: Long? = null,
+) {
     val steps = todaySteps ?: 0L
     val progress = (steps.toFloat() / stepsGoal).coerceIn(0f, 1f)
     val animatedProgress by animateFloatAsState(
@@ -157,10 +162,8 @@ internal fun StepsCard(todaySteps: Long?, stepsGoal: Long) {
         ),
         shape = RoundedCornerShape(16.dp)
     ) {
-        Row(
-            modifier = Modifier.padding(20.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier.size(100.dp)
@@ -218,18 +221,54 @@ internal fun StepsCard(todaySteps: Long?, stepsGoal: Long) {
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
                 Text(
-                    text = steps.toString(),
+                    text = formatThousands(steps),
                     style = MaterialTheme.typography.headlineLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
                 Text(
-                    text = "Goal: $stepsGoal",
+                    text = "Goal: ${formatThousands(stepsGoal)}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                 )
             }
         }
+
+        if (weekTotal != null || monthTotal != null) {
+            Spacer(modifier = Modifier.height(14.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                weekTotal?.let { PeriodPill(label = "This Week", value = formatCompact(it.toDouble())) }
+                monthTotal?.let { PeriodPill(label = "This Month", value = formatCompact(it.toDouble())) }
+            }
+        }
+        }
+    }
+}
+
+/** Small stat pill used under the steps ring: "This Week 24.3K". */
+@Composable
+private fun PeriodPill(label: String, value: String) {
+    Row(
+        modifier = Modifier
+            .background(
+                MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.08f),
+                RoundedCornerShape(50)
+            )
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.75f)
+        )
+        Spacer(modifier = Modifier.width(6.dp))
+        Text(
+            text = value,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onPrimaryContainer
+        )
     }
 }
 

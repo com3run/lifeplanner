@@ -66,6 +66,8 @@ fun LifeBalanceScreen(
     val healthPermissionState by healthViewModel.permissionState.collectAsState()
     val todaySteps by healthViewModel.todaySteps.collectAsState()
     val stepsHistory by healthViewModel.stepsHistory.collectAsState()
+    val stepsWeekTotal by healthViewModel.stepsWeekTotal.collectAsState()
+    val stepsMonthTotal by healthViewModel.stepsMonthTotal.collectAsState()
     val weightHistory by healthViewModel.weightHistory.collectAsState()
     val latestWeight by healthViewModel.latestWeight.collectAsState()
     val heartRateHistory by healthViewModel.heartRateHistory.collectAsState()
@@ -220,7 +222,9 @@ fun LifeBalanceScreen(
                             weightHistory = weightHistory,
                             latestWeight = latestWeight,
                             onRequestPermissions = requestPermissions,
-                            onAddWeight = { healthViewModel.showAddWeightDialog() }
+                            onAddWeight = { healthViewModel.showAddWeightDialog() },
+                            stepsWeekTotal = stepsWeekTotal,
+                            stepsMonthTotal = stepsMonthTotal
                         )
                     }
 
