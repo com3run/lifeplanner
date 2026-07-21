@@ -83,7 +83,8 @@ class CausalInsightEngine(
         val weekly = days
             .filter { it.habitsCompleted != null }
             .groupBy { it.date.toEpochDays() / 7 }
-            .toSortedMap()
+            .entries
+            .sortedBy { it.key }
             .map { (_, ds) -> ds.sumOf { it.habitsCompleted ?: 0 } }
         if (weekly.size < minSpiralWeeks) return emptyList()
 
