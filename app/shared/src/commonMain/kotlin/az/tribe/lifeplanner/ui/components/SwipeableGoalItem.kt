@@ -31,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -115,11 +116,15 @@ fun SwipeableGoalItem(
             enableDismissFromStartToEnd = !isCompleted,
             enableDismissFromEndToStart = true
         ) {
-            GoalItem(
-                goal = goal,
-                onClick = onClick,
-                scrollState = scrollState
-            )
+            // Completed goals recede: they sort to the bottom AND dim, so the active ones the user
+            // can still act on stay prominent. Kept visible (not hidden) so progress is still felt.
+            Box(modifier = Modifier.alpha(if (isCompleted) 0.5f else 1f)) {
+                GoalItem(
+                    goal = goal,
+                    onClick = onClick,
+                    scrollState = scrollState
+                )
+            }
         }
 
         // Local celebration overlay
