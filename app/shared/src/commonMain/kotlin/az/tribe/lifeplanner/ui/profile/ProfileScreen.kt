@@ -212,10 +212,6 @@ fun ProfileScreen(
                 )
             }
 
-            item { ProfileSectionHeader("Preview") }
-            item { ProfileMenuItem(icon = PhosphorIcons.Regular.User, title = "You (new design)", subtitle = "Preview the redesigned profile + dark-mode toggle", onClick = onNavigateToYouRedesign) }
-            item { ProfileMenuItem(icon = PhosphorIcons.Regular.Sparkle, title = "Onboarding (new design)", subtitle = "Preview the redesigned first-run flow", onClick = onNavigateToOnboardingRedesign) }
-
             item { ProfileSectionHeader("Settings") }
             item { ProfileMenuItem(icon = PhosphorIcons.Regular.Bell, title = "Reminders", subtitle = "Notification preferences", onClick = onNavigateToReminders) }
             item { ProfileMenuItem(icon = PhosphorIcons.Regular.CloudArrowUp, title = "Backup & Sync", subtitle = "Export and restore your data", onClick = onNavigateToBackup) }
