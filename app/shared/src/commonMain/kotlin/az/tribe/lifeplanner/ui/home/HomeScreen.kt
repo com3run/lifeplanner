@@ -39,6 +39,7 @@ import az.tribe.lifeplanner.domain.model.Goal
 import az.tribe.lifeplanner.domain.model.ObjectiveType
 import az.tribe.lifeplanner.ui.ability.AbilityViewModel
 import az.tribe.lifeplanner.ui.balance.DiscoveryGoal
+import az.tribe.lifeplanner.ui.calendar.CalendarUpcomingCard
 import az.tribe.lifeplanner.ui.balance.DiscoverySection
 import az.tribe.lifeplanner.ui.balance.LifeBalanceViewModel
 import az.tribe.lifeplanner.ui.balance.generateWeeklyInsight
@@ -401,6 +402,13 @@ fun HomeScreen(
                             onHabitClick = onNavigateToHabitDetail
                         )
                     }
+                }
+            }
+
+            // ── 5b. Upcoming calendar events (read-only device calendar) ────────
+            item(key = "calendar_upcoming") {
+                Box(Modifier.padding(horizontal = LifePlannerDesign.Padding.screenHorizontal)) {
+                    CalendarUpcomingCard()
                 }
             }
 
