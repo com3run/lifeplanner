@@ -73,6 +73,15 @@ class AiProxyServiceImpl(
             if (response.status.value == 401) {
                 throw AiAuthRequiredException("AI proxy auth error 401: $errorBody")
             }
+            // The edge function returns {"error": "<already-sanitized message>"} on 5xx. Surface
+            // it verbatim so the user sees "rate-limited" / "authentication failed" / "timed out"
+            // instead of a generic connection error, without leaking quota or key details.
+            val serverMessage = runCatching {
+                Json.parseToJsonElement(errorBody).jsonObject["error"]?.jsonPrimitive?.content
+            }.getOrNull()?.takeIf { it.isNotBlank() }
+            if (serverMessage != null) {
+                throw AiProviderException(serverMessage)
+            }
             throw IllegalStateException("AI proxy error ${response.status.value}: $errorBody")
         }
 

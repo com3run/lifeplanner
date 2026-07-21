@@ -1,5 +1,6 @@
 package az.tribe.lifeplanner.data.repository
 
+import az.tribe.lifeplanner.data.network.AiProviderException
 import az.tribe.lifeplanner.data.network.AiProxyService
 import az.tribe.lifeplanner.domain.model.ChatMessage
 import az.tribe.lifeplanner.domain.model.CoachGroup
@@ -17,6 +18,14 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
+
+/**
+ * Prefer the AI proxy's already-sanitized message (rate-limited / auth failed / timed out) over a
+ * blanket "having trouble connecting", so the user sees the real reason. Falls back to [fallback]
+ * for genuine connectivity or unexpected failures.
+ */
+private fun aiFailureText(e: Throwable, fallback: String): String =
+    (e as? AiProviderException)?.userMessage ?: fallback
 
 // ============================================================================
 // AI CALL HELPERS (extension functions on ChatRepositoryImpl)
@@ -228,7 +237,7 @@ IMPORTANT: If user explained what they want to achieve, include the goal/habit i
     } catch (e: Exception) {
         Logger.e("ChatRepositoryImpl") { "Coach chat request failed: ${e.message}\n${e.stackTraceToString()}" }
         CoachResponse(
-            messages = listOf("I'm having trouble connecting right now. Could you try again in a moment?"),
+            messages = listOf(aiFailureText(e, "I'm having trouble connecting right now. Could you try again in a moment?")),
             suggestions = emptyList()
         )
     }
@@ -348,7 +357,7 @@ internal suspend fun ChatRepositoryImpl.makeGeminiRequest(prompt: String, coachN
     } catch (e: Exception) {
         Logger.e("ChatRepositoryImpl") { "Custom coach chat request failed: ${e.message}\n${e.stackTraceToString()}" }
         CoachResponse(
-            messages = listOf("I'm having trouble connecting right now. Could you try again?"),
+            messages = listOf(aiFailureText(e, "I'm having trouble connecting right now. Could you try again?")),
             suggestions = emptyList()
         )
     }
@@ -383,7 +392,7 @@ internal suspend fun ChatRepositoryImpl.makeGeminiCouncilRequest(prompt: String,
     } catch (e: Exception) {
         Logger.e("ChatRepositoryImpl") { "Council chat request failed: ${e.message}\n${e.stackTraceToString()}" }
         CoachResponse(
-            messages = listOf("We're having trouble connecting right now. Please try again."),
+            messages = listOf(aiFailureText(e, "We're having trouble connecting right now. Please try again.")),
             suggestions = emptyList()
         )
     }
@@ -541,7 +550,7 @@ If user explained their goal clearly, one coach should propose a goal/habit sugg
     } catch (e: Exception) {
         Logger.e("ChatRepositoryImpl") { "Council meeting request failed: ${e.message}\n${e.stackTraceToString()}" }
         CoachResponse(
-            messages = listOf("Luna: The council is having a moment. Let me help you directly!"),
+            messages = listOf(aiFailureText(e, "Luna: The council is having a moment. Let me help you directly!")),
             suggestions = emptyList()
         )
     }

@@ -16,6 +16,15 @@ package az.tribe.lifeplanner.data.network
 class AiAuthRequiredException(message: String) : Exception(message)
 
 /**
+ * Raised when the `ai-proxy` edge function returns an error it has already sanitized for display
+ * (`index.ts`: "AI provider is rate-limited...", "AI provider authentication failed...", "AI
+ * provider timed out...", or a generic fallback). The function deliberately strips quota/key
+ * details, so [userMessage] is safe to show the user verbatim and is far more diagnostic than a
+ * blanket "having trouble connecting" — it names rate-limit vs auth vs timeout.
+ */
+class AiProviderException(val userMessage: String) : Exception(userMessage)
+
+/**
  * Map a failure from an AI call to something worth showing a user.
  *
  * [action] names what was being attempted, lowercase and without punctuation, for example
