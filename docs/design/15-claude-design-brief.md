@@ -26,58 +26,53 @@ Three things follow from that, and they should be visible in any screen you desi
   beats a false-precise number.
 - **A missed day is "life happens", never guilt.** No streak panic, no red shaming.
 
-## 2. Identity: Warm Ink
+## 2. Identity: v2 (indigo)
 
-Warm paper and ink neutrals with a brass primary. Reads calm, premium, and grown-up. The reference
-points are Oura (trustworthy data, restraint) and Finch (warmth), explicitly **without** Finch's
-cuteness: this is a serious tool for adults.
-
-Avoid the generic SaaS indigo/violet look. That was v2 and it is what we moved away from.
+A clean, modern indigo/violet system on soft near-white surfaces. Reads friendly, bright, and
+capable. Primary is a vivid indigo; a violet secondary and coral accent add warmth. This is the
+palette the app currently ships (`ACTIVE_VISUAL_IDENTITY = CLASSIC`), so designs made from it drop
+straight onto the real screens.
 
 ### Light
 
 | Role | Hex | Use |
 |---|---|---|
-| `background` | `#FAF7F2` | app canvas (warm paper, never pure white) |
+| `background` | `#F8F9FC` | app canvas (soft near-white) |
 | `surface` | `#FFFFFF` | cards, sheets |
-| `surfaceVariant` | `#F1EBE1` | chips, subtle fills |
-| `primary` | `#A65A2E` | primary actions, brand |
-| `primaryContainer` | `#F7E7D8` | tonal primary surfaces |
-| `secondary` | `#3F5A50` | secondary accents (muted teal-green) |
-| `accent` | `#C98A3F` | warmth, highlights |
-| `textPrimary` | `#211C16` | headings, body (warm ink, never pure black) |
-| `textSecondary` | `#6A6055` | supporting text |
-| `textTertiary` | `#988D80` | hints, captions |
-| `success` | `#4A7C52` | on track |
-| `warning` | `#B5802C` | caution |
-| `error` | `#A9453B` | errors, never "you failed" |
-| `divider` | `#EAE2D6` | separators |
+| `surfaceVariant` | `#F0F2FA` | chips, subtle fills |
+| `primary` | `#4A6FFF` | primary actions, brand (indigo) |
+| `primaryContainer` | `#ECF0FF` | tonal primary surfaces |
+| `secondary` | `#7A5AF8` | secondary accents (violet) |
+| `accent` | `#F86E5A` | warmth, highlights (coral) |
+| `textPrimary` | `#2C3345` | headings, body |
+| `textSecondary` | `#6E7A94` | supporting text |
+| `textTertiary` | `#9AA6BC` | hints, captions |
+| `success` | `#28C76F` | on track (green) |
+| `warning` | `#FF9F43` | caution (amber) |
+| `error` | `#EA5455` | errors, never "you failed" |
+| `divider` | `#E8ECF4` | separators |
 
 ### Dark
 
 | Role | Hex |
 |---|---|
-| `background` | `#16130F` |
-| `surface` | `#1E1A15` |
-| `surfaceVariant` | `#2A251E` |
-| `primary` | `#D98B57` |
-| `secondary` | `#7FA394` |
-| `accent` | `#E0A85F` |
-| `textPrimary` | `#F2EBE1` |
-| `textSecondary` | `#B5AA9B` |
-| `success` / `warning` / `error` | `#79B183` / `#D8A44E` / `#D9776B` |
+| `background` | `#121826` |
+| `surface` | `#1B2437` |
+| `surfaceVariant` | `#252E42` |
+| `primary` | `#6A87FF` |
+| `secondary` | `#9578FF` |
+| `accent` | `#FF8A7A` |
+| `textPrimary` | `#F5F6FA` |
+| `textSecondary` | `#B0B7C9` |
+| `success` / `warning` / `error` | `#3DD98B` / `#FFBF75` / `#FF7273` |
 
-### Hero gradient, by time of day
+### Hero gradient
 
-The one surface that shifts with the hour. Everything else stays fixed so contrast never drifts.
-Use it behind the page hero only, always with white text.
+A single fixed indigo→violet gradient behind the page hero. Always white text on it.
 
-| Phase | Hours | From → To |
-|---|---|---|
-| Dawn | 05–08 | `#8F4A32` → `#C4794A` |
-| Day | 09–16 | `#8A4A25` → `#BC7F37` |
-| Dusk | 17–21 | `#6B3524` → `#B0603A` |
-| Night | 22–04 | `#241A14` → `#5E3320` |
+| From → To |
+|---|
+| `#667EEA` → `#764BA2` |
 
 ## 3. Type
 
@@ -137,13 +132,12 @@ new goal on Goals, hidden on You).
 ## 7. Rules
 
 **Do**
-- Lead with the gradient hero; keep the rest calm and flat.
+- Lead with the indigo→violet gradient hero; keep the rest calm and flat.
 - Show the reason behind a number ("Based on 14 days, medium confidence").
-- Use warm neutrals; let brass be the only strong hue on the page.
+- Let indigo `primary` be the main hue; use the violet secondary and coral accent sparingly.
 - Write plainly and kindly. Short sentences.
 
 **Do not**
-- Use indigo/violet SaaS accents, pure white backgrounds, or pure black text.
 - Add streak-anxiety mechanics, leaderboards, guilt framing, or manufactured urgency.
 - Stack heavy drop shadows or use more than one strong accent per screen.
 - Invent a number the app could not actually know.

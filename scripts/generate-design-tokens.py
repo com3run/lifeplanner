@@ -23,13 +23,25 @@ import sys
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
 SOURCE = REPO / "app/shared/src/commonMain/kotlin/az/tribe/lifeplanner/ui/theme/VisualIdentity.kt"
+# CLASSIC (v2) colors live in ModernColors, not VisualIdentity's Palette blocks.
+CLASSIC_SOURCE = REPO / "app/shared/src/commonMain/kotlin/az/tribe/lifeplanner/ui/theme/LifePlannerColors.kt"
 OUT = REPO.parent / "lifeplanner-assets/design/tokens.json"
 
 # Palette object names in VisualIdentity.kt, per identity.
 IDENTITIES = {
     "WARM_INK": ("WarmInkLight", "WarmInkDark"),
     "SAGE": ("SageLight", "SageDark"),
+    "CLASSIC": None,  # special-cased: reads ModernColors (the frozen v2 palette)
 }
+
+# The roles the brief/tokens care about, in the order they appear in ModernColors.
+CLASSIC_ROLES = [
+    "primary", "primaryContainer", "secondary", "accent", "success", "warning", "error",
+    "background", "surface", "surfaceVariant",
+    "textPrimary", "textSecondary", "textTertiary", "textDisabled", "divider",
+]
+# CLASSIC's hero gradient is LifePlannerGradients.primary (static, no time-of-day shift).
+CLASSIC_HERO = {"day": {"from": "#667EEA", "to": "#764BA2"}}
 
 
 def hexed(argb: str) -> str:
@@ -60,19 +72,41 @@ def read_hero(src: str, identity: str) -> dict:
     return {p.lower(): {"from": hexed(a), "to": hexed(b)} for p, a, b in stops}
 
 
+def read_classic() -> tuple:
+    """Parse ModernColors (v2/CLASSIC): top-level object = light, nested `object Dark` = dark."""
+    src = CLASSIC_SOURCE.read_text()
+    dark_start = src.index("object Dark")
+    light_src, dark_src = src[:dark_start], src[dark_start:]
+
+    def grab(text):
+        found = dict(re.findall(r"val (\w+)\s*=\s*Color\(0x([0-9A-Fa-f]{8})\)", text))
+        return {role: found[role] for role in CLASSIC_ROLES if role in found}
+
+    light, dark = grab(light_src), grab(dark_src)
+    missing = [r for r in CLASSIC_ROLES if r not in light or r not in dark]
+    if missing:
+        sys.exit(f"error: CLASSIC roles missing from ModernColors: {missing}")
+    return light, dark
+
+
 def build(identity: str) -> dict:
-    src = SOURCE.read_text()
-    light_name, dark_name = IDENTITIES[identity]
-    light, dark = read_palette(src, light_name), read_palette(src, dark_name)
-    hero = read_hero(src, identity)
+    if identity == "CLASSIC":
+        light, dark = read_classic()
+        hero = CLASSIC_HERO
+        source_note = "the frozen v2 palette in LifePlannerColors.kt (ModernColors)"
+    else:
+        src = SOURCE.read_text()
+        light_name, dark_name = IDENTITIES[identity]
+        light, dark = read_palette(src, light_name), read_palette(src, dark_name)
+        hero = read_hero(src, identity)
+        source_note = "VisualIdentity.kt"
 
     def colors(p):
         return {k: {"value": hexed(v), "type": "color"} for k, v in p.items()}
 
     return {
         "$description": (
-            f"LifePlanner v3 '{identity}' identity. GENERATED from "
-            "app/shared/src/commonMain/kotlin/az/tribe/lifeplanner/ui/theme/VisualIdentity.kt "
+            f"LifePlanner '{identity}' identity. GENERATED from {source_note} "
             "by scripts/generate-design-tokens.py. Do not hand-edit; edit the Kotlin and re-run."
         ),
         "global": {
