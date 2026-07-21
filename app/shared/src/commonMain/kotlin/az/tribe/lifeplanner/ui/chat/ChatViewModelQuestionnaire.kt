@@ -69,7 +69,10 @@ fun ChatViewModel.submitGoalQuestionnaire() {
         goalQuestionnaire = q.copy(submitted = true),
         questionnairedSuggestionIds = _uiState.value.questionnairedSuggestionIds + q.forSuggestionId
     )
-    sendMessage(message)
+    // Send the formatted answers to the coach in the background: it must not appear as a raw
+    // "Goal clarification answers: ..." user bubble. The completed questionnaire card already shows
+    // the questions and the user's answers; the coach just acts on them.
+    sendHiddenFollowUp(message)
 }
 
 // Returns (questions, hadError). Always AI-generated, no static fallback.
