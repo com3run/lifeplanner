@@ -6,6 +6,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -287,6 +288,9 @@ fun RecommendationCard(rec: BehaviorRecommendation, index: Int, onClick: (String
                             color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier
                                 .clip(RoundedCornerShape(6.dp))
+                                // The button was styled but never wired: onClick was passed in and
+                                // never called, so tapping "Open →" did nothing.
+                                .clickable { onClick(rec.actionRoute) }
                                 .background(MaterialTheme.colorScheme.primaryContainer.copy(0.5f))
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
                         )
