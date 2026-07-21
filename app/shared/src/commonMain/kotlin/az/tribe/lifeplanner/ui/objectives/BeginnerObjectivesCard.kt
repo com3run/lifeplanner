@@ -186,27 +186,10 @@ fun BeginnerObjectivesCard(
                 }
             }
 
-            // Dismiss button, visible only when all objectives are complete
-            if (allComplete) {
-                Spacer(Modifier.height(8.dp))
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(onClick = onDismiss)
-                        .background(Color(0xFF4CAF50).copy(alpha = 0.08f))
-                        .padding(12.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "Dismiss",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF4CAF50)
-                    )
-                }
-            } else {
-                Spacer(Modifier.height(8.dp))
-            }
+            // No manual Dismiss. Completing all objectives is a one-time moment: the card shows
+            // its "All done" state this once, and the ViewModel persists completion so it does
+            // not return on the next visit. Nothing for the user to tap away.
+            Spacer(Modifier.height(8.dp))
         }
     }
 }

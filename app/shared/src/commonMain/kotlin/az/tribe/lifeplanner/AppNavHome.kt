@@ -67,6 +67,9 @@ internal fun NavGraphBuilder.appNavHome(
             onGoalClick = { goal ->
                 navController.navigate("goal_detail/${goal.id}")
             },
+            onNavigateToHabitDetail = { habitId ->
+                navController.navigate("habit_detail_redesign/$habitId") { launchSingleTop = true }
+            },
             onAddGoalClick = {
                 navController.navigate(Screen.GoalWizard.route)
             },

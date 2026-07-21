@@ -114,6 +114,7 @@ fun HomeScreen(
     onNavigateToTemplates: () -> Unit = {},
     onNavigateToAbilities: () -> Unit = {},
     onNavigateToAbilityDetail: (String) -> Unit = {},
+    onNavigateToHabitDetail: (String) -> Unit = {},
     onContinueChat: (sessionId: String) -> Unit = {},
     onStartFocusForMilestone: (goalId: String, milestoneId: String) -> Unit = { _, _ -> },
     onNavigateToJournalEntry: (entryId: String) -> Unit = {},
@@ -397,7 +398,7 @@ fun HomeScreen(
                         NextActionCard(
                             nextAction = displayedNextAction,
                             onGoalClick = onGoalClick,
-                            onHabitCheckIn = { habitId -> habitViewModel.toggleCheckIn(habitId) }
+                            onHabitClick = onNavigateToHabitDetail
                         )
                     }
                 }
