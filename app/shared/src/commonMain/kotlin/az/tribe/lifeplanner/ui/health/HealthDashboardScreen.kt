@@ -149,10 +149,12 @@ fun HealthDashboardScreen(
                     contentAlignment = Alignment.Center
                 ) { HealthNotAvailableCard() }
 
-                HealthScreenState.NEEDS_PERMISSION -> Box(
-                    modifier = Modifier.fillMaxSize().padding(24.dp),
-                    contentAlignment = Alignment.Center
-                ) { PermissionDeniedCard(onRequestPermissions = requestPermissions) }
+                HealthScreenState.NEEDS_PERMISSION -> Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(16.dp)
+                ) { HealthConnectPreview(onRequestPermissions = requestPermissions) }
 
                 HealthScreenState.CONNECTED -> Column(
                     modifier = Modifier

@@ -56,8 +56,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import az.tribe.lifeplanner.domain.model.HealthMetric
-import az.tribe.lifeplanner.ui.components.connect.ConnectStoryContent
-import az.tribe.lifeplanner.ui.components.connect.FeatureConnectStory
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Bold
 import com.adamglin.phosphoricons.bold.Barbell
@@ -346,102 +344,6 @@ internal fun HealthNotAvailableCard() {
             )
         }
     }
-}
-
-/**
- * A looping "living" illustration for the health permission prompt: concentric radar rings
- * ripple outward from a gently breathing heartbeat icon. Pure Compose (no Lottie / no assets),
- * so it renders identically on Android and iOS with no extra dependency.
- */
-@Composable
-internal fun AnimatedHealthPulse(
-    icon: ImageVector,
-    tint: Color,
-    modifier: Modifier = Modifier,
-) {
-    val transition = rememberInfiniteTransition(label = "health-pulse")
-    val period = 2200
-    // Three ripple rings, evenly staggered across the period, each expanding and fading.
-    val ring1 by transition.animateFloat(
-        initialValue = 0f, targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(period, easing = LinearEasing), RepeatMode.Restart),
-        label = "ring1"
-    )
-    val ring2 by transition.animateFloat(
-        initialValue = 0f, targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            tween(period, delayMillis = period / 3, easing = LinearEasing), RepeatMode.Restart
-        ),
-        label = "ring2"
-    )
-    val ring3 by transition.animateFloat(
-        initialValue = 0f, targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            tween(period, delayMillis = period * 2 / 3, easing = LinearEasing), RepeatMode.Restart
-        ),
-        label = "ring3"
-    )
-    val breathe by transition.animateFloat(
-        initialValue = 1f, targetValue = 1.08f,
-        animationSpec = infiniteRepeatable(tween(1100, easing = FastOutSlowInEasing), RepeatMode.Reverse),
-        label = "breathe"
-    )
-
-    Box(modifier = modifier.size(120.dp), contentAlignment = Alignment.Center) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            val maxRadius = size.minDimension / 2f
-            listOf(ring1, ring2, ring3).forEach { p ->
-                drawCircle(
-                    color = tint.copy(alpha = (1f - p) * 0.35f),
-                    radius = maxRadius * (0.30f + 0.70f * p),
-                    style = Stroke(width = 2.dp.toPx())
-                )
-            }
-            // Soft filled core the icon sits on.
-            drawCircle(color = tint.copy(alpha = 0.12f), radius = maxRadius * 0.32f)
-        }
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = tint,
-            modifier = Modifier
-                .size(40.dp)
-                .graphicsLayer { scaleX = breathe; scaleY = breathe }
-        )
-    }
-}
-
-/** The "connect Health" story content, shared by the dedicated screen and the embedded section. */
-private val healthConnectStory = ConnectStoryContent(
-    eyebrow = "Health",
-    title = "Connect your health data",
-    story = "LifePlanner reads your steps, sleep, heart rate and weight from Health Connect so your " +
-        "day fills in on its own. Your data stays on your device until you choose to sync it.",
-    benefits = listOf(
-        "Steps count toward your daily goal automatically",
-        "See sleep and heart-rate trends over time",
-        "Health progress feeds your goals and streaks",
-    ),
-    ctaLabel = "Grant Access",
-    footnote = "On Android, make sure Health Connect is installed from the Play Store.",
-)
-
-@Composable
-internal fun PermissionDeniedCard(
-    onRequestPermissions: () -> Unit,
-    connecting: Boolean = false,
-) {
-    FeatureConnectStory(
-        content = healthConnectStory,
-        onConnect = onRequestPermissions,
-        connecting = connecting,
-        hero = {
-            AnimatedHealthPulse(
-                icon = PhosphorIcons.Bold.Heartbeat,
-                tint = MaterialTheme.colorScheme.primary
-            )
-        }
-    )
 }
 
 @Composable

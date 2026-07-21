@@ -34,7 +34,11 @@ fun HealthSection(
     when {
         permissionState == HealthPermissionState.NOT_AVAILABLE -> {}
         permissionState == HealthPermissionState.DENIED -> {
-            PermissionDeniedCard(onRequestPermissions = onRequestPermissions)
+            HealthConnectPreview(
+                onRequestPermissions = onRequestPermissions,
+                modifier = modifier,
+                compact = true
+            )
         }
         else -> {
             Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
