@@ -453,23 +453,19 @@ fun App(
             }
         }
 
-        // D2: the third tab is the grouped You screen. Keep the legacy Profile route in
-        // mainRoutes so reaching it any other way still shows the bottom nav.
-        val youRoute = Screen.YouRedesign.route
-
+        // 2026-07-21: v2 nav. Three tabs: legacy Home, the Journal hub (Goals/Habits/Journal),
+        // legacy Profile.
         // Routes where bottom navigation should be visible
         val mainRoutes = buildList {
             add(homeRoute)
-            add(Screen.GoalsRedesign.route)
-            add(youRoute)
+            add(Screen.Journal.route)
             add(Screen.Profile.route)
         }
 
         // Tab index for directional slide transitions between bottom nav tabs
         val tabIndex = mapOf(
             homeRoute to 0,
-            Screen.GoalsRedesign.route to 1,
-            youRoute to 2,
+            Screen.Journal.route to 1,
             Screen.Profile.route to 2
         )
         // Slide offset = 25% of width for a subtle directional hint
@@ -477,23 +473,14 @@ fun App(
 
         val showBottomNav = currentRoute in mainRoutes
 
-        // Contextual circle button action, changes per screen and hub tab
-        // D2 §7: one context-aware "+" whose default action matches the tab.
-        // Today -> capture, Goals -> new goal, You -> hidden (no capture verb there).
+        // Contextual circle button action, changes per screen and hub tab (v2 behavior).
         val navContextAction: NavContextAction? = when (currentRoute) {
             homeRoute -> NavContextAction(
-                icon = PhosphorIcons.Regular.PencilSimple,
-                contentDescription = "Capture"
+                icon = PhosphorIcons.Regular.MagnifyingGlass,
+                contentDescription = "Search"
             ) {
-                navController.navigate("journal_wizard") { launchSingleTop = true }
+                navController.navigate(Screen.Search.route) { launchSingleTop = true }
             }
-            Screen.GoalsRedesign.route -> NavContextAction(
-                icon = PhosphorIcons.Regular.Flag,
-                contentDescription = "Add Goal"
-            ) {
-                navController.navigate(Screen.GoalWizard.route) { launchSingleTop = true }
-            }
-            youRoute -> null
             Screen.Journal.route -> when (hubSelectedTab) {
                 1 -> NavContextAction(
                     icon = PhosphorIcons.Regular.Flag,

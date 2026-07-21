@@ -51,10 +51,13 @@ sealed class BottomNavItem(
     )
 
     data object Hub : BottomNavItem(
-        route = Screen.GoalsRedesign.route,
-        title = "Goals",
-        selectedIcon = PhosphorIcons.Fill.Flag,
-        unselectedIcon = PhosphorIcons.Regular.Flag
+        // 2026-07-21: reverted to the v2 middle tab, the Journal hub whose sub-tabs are
+        // Goals / Habits / Journal / Planner. v3 had pointed this at the standalone
+        // GoalsRedesign screen.
+        route = Screen.Journal.route,
+        title = "Journal",
+        selectedIcon = PhosphorIcons.Fill.SquaresFour,
+        unselectedIcon = PhosphorIcons.Regular.SquaresFour
     )
 
     data object Abilities : BottomNavItem(
