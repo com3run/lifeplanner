@@ -12,8 +12,6 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -91,13 +89,10 @@ fun CelebrationOverlay(
         enter = fadeIn(tween(200)),
         exit = fadeOut(tween(300))
     ) {
+        // Not clickable itself: taps outside the card fall through to the screen beneath,
+        // so the celebration never blocks controls (e.g. the focus mood picker).
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .clickable(
-                    indication = null,
-                    interactionSource = remember { MutableInteractionSource() }
-                ) { onDismiss() },
+            modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.BottomCenter
         ) {
             // Confetti particles on top layer
@@ -153,6 +148,7 @@ fun CelebrationOverlay(
                 }
 
                 Surface(
+                    onClick = onDismiss,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 32.dp),

@@ -19,6 +19,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -57,10 +60,13 @@ fun FocusScreen(
         }
     }
 
+    var showCelebration by remember { mutableStateOf(false) }
+
     LaunchedEffect(timerState) {
         if (timerState == TimerState.COMPLETED) {
             hapticManager.celebration()
             soundPlayer.play(CelebrationType.GOAL_COMPLETED)
+            showCelebration = true
         }
     }
 
@@ -136,8 +142,8 @@ fun FocusScreen(
                     CelebrationOverlay(
                         type = CelebrationType.GOAL_COMPLETED,
                         message = "Focus Complete!",
-                        isVisible = true,
-                        onDismiss = { focusViewModel.resetToSetup() }
+                        isVisible = showCelebration,
+                        onDismiss = { showCelebration = false }
                     )
                 }
             }
