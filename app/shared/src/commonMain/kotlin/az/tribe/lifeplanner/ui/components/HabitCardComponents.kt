@@ -20,6 +20,7 @@ import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.ArrowCounterClockwise
 import com.adamglin.phosphoricons.regular.Check
+import com.adamglin.phosphoricons.regular.ShieldCheck
 import com.adamglin.phosphoricons.regular.Trash
 import com.adamglin.phosphoricons.regular.CheckCircle
 import com.adamglin.phosphoricons.regular.PencilSimple
@@ -397,6 +398,31 @@ internal fun WeeklyDots(
                 }
             }
         }
+    }
+}
+
+/** QUIT habits count days resisted, shown as a green "N days clean" pill. */
+@Composable
+internal fun DaysCleanPill(days: Int) {
+    val green = Color(0xFF28C76F)
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = Modifier
+            .background(green.copy(alpha = 0.12f), RoundedCornerShape(50))
+            .padding(horizontal = 8.dp, vertical = 3.dp)
+    ) {
+        Icon(
+            imageVector = PhosphorIcons.Regular.ShieldCheck,
+            contentDescription = null,
+            tint = green,
+            modifier = Modifier.size(12.dp)
+        )
+        Text(
+            text = if (days == 1) "1 day clean" else "$days days clean",
+            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+            color = green
+        )
     }
 }
 

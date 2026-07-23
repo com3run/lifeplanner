@@ -37,6 +37,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import az.tribe.lifeplanner.domain.enum.GoalCategory
+import az.tribe.lifeplanner.domain.enum.HabitType
 import az.tribe.lifeplanner.ui.habit.HabitWithStatus
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
 import kotlin.math.absoluteValue
@@ -378,7 +379,11 @@ fun HabitCard(
                     HabitTypePill(type = habit.type)
 
                     if (habit.currentStreak > 0) {
-                        StreakBadge(streak = habit.currentStreak)
+                        if (habit.type == HabitType.QUIT) {
+                            DaysCleanPill(days = habit.currentStreak)
+                        } else {
+                            StreakBadge(streak = habit.currentStreak)
+                        }
                     }
 
                     FrequencyChip(frequency = habit.frequency)

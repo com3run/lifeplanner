@@ -56,6 +56,7 @@ fun JournalScreen(
     onGoalClick: (Goal) -> Unit = {},
     onAddGoalClick: () -> Unit = {},
     onAddHabitClick: () -> Unit = {},
+    onHabitClick: (String) -> Unit = {},
     onNavigateToFocus: () -> Unit = {},
     onAbilityClick: (String) -> Unit = {},
     onCreateAbility: () -> Unit = {},
@@ -283,7 +284,11 @@ fun JournalScreen(
                                 onCheckIn = { habitViewModel.toggleCheckIn(habitWithStatus.habit.id) },
                                 onDelete = { habitViewModel.deleteHabit(habitWithStatus.habit.id) },
                                 onEdit = { habitToEdit = habitWithStatus.habit },
+                                onCardClick = { onHabitClick(habitWithStatus.habit.id) },
                                 onFocusClick = onNavigateToFocus,
+                                onIncrement = if (habitWithStatus.habit.targetCount > 1) {
+                                    { habitViewModel.incrementCheckIn(habitWithStatus.habit.id) }
+                                } else null,
                                 modifier = Modifier.padding(horizontal = 16.dp).animateItem()
                             )
                         }

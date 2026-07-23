@@ -95,6 +95,11 @@ internal fun NavGraphBuilder.appNavJournal(
                     launchSingleTop = true
                 }
             },
+            onHabitClick = { habitId ->
+                navController.navigate("habit_detail_redesign/$habitId") {
+                    launchSingleTop = true
+                }
+            },
             onNavigateToFocus = {
                 navController.navigate("focus_setup") {
                     launchSingleTop = true

@@ -49,6 +49,7 @@ fun AddHabitScreen(
     var showTemplates by remember { mutableStateOf(false) }
     var healthMetric by remember { mutableStateOf<HealthMetricType?>(null) }
     var healthTargetText by remember { mutableStateOf("") }
+    var showTitleError by remember { mutableStateOf(false) }
     val timePickerState = rememberTimePickerState(initialHour = 8, initialMinute = 0, is24Hour = false)
     var selectedTemplateCategory by remember { mutableStateOf<GoalCategory?>(null) }
 
@@ -248,6 +249,9 @@ fun AddHabitScreen(
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = {
+                    if (!isFormValid) {
+                        showTitleError = true
+                    }
                     if (isFormValid) {
                         viewModel.createHabit(
                             title = title.trim(),
@@ -292,10 +296,17 @@ fun AddHabitScreen(
             item {
                 OutlinedTextField(
                     value = title,
-                    onValueChange = { title = it },
+                    onValueChange = {
+                        title = it
+                        if (it.isNotBlank()) showTitleError = false
+                    },
                     label = { Text("Habit name") },
                     placeholder = { Text("e.g., Morning meditation") },
                     singleLine = true,
+                    isError = showTitleError,
+                    supportingText = if (showTitleError) {
+                        { Text("Give your habit a name first") }
+                    } else null,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp)
                 )
