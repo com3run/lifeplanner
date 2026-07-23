@@ -110,6 +110,7 @@ import az.tribe.lifeplanner.usecases.journal.UpdateJournalEntryUseCase
 import az.tribe.lifeplanner.usecases.ability.AwardAbilityXpUseCase
 import az.tribe.lifeplanner.usecases.health.AutoCompleteHealthHabitsUseCase
 import az.tribe.lifeplanner.usecases.health.SyncHealthDataUseCase
+import az.tribe.lifeplanner.usecases.habit.BackfillHabitTargetsUseCase
 import az.tribe.lifeplanner.usecases.habit.CheckInHabitUseCase
 import az.tribe.lifeplanner.usecases.habit.CreateHabitUseCase
 import az.tribe.lifeplanner.usecases.habit.DeleteHabitUseCase
@@ -359,6 +360,7 @@ val appModule = module {
     // Habit Use Cases
     factory { GetAllHabitsUseCase(get()) }
     factory { CreateHabitUseCase(get()) }
+    factory { BackfillHabitTargetsUseCase(get(), get()) }
     factory { UpdateHabitUseCase(get()) }
     factory { DeleteHabitUseCase(get()) }
     factory { CheckInHabitUseCase(get()) }

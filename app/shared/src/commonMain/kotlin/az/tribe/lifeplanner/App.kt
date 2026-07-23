@@ -136,6 +136,12 @@ fun App(
             connectivityObserver.observe().collect { /* keeps StateFlow primed */ }
         }
 
+        // One-time upgrade of pre-track-mode habits ("Drink 8 glasses" -> count habit).
+        val backfillHabitTargets: az.tribe.lifeplanner.usecases.habit.BackfillHabitTargetsUseCase = koinInject()
+        LaunchedEffect(Unit) {
+            runCatching { backfillHabitTargets() }
+        }
+
         val builtinCoachFetcher: az.tribe.lifeplanner.data.network.BuiltinCoachFetcher = koinInject()
         val personaApiFetcher: az.tribe.lifeplanner.data.network.PersonaApiFetcher = koinInject()
         val systemPromptFetcher: az.tribe.lifeplanner.data.network.SystemPromptFetcher = koinInject()

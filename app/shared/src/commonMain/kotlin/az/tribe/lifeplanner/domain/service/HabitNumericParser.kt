@@ -1,4 +1,4 @@
-package az.tribe.lifeplanner.ui.habit
+package az.tribe.lifeplanner.domain.service
 
 /**
  * Parses numeric targets from habit title/description strings.

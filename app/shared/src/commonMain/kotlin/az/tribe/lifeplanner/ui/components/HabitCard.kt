@@ -390,10 +390,19 @@ fun HabitCard(
                 }
             }
 
-            // Count progress bar for count-based habits
+            // Count progress for count-based habits: plain words plus a bar,
+            // "3 of 8 glasses today", not an abstract percentage.
             if (isCountBased && !isCompletedToday && habit.targetCount > 0) {
                 val progress = (todayCount.toFloat() / habit.targetCount).coerceIn(0f, 1f)
+                val unitLabel = habit.unit ?: "times"
+                val remaining = (habit.targetCount - todayCount).coerceAtLeast(0)
                 Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = "$todayCount of ${habit.targetCount} $unitLabel today, $remaining to go",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(4.dp))
                 LinearProgressIndicator(
                     progress = { progress },
                     modifier = Modifier
