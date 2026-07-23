@@ -77,6 +77,7 @@ fun ProfileScreen(
     onNavigateToDecisionReview: () -> Unit = {},
     onNavigateToYourWiring: () -> Unit = {},
     onNavigateToAICoach: () -> Unit,
+    onContinueCoachChat: (String) -> Unit = {},
     onNavigateToSignIn: () -> Unit = {},
     onNavigateToFeedback: () -> Unit = {},
     onResetOnboarding: () -> Unit = {}
@@ -176,7 +177,11 @@ fun ProfileScreen(
                     session = recentSession,
                     coach = recentCoach,
                     coachUnlocked = true,
-                    onClick = onNavigateToAICoach,
+                    // "Continue with X" resumes that chat; the coach menu is only for starting fresh.
+                    onClick = {
+                        val coachId = if (recentSession != null) recentCoach?.id else null
+                        if (coachId != null) onContinueCoachChat(coachId) else onNavigateToAICoach()
+                    },
                     modifier = Modifier.fillMaxWidth()
                 )
             }

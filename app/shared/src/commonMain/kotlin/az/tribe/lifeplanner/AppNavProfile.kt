@@ -140,6 +140,11 @@ internal fun NavGraphBuilder.appNavProfile(
                     launchSingleTop = true
                 }
             },
+            onContinueCoachChat = { coachId ->
+                navController.navigate("ai_chat/$coachId") {
+                    launchSingleTop = true
+                }
+            },
             onNavigateToSignIn = {
                 navController.navigate("sign_in") {
                     launchSingleTop = true
