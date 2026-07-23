@@ -40,6 +40,9 @@ import az.tribe.lifeplanner.ui.components.IconChip
 import az.tribe.lifeplanner.ui.components.ProgressRing
 import az.tribe.lifeplanner.ui.components.StateView
 import az.tribe.lifeplanner.ui.goal.GoalJourneyCard
+import az.tribe.lifeplanner.ui.intro.FeatureIntroCatalog
+import az.tribe.lifeplanner.ui.intro.FeatureIntroHost
+import az.tribe.lifeplanner.ui.intro.rememberFeatureIntroGate
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
 import az.tribe.lifeplanner.ui.theme.bouncyClickable
 import az.tribe.lifeplanner.ui.theme.gradient
@@ -73,6 +76,8 @@ fun GoalDetailScreen(
     val goal by viewModel.goal.collectAsState()
     val valueTitle by viewModel.valueTitle.collectAsState()
     val c = MaterialTheme.modernColors
+    val introGate = rememberFeatureIntroGate()
+    FeatureIntroHost(introGate)
 
     Scaffold(
         containerColor = c.background,
@@ -196,7 +201,7 @@ fun GoalDetailScreen(
                 item {
                     AppButton(
                         text = "Feeling stuck? Explore possibilities",
-                        onClick = onExplorePossibilities,
+                        onClick = { introGate.open(FeatureIntroCatalog.POSSIBILITY, c.primary) { onExplorePossibilities() } },
                         variant = AppButtonVariant.PRIMARY,
                         leadingIcon = PhosphorIcons.Regular.Sparkle,
                         modifier = Modifier.fillMaxWidth().padding(top = LifePlannerDesign.Spacing.xs),

@@ -119,6 +119,7 @@ class HomeFeedBuilder(
                     title = "\"${g.title}\" has not moved lately",
                     body = "Widen the options instead of forcing the same path. Tap to explore possibilities.",
                     route = "possibility_mode/${g.id}",
+                    introId = FeatureIntroCatalog.POSSIBILITY,
                     score = 90.0,
                 )
             }

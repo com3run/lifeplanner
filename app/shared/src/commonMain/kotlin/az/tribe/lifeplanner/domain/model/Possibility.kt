@@ -15,6 +15,8 @@ data class Possibility(
     val permutation: PermutationKind,
     /** One line on why this might unstick things. Honest, not a hard sell. */
     val rationale: String,
+    /** True when the on-device fallback produced it because the AI was unreachable, so the screen can say so. */
+    val isLocal: Boolean = false,
 )
 
 /**

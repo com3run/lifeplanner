@@ -463,7 +463,11 @@ class FakeGoalDependencyRepository : GoalDependencyRepository {
 
 class FakeAiProxyService : AiProxyService {
     var responseToReturn = "Great day!"
-    override suspend fun generateText(prompt: String, systemPrompt: String?, provider: AiProvider?) = responseToReturn
+    var errorToThrow: Throwable? = null
+    override suspend fun generateText(prompt: String, systemPrompt: String?, provider: AiProvider?): String {
+        errorToThrow?.let { throw it }
+        return responseToReturn
+    }
     override suspend fun generateStructuredJson(prompt: String, responseSchema: JsonObject, systemPrompt: String?, provider: AiProvider?) = "{}"
     override suspend fun chat(messages: List<AiProxyService.ChatMessage>, systemPrompt: String?, responseSchema: JsonObject?, provider: AiProvider?) = responseToReturn
     override fun chatStream(messages: List<AiProxyService.ChatMessage>, systemPrompt: String?, provider: AiProvider?) = flow<AiProxyService.StreamEvent> {}

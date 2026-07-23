@@ -39,6 +39,6 @@ object FeatureFlags {
     /** Becoming (IdentityStatement). */
     const val PILLAR_BECOMING = false
 
-    /** Possibility Mode. */
-    const val PILLAR_POSSIBILITY = false
+    /** Possibility Mode. Back on since 2026-07-23: TRI-20 ships with an intro gate and a local no-AI fallback. */
+    const val PILLAR_POSSIBILITY = true
 }

@@ -131,6 +131,15 @@ fun PossibilityModeScreen(
                             modifier = Modifier.padding(top = LifePlannerDesign.Spacing.xs),
                         )
                     }
+                    if (possibilities.isNotEmpty() && possibilities.all { it.isLocal }) {
+                        item {
+                            Text(
+                                "AI could not be reached just now, so these were drawn from the goal itself.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = c.textTertiary,
+                            )
+                        }
+                    }
                     items(possibilities, key = { it.id }) { p ->
                         PossibilityCard(p, selected = p.id in selectedIds, onToggle = { viewModel.toggleSelect(p.id) })
                     }
@@ -188,8 +197,9 @@ private fun GeneratingRow() {
     }
 }
 
+// Internal so the JVM preview harness (PreviewScreenshots) can render it with fixture data.
 @Composable
-private fun PossibilityCard(p: Possibility, selected: Boolean, onToggle: () -> Unit) {
+internal fun PossibilityCard(p: Possibility, selected: Boolean, onToggle: () -> Unit) {
     val c = MaterialTheme.modernColors
     Surface(
         modifier = Modifier.fillMaxWidth().bouncyClickable(onClick = onToggle),

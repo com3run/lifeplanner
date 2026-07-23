@@ -51,6 +51,9 @@ object FeatureIntroCatalog {
     const val DECISION_REVIEW = "intro_decision_review"
     const val MY_PATTERNS = "intro_my_patterns"
 
+    /** Shared by the goal detail button and the feed's stalled-goal card: one screen, one intro. */
+    const val POSSIBILITY = "intro_possibility_mode"
+
     private val all: Map<String, FeatureIntro> = listOf(
         FeatureIntro(
             id = VISION,
@@ -135,6 +138,20 @@ object FeatureIntroCatalog {
             ),
             asks = "This uses how you use this app only. Nothing leaves your device and no other app is looked at.",
             ctaLabel = "See my patterns",
+        ),
+        FeatureIntro(
+            id = POSSIBILITY,
+            icon = IntroIcon.EYE,
+            eyebrow = "WHEN YOU ARE STUCK",
+            title = "Widen your options",
+            whatItIs = "A screen that turns one stuck goal into several concrete ways forward.",
+            benefits = listOf(
+                IntroBenefit(IntroIcon.EYE, "Genuinely different options, each labeled with the thinking angle behind it."),
+                IntroBenefit(IntroIcon.TARGET, "Any option can become a new goal, a step on this one, or a logged decision."),
+                IntroBenefit(IntroIcon.SCALES, "It widens your choices and never chooses for you."),
+            ),
+            asks = "Nothing new. It works from the goal you already wrote.",
+            ctaLabel = "Show me options",
         ),
     ).associateBy { it.id }
 

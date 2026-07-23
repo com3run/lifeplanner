@@ -16,9 +16,12 @@ import az.tribe.lifeplanner.domain.enum.BadgeType
 import az.tribe.lifeplanner.domain.enum.GoalCategory
 import az.tribe.lifeplanner.domain.enum.GoalStatus
 import az.tribe.lifeplanner.domain.enum.GoalTimeline
+import androidx.compose.foundation.layout.Column
 import az.tribe.lifeplanner.domain.model.Badge
 import az.tribe.lifeplanner.domain.model.Goal
 import az.tribe.lifeplanner.domain.model.Milestone
+import az.tribe.lifeplanner.domain.service.LocalPossibilityFallback
+import az.tribe.lifeplanner.ui.possibility.PossibilityCard
 import az.tribe.lifeplanner.ui.components.BadgeCard
 import az.tribe.lifeplanner.ui.components.BadgeMedallion
 import az.tribe.lifeplanner.ui.goal.GoalJourneyCard
@@ -167,6 +170,23 @@ class PreviewScreenshots {
         compose.mainClock.advanceTimeBy(1_500)
         captureScreenRoboImage("build/previews/FeatureIntro_${introId.removePrefix("intro_")}.png")
     }
+
+    /**
+     * Renders the real LocalPossibilityFallback output for the preview goal, so reviewing this
+     * PNG reviews the actual no-AI copy users will see during an outage.
+     */
+    @Test
+    fun possibilityCards() = snap("PossibilityCard") {
+        val options = LocalPossibilityFallback()(goal(milestonesDone = 1))
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            options.take(3).forEachIndexed { i, p ->
+                PossibilityCard(p, selected = i == 0, onToggle = {})
+            }
+        }
+    }
+
+    @Test
+    fun featureIntroPossibility() = snapIntro(FeatureIntroCatalog.POSSIBILITY)
 
     @Test
     fun featureIntroVision() = snapIntro(FeatureIntroCatalog.VISION)
