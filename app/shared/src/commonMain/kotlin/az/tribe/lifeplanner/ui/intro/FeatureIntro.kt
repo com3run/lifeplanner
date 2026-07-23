@@ -73,7 +73,7 @@ object FeatureIntroCatalog {
             id = QUEST,
             icon = IntroIcon.TARGET,
             eyebrow = "QUARTERLY QUEST",
-            title = "Pick one goal for the next 90 days",
+            title = "Pick one goal for 90 days",
             whatItIs = "One goal with a finish line, instead of a list you never reach the bottom of.",
             benefits = listOf(
                 IntroBenefit(IntroIcon.TARGET, "Your feed keeps this goal in front of you every day."),
