@@ -40,7 +40,7 @@ jobs:
           appId: ${{ secrets.FIREBASE_APP_ID }}
           serviceCredentialsFileContent: ${{ secrets.CREDENTIAL_FILE_CONTENT }}
           groups: testers
-          file: app/androidApp/build/outputs/apk/debug/androidApp-debug.apk
+          file: app/androidApp/build/outputs/bundle/release/androidApp-release.aab
           releaseNotes: ${{ inputs.release_notes }}
 
       - name: Notify Telegram

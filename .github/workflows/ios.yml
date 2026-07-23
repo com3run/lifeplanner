@@ -1,9 +1,12 @@
 name: iOS CI/CD
 
 on:
-  push:
-    branches: [ develop ]
-#  workflow_dispatch:
+  # Manual only: builds ship to TestFlight when you explicitly run this workflow.
+  # (The previous `push: branches: [develop]` trigger was dead -- no such branch.)
+  # To re-enable automatic builds later, uncomment:
+  #   push:
+  #     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build-and-distribute:
