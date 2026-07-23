@@ -21,6 +21,7 @@ internal fun NavGraphBuilder.appNavGoalDetailRedesign(navController: NavControll
             onBackClick = { navController.popBackStack() },
             onEdit = { navController.navigate("edit_goal/$goalId") { launchSingleTop = true } },
             onExplorePossibilities = { navController.navigate("possibility_mode/$goalId") { launchSingleTop = true } },
+            onOpenCoach = { coachId -> navController.navigate("ai_chat/$coachId") { launchSingleTop = true } },
         )
     }
 }

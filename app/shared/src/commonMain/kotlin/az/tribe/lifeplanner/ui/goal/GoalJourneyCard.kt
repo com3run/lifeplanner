@@ -39,6 +39,8 @@ import com.adamglin.phosphoricons.regular.BookOpen
 internal fun GoalJourneyCard(
     goal: Goal,
     modifier: Modifier = Modifier,
+    // Screens whose list already insets content pass 0.dp; the legacy screen relies on 16.dp.
+    horizontalPadding: androidx.compose.ui.unit.Dp = 16.dp,
 ) {
     val journey = remember(goal.id, goal.status, goal.milestones) {
         GoalJourneyNarrator.narrate(goal)
@@ -49,7 +51,7 @@ internal fun GoalJourneyCard(
         else -> MaterialTheme.colorScheme.secondary
     }
 
-    GlassCard(modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+    GlassCard(modifier = modifier.fillMaxWidth().padding(horizontal = horizontalPadding)) {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)

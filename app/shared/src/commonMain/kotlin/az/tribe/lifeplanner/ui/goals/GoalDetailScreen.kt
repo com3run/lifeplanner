@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import az.tribe.lifeplanner.domain.model.CoachPersona
 import az.tribe.lifeplanner.domain.model.Milestone
 import az.tribe.lifeplanner.ui.components.AppButton
 import az.tribe.lifeplanner.ui.components.AppButtonVariant
@@ -38,6 +39,7 @@ import az.tribe.lifeplanner.ui.components.GradientHero
 import az.tribe.lifeplanner.ui.components.IconChip
 import az.tribe.lifeplanner.ui.components.ProgressRing
 import az.tribe.lifeplanner.ui.components.StateView
+import az.tribe.lifeplanner.ui.goal.GoalJourneyCard
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
 import az.tribe.lifeplanner.ui.theme.bouncyClickable
 import az.tribe.lifeplanner.ui.theme.gradient
@@ -65,6 +67,7 @@ fun GoalDetailScreen(
     onBackClick: () -> Unit,
     onEdit: () -> Unit,
     onExplorePossibilities: () -> Unit = {},
+    onOpenCoach: (String) -> Unit = {},
     viewModel: GoalDetailViewModel = koinViewModel { parametersOf(goalId) },
 ) {
     val goal by viewModel.goal.collectAsState()
@@ -124,18 +127,41 @@ fun GoalDetailScreen(
                 )
             }
 
-            // Why-Chain (Pillar 1)
+            // Why-Chain (Pillar 1): name the value, and since the coach exists because of that
+            // value, offer to chat about it right here instead of just stating it.
             item {
+                val coach = CoachPersona.getByCategory(g.category)
                 Surface(Modifier.fillMaxWidth(), color = c.cardBackground, shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large)) {
-                    Row(Modifier.fillMaxWidth().padding(LifePlannerDesign.Padding.cardContent), horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm), verticalAlignment = Alignment.CenterVertically) {
-                        IconChip(PhosphorIcons.Regular.Compass, tint = c.secondary)
-                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                            Text(if (valueTitle != null) "Toward $valueTitle" else "Not linked to a value yet", style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = c.textPrimary)
-                            Text(if (valueTitle != null) "This goal serves what matters to you." else "Tap Edit to connect it to a value, your why.", style = MaterialTheme.typography.bodySmall, color = c.textSecondary)
+                    Column(
+                        Modifier.fillMaxWidth().padding(LifePlannerDesign.Padding.cardContent),
+                        verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm)
+                    ) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm), verticalAlignment = Alignment.CenterVertically) {
+                            IconChip(PhosphorIcons.Regular.Compass, tint = c.secondary)
+                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text(if (valueTitle != null) "Toward $valueTitle" else "Not linked to a value yet", style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = c.textPrimary)
+                                Text(
+                                    if (valueTitle != null) "This goal serves \"$valueTitle\". ${coach.name} coaches this, keep the why alive together."
+                                    else "Tap Edit to connect it to a value, your why.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = c.textSecondary
+                                )
+                            }
+                        }
+                        if (valueTitle != null) {
+                            AppButton(
+                                text = "Talk it through with ${coach.name}",
+                                onClick = { onOpenCoach(coach.id) },
+                                variant = AppButtonVariant.SECONDARY,
+                                modifier = Modifier.fillMaxWidth()
+                            )
                         }
                     }
                 }
             }
+
+            // Goal as a journal: local narrative of where the user is on this journey.
+            item { GoalJourneyCard(goal = g, horizontalPadding = 0.dp) }
 
             if (g.description.isNotBlank()) {
                 item {
