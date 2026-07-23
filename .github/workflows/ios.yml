@@ -1,9 +1,12 @@
 name: iOS CI/CD
 
 on:
-  push:
-    branches: [ develop ]
-#  workflow_dispatch:
+  # Manual only: builds ship to TestFlight when you explicitly run this workflow.
+  # (The previous `push: branches: [develop]` trigger was dead -- no such branch.)
+  # To re-enable automatic builds later, uncomment:
+  #   push:
+  #     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build-and-distribute:
@@ -44,3 +47,24 @@ jobs:
           key-id: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
           private-key: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
           app-path: build/iosApp.ipa
+
+      - name: Notify Telegram
+        if: always()
+        env:
+          TG_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TG_CHAT: ${{ secrets.TELEGRAM_CHAT_ID }}
+          JOB_STATUS: ${{ job.status }}
+          WF: ${{ github.workflow }}
+          REF: ${{ github.ref_name }}
+        run: |
+          if [ -z "$TG_TOKEN" ] || [ -z "$TG_CHAT" ]; then
+            echo "Telegram secrets not set; skipping notification."; exit 0
+          fi
+          if [ "$JOB_STATUS" = "success" ]; then EMOJI="✅"; else EMOJI="🚨"; fi
+          COMMIT_MSG=$(git log -1 --pretty=%s 2>/dev/null || echo "")
+          TEXT=$(printf '%s LifePlanner CI: %s\nstatus: %s\nbranch: %s\ncommit: %s\n%s' \
+            "$EMOJI" "$WF" "$JOB_STATUS" "$REF" "${GITHUB_SHA:0:7}" "$COMMIT_MSG")
+          curl -s -X POST "https://api.telegram.org/bot${TG_TOKEN}/sendMessage" \
+            --data-urlencode chat_id="$TG_CHAT" \
+            --data-urlencode text="$TEXT" >/dev/null
+          echo "Telegram notification sent ($JOB_STATUS)."

@@ -40,5 +40,26 @@ jobs:
           appId: ${{ secrets.FIREBASE_APP_ID }}
           serviceCredentialsFileContent: ${{ secrets.CREDENTIAL_FILE_CONTENT }}
           groups: testers
-          file: app/androidApp/build/outputs/apk/debug/androidApp-debug.apk
+          file: app/androidApp/build/outputs/bundle/release/androidApp-release.aab
           releaseNotes: ${{ inputs.release_notes }}
+
+      - name: Notify Telegram
+        if: always()
+        env:
+          TG_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TG_CHAT: ${{ secrets.TELEGRAM_CHAT_ID }}
+          JOB_STATUS: ${{ job.status }}
+          WF: ${{ github.workflow }}
+          REF: ${{ github.ref_name }}
+        run: |
+          if [ -z "$TG_TOKEN" ] || [ -z "$TG_CHAT" ]; then
+            echo "Telegram secrets not set; skipping notification."; exit 0
+          fi
+          if [ "$JOB_STATUS" = "success" ]; then EMOJI="✅"; else EMOJI="🚨"; fi
+          COMMIT_MSG=$(git log -1 --pretty=%s 2>/dev/null || echo "")
+          TEXT=$(printf '%s LifePlanner CI: %s\nstatus: %s\nbranch: %s\ncommit: %s\n%s' \
+            "$EMOJI" "$WF" "$JOB_STATUS" "$REF" "${GITHUB_SHA:0:7}" "$COMMIT_MSG")
+          curl -s -X POST "https://api.telegram.org/bot${TG_TOKEN}/sendMessage" \
+            --data-urlencode chat_id="$TG_CHAT" \
+            --data-urlencode text="$TEXT" >/dev/null
+          echo "Telegram notification sent ($JOB_STATUS)."
