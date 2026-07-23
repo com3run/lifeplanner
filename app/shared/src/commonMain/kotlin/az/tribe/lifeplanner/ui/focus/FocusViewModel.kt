@@ -142,7 +142,6 @@ class FocusViewModel(
         loadActiveGoals()
         loadTodayStats()
         loadAllTimeStats()
-        autoSuggestMood()
     }
 
     private fun loadActiveGoals() {
@@ -164,8 +163,19 @@ class FocusViewModel(
         }
     }
 
+    /** Mood is collected at the end of a session; persist it onto the session record. */
     fun setMood(mood: Mood) {
         _selectedMood.value = mood
+        val sessionId = currentSessionId ?: return
+        viewModelScope.launch {
+            try {
+                focusRepository.getSessionById(sessionId)?.let { session ->
+                    focusRepository.updateSession(session.copy(mood = mood))
+                }
+            } catch (e: Exception) {
+                Logger.e("FocusViewModel") { "saveMood failed: ${e.message}" }
+            }
+        }
     }
 
     fun setAmbientSound(sound: AmbientSound) {
@@ -266,6 +276,10 @@ class FocusViewModel(
         currentSessionId = sessionId
         val now = Clock.System.now()
         timerStartInstant = now
+
+        // Ambient sound is chosen automatically from the time of day (no picker for now)
+        val hour = now.toLocalDateTime(TimeZone.currentSystemDefault()).hour
+        _selectedAmbientSound.value = autoAmbientSoundForHour(hour)
 
         viewModelScope.launch {
             val session = FocusSession(
@@ -425,6 +439,7 @@ class FocusViewModel(
         _elapsedSeconds.value = 0
         _progress.value = 0f
         _lastXpEarned.value = 0
+        _selectedMood.value = null
         _selectedAmbientSound.value = AmbientSound.NONE
         _selectedFocusTheme.value = FocusTheme.DEFAULT
         _showMilestonePrompt.value = false
@@ -437,7 +452,6 @@ class FocusViewModel(
         loadActiveGoals()
         loadTodayStats()
         loadAllTimeStats()
-        autoSuggestMood()
     }
 
     private fun startTickLoop(totalSeconds: Int) {

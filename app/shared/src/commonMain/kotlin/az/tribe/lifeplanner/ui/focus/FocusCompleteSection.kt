@@ -32,7 +32,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import az.tribe.lifeplanner.domain.enum.Mood
 import az.tribe.lifeplanner.ui.components.GlassCard
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
 import com.adamglin.PhosphorIcons
@@ -103,19 +103,34 @@ internal fun FocusCompleteContent(
 
         Spacer(Modifier.height(8.dp))
 
+        Text(
+            "$elapsedDisplay focused",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        Spacer(Modifier.height(24.dp))
+
+        Text(
+            "How are you feeling?",
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        Spacer(Modifier.height(12.dp))
+
         Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            selectedMood?.let { mood ->
-                Text(mood.emoji, fontSize = 20.sp)
-                Spacer(Modifier.width(8.dp))
+            Mood.entries.sortedBy { it.score }.forEach { mood ->
+                MoodChip(
+                    mood = mood,
+                    isSelected = selectedMood == mood,
+                    onClick = { focusViewModel.setMood(mood) }
+                )
             }
-            Text(
-                "$elapsedDisplay focused",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
         }
 
         Spacer(Modifier.height(24.dp))

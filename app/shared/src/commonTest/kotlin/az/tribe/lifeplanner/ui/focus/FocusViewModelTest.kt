@@ -339,6 +339,54 @@ class FocusViewModelTest {
         assertEquals(FocusTheme.OCEAN, viewModel.selectedFocusTheme.value)
     }
 
+    @Test
+    fun `autoAmbientSoundForHour maps day parts to sounds`() {
+        assertEquals(AmbientSound.BIRDS, autoAmbientSoundForHour(7))
+        assertEquals(AmbientSound.CAFE, autoAmbientSoundForHour(12))
+        assertEquals(AmbientSound.LOFI, autoAmbientSoundForHour(15))
+        assertEquals(AmbientSound.FIREPLACE, autoAmbientSoundForHour(20))
+        assertEquals(AmbientSound.NIGHT, autoAmbientSoundForHour(23))
+        assertEquals(AmbientSound.NIGHT, autoAmbientSoundForHour(3))
+    }
+
+    @Test
+    fun `startTimer auto-selects ambient sound from time of day`() = runTest(testDispatcher) {
+        val milestone = testMilestone(id = "m1")
+        val goal = testGoal(id = "g1", milestones = listOf(milestone))
+
+        viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.selectMilestoneWithGoal(milestone, goal)
+        viewModel.startTimer()
+
+        assertNotEquals(AmbientSound.NONE, viewModel.selectedAmbientSound.value)
+
+        viewModel.cancelTimer()
+        testDispatcher.scheduler.advanceUntilIdle()
+    }
+
+    @Test
+    fun `setMood after session end persists mood to session record`() = runTest(testDispatcher) {
+        val milestone = testMilestone(id = "m1")
+        val goal = testGoal(id = "g1", milestones = listOf(milestone))
+
+        viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.selectMilestoneWithGoal(milestone, goal)
+        viewModel.startTimer()
+        viewModel.cancelTimer()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.setMood(Mood.VERY_HAPPY)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val sessionId = viewModel.currentSessionId
+        assertNotNull(sessionId)
+        assertEquals(Mood.VERY_HAPPY, fakeFocusRepository.getSessionById(sessionId)?.mood)
+    }
+
     // ─── selectMilestoneWithGoal ─────────────────────────────────────────────
 
     @Test

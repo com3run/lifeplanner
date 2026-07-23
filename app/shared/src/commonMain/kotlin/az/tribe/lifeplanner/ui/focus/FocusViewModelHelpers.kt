@@ -1,6 +1,6 @@
 package az.tribe.lifeplanner.ui.focus
 
-import az.tribe.lifeplanner.domain.enum.Mood
+import az.tribe.lifeplanner.domain.enum.AmbientSound
 import az.tribe.lifeplanner.domain.model.XpRewards
 import co.touchlab.kermit.Logger
 import kotlinx.coroutines.flow.firstOrNull
@@ -30,13 +30,18 @@ internal fun calculatePartialXp(elapsedSeconds: Int): Int {
     }
 }
 
+/** Ambient sound picked automatically from the time of day, no picker in the UI for now. */
+internal fun autoAmbientSoundForHour(hour: Int): AmbientSound = when (hour) {
+    in 5..10 -> AmbientSound.BIRDS
+    in 11..13 -> AmbientSound.CAFE
+    in 14..17 -> AmbientSound.LOFI
+    in 18..21 -> AmbientSound.FIREPLACE
+    else -> AmbientSound.NIGHT
+}
+
 // ---------------------------------------------------------------------------
 // Extension functions, ViewModel helpers that load / refresh state
 // ---------------------------------------------------------------------------
-
-internal fun FocusViewModel.autoSuggestMood() {
-    _selectedMood.value = Mood.HAPPY
-}
 
 internal fun FocusViewModel.loadTodayStats() {
     viewModelScope.launch {

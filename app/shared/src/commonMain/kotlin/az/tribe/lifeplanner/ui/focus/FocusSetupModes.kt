@@ -39,9 +39,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import az.tribe.lifeplanner.domain.enum.AmbientSound
 import az.tribe.lifeplanner.domain.enum.FocusTheme
-import az.tribe.lifeplanner.domain.enum.Mood
 import az.tribe.lifeplanner.ui.components.GlassCard
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
 import az.tribe.lifeplanner.ui.theme.gradientColors
@@ -62,7 +60,6 @@ internal fun FocusFreeFlowSetup(
     val todaySeconds by focusViewModel.todaySeconds.collectAsState()
     val allTimeSeconds by focusViewModel.allTimeSeconds.collectAsState()
     val selectedMood by focusViewModel.selectedMood.collectAsState()
-    val selectedAmbientSound by focusViewModel.selectedAmbientSound.collectAsState()
     val selectedFocusTheme by focusViewModel.selectedFocusTheme.collectAsState()
 
     val freeFlowGoals = remember(milestoneItems) {
@@ -119,52 +116,6 @@ internal fun FocusFreeFlowSetup(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                    }
-                }
-            }
-
-            item {
-                Text(
-                    "How are you feeling?",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    Mood.entries.sortedBy { it.score }.forEach { mood ->
-                        MoodChip(
-                            mood = mood,
-                            isSelected = selectedMood == mood,
-                            onClick = { focusViewModel.setMood(mood) }
-                        )
-                    }
-                }
-            }
-
-            item {
-                Text(
-                    "Ambient Sound",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            item {
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    AmbientSound.entries.forEach { sound ->
-                        PickerChip(
-                            label = "${sound.icon} ${sound.displayName}",
-                            isSelected = selectedAmbientSound == sound,
-                            onClick = { focusViewModel.setAmbientSound(sound) }
-                        )
                     }
                 }
             }
@@ -319,7 +270,6 @@ internal fun FocusTimedSetup(
     val allTimeSessionCount by focusViewModel.allTimeSessionCount.collectAsState()
     val allTimeSeconds by focusViewModel.allTimeSeconds.collectAsState()
     val selectedMood by focusViewModel.selectedMood.collectAsState()
-    val selectedAmbientSound by focusViewModel.selectedAmbientSound.collectAsState()
     val selectedFocusTheme by focusViewModel.selectedFocusTheme.collectAsState()
     val isCustomDuration by focusViewModel.isCustomDuration.collectAsState()
     val customDurationMinutes by focusViewModel.customDurationMinutes.collectAsState()
@@ -362,24 +312,6 @@ internal fun FocusTimedSetup(
                             StatItem(formatDuration(allTimeSeconds), "focused")
                         }
                     }
-                }
-            }
-        }
-
-        item { Text("How are you feeling?", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) }
-        item {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                Mood.entries.sortedBy { it.score }.forEach { mood ->
-                    MoodChip(mood = mood, isSelected = selectedMood == mood, onClick = { focusViewModel.setMood(mood) })
-                }
-            }
-        }
-
-        item { Text("Ambient Sound", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) }
-        item {
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                AmbientSound.entries.forEach { sound ->
-                    PickerChip(label = "${sound.icon} ${sound.displayName}", isSelected = selectedAmbientSound == sound, onClick = { focusViewModel.setAmbientSound(sound) })
                 }
             }
         }
