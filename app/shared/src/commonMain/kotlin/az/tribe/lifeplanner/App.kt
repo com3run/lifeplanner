@@ -138,8 +138,11 @@ fun App(
 
         // One-time upgrade of pre-track-mode habits ("Drink 8 glasses" -> count habit).
         val backfillHabitTargets: az.tribe.lifeplanner.usecases.habit.BackfillHabitTargetsUseCase = koinInject()
+        // Link goals to the life value they clearly serve, so the why is shown, not asked.
+        val autoLinkGoalValues: az.tribe.lifeplanner.usecases.AutoLinkGoalValuesUseCase = koinInject()
         LaunchedEffect(Unit) {
             runCatching { backfillHabitTargets() }
+            runCatching { autoLinkGoalValues() }
         }
 
         val builtinCoachFetcher: az.tribe.lifeplanner.data.network.BuiltinCoachFetcher = koinInject()
@@ -279,7 +282,12 @@ fun App(
                 when (event) {
                     is GamificationEvent.BadgeEarned -> {
                         globalCelebrationType = CelebrationType.BADGE_UNLOCKED
-                        globalCelebrationMessage = "Badge Unlocked: ${event.badge.type.displayName}"
+                        globalCelebrationMessage = buildString {
+                            append("Badge Unlocked: ${event.badge.type.displayName}")
+                            if (event.alsoEarnedCount > 0) {
+                                append(" +${event.alsoEarnedCount} more")
+                            }
+                        }
                         showGlobalCelebration = true
                     }
 

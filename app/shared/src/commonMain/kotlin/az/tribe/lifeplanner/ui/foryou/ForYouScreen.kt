@@ -39,6 +39,8 @@ import az.tribe.lifeplanner.ui.components.AppButtonVariant
 import az.tribe.lifeplanner.ui.components.GradientHero
 import az.tribe.lifeplanner.ui.components.IconChip
 import az.tribe.lifeplanner.ui.components.ProgressRing
+import az.tribe.lifeplanner.ui.intro.FeatureIntro
+import az.tribe.lifeplanner.ui.intro.FeatureIntroSheet
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
 import az.tribe.lifeplanner.ui.theme.bouncyClickable
 import az.tribe.lifeplanner.ui.theme.gradientColors
@@ -74,6 +76,7 @@ fun ForYouScreen(
     val c = MaterialTheme.modernColors
 
     var filter by remember { mutableStateOf<FeedSection?>(null) }
+    var pendingIntro by remember { mutableStateOf<PendingIntro?>(null) }
     val visible = remember(feed, filter) {
         val f = filter
         if (f == null) feed else feed.filter { it.kind.section() == f }
@@ -115,16 +118,55 @@ fun ForYouScreen(
                     if (cards.isNotEmpty()) {
                         item(key = "h_${sec.name}") { SectionLabel(sec.label) }
                         items(cards, key = { it.id }) { fi ->
+                            val accent = accentFor(fi)
                             FeedCard(
                                 item = fi,
+                                accent = accent,
                                 onAction = { fi.actionHabitId?.let(viewModel::checkInHabit) },
-                                onOpen = { fi.route?.let(onOpenRoute) },
+                                onOpen = {
+                                    val route = fi.route ?: return@FeedCard
+                                    // A feature the user has never met explains itself first.
+                                    val intro = viewModel.introFor(fi)
+                                    if (intro == null) onOpenRoute(route)
+                                    else pendingIntro = PendingIntro(intro, route, accent)
+                                },
                             )
                         }
                     }
                 }
             }
         }
+    }
+
+    pendingIntro?.let { p ->
+        FeatureIntroSheet(
+            intro = p.intro,
+            accent = p.accent,
+            // Dismissing leaves the intro unseen, so a curious tap costs the user nothing.
+            onDismiss = { pendingIntro = null },
+            onContinue = {
+                viewModel.markIntroSeen(p.intro.id)
+                pendingIntro = null
+                onOpenRoute(p.route)
+            },
+        )
+    }
+}
+
+/** An intro waiting to be shown, with the route it leads to and the accent of the card it came from. */
+private data class PendingIntro(val intro: FeatureIntro, val route: String, val accent: Color)
+
+@Composable
+private fun accentFor(item: FeedItem): Color {
+    val c = MaterialTheme.modernColors
+    return when (item.kind) {
+        FeedKind.DO_NEXT -> item.category?.gradientColors()?.firstOrNull() ?: c.primary
+        FeedKind.INSIGHT -> c.secondary
+        FeedKind.BECOMING -> c.success
+        FeedKind.PATTERN -> c.accent
+        FeedKind.MOMENTUM -> c.warning
+        FeedKind.KNOWLEDGE -> c.primary
+        FeedKind.POSSIBILITY -> c.secondary
     }
 }
 
@@ -180,17 +222,8 @@ private fun FilterChip(label: String, active: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-private fun FeedCard(item: FeedItem, onAction: () -> Unit, onOpen: () -> Unit) {
+private fun FeedCard(item: FeedItem, accent: Color, onAction: () -> Unit, onOpen: () -> Unit) {
     val c = MaterialTheme.modernColors
-    val accent = when (item.kind) {
-        FeedKind.DO_NEXT -> item.category?.gradientColors()?.firstOrNull() ?: c.primary
-        FeedKind.INSIGHT -> c.secondary
-        FeedKind.BECOMING -> c.success
-        FeedKind.PATTERN -> c.accent
-        FeedKind.MOMENTUM -> c.warning
-        FeedKind.KNOWLEDGE -> c.primary
-        FeedKind.POSSIBILITY -> c.secondary
-    }
     Surface(
         modifier = Modifier.fillMaxWidth().bouncyClickable(enabled = item.route != null, onClick = onOpen),
         color = c.cardBackground,

@@ -16,6 +16,7 @@ import az.tribe.lifeplanner.domain.service.CausalInsightProvider
 import az.tribe.lifeplanner.domain.service.KnowledgeLibrary
 import az.tribe.lifeplanner.domain.service.PossibilityContextProvider
 import az.tribe.lifeplanner.domain.service.PossibilityEngine
+import az.tribe.lifeplanner.ui.intro.FeatureIntroCatalog
 import az.tribe.lifeplanner.ui.navigation.Screen
 import az.tribe.lifeplanner.ui.objectives.BeginnerObjectiveViewModel
 import az.tribe.lifeplanner.usecases.ComputeValueAlignmentUseCase
@@ -233,6 +234,7 @@ class HomeFeedBuilder(
                 title = "Name what matters to you",
                 body = "Pick a few values to steer by. Takes two minutes, and every goal you set can serve one.",
                 route = Screen.Becoming.route,
+                introId = FeatureIntroCatalog.VISION,
                 score = 88.0,
             )
             GoalSettingCascade.Step.QUEST -> invitations += FeedItem(
@@ -242,6 +244,7 @@ class HomeFeedBuilder(
                 title = "Pick one goal for the next 90 days",
                 body = "One quest with a finish line beats a wish list. Set a goal due about three months out and the feed keeps it in front of you.",
                 route = Screen.GoalWizard.route,
+                introId = FeatureIntroCatalog.QUEST,
                 score = 96.0,
             )
             GoalSettingCascade.Step.WEEKLY_REVIEW -> invitations += FeedItem(
@@ -251,13 +254,17 @@ class HomeFeedBuilder(
                 title = "Look back at your week",
                 body = "About ten minutes to see what moved and what needs a different approach next week.",
                 route = Screen.Retrospective.route,
+                introId = FeatureIntroCatalog.WEEKLY_REVIEW,
                 score = 84.0,
             )
             null -> Unit
         }
 
         // Pillar 1: a goal with no value is the orphaned-goal nudge D1 P4 calls for.
-        goals.firstOrNull { it.valueId == null }?.let { orphan ->
+        // AutoLinkGoalValuesUseCase links the unambiguous ones at app start, so this question
+        // only remains for goals whose why genuinely is not inferable.
+        val orphan = goals.firstOrNull { it.valueId == null && !it.isArchived }
+        if (orphan != null) {
             invitations += FeedItem(
                 id = "why_invite_${orphan.id}",
                 kind = FeedKind.INSIGHT,
@@ -267,6 +274,24 @@ class HomeFeedBuilder(
                 route = "goal_detail_redesign/${orphan.id}",
                 score = 86.0,
             )
+        } else {
+            // The why is known; state it instead of asking (one YOUR WHY card at a time).
+            goals.firstOrNull {
+                it.valueId != null && !it.isArchived && it.status == GoalStatus.IN_PROGRESS
+            }?.let { linked ->
+                valueTitleById[linked.valueId]?.let { valueTitle ->
+                    invitations += FeedItem(
+                        id = "why_known_${linked.id}",
+                        kind = FeedKind.INSIGHT,
+                        eyebrow = "YOUR WHY",
+                        title = "\"${linked.title}\" is for \"$valueTitle\"",
+                        body = "That is the why behind this one. Your coach knows this ground, " +
+                            "the goal page connects you.",
+                        route = "goal_detail_redesign/${linked.id}",
+                        score = 74.0,
+                    )
+                }
+            }
         }
 
         // Pillar 5: no completed goals and no identity statement yet. Skipped when the cascade's

@@ -309,7 +309,8 @@ fun GoalDetailScreen(
             item {
                 CoachInsightCard(
                     coach = coach,
-                    onMeetCoach = { onCoachClick(coach.id) }
+                    onMeetCoach = { onCoachClick(coach.id) },
+                    valueTitle = lifeValues.find { it.id == goal.valueId }?.title
                 )
             }
 

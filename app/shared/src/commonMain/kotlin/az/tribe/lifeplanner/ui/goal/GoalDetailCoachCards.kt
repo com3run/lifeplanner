@@ -53,7 +53,8 @@ import com.adamglin.phosphoricons.regular.User
 @Composable
 internal fun CoachInsightCard(
     coach: CoachPersona,
-    onMeetCoach: () -> Unit
+    onMeetCoach: () -> Unit,
+    valueTitle: String? = null,
 ) {
     val bgColor = try {
         Color(("FF" + coach.avatar.backgroundColor.removePrefix("#")).toLong(16))
@@ -164,6 +165,23 @@ internal fun CoachInsightCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+
+            // The value is why this coach is here; say it together, not as a question.
+            if (valueTitle != null) {
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = bgColor.copy(alpha = 0.08f),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "This goal serves \"$valueTitle\". That is ${coach.name}'s ground, " +
+                            "a short chat keeps the why alive.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)
                     )
                 }
             }

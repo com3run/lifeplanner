@@ -5,6 +5,9 @@ import androidx.lifecycle.viewModelScope
 import az.tribe.lifeplanner.domain.model.FeedItem
 import az.tribe.lifeplanner.domain.model.UserProgress
 import az.tribe.lifeplanner.domain.repository.GamificationRepository
+import az.tribe.lifeplanner.ui.intro.FeatureIntro
+import az.tribe.lifeplanner.ui.intro.IntroSeenStore
+import az.tribe.lifeplanner.ui.intro.introToShow
 import az.tribe.lifeplanner.usecases.habit.CheckInHabitUseCase
 import co.touchlab.kermit.Logger
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,6 +24,7 @@ class ForYouViewModel(
     private val feedBuilder: HomeFeedBuilder,
     private val checkInHabitUseCase: CheckInHabitUseCase,
     private val gamificationRepository: GamificationRepository,
+    private val introSeenStore: IntroSeenStore,
 ) : ViewModel() {
 
     private val _feed = MutableStateFlow<List<FeedItem>>(emptyList())
@@ -48,6 +52,11 @@ class ForYouViewModel(
             _isLoading.value = false
         }
     }
+
+    /** The intro to show before opening [item], or null to open it directly. */
+    fun introFor(item: FeedItem): FeatureIntro? = introSeenStore.introToShow(item.introId)
+
+    fun markIntroSeen(introId: String) = introSeenStore.markSeen(introId)
 
     /** Inline check-in from a "Do next" card. Rebuilds the feed so it reflects the new state. */
     fun checkInHabit(habitId: String) {

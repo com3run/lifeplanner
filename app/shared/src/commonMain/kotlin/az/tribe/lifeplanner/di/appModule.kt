@@ -122,6 +122,7 @@ import az.tribe.lifeplanner.usecases.habit.UpdateHabitUseCase
 import az.tribe.lifeplanner.usecases.AddMilestoneUseCase
 import az.tribe.lifeplanner.usecases.ArchiveGoalUseCase
 import az.tribe.lifeplanner.usecases.CalculateGoalCompletionRateUseCase
+import az.tribe.lifeplanner.usecases.AutoLinkGoalValuesUseCase
 import az.tribe.lifeplanner.usecases.CreateGoalUseCase
 import az.tribe.lifeplanner.usecases.DeleteGoalUseCase
 import az.tribe.lifeplanner.usecases.DeleteMilestoneUseCase
@@ -318,6 +319,7 @@ val appModule = module {
     factory { DeleteGoalUseCase(get()) }
     factory { az.tribe.lifeplanner.usecases.PromoteTopValuesToLifeValuesUseCase(get(), get(), get()) }
     factory { UpdateGoalUseCase(get()) }
+    factory { AutoLinkGoalValuesUseCase(get(), get()) }
     factory { UpdateGoalProgressUseCase(get()) }
     factory { LogGoalChangeUseCase(get()) }
     factory { GetGoalHistoryUseCase(get()) }
@@ -405,7 +407,8 @@ val appModule = module {
     viewModelOf(::FocusViewModel)
     viewModel { az.tribe.lifeplanner.ui.today.TodayViewModel(get(), get(), get()) }
     single { az.tribe.lifeplanner.ui.foryou.HomeFeedBuilder(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
-    viewModel { az.tribe.lifeplanner.ui.foryou.ForYouViewModel(get(), get(), get()) }
+    single<az.tribe.lifeplanner.ui.intro.IntroSeenStore> { az.tribe.lifeplanner.ui.intro.SettingsIntroSeenStore() }
+    viewModel { az.tribe.lifeplanner.ui.foryou.ForYouViewModel(get(), get(), get(), get()) }
     single { az.tribe.lifeplanner.usecases.GeneratePossibilitiesUseCase(get()) }
     viewModel { params -> az.tribe.lifeplanner.ui.possibility.PossibilityModeViewModel(params.get(), get(), get(), get(), get()) }
     viewModel { az.tribe.lifeplanner.ui.goals.GoalsViewModel(get()) }
