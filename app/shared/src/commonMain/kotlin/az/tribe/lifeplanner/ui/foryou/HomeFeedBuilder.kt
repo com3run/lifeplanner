@@ -2,6 +2,7 @@ package az.tribe.lifeplanner.ui.foryou
 
 import az.tribe.lifeplanner.core.FeatureFlags
 
+import az.tribe.lifeplanner.domain.enum.GoalStatus
 import az.tribe.lifeplanner.domain.model.ActionOptionType
 import az.tribe.lifeplanner.domain.model.FeedItem
 import az.tribe.lifeplanner.domain.model.FeedKind
@@ -16,8 +17,10 @@ import az.tribe.lifeplanner.domain.service.KnowledgeLibrary
 import az.tribe.lifeplanner.domain.service.PossibilityContextProvider
 import az.tribe.lifeplanner.domain.service.PossibilityEngine
 import az.tribe.lifeplanner.ui.navigation.Screen
+import az.tribe.lifeplanner.ui.objectives.BeginnerObjectiveViewModel
 import az.tribe.lifeplanner.usecases.ComputeValueAlignmentUseCase
 import co.touchlab.kermit.Logger
+import com.russhwolf.settings.Settings
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.daysUntil
@@ -53,6 +56,7 @@ class HomeFeedBuilder(
     private val behaviorRepository: BehaviorRepository,
     private val goalRepository: GoalRepository,
     private val lifeValueRepository: LifeValueRepository,
+    private val settings: Settings = Settings(),
 ) {
 
     suspend fun build(): List<FeedItem> {
@@ -68,9 +72,8 @@ class HomeFeedBuilder(
         // prominent card from a task ("fits (overdue)") into a reason ("Toward Family"), which is
         // D1's P4 (always show the why) and the difference between this and a generic planner.
         val goals = runCatching { goalRepository.getAllGoals() }.getOrDefault(emptyList())
-        val valueTitleById = runCatching { lifeValueRepository.getAllLifeValues() }
-            .getOrDefault(emptyList())
-            .associate { it.id to it.title }
+        val lifeValues = runCatching { lifeValueRepository.getAllLifeValues() }.getOrDefault(emptyList())
+        val valueTitleById = lifeValues.associate { it.id to it.title }
         fun whyFor(goalId: String?): String? = goalId
             ?.let { id -> goals.firstOrNull { it.id == id } }
             ?.valueId
@@ -204,6 +207,55 @@ class HomeFeedBuilder(
         val present = items.map { it.kind }.toSet()
         val invitations = mutableListOf<FeedItem>()
 
+        // The goal-setting cascade leads the invitations: vision, then one 90-day quest, then a
+        // weekly review cadence. Unlike the pillar invites below it needs no history at all, and
+        // the quest and review steps are v2-safe (goals and the retrospective are not pillar
+        // features), so a brand-new user's first card is a method, not an empty planner. Only the
+        // first missing step shows; it is added first so the cap below never drops it.
+        val quest = goals
+            .filter { it.id != BeginnerObjectiveViewModel.GETTING_STARTED_GOAL_ID }
+            .filter { !it.isArchived && it.status != GoalStatus.COMPLETED }
+            .filter { today.daysUntil(it.dueDate) in 0..GoalSettingCascade.QUEST_WINDOW_DAYS }
+            .maxByOrNull { it.createdAt }
+        val daysSinceReview = settings.getLongOrNull(GoalSettingCascade.LAST_REVIEW_AT_KEY)?.let {
+            ((Clock.System.now().toEpochMilliseconds() - it) / MILLIS_PER_DAY).toInt()
+        }
+        when (GoalSettingCascade.nextStep(
+            valuesEnabled = FeatureFlags.PILLAR_BECOMING,
+            hasActiveValues = lifeValues.any { it.isActive },
+            questAgeDays = quest?.createdAt?.date?.daysUntil(today),
+            daysSinceLastReview = daysSinceReview,
+        )) {
+            GoalSettingCascade.Step.VISION -> invitations += FeedItem(
+                id = "cascade_vision",
+                kind = FeedKind.BECOMING,
+                eyebrow = "YOUR COMPASS",
+                title = "Name what matters to you",
+                body = "Pick a few values to steer by. Takes two minutes, and every goal you set can serve one.",
+                route = Screen.Becoming.route,
+                score = 88.0,
+            )
+            GoalSettingCascade.Step.QUEST -> invitations += FeedItem(
+                id = "cascade_quest",
+                kind = FeedKind.DO_NEXT,
+                eyebrow = "QUARTERLY QUEST",
+                title = "Pick one goal for the next 90 days",
+                body = "One quest with a finish line beats a wish list. Set a goal due about three months out and the feed keeps it in front of you.",
+                route = Screen.GoalWizard.route,
+                score = 96.0,
+            )
+            GoalSettingCascade.Step.WEEKLY_REVIEW -> invitations += FeedItem(
+                id = "cascade_review",
+                kind = FeedKind.INSIGHT,
+                eyebrow = "WEEKLY REVIEW",
+                title = "Look back at your week",
+                body = "About ten minutes to see what moved and what needs a different approach next week.",
+                route = Screen.Retrospective.route,
+                score = 84.0,
+            )
+            null -> Unit
+        }
+
         // Pillar 1: a goal with no value is the orphaned-goal nudge D1 P4 calls for.
         goals.firstOrNull { it.valueId == null }?.let { orphan ->
             invitations += FeedItem(
@@ -217,8 +269,11 @@ class HomeFeedBuilder(
             )
         }
 
-        // Pillar 5: no completed goals and no identity statement yet.
-        if (FeatureFlags.PILLAR_BECOMING && FeedKind.BECOMING !in present) {
+        // Pillar 5: no completed goals and no identity statement yet. Skipped when the cascade's
+        // vision step is already asking for the same visit, two Becoming invites is nagging.
+        if (FeatureFlags.PILLAR_BECOMING && FeedKind.BECOMING !in present &&
+            invitations.none { it.kind == FeedKind.BECOMING }
+        ) {
             invitations += FeedItem(
                 id = "becoming_invite",
                 kind = FeedKind.BECOMING,
@@ -264,4 +319,8 @@ class HomeFeedBuilder(
     }
 
     private fun plural(n: Int, one: String, many: String) = if (n == 1) one else many
+
+    private companion object {
+        const val MILLIS_PER_DAY = 86_400_000L
+    }
 }
