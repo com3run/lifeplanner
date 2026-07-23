@@ -1,0 +1,8 @@
+{
+  "pkg": "@lifeplanner/design-system",
+  "globalName": "LifePlannerDS",
+  "shape": "package",
+  "buildCmd": "npm run build",
+  "srcDir": "src",
+  "tsconfig": "tsconfig.json"
+}
