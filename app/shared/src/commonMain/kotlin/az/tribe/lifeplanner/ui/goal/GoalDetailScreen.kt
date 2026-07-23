@@ -264,6 +264,11 @@ fun GoalDetailScreen(
                 )
             }
 
+            // Goal as a journal: local narrative of where the user is on this journey.
+            item {
+                GoalJourneyCard(goal = goal)
+            }
+
             // Pillar 1: Why-Chain (value → goal → milestones) + orphan nudge
             item {
                 val linkedValue = lifeValues.find { it.id == goal.valueId }
