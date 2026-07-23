@@ -102,6 +102,18 @@ Deno.serve(async (req) => {
     return json({ telegram_configured: configured, test_sent: sent });
   }
 
+  // Force a sample outage alert (to preview what a real alert looks like):
+  // /health?force=1
+  if (url.searchParams.get("force") === "1") {
+    const sent = await sendTelegram(
+      `🚨 <b>LifePlanner backend alert</b>\n` +
+        `1 function(s) unhealthy:\n` +
+        `• <b>example-function</b> → 503\n\n` +
+        `<i>(This is a forced test alert — nothing is actually down.)</i>`,
+    );
+    return json({ forced_alert_sent: sent });
+  }
+
   const results = await Promise.all(FUNCTIONS.map(probe));
   const down = results.filter((r) => !r.healthy);
   const overall = down.length === 0 ? "ok" : "degraded";
