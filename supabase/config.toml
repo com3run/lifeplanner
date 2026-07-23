@@ -415,3 +415,6 @@ enabled = true
 
 [functions.health]
 verify_jwt = false
+
+[functions.store-watch]
+verify_jwt = false

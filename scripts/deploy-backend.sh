@@ -16,7 +16,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
 # All deployable edge functions.
-ALL_FUNCTIONS=(ai-proxy auth-redirect mcp-server persona-sync-webhook resend-verification health)
+ALL_FUNCTIONS=(ai-proxy auth-redirect mcp-server persona-sync-webhook resend-verification health store-watch)
 
 # --- auth check -------------------------------------------------------------
 if ! supabase projects list >/dev/null 2>&1; then
