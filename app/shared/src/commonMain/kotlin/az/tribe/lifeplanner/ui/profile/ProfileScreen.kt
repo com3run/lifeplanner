@@ -25,6 +25,9 @@ import az.tribe.lifeplanner.ui.components.AchievementsCard
 import az.tribe.lifeplanner.ui.gamification.GamificationViewModel
 import az.tribe.lifeplanner.ui.home.HomeCoachAICard
 import az.tribe.lifeplanner.ui.home.HomeViewModel
+import az.tribe.lifeplanner.ui.intro.FeatureIntroCatalog
+import az.tribe.lifeplanner.ui.intro.FeatureIntroHost
+import az.tribe.lifeplanner.ui.intro.rememberFeatureIntroGate
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
 import az.tribe.lifeplanner.ui.auth.AuthBottomSheet
 import az.tribe.lifeplanner.ui.calendar.rememberCalendarPermission
@@ -83,6 +86,10 @@ fun ProfileScreen(
     onResetOnboarding: () -> Unit = {}
 ) {
     val settings: Settings = koinInject()
+    // Feature rows below open screens the user may never have seen. The gate lets each one
+    // introduce itself on first tap instead of dropping them into it cold.
+    val introGate = rememberFeatureIntroGate()
+    val introAccent = MaterialTheme.colorScheme.primary
     val authState by authViewModel.authState.collectAsState()
     val syncStatus by authViewModel.syncStatus.collectAsState()
     val isLocalOnlyGuest by authViewModel.isLocalOnlyGuest.collectAsState()
@@ -220,19 +227,19 @@ fun ProfileScreen(
             item { ProfileSectionHeader("Settings") }
             item { ProfileMenuItem(icon = PhosphorIcons.Regular.Bell, title = "Reminders", subtitle = "Notification preferences", onClick = onNavigateToReminders) }
             item { ProfileMenuItem(icon = PhosphorIcons.Regular.CloudArrowUp, title = "Backup & Sync", subtitle = "Export and restore your data", onClick = onNavigateToBackup) }
-            item { ProfileMenuItem(icon = PhosphorIcons.Regular.ClockCounterClockwise, title = "Day Retrospective", subtitle = "Browse past days and activity", onClick = onNavigateToRetrospective) }
-            item { ProfileMenuItem(icon = PhosphorIcons.Regular.ClockCounterClockwise, title = "Decision Journal", subtitle = "Your choices, reasoning, and outcomes", onClick = onNavigateToDecisions) }
+            item { ProfileMenuItem(icon = PhosphorIcons.Regular.ClockCounterClockwise, title = "Day Retrospective", subtitle = "Browse past days and activity", onClick = { introGate.open(FeatureIntroCatalog.WEEKLY_REVIEW, introAccent, onNavigateToRetrospective) }) }
+            item { ProfileMenuItem(icon = PhosphorIcons.Regular.ClockCounterClockwise, title = "Decision Journal", subtitle = "Your choices, reasoning, and outcomes", onClick = { introGate.open(FeatureIntroCatalog.DECISION_JOURNAL, introAccent, onNavigateToDecisions) }) }
             if (FeatureFlags.PILLAR_CAUSAL) {
                 item { ProfileMenuItem(icon = PhosphorIcons.Regular.ChartBar, title = "Causal Insights", subtitle = "What actually drives your progress", onClick = onNavigateToCausalInsights) }
             }
             if (FeatureFlags.PILLAR_BECOMING) {
                 item { ProfileMenuItem(icon = PhosphorIcons.Regular.Brain, title = "Becoming", subtitle = "Who you're becoming, values & identity", onClick = onNavigateToBecoming) }
             }
-            item { ProfileMenuItem(icon = PhosphorIcons.Regular.Scales, title = "Review Decisions", subtitle = "Grade your reasoning, not just outcomes", onClick = onNavigateToDecisionReview) }
+            item { ProfileMenuItem(icon = PhosphorIcons.Regular.Scales, title = "Review Decisions", subtitle = "Grade your reasoning, not just outcomes", onClick = { introGate.open(FeatureIntroCatalog.DECISION_REVIEW, introAccent, onNavigateToDecisionReview) }) }
             if (FeatureFlags.PILLAR_WIRING) {
                 item { ProfileMenuItem(icon = PhosphorIcons.Regular.Sliders, title = "Your Wiring", subtitle = "How you're wired, your decision-making profile", onClick = onNavigateToYourWiring) }
             }
-            item { ProfileMenuItem(icon = PhosphorIcons.Regular.ChartBar, title = "My Patterns", subtitle = "See how you use the app + personalized tips", onClick = onNavigateToScreenTimeInsight) }
+            item { ProfileMenuItem(icon = PhosphorIcons.Regular.ChartBar, title = "My Patterns", subtitle = "See how you use the app + personalized tips", onClick = { introGate.open(FeatureIntroCatalog.MY_PATTERNS, introAccent, onNavigateToScreenTimeInsight) }) }
             item { ProfileMenuItem(icon = PhosphorIcons.Regular.ChatCircleText, title = "Send Feedback", subtitle = "Report bugs, request features", onClick = onNavigateToFeedback) }
 
             if (authState is AuthState.Authenticated && currentUser?.email != null) {
@@ -263,6 +270,8 @@ fun ProfileScreen(
             }
         }
     }
+
+    FeatureIntroHost(introGate)
 
     if (showAiProviderDialog) {
         AiProviderDialog(

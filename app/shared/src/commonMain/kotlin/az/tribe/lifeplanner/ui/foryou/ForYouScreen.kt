@@ -39,8 +39,8 @@ import az.tribe.lifeplanner.ui.components.AppButtonVariant
 import az.tribe.lifeplanner.ui.components.GradientHero
 import az.tribe.lifeplanner.ui.components.IconChip
 import az.tribe.lifeplanner.ui.components.ProgressRing
-import az.tribe.lifeplanner.ui.intro.FeatureIntro
-import az.tribe.lifeplanner.ui.intro.FeatureIntroSheet
+import az.tribe.lifeplanner.ui.intro.FeatureIntroHost
+import az.tribe.lifeplanner.ui.intro.rememberFeatureIntroGate
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
 import az.tribe.lifeplanner.ui.theme.bouncyClickable
 import az.tribe.lifeplanner.ui.theme.gradientColors
@@ -76,7 +76,7 @@ fun ForYouScreen(
     val c = MaterialTheme.modernColors
 
     var filter by remember { mutableStateOf<FeedSection?>(null) }
-    var pendingIntro by remember { mutableStateOf<PendingIntro?>(null) }
+    val introGate = rememberFeatureIntroGate()
     val visible = remember(feed, filter) {
         val f = filter
         if (f == null) feed else feed.filter { it.kind.section() == f }
@@ -126,9 +126,7 @@ fun ForYouScreen(
                                 onOpen = {
                                     val route = fi.route ?: return@FeedCard
                                     // A feature the user has never met explains itself first.
-                                    val intro = viewModel.introFor(fi)
-                                    if (intro == null) onOpenRoute(route)
-                                    else pendingIntro = PendingIntro(intro, route, accent)
+                                    introGate.open(fi.introId, accent) { onOpenRoute(route) }
                                 },
                             )
                         }
@@ -138,23 +136,8 @@ fun ForYouScreen(
         }
     }
 
-    pendingIntro?.let { p ->
-        FeatureIntroSheet(
-            intro = p.intro,
-            accent = p.accent,
-            // Dismissing leaves the intro unseen, so a curious tap costs the user nothing.
-            onDismiss = { pendingIntro = null },
-            onContinue = {
-                viewModel.markIntroSeen(p.intro.id)
-                pendingIntro = null
-                onOpenRoute(p.route)
-            },
-        )
-    }
+    FeatureIntroHost(introGate)
 }
-
-/** An intro waiting to be shown, with the route it leads to and the accent of the card it came from. */
-private data class PendingIntro(val intro: FeatureIntro, val route: String, val accent: Color)
 
 @Composable
 private fun accentFor(item: FeedItem): Color {

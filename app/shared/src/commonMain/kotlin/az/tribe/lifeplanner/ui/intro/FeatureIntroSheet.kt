@@ -33,10 +33,12 @@ import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
 import az.tribe.lifeplanner.ui.theme.modernColors
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.ChartBar
 import com.adamglin.phosphoricons.regular.Clock
 import com.adamglin.phosphoricons.regular.Compass
 import com.adamglin.phosphoricons.regular.Eye
 import com.adamglin.phosphoricons.regular.Lock
+import com.adamglin.phosphoricons.regular.Scales
 import com.adamglin.phosphoricons.regular.Sparkle
 import com.adamglin.phosphoricons.regular.Target
 import com.adamglin.phosphoricons.regular.TrendUp
@@ -187,5 +189,7 @@ private fun IntroIcon?.vector(): ImageVector = when (this) {
     IntroIcon.CLOCK -> PhosphorIcons.Regular.Clock
     IntroIcon.COMPASS -> PhosphorIcons.Regular.Compass
     IntroIcon.LOCK -> PhosphorIcons.Regular.Lock
+    IntroIcon.SCALES -> PhosphorIcons.Regular.Scales
+    IntroIcon.CHART -> PhosphorIcons.Regular.ChartBar
     null -> PhosphorIcons.Regular.Sparkle
 }

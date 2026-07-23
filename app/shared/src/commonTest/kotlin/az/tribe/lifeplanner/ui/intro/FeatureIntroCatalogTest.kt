@@ -54,8 +54,18 @@ class FeatureIntroCatalogTest {
     }
 
     @Test
+    fun everyYouTabFeatureHasAnIntro() {
+        listOf(
+            FeatureIntroCatalog.WEEKLY_REVIEW,
+            FeatureIntroCatalog.DECISION_JOURNAL,
+            FeatureIntroCatalog.DECISION_REVIEW,
+            FeatureIntroCatalog.MY_PATTERNS,
+        ).forEach { assertNotNull(FeatureIntroCatalog[it], "missing intro for $it") }
+    }
+
+    @Test
     fun idsAreUniqueAndStable() {
-        assertEquals(3, FeatureIntroCatalog.ids.size)
+        assertEquals(6, FeatureIntroCatalog.ids.size)
         assertTrue(FeatureIntroCatalog.ids.all { it.startsWith("intro_") })
     }
 }

@@ -30,7 +30,7 @@ data class FeatureIntro(
 data class IntroBenefit(val icon: IntroIcon, val text: String)
 
 /** Icon vocabulary for benefit rows, kept as data so the catalog stays free of Compose types. */
-enum class IntroIcon { TARGET, TREND, EYE, CLOCK, COMPASS, LOCK }
+enum class IntroIcon { TARGET, TREND, EYE, CLOCK, COMPASS, LOCK, SCALES, CHART }
 
 /**
  * Every intro the app can show, keyed by [FeatureIntro.id].
@@ -43,7 +43,13 @@ object FeatureIntroCatalog {
 
     const val VISION = "intro_vision"
     const val QUEST = "intro_quest"
+
+    /** Shared by the feed's weekly review card and the You tab's Day Retrospective row: one screen, one intro. */
     const val WEEKLY_REVIEW = "intro_weekly_review"
+
+    const val DECISION_JOURNAL = "intro_decision_journal"
+    const val DECISION_REVIEW = "intro_decision_review"
+    const val MY_PATTERNS = "intro_my_patterns"
 
     private val all: Map<String, FeatureIntro> = listOf(
         FeatureIntro(
@@ -87,6 +93,48 @@ object FeatureIntroCatalog {
             ),
             asks = "We will ask you to skim your week and answer a few short questions. Your answers stay on your device.",
             ctaLabel = "Start my review",
+        ),
+        FeatureIntro(
+            id = DECISION_JOURNAL,
+            icon = IntroIcon.COMPASS,
+            eyebrow = "DECISION JOURNAL",
+            title = "Write down the call you just made",
+            whatItIs = "A log of your real decisions, with the reasoning you had at the time.",
+            benefits = listOf(
+                IntroBenefit(IntroIcon.EYE, "Read back what you were actually thinking, not what you remember thinking."),
+                IntroBenefit(IntroIcon.TREND, "See which kinds of calls you tend to get right."),
+                IntroBenefit(IntroIcon.CLOCK, "Takes a minute now and pays off months from now."),
+            ),
+            asks = "We will ask what you decided, why, and what you expect to happen. Two or three sentences is plenty.",
+            ctaLabel = "Log a decision",
+        ),
+        FeatureIntro(
+            id = DECISION_REVIEW,
+            icon = IntroIcon.SCALES,
+            eyebrow = "REVIEW DECISIONS",
+            title = "Grade your thinking, not just the result",
+            whatItIs = "A second look at decisions whose outcome you now know.",
+            benefits = listOf(
+                IntroBenefit(IntroIcon.SCALES, "Tell a good call from a lucky one, and a bad call from bad luck."),
+                IntroBenefit(IntroIcon.TREND, "Spot the reasoning that keeps letting you down."),
+                IntroBenefit(IntroIcon.EYE, "Compare what you expected with what actually happened."),
+            ),
+            asks = "We will show you decisions you logged yourself and ask how each one turned out.",
+            ctaLabel = "Review my decisions",
+        ),
+        FeatureIntro(
+            id = MY_PATTERNS,
+            icon = IntroIcon.CHART,
+            eyebrow = "MY PATTERNS",
+            title = "See when you actually show up",
+            whatItIs = "The times and days you open this app, turned into a picture of your week.",
+            benefits = listOf(
+                IntroBenefit(IntroIcon.CLOCK, "Find the hours when your follow-through is strongest."),
+                IntroBenefit(IntroIcon.TARGET, "Anchor your most important habit to a window that already works."),
+                IntroBenefit(IntroIcon.CHART, "Watch the picture sharpen the more you use the app."),
+            ),
+            asks = "This uses how you use this app only. Nothing leaves your device and no other app is looked at.",
+            ctaLabel = "See my patterns",
         ),
     ).associateBy { it.id }
 
