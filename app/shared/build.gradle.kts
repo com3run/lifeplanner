@@ -178,6 +178,14 @@ kotlin {
 
         getByName("androidHostTest").dependencies {
             implementation(libs.sqldelight.test)
+            // JVM screenshot previews: render commonMain composables to PNG without an
+            // emulator (previews/PreviewScreenshots.kt). Robolectric native graphics + Roborazzi.
+            implementation(libs.junit)
+            implementation(libs.robolectric)
+            implementation(libs.roborazzi)
+            implementation(libs.roborazzi.compose)
+            implementation(libs.androidx.compose.ui.test.junit4)
+            implementation(libs.androidx.compose.ui.test.manifest)
         }
     }
 }
@@ -268,4 +276,7 @@ tasks.withType<Test>().configureEach {
     // Recycle the test JVM each class so leaked coroutine scopes / Dispatchers.IO listeners
     // (e.g. SyncManager's uncancelled scope) can't accumulate and stall the full-suite run.
     forkEvery = 1
+    // Roborazzi always records: captureRoboImage writes PNGs to build/previews/ so UI
+    // changes can be reviewed without building for a device. No-op for non-preview tests.
+    systemProperty("roborazzi.test.record", "true")
 }
