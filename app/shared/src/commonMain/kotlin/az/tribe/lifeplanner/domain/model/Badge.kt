@@ -53,6 +53,30 @@ object BadgeRequirements {
     }
 
     /**
+     * How rare/hard-won a badge is, 1 (starter) to 5 (legendary). Used to pick the single badge
+     * worth celebrating when several are earned at once, so a batch leads with its best moment
+     * instead of burying it under starter badges.
+     */
+    fun getSignificance(type: BadgeType): Int = when (type) {
+        BadgeType.STREAK_100, BadgeType.GOAL_50,
+        BadgeType.HABIT_PERFECT_MONTH, BadgeType.FOCUS_50 -> 5
+
+        BadgeType.STREAK_30, BadgeType.GOAL_25, BadgeType.JOURNAL_30,
+        BadgeType.HABIT_PERFECT_WEEK, BadgeType.FOCUS_10, BadgeType.BALANCED -> 4
+
+        BadgeType.STREAK_14, BadgeType.GOAL_10, BadgeType.JOURNAL_10, BadgeType.HABIT_5,
+        BadgeType.FOCUS_HOUR, BadgeType.HEALTH_FOCUS, BadgeType.CAREER_FOCUS,
+        BadgeType.COMEBACK -> 3
+
+        BadgeType.STREAK_7, BadgeType.GOAL_5,
+        BadgeType.PERFECTIONIST, BadgeType.GETTING_STARTED -> 2
+
+        BadgeType.FIRST_STEP, BadgeType.STREAK_3, BadgeType.GOAL_1, BadgeType.HABIT_STARTER,
+        BadgeType.JOURNAL_FIRST, BadgeType.FOCUS_FIRST,
+        BadgeType.EARLY_BIRD, BadgeType.NIGHT_OWL -> 1
+    }
+
+    /**
      * Get the category this badge applies to
      */
     fun getCategory(type: BadgeType): BadgeCategory = when (type) {

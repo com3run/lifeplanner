@@ -7,6 +7,7 @@ import az.tribe.lifeplanner.data.analytics.FacebookAnalytics
 import az.tribe.lifeplanner.domain.enum.BadgeType
 import az.tribe.lifeplanner.domain.enum.ChallengeType
 import az.tribe.lifeplanner.domain.model.Badge
+import az.tribe.lifeplanner.domain.model.BadgeRequirements
 import az.tribe.lifeplanner.domain.model.Challenge
 import az.tribe.lifeplanner.domain.model.UserProgress
 import az.tribe.lifeplanner.domain.repository.GamificationRepository
@@ -23,6 +24,11 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
+import kotlin.time.Clock
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.minutes
 
 class GamificationViewModel(
     private val gamificationRepository: GamificationRepository,
@@ -55,6 +61,12 @@ class GamificationViewModel(
 
     /** Prevents concurrent loadAll() calls from racing. */
     private val loadMutex = Mutex()
+
+    /**
+     * False until the first load has recorded what the user already had. Without it the initial
+     * snapshot reads as "everything was just earned" and the whole badge history is celebrated.
+     */
+    private var hasBadgeBaseline = false
 
     init {
         viewModelScope.launch {
@@ -94,15 +106,33 @@ class GamificationViewModel(
                 )
             }
 
-            // Detect newly earned badges from server-side changes
-            val newBadgeTypes = _badges.value.map { it.type }.toSet()
-            val previousBadgeTypes = previousBadges.map { it.type }.toSet()
-            val earnedTypes = newBadgeTypes - previousBadgeTypes
-            if (earnedTypes.isNotEmpty()) {
-                _badges.value.filter { it.type in earnedTypes }.forEach { badge ->
+            // Detect newly earned badges from server-side changes.
+            //
+            // Two things would otherwise mistake a user's badge history for a burst of wins:
+            // the first load has no baseline to diff against, and the load right after sign-in
+            // sees every previously earned badge arrive from the server at once. So we skip the
+            // baseline load, and require the badge to have been earned just now.
+            if (!hasBadgeBaseline) {
+                hasBadgeBaseline = true
+            } else {
+                val previousBadgeTypes = previousBadges.map { it.type }.toSet()
+                val justEarned = _badges.value
+                    .filter { it.type !in previousBadgeTypes }
+                    .filter { earnedWithinCelebrationWindow(it) }
+
+                justEarned.forEach { badge ->
                     FacebookAnalytics.logUnlockAchievement(badge.type.displayName)
                     Analytics.badgeEarned(badge.type.name)
-                    _gamificationEvents.emit(GamificationEvent.BadgeEarned(badge))
+                }
+
+                // One celebration per batch: the rarest badge, most recent breaking a tie.
+                val headline = justEarned.maxWithOrNull(
+                    compareBy({ BadgeRequirements.getSignificance(it.type) }, { it.earnedAt })
+                )
+                if (headline != null) {
+                    _gamificationEvents.emit(
+                        GamificationEvent.BadgeEarned(headline, alsoEarnedCount = justEarned.size - 1)
+                    )
                 }
             }
         } catch (e: Exception) {
@@ -110,6 +140,19 @@ class GamificationViewModel(
         } finally {
             _isLoading.value = false
         }
+    }
+
+    /**
+     * A badge counts as "just earned" only if it was awarded within this window. Sign-in pulls
+     * the full badge history down in one sync; those all carry old timestamps.
+     */
+    private fun earnedWithinCelebrationWindow(badge: Badge): Boolean = try {
+        val tz = TimeZone.currentSystemDefault()
+        val age = Clock.System.now() - badge.earnedAt.toInstant(tz)
+        age >= Duration.ZERO && age <= BADGE_CELEBRATION_WINDOW
+    } catch (e: Exception) {
+        co.touchlab.kermit.Logger.w("GamificationVM") { "badge age check failed: ${e.message}" }
+        false
     }
 
     fun refresh() {
@@ -128,6 +171,9 @@ class GamificationViewModel(
         _activeChallenges.value = emptyList()
         _completedChallenges.value = emptyList()
         _availableChallenges.value = emptyList()
+        // The next load re-establishes the baseline; without this the signed-in user's whole
+        // badge history would be celebrated on the load that follows.
+        hasBadgeBaseline = false
         // Re-read from DB to pick up the cleared state
         viewModelScope.launch { loadAll() }
     }
@@ -207,11 +253,17 @@ class GamificationViewModel(
             type to earnedBadges[type]
         }
     }
+
+    companion object {
+        /** How recently a badge must have been awarded to be worth a celebration. */
+        val BADGE_CELEBRATION_WINDOW: Duration = 10.minutes
+    }
 }
 
 sealed class GamificationEvent {
     data class StreakUpdated(val newStreak: Int) : GamificationEvent()
-    data class BadgeEarned(val badge: Badge) : GamificationEvent()
+    /** [alsoEarnedCount] is how many further badges landed in the same batch but are not shown. */
+    data class BadgeEarned(val badge: Badge, val alsoEarnedCount: Int = 0) : GamificationEvent()
     data class ChallengeStarted(val challenge: Challenge) : GamificationEvent()
     data class ChallengeCompleted(val challenge: Challenge) : GamificationEvent()
     data class LevelUp(val newLevel: Int, val title: String) : GamificationEvent()
