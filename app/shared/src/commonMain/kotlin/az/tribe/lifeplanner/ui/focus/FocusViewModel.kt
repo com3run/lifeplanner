@@ -277,10 +277,6 @@ class FocusViewModel(
         val now = Clock.System.now()
         timerStartInstant = now
 
-        // Ambient sound is chosen automatically from the time of day (no picker for now)
-        val hour = now.toLocalDateTime(TimeZone.currentSystemDefault()).hour
-        _selectedAmbientSound.value = autoAmbientSoundForHour(hour)
-
         viewModelScope.launch {
             val session = FocusSession(
                 id = sessionId,

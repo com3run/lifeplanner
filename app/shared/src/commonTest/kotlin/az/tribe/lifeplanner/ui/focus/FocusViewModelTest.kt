@@ -340,33 +340,6 @@ class FocusViewModelTest {
     }
 
     @Test
-    fun `autoAmbientSoundForHour maps day parts to sounds`() {
-        assertEquals(AmbientSound.BIRDS, autoAmbientSoundForHour(7))
-        assertEquals(AmbientSound.CAFE, autoAmbientSoundForHour(12))
-        assertEquals(AmbientSound.LOFI, autoAmbientSoundForHour(15))
-        assertEquals(AmbientSound.FIREPLACE, autoAmbientSoundForHour(20))
-        assertEquals(AmbientSound.NIGHT, autoAmbientSoundForHour(23))
-        assertEquals(AmbientSound.NIGHT, autoAmbientSoundForHour(3))
-    }
-
-    @Test
-    fun `startTimer auto-selects ambient sound from time of day`() = runTest(testDispatcher) {
-        val milestone = testMilestone(id = "m1")
-        val goal = testGoal(id = "g1", milestones = listOf(milestone))
-
-        viewModel = createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        viewModel.selectMilestoneWithGoal(milestone, goal)
-        viewModel.startTimer()
-
-        assertNotEquals(AmbientSound.NONE, viewModel.selectedAmbientSound.value)
-
-        viewModel.cancelTimer()
-        testDispatcher.scheduler.advanceUntilIdle()
-    }
-
-    @Test
     fun `setMood after session end persists mood to session record`() = runTest(testDispatcher) {
         val milestone = testMilestone(id = "m1")
         val goal = testGoal(id = "g1", milestones = listOf(milestone))
