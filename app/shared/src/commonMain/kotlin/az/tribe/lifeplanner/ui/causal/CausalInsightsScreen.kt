@@ -1,5 +1,6 @@
 package az.tribe.lifeplanner.ui.causal
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -33,6 +35,9 @@ import az.tribe.lifeplanner.domain.model.InsightConfidence
 import az.tribe.lifeplanner.domain.model.InsightKind
 import az.tribe.lifeplanner.domain.service.Calibration
 import az.tribe.lifeplanner.ui.theme.modernColors
+import leanlifeplanner.app.shared.generated.resources.Res
+import leanlifeplanner.app.shared.generated.resources.illus_state_waiting
+import org.jetbrains.compose.resources.painterResource
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.ArrowLeft
@@ -173,13 +178,23 @@ private fun ConfidenceChip(confidence: InsightConfidence) {
 
 @Composable
 private fun EmptyState() {
-    Text(
-        "Not enough history yet. Keep logging habits, mood, focus, and sleep, once there's " +
-            "enough, your personal patterns and estimation calibration show up here.",
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.modernColors.textSecondary,
-        modifier = Modifier.padding(vertical = 16.dp)
-    )
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Image(
+            painter = painterResource(Res.drawable.illus_state_waiting),
+            contentDescription = null,
+            modifier = Modifier.size(140.dp)
+        )
+        Text(
+            "Not enough history yet. Keep logging habits, mood, focus, and sleep, once there's " +
+                "enough, your personal patterns and estimation calibration show up here.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.modernColors.textSecondary
+        )
+    }
 }
 
 @Composable

@@ -2,6 +2,7 @@ package az.tribe.lifeplanner.ui.planner
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -57,6 +58,9 @@ import com.adamglin.phosphoricons.regular.Sun
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.plus
+import leanlifeplanner.app.shared.generated.resources.Res
+import leanlifeplanner.app.shared.generated.resources.illus_empty_calendar
+import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.viewmodel.koinViewModel
 
 // ─── Domain types ─────────────────────────────────────────────────────────────
@@ -487,7 +491,11 @@ private fun PlannerEmptyState() {
         modifier = Modifier.fillMaxWidth().padding(vertical = 36.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("✦", fontSize = 28.sp)
+        Image(
+            painter = painterResource(Res.drawable.illus_empty_calendar),
+            contentDescription = null,
+            modifier = Modifier.size(140.dp)
+        )
         Spacer(Modifier.height(10.dp))
         Text("No habits scheduled yet", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f), fontWeight = FontWeight.Medium)
         Spacer(Modifier.height(4.dp))

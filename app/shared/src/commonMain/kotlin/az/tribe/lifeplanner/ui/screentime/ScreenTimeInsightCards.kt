@@ -5,6 +5,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -47,6 +48,9 @@ import com.adamglin.phosphoricons.regular.Clock
 import com.adamglin.phosphoricons.regular.Lightning
 import com.adamglin.phosphoricons.regular.Sparkle
 import kotlinx.coroutines.delay
+import leanlifeplanner.app.shared.generated.resources.Res
+import leanlifeplanner.app.shared.generated.resources.illus_state_waiting
+import org.jetbrains.compose.resources.painterResource
 
 @Composable
 fun OverviewCard(pattern: AppUsagePattern) {
@@ -313,9 +317,11 @@ fun EmptyPatternCard() {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Icon(PhosphorIcons.Regular.ChartBar, null,
-                modifier = Modifier.size(48.dp),
-                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
+            Image(
+                painter = painterResource(Res.drawable.illus_state_waiting),
+                contentDescription = null,
+                modifier = Modifier.size(120.dp)
+            )
             Text("Not enough data yet", fontWeight = FontWeight.Bold, fontSize = 17.sp)
             Text(
                 "Use the app for a few more days and your personalized patterns will appear here.",
