@@ -47,8 +47,11 @@ class RetrospectiveViewModel(
 
     init {
         // Opening the retrospective is the weekly review; stamp it so the For You goal-setting
-        // cascade knows when to invite the next one.
-        Settings().putLong(GoalSettingCascade.LAST_REVIEW_AT_KEY, Clock.System.now().toEpochMilliseconds())
+        // cascade knows when to invite the next one. Best-effort: the no-arg Settings() needs an
+        // Android Context, which host unit tests do not have.
+        runCatching {
+            Settings().putLong(GoalSettingCascade.LAST_REVIEW_AT_KEY, Clock.System.now().toEpochMilliseconds())
+        }
         viewModelScope.launch {
             // Always load today's snapshot eagerly for compare section
             val todaySnap = safeGetSnapshot(today)
