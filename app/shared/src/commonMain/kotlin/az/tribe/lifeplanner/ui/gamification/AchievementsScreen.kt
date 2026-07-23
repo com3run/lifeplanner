@@ -61,7 +61,7 @@ import az.tribe.lifeplanner.domain.enum.BadgeType
 import az.tribe.lifeplanner.domain.model.BadgeCategory
 import az.tribe.lifeplanner.domain.model.BadgeRequirements
 import az.tribe.lifeplanner.ui.components.BadgeCard
-import az.tribe.lifeplanner.ui.components.getBadgeIcon
+import az.tribe.lifeplanner.ui.components.BadgeMedallion
 import az.tribe.lifeplanner.ui.components.rememberHapticManager
 import az.tribe.lifeplanner.ui.gamification.GamificationViewModel
 import org.koin.compose.koinInject
@@ -267,24 +267,12 @@ private fun BadgeDetailBottomSheet(
                 )
             }
 
-            Box(
-                modifier = Modifier
-                    .size(80.dp)
-                    .scale(badgeScale.value)
-                    .clip(CircleShape)
-                    .background(
-                        if (isEarned) Color(badgeType.color)
-                        else MaterialTheme.colorScheme.surfaceVariant
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = getBadgeIcon(badgeType),
-                    contentDescription = null,
-                    modifier = Modifier.size(40.dp),
-                    tint = if (isEarned) Color.White else MaterialTheme.colorScheme.outline
-                )
-            }
+            BadgeMedallion(
+                type = badgeType,
+                isEarned = isEarned,
+                size = 80.dp,
+                modifier = Modifier.scale(badgeScale.value)
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 

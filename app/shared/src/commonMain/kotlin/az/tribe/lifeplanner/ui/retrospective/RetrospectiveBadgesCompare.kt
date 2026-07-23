@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import az.tribe.lifeplanner.domain.model.Badge
 import az.tribe.lifeplanner.domain.model.DaySnapshot
 import az.tribe.lifeplanner.ui.components.GlassCard
+import az.tribe.lifeplanner.ui.components.badgeIcon
 import kotlinx.datetime.LocalDate
 
 @Composable
@@ -57,9 +58,11 @@ internal fun BadgesSection(badges: List<Badge>) {
                             .background(Color(badge.type.color).copy(alpha = 0.12f)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            badge.type.icon,
-                            style = MaterialTheme.typography.titleMedium
+                        Icon(
+                            imageVector = badgeIcon(badge.type),
+                            contentDescription = badge.type.displayName,
+                            modifier = Modifier.size(20.dp),
+                            tint = Color(badge.type.color)
                         )
                     }
                     Spacer(Modifier.width(12.dp))

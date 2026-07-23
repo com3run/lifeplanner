@@ -22,15 +22,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import com.adamglin.PhosphorIcons
-import com.adamglin.phosphoricons.Regular
-import com.adamglin.phosphoricons.regular.Check
-import com.adamglin.phosphoricons.regular.Trophy
-import com.adamglin.phosphoricons.regular.Fire
-import com.adamglin.phosphoricons.regular.Repeat
-import com.adamglin.phosphoricons.regular.Book
-import com.adamglin.phosphoricons.regular.Star
-import com.adamglin.phosphoricons.regular.TrendUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -107,40 +98,23 @@ fun BadgeCard(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // Badge Icon with optional pulse glow
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .then(
-                    if (isNew) {
-                        Modifier.border(
-                            width = 3.dp,
-                            brush = Brush.linearGradient(
-                                colors = listOf(
-                                    MaterialTheme.colorScheme.primary.copy(alpha = glowAlpha),
-                                    Color(badgeType.color).copy(alpha = glowAlpha)
-                                )
-                            ),
-                            shape = CircleShape
+        BadgeMedallion(
+            type = badgeType,
+            isEarned = isEarned,
+            size = 48.dp,
+            modifier = if (isNew) {
+                Modifier.border(
+                    width = 3.dp,
+                    brush = Brush.linearGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primary.copy(alpha = glowAlpha),
+                            Color(badgeType.color).copy(alpha = glowAlpha)
                         )
-                    } else Modifier
+                    ),
+                    shape = CircleShape
                 )
-                .clip(CircleShape)
-                .background(
-                    if (isEarned) {
-                        Color(badgeType.color)
-                    } else {
-                        MaterialTheme.colorScheme.surfaceVariant
-                    }
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = getBadgeIcon(badgeType),
-                contentDescription = badgeType.displayName,
-                modifier = Modifier.size(24.dp),
-                tint = if (isEarned) Color.White else MaterialTheme.colorScheme.outline
-            )
-        }
+            } else Modifier
+        )
 
         Spacer(modifier = Modifier.height(6.dp))
 
@@ -168,18 +142,5 @@ fun BadgeCard(
                 fontWeight = FontWeight.Bold
             )
         }
-    }
-}
-/**
- * Get appropriate icon for badge type
- */
-fun getBadgeIcon(type: BadgeType): ImageVector {
-    return when {
-        type.name.startsWith("STREAK") -> PhosphorIcons.Regular.Fire
-        type.name.startsWith("GOAL") || type.name == "FIRST_STEP" -> PhosphorIcons.Regular.TrendUp
-        type.name.startsWith("HABIT") -> PhosphorIcons.Regular.Repeat
-        type.name.startsWith("JOURNAL") -> PhosphorIcons.Regular.Book
-        type == BadgeType.PERFECTIONIST -> PhosphorIcons.Regular.Check
-        else -> PhosphorIcons.Regular.Trophy
     }
 }
