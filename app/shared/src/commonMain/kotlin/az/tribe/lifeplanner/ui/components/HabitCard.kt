@@ -371,13 +371,11 @@ fun HabitCard(
 
                 Spacer(modifier = Modifier.weight(1f))
 
-                // Stats: streak + completions
+                // Stats: the streak is the star (owner call: no Build/Break status pill).
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    HabitTypePill(type = habit.type)
-
                     if (habit.currentStreak > 0) {
                         if (habit.type == HabitType.QUIT) {
                             DaysCleanPill(days = habit.currentStreak)

@@ -430,22 +430,26 @@ internal fun DaysCleanPill(days: Int) {
 internal fun StreakBadge(
     streak: Int
 ) {
+    val flame = Color(0xFFFF6B35)
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = Modifier
+            .background(flame.copy(alpha = 0.12f), RoundedCornerShape(50))
+            .padding(horizontal = 8.dp, vertical = 3.dp)
     ) {
         Icon(
             imageVector = PhosphorIcons.Regular.Fire,
             contentDescription = null,
-            tint = Color(0xFFFF6B35),
-            modifier = Modifier.size(14.dp)
+            tint = flame,
+            modifier = Modifier.size(12.dp)
         )
         Text(
-            text = "${streak}d",
+            text = if (streak == 1) "1 day streak" else "$streak day streak",
             style = MaterialTheme.typography.labelSmall.copy(
                 fontWeight = FontWeight.SemiBold
             ),
-            color = Color(0xFFFF6B35)
+            color = flame
         )
     }
 }
