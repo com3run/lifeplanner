@@ -17,7 +17,7 @@ object FeatureFlags {
      * the data-coupled For You feed. Default false = current behavior (For You home).
      * Flip to true for the Phase 1 release; back to false once Phase 2 lands For You.
      */
-    const val USE_LEGACY_HOME_TAB = true
+    const val USE_LEGACY_HOME_TAB = false
 
     /** Phase 2: For You feed as Home (needs PossibilityEngine + feed tables). */
     const val REDESIGN_HOME_FORYOU = false
