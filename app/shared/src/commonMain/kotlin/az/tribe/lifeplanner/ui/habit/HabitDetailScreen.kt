@@ -113,7 +113,11 @@ fun HabitDetailScreen(
             return@Scaffold
         }
         val isQuit = h.type == HabitType.QUIT
-        val streakNoun = if (isQuit) "day clean" else "day streak"
+        val streakLabel = when {
+            isQuit && h.currentStreak == 1 -> "1 day clean"
+            isQuit -> "${h.currentStreak} days clean"
+            else -> "${h.currentStreak} day streak"
+        }
 
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -129,8 +133,8 @@ fun HabitDetailScreen(
                 GradientHero(
                     eyebrow = "${h.category.displayName} · ${h.type.displayName}",
                     title = h.title,
-                    subtitle = if (h.currentStreak > 0) "🔥 ${h.currentStreak} $streakNoun · ${h.frequency.displayName}"
-                    else "${h.frequency.displayName} · start your streak today",
+                    subtitle = if (h.currentStreak > 0) "${if (isQuit) "🛡️" else "🔥"} $streakLabel · ${h.frequency.displayName}"
+                    else "${h.frequency.displayName} · ${if (isQuit) "day one starts now" else "start your streak today"}",
                     gradient = h.category.gradient(),
                     trailing = {
                         // getHabitCompletionRate returns a 0..100 percentage (last 30 days).
@@ -157,7 +161,12 @@ fun HabitDetailScreen(
             // Streak stats
             item {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm)) {
-                    StatTile(value = "${h.currentStreak}", label = "Current", accent = c.warning, modifier = Modifier.weight(1f))
+                    StatTile(
+                        value = "${h.currentStreak}",
+                        label = if (isQuit) "Days clean" else "Current",
+                        accent = if (isQuit) c.success else c.warning,
+                        modifier = Modifier.weight(1f)
+                    )
                     StatTile(value = "${h.longestStreak}", label = "Best", accent = c.secondary, modifier = Modifier.weight(1f))
                     StatTile(value = "${h.totalCompletions}", label = "Total", accent = c.primary, modifier = Modifier.weight(1f))
                 }
