@@ -1,6 +1,8 @@
 package az.tribe.lifeplanner.ui.goal
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -48,6 +50,9 @@ fun WhyThisGoalBottomSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                // Without this the options below the fold are unreachable once the user has
+                // more than a handful of values.
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp)
                 .padding(bottom = 32.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
