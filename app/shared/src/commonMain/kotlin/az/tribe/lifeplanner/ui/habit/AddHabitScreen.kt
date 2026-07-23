@@ -32,6 +32,13 @@ import com.adamglin.phosphoricons.regular.Sparkle
 import com.adamglin.phosphoricons.regular.X
 import org.koin.compose.viewmodel.koinViewModel
 
+/** How a habit is measured: single check, N actions a day, or minutes a day. */
+internal enum class HabitTrackMode(val label: String) {
+    CHECK("Just check"),
+    COUNT("Count"),
+    MINUTES("Minutes"),
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddHabitScreen(
@@ -50,6 +57,35 @@ fun AddHabitScreen(
     var healthMetric by remember { mutableStateOf<HealthMetricType?>(null) }
     var healthTargetText by remember { mutableStateOf("") }
     var showTitleError by remember { mutableStateOf(false) }
+    var titleErrorText by remember { mutableStateOf("") }
+    // Collected so the duplicate check below sees the real list (the flow is WhileSubscribed).
+    val existingHabits by viewModel.habits.collectAsState()
+    var trackMode by remember { mutableStateOf(HabitTrackMode.CHECK) }
+    var userPickedTrackMode by remember { mutableStateOf(false) }
+    var countTargetText by remember { mutableStateOf("") }
+    var countUnitText by remember { mutableStateOf("") }
+
+    // "Drink 8 glasses of water" should become an 8-action habit without extra typing:
+    // infer count/minutes from the title until the user picks a mode themselves.
+    LaunchedEffect(title) {
+        if (userPickedTrackMode) return@LaunchedEffect
+        val parsed = HabitNumericParser.parse(title)
+        if (parsed != null && parsed.first > 1) {
+            val (count, unit) = parsed
+            if (unit == "min" || unit == "hrs") {
+                trackMode = HabitTrackMode.MINUTES
+                countTargetText = (if (unit == "hrs") count * 60 else count).toString()
+            } else {
+                trackMode = HabitTrackMode.COUNT
+                countTargetText = count.toString()
+                countUnitText = unit
+            }
+        } else if (trackMode != HabitTrackMode.CHECK) {
+            trackMode = HabitTrackMode.CHECK
+            countTargetText = ""
+            countUnitText = ""
+        }
+    }
     val timePickerState = rememberTimePickerState(initialHour = 8, initialMinute = 0, is24Hour = false)
     var selectedTemplateCategory by remember { mutableStateOf<GoalCategory?>(null) }
 
@@ -249,16 +285,33 @@ fun AddHabitScreen(
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = {
+                    val isDuplicate = existingHabits.any {
+                        it.habit.title.equals(title.trim(), ignoreCase = true)
+                    }
                     if (!isFormValid) {
+                        titleErrorText = "Give your habit a name first"
+                        showTitleError = true
+                    } else if (isDuplicate) {
+                        titleErrorText = "You already have a habit with this name"
                         showTitleError = true
                     }
-                    if (isFormValid) {
+                    if (isFormValid && !isDuplicate) {
+                        val target = countTargetText.toIntOrNull()?.coerceAtLeast(1)
                         viewModel.createHabit(
                             title = title.trim(),
                             description = description.trim(),
                             category = selectedCategory,
                             frequency = selectedFrequency,
                             type = selectedHabitType,
+                            targetCount = when (trackMode) {
+                                HabitTrackMode.CHECK -> 1
+                                else -> target ?: 1
+                            },
+                            unit = when (trackMode) {
+                                HabitTrackMode.CHECK -> null
+                                HabitTrackMode.COUNT -> countUnitText.trim().ifBlank { "times" }
+                                HabitTrackMode.MINUTES -> "min"
+                            },
                             reminderTime = reminderTime,
                             healthMetricType = healthMetric,
                             healthTarget = healthTargetText.toDoubleOrNull()
@@ -305,7 +358,7 @@ fun AddHabitScreen(
                     singleLine = true,
                     isError = showTitleError,
                     supportingText = if (showTitleError) {
-                        { Text("Give your habit a name first") }
+                        { Text(titleErrorText) }
                     } else null,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp)
@@ -421,6 +474,78 @@ fun AddHabitScreen(
                             modifier = Modifier.weight(1f)
                         )
                     }
+                }
+            }
+
+            // ── How do you track it ──────────────────────────────────────────
+            item {
+                Text(
+                    "How do you track it?",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    HabitTrackMode.entries.forEach { mode ->
+                        val isSelected = trackMode == mode
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = {
+                                userPickedTrackMode = true
+                                trackMode = mode
+                                if (mode == HabitTrackMode.MINUTES) countUnitText = ""
+                            },
+                            label = {
+                                Text(
+                                    mode.label,
+                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                                )
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+                if (trackMode == HabitTrackMode.COUNT) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(
+                            value = countTargetText,
+                            onValueChange = { countTargetText = it.filter { c -> c.isDigit() } },
+                            label = { Text("Times a day") },
+                            placeholder = { Text("8") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            singleLine = true,
+                            modifier = Modifier.weight(1f)
+                        )
+                        OutlinedTextField(
+                            value = countUnitText,
+                            onValueChange = { countUnitText = it },
+                            label = { Text("Unit") },
+                            placeholder = { Text("glasses") },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        "Each tap adds 1 until the day's target is reached.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else if (trackMode == HabitTrackMode.MINUTES) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = countTargetText,
+                        onValueChange = { countTargetText = it.filter { c -> c.isDigit() } },
+                        label = { Text("Minutes a day") },
+                        placeholder = { Text("20") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
             }
 
