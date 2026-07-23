@@ -22,10 +22,8 @@ import az.tribe.lifeplanner.domain.model.Milestone
 import az.tribe.lifeplanner.ui.components.BadgeCard
 import az.tribe.lifeplanner.ui.components.BadgeMedallion
 import az.tribe.lifeplanner.ui.goal.GoalJourneyCard
-import az.tribe.lifeplanner.ui.intro.FeatureIntro
+import az.tribe.lifeplanner.ui.intro.FeatureIntroCatalog
 import az.tribe.lifeplanner.ui.intro.FeatureIntroSheet
-import az.tribe.lifeplanner.ui.intro.IntroBenefit
-import az.tribe.lifeplanner.ui.intro.IntroIcon
 import az.tribe.lifeplanner.ui.theme.LifePlannerTheme
 import com.github.takahirom.roborazzi.RobolectricDeviceQualifiers
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -146,26 +144,18 @@ class PreviewScreenshots {
         GoalJourneyCard(goal = goal(milestonesDone = 1), horizontalPadding = 0.dp)
     }
 
-    @Test
-    fun featureIntroSheet() {
+    /**
+     * Renders a real catalog entry rather than a mock, so what the owner reviews is the copy that
+     * actually ships. One test per intro because a compose rule allows a single setContent.
+     */
+    private fun snapIntro(introId: String) {
+        val intro = requireNotNull(FeatureIntroCatalog[introId]) { "no intro for $introId" }
         compose.mainClock.autoAdvance = false
         compose.setContent {
             LifePlannerTheme {
                 Surface(color = MaterialTheme.colorScheme.background) {
                     FeatureIntroSheet(
-                        intro = FeatureIntro(
-                            id = "intro_preview",
-                            icon = IntroIcon.COMPASS,
-                            eyebrow = "YOUR COMPASS",
-                            title = "Name what matters to you",
-                            whatItIs = "A short list of values that every goal you set can point back to.",
-                            benefits = listOf(
-                                IntroBenefit(IntroIcon.COMPASS, "Your goals show the reason behind them, not just a due date."),
-                                IntroBenefit(IntroIcon.TARGET, "The coach uses your values when it helps you plan."),
-                            ),
-                            asks = "Two minutes to pick a few values.",
-                            ctaLabel = "Pick my values",
-                        ),
+                        intro = intro,
                         accent = MaterialTheme.colorScheme.primary,
                         onDismiss = {},
                         onContinue = {},
@@ -175,6 +165,24 @@ class PreviewScreenshots {
         }
         // The sheet animates in inside a dialog window, so capture the whole screen.
         compose.mainClock.advanceTimeBy(1_500)
-        captureScreenRoboImage("build/previews/FeatureIntroSheet.png")
+        captureScreenRoboImage("build/previews/FeatureIntro_${introId.removePrefix("intro_")}.png")
     }
+
+    @Test
+    fun featureIntroVision() = snapIntro(FeatureIntroCatalog.VISION)
+
+    @Test
+    fun featureIntroQuest() = snapIntro(FeatureIntroCatalog.QUEST)
+
+    @Test
+    fun featureIntroWeeklyReview() = snapIntro(FeatureIntroCatalog.WEEKLY_REVIEW)
+
+    @Test
+    fun featureIntroDecisionJournal() = snapIntro(FeatureIntroCatalog.DECISION_JOURNAL)
+
+    @Test
+    fun featureIntroDecisionReview() = snapIntro(FeatureIntroCatalog.DECISION_REVIEW)
+
+    @Test
+    fun featureIntroMyPatterns() = snapIntro(FeatureIntroCatalog.MY_PATTERNS)
 }
