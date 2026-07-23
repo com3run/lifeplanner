@@ -455,23 +455,6 @@ internal fun StreakBadge(
 }
 
 @Composable
-internal fun HabitTypePill(type: HabitType) {
-    val color = if (type == HabitType.BUILD) Color(0xFF4CAF50) else Color(0xFFF44336)
-    Surface(
-        shape = RoundedCornerShape(8.dp),
-        color = color.copy(alpha = 0.12f),
-        modifier = Modifier.height(20.dp)
-    ) {
-        Text(
-            text = type.displayName,
-            style = MaterialTheme.typography.labelSmall,
-            color = color,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-        )
-    }
-}
-
-@Composable
 internal fun FrequencyChip(frequency: HabitFrequency) {
     Surface(
         shape = RoundedCornerShape(8.dp),
