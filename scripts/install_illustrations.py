@@ -1,6 +1,16 @@
 #!/usr/bin/env python3
 """Install Dotion empty-state SVGs into composeResources with dark variants.
 
+IMPORTANT: the files this writes are SVG, and Compose Resources CANNOT render SVG
+on Android -- painterResource throws at runtime with "Android platform doesn't
+support SVG format" (it works fine on iOS, so this only shows up on a device).
+After running this, convert every generated file to an Android VectorDrawable:
+
+    npx svg2vectordrawable -i <file>.svg -o <file>.xml && rm <file>.svg
+
+Vector XML renders on all targets, which is why the checked-in illustrations are
+.xml rather than .svg.
+
 The source art is a greyscale ramp (near-black linework down to light greys on
 white). That reads correctly on a light background but disappears on a dark one,
 so a luminance-inverted copy goes into drawable-dark/ and Compose Resources picks
