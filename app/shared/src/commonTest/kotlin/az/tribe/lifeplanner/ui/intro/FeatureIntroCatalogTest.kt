@@ -65,7 +65,7 @@ class FeatureIntroCatalogTest {
 
     @Test
     fun idsAreUniqueAndStable() {
-        assertEquals(6, FeatureIntroCatalog.ids.size)
+        assertEquals(7, FeatureIntroCatalog.ids.size)
         assertTrue(FeatureIntroCatalog.ids.all { it.startsWith("intro_") })
     }
 }
