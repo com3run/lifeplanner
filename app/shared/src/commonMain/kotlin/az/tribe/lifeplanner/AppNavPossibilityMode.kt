@@ -19,6 +19,26 @@ internal fun NavGraphBuilder.appNavPossibilityMode(navController: NavController)
         PossibilityModeScreen(
             goalId = goalId,
             onBackClick = { navController.popBackStack() },
+            onOpenGoal = { id ->
+                navController.navigate("goal_detail_redesign/$id") {
+                    popUpTo(Screen.PossibilityMode.route) { inclusive = true }
+                    launchSingleTop = true
+                }
+            },
+            onOpenDecision = { id ->
+                navController.navigate("decision_detail/$id") {
+                    popUpTo(Screen.PossibilityMode.route) { inclusive = true }
+                    launchSingleTop = true
+                }
+            },
+            onTalkToCoach = { coachId, message ->
+                // Seed the opener so chat auto-sends it and the matched coach reacts to this situation.
+                az.tribe.lifeplanner.ui.balance.InsightMessageHolder.pendingMessage = message
+                navController.navigate("ai_chat/$coachId") {
+                    popUpTo(Screen.PossibilityMode.route) { inclusive = true }
+                    launchSingleTop = true
+                }
+            },
         )
     }
 }

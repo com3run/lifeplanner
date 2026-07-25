@@ -2,6 +2,7 @@ package az.tribe.lifeplanner.ui.possibility
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import az.tribe.lifeplanner.domain.enum.GoalCategory
 import az.tribe.lifeplanner.domain.enum.GoalStatus
 import az.tribe.lifeplanner.domain.model.Decision
 import az.tribe.lifeplanner.domain.model.Goal
@@ -52,9 +53,13 @@ class PossibilityModeViewModel(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
-    /** Set to a short confirmation after a convergence action, so the screen can acknowledge it. */
-    private val _actionDone = MutableStateFlow<String?>(null)
-    val actionDone: StateFlow<String?> = _actionDone.asStateFlow()
+    /**
+     * A one-shot navigation request emitted after a convergence action, so the screen moves the user
+     * somewhere real instead of just flashing a toast. Cleared once handled.
+     */
+    private val _nav = MutableStateFlow<PossibilityNav?>(null)
+    val nav: StateFlow<PossibilityNav?> = _nav.asStateFlow()
+    fun consumeNav() { _nav.value = null }
 
     init {
         generate()
@@ -85,50 +90,61 @@ class PossibilityModeViewModel(
     private fun selected(): List<Possibility> =
         _possibilities.value.filter { it.id in _selectedIds.value }
 
-    /** Convergence: turn a possibility into its own new goal, carrying the parent's value + area. */
-    fun makeGoal(p: Possibility) {
-        val parent = _goal.value ?: return
-        viewModelScope.launch {
-            runCatching {
-                val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-                createGoalUseCase(
-                    Goal(
-                        id = Uuid.random().toString(),
-                        category = parent.category,
-                        title = p.text.take(120),
-                        description = "From Possibility Mode for \"${parent.title}\". ${p.rationale}",
-                        status = GoalStatus.IN_PROGRESS,
-                        timeline = parent.timeline,
-                        dueDate = parent.dueDate,
-                        createdAt = now,
-                        valueId = parent.valueId,
-                    )
-                )
-                _actionDone.value = "Added as a new goal"
-            }.onFailure { Logger.w("PossibilityMode") { "makeGoal failed: ${it.message}" } }
-        }
-    }
-
-    /** Convergence: attach a possibility as a concrete next step on the stuck goal. */
-    fun addStep(p: Possibility) {
-        viewModelScope.launch {
-            runCatching {
-                goalRepository.addMilestone(goalId, Milestone(id = Uuid.random().toString(), title = p.text.take(120)))
-                _actionDone.value = "Added as a step"
-            }.onFailure { Logger.w("PossibilityMode") { "addStep failed: ${it.message}" } }
-        }
-    }
-
-    /** Convergence: record the deliberate re-choice as a Decision (Pillar 3), with the full option set. */
-    fun logAsDecision() {
+    /** Convergence: turn the selected possibilities into new goals, then open the one created (or go back). */
+    fun makeGoalsFromSelection() {
         val parent = _goal.value ?: return
         val picks = selected().ifEmpty { return }
         viewModelScope.launch {
+            val createdIds = mutableListOf<String>()
+            picks.forEach { p ->
+                runCatching {
+                    val id = Uuid.random().toString()
+                    val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+                    createGoalUseCase(
+                        Goal(
+                            id = id,
+                            category = parent.category,
+                            title = p.text.take(120),
+                            description = "From Possibility Mode for \"${parent.title}\". ${p.rationale}",
+                            status = GoalStatus.IN_PROGRESS,
+                            timeline = parent.timeline,
+                            dueDate = parent.dueDate,
+                            createdAt = now,
+                            valueId = parent.valueId,
+                        )
+                    )
+                    createdIds += id
+                }.onFailure { Logger.w("PossibilityMode") { "makeGoal failed: ${it.message}" } }
+            }
+            _nav.value = createdIds.singleOrNull()?.let { PossibilityNav.OpenGoal(it) } ?: PossibilityNav.Back
+        }
+    }
+
+    /** Convergence: attach the selected possibilities as one-time steps on the stuck goal, then open it. */
+    fun addStepsFromSelection() {
+        val picks = selected().ifEmpty { return }
+        viewModelScope.launch {
+            runCatching {
+                picks.forEach { p ->
+                    goalRepository.addMilestone(goalId, Milestone(id = Uuid.random().toString(), title = p.text.take(120)))
+                }
+            }.onFailure { Logger.w("PossibilityMode") { "addStep failed: ${it.message}" } }
+            // Return to the goal so the new steps are visible, instead of a silent toast.
+            _nav.value = PossibilityNav.OpenGoal(goalId)
+        }
+    }
+
+    /** Convergence: record the deliberate re-choice as a Decision (Pillar 3), then open it. */
+    fun logSelectionAsDecision() {
+        val parent = _goal.value ?: return
+        val picks = selected().ifEmpty { return }
+        viewModelScope.launch {
+            val id = Uuid.random().toString()
             runCatching {
                 val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
                 decisionRepository.insertDecision(
                     Decision(
-                        id = Uuid.random().toString(),
+                        id = id,
                         question = "How could I get unstuck on \"${parent.title}\"?",
                         optionsConsidered = _possibilities.value.map { it.text },
                         chosenOption = picks.joinToString("; ") { it.text },
@@ -137,10 +153,46 @@ class PossibilityModeViewModel(
                         decidedAt = now,
                     )
                 )
-                _actionDone.value = "Logged as a decision"
+                _nav.value = PossibilityNav.OpenDecision(id)
             }.onFailure { Logger.w("PossibilityMode") { "logAsDecision failed: ${it.message}" } }
         }
     }
 
-    fun clearActionDone() { _actionDone.value = null }
+    /**
+     * Hand the situation to the user's coach. Builds a context-rich opener from the stuck goal and any
+     * picks, so when chat opens the persona reacts to *this* situation, and invites the user in.
+     */
+    fun talkToCoach() {
+        val parent = _goal.value ?: return
+        val picks = selected()
+        val message = buildString {
+            append("I feel stuck on my goal \"${parent.title}\". ")
+            if (picks.isNotEmpty()) {
+                append("I explored some options in Possibility Mode and I'm considering: ")
+                append(picks.joinToString("; ") { it.text })
+                append(". ")
+            }
+            append("Can you help me think this through and find one small first step? Feel free to ask me questions.")
+        }
+        _nav.value = PossibilityNav.TalkToCoach(coachFor(parent.category), message)
+    }
+
+    /** The built-in coach whose expertise best fits the stuck goal's area. */
+    private fun coachFor(category: GoalCategory): String = when (category) {
+        GoalCategory.CAREER -> "alex_career"
+        GoalCategory.MONEY -> "morgan_finance"
+        GoalCategory.BODY -> "kai_fitness"
+        GoalCategory.PEOPLE -> "sam_social"
+        GoalCategory.WELLBEING -> "river_wellness"
+        GoalCategory.FAMILY -> "jamie_family"
+        GoalCategory.PURPOSE -> "luna_general"
+    }
+}
+
+/** A one-shot destination after a Possibility Mode action. */
+sealed interface PossibilityNav {
+    data class OpenGoal(val goalId: String) : PossibilityNav
+    data class OpenDecision(val decisionId: String) : PossibilityNav
+    data class TalkToCoach(val coachId: String, val message: String) : PossibilityNav
+    data object Back : PossibilityNav
 }
