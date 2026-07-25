@@ -859,7 +859,11 @@ function createStreamingResponse(
   const stream = new ReadableStream({
     async start(controller) {
       const encoder = new TextEncoder();
+      // Track whether any reply text has reached the client. As long as it hasn't, a provider
+      // failure is fully recoverable and we can transparently fall back to the next provider.
+      let streamedAny = false;
       const send: SendFn = (event: string, data: string) => {
+        if (event === "text") streamedAny = true;
         controller.enqueue(encoder.encode(`event: ${event}\ndata: ${data}\n\n`));
       };
 
@@ -881,12 +885,17 @@ function createStreamingResponse(
           controller.close();
           return;
         } catch (err: unknown) {
-          if (isRateLimited(err)) {
-            console.warn(`Streaming provider ${p} rate-limited, trying next`);
+          const rawMsg = err instanceof Error ? err.message : "Stream error";
+          // Nothing reached the client yet, so this provider's failure is recoverable: fall back
+          // to the next provider instead of showing an error. Previously only rate limits fell
+          // back here, so a single transient hiccup (a 5xx, a bad response) on the preferred
+          // provider surfaced as "error from server" mid-chat even though others could answer.
+          if (!streamedAny) {
+            console.warn(`Streaming provider ${p} failed before any output (${rawMsg}), falling back to next`);
             continue;
           }
-          const rawMsg = err instanceof Error ? err.message : "Stream error";
-          console.error("Stream error:", rawMsg);
+          // Reply already started; we cannot cleanly switch providers, so surface a friendly error.
+          console.error("Stream error after partial output:", rawMsg);
           let userMsg = "Something went wrong during streaming. Please try again.";
           if (rawMsg.includes("timeout") || rawMsg.includes("ETIMEDOUT")) userMsg = "AI provider timed out. Please try again.";
           send("error", JSON.stringify({ error: userMsg }));
@@ -895,7 +904,7 @@ function createStreamingResponse(
         }
       }
 
-      send("error", JSON.stringify({ error: "AI provider is rate-limited. Please wait a moment and try again." }));
+      send("error", JSON.stringify({ error: "The AI is unavailable right now. Please try again in a moment." }));
       controller.close();
     },
   });
