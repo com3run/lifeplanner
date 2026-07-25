@@ -20,15 +20,14 @@ recommendations), and Supabase-native monitoring.
 
 ## ⚠️ Blockers that need YOU (credentials / accounts — I can't do these)
 
-1. **Android release signing.** The AAB builds **unsigned** because the keystore isn't at the repo root and the `RELEASE_*` props aren't set.
-   - Copy `~/Documents/tribe/lifeplanner.jks` → repo root `lifeplanner.jks` (git-ignored).
-   - Add to `local.properties` (git-ignored):
-     ```
-     RELEASE_STORE_PASSWORD=…
-     RELEASE_KEY_ALIAS=…
-     RELEASE_KEY_PASSWORD=…
-     ```
-   - Then `./gradlew :app:androidApp:bundleRelease` produces a signed AAB.
+1. **Android release signing.** The AAB builds **unsigned** until the keystore + `RELEASE_*` props are set. The keystore path is now configurable, so you do NOT need to copy the `.jks` into the repo. Add to `local.properties` (git-ignored):
+   ```
+   RELEASE_STORE_FILE=~/Documents/tribe/lifeplanner.jks
+   RELEASE_STORE_PASSWORD=…
+   RELEASE_KEY_ALIAS=…
+   RELEASE_KEY_PASSWORD=…
+   ```
+   `RELEASE_STORE_FILE` accepts an absolute, `~`-relative, or repo-root-relative path; it defaults to `lifeplanner.jks` at the repo root if unset. Then `./gradlew :app:androidApp:bundleRelease` produces a signed AAB.
    - **OR** ship via CI (`.github/workflows/android.yml`) which signs from its own secrets.
 
 2. **iOS `GoogleService-Info.plist`.** Missing from the checkout (git-ignored Firebase secret). Download from Firebase Console → the iOS app (`az.tribe.lifeplanner`) → save to `app/iosApp/iosApp/GoogleService-Info.plist`. Without it the Xcode app build fails.
