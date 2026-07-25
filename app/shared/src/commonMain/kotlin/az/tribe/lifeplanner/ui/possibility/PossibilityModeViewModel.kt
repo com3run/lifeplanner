@@ -10,6 +10,7 @@ import az.tribe.lifeplanner.domain.model.Milestone
 import az.tribe.lifeplanner.domain.model.Possibility
 import az.tribe.lifeplanner.domain.repository.DecisionRepository
 import az.tribe.lifeplanner.domain.repository.GoalRepository
+import az.tribe.lifeplanner.domain.service.LocalPossibilityFallback
 import az.tribe.lifeplanner.usecases.CreateGoalUseCase
 import az.tribe.lifeplanner.usecases.GeneratePossibilitiesUseCase
 import co.touchlab.kermit.Logger
@@ -47,8 +48,11 @@ class PossibilityModeViewModel(
     private val _selectedIds = MutableStateFlow<Set<String>>(emptySet())
     val selectedIds: StateFlow<Set<String>> = _selectedIds.asStateFlow()
 
-    private val _isGenerating = MutableStateFlow(true)
-    val isGenerating: StateFlow<Boolean> = _isGenerating.asStateFlow()
+    /** True while the AI is widening the options in the background. Local options already show. */
+    private val _isEnhancing = MutableStateFlow(true)
+    val isEnhancing: StateFlow<Boolean> = _isEnhancing.asStateFlow()
+
+    private val localFallback = LocalPossibilityFallback()
 
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
@@ -67,19 +71,25 @@ class PossibilityModeViewModel(
 
     fun generate() {
         viewModelScope.launch {
-            _isGenerating.value = true
+            _isEnhancing.value = true
             _error.value = null
             val g = runCatching { goalRepository.observeAllGoals().first().firstOrNull { it.id == goalId } }.getOrNull()
             _goal.value = g
             if (g == null) {
                 _error.value = "That goal could not be found."
-                _isGenerating.value = false
+                _isEnhancing.value = false
                 return@launch
             }
-            val result = generatePossibilities(g)
-            _possibilities.value = result
-            if (result.isEmpty()) _error.value = "Could not gather possibilities right now. Try again."
-            _isGenerating.value = false
+            // Instant: show local options right away so there is never a blank wait.
+            if (_possibilities.value.isEmpty()) _possibilities.value = localFallback(g)
+            // Enhance: swap in the AI's wider set when it arrives; keep the local ones if it fails.
+            val ai = generatePossibilities(g)
+            if (ai.any { !it.isLocal }) {
+                _possibilities.value = ai
+                _selectedIds.value = emptySet() // the option set changed under the user
+            }
+            if (_possibilities.value.isEmpty()) _error.value = "Could not gather possibilities right now. Try again."
+            _isEnhancing.value = false
         }
     }
 
@@ -172,7 +182,10 @@ class PossibilityModeViewModel(
                 append(picks.joinToString("; ") { it.text })
                 append(". ")
             }
-            append("Can you help me think this through and find one small first step? Feel free to ask me questions.")
+            append(
+                "Please suggest one small, concrete first step I could take today, and a sentence on why " +
+                    "it helps. Keep it specific, not abstract. Then, only if you need to tailor it, ask me one question."
+            )
         }
         _nav.value = PossibilityNav.TalkToCoach(coachFor(parent.category), message)
     }

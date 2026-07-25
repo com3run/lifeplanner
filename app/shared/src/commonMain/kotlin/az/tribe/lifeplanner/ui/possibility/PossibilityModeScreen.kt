@@ -69,7 +69,7 @@ fun PossibilityModeScreen(
     val goal by viewModel.goal.collectAsState()
     val possibilities by viewModel.possibilities.collectAsState()
     val selectedIds by viewModel.selectedIds.collectAsState()
-    val isGenerating by viewModel.isGenerating.collectAsState()
+    val isEnhancing by viewModel.isEnhancing.collectAsState()
     val error by viewModel.error.collectAsState()
     val nav by viewModel.nav.collectAsState()
     val c = MaterialTheme.modernColors
@@ -121,14 +121,14 @@ fun PossibilityModeScreen(
             }
 
             when {
-                isGenerating -> item { GeneratingRow() }
-                error != null -> item {
+                error != null && possibilities.isEmpty() -> item {
                     Column(verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm)) {
                         StateView(title = "Nothing yet", message = error ?: "", modifier = Modifier.fillMaxWidth())
                         AppButton(text = "Try again", onClick = viewModel::generate, modifier = Modifier.fillMaxWidth())
                     }
                 }
                 else -> {
+                    if (isEnhancing) item { GeneratingRow() }
                     item {
                         Text(
                             "Pick the ones worth trying",
@@ -137,7 +137,7 @@ fun PossibilityModeScreen(
                             modifier = Modifier.padding(top = LifePlannerDesign.Spacing.xs),
                         )
                     }
-                    if (possibilities.isNotEmpty() && possibilities.all { it.isLocal }) {
+                    if (!isEnhancing && possibilities.isNotEmpty() && possibilities.all { it.isLocal }) {
                         item {
                             Text(
                                 "AI could not be reached just now, so these were drawn from the goal itself.",
@@ -211,7 +211,7 @@ private fun GeneratingRow() {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = c.primary)
-            Text("Widening the options...", style = MaterialTheme.typography.bodyMedium, color = c.textSecondary)
+            Text("Finding more ideas for you...", style = MaterialTheme.typography.bodyMedium, color = c.textSecondary)
         }
     }
 }
