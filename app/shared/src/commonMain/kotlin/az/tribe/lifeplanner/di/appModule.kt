@@ -412,6 +412,8 @@ val appModule = module {
     single { az.tribe.lifeplanner.ui.foryou.HomeFeedBuilder(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single<az.tribe.lifeplanner.ui.intro.IntroSeenStore> { az.tribe.lifeplanner.ui.intro.SettingsIntroSeenStore() }
     viewModel { az.tribe.lifeplanner.ui.foryou.ForYouViewModel(get(), get(), get()) }
+    viewModel { az.tribe.lifeplanner.ui.foryou.LearnHubViewModel(get(), get(), get(), get()) }
+    viewModel { az.tribe.lifeplanner.ui.foryou.KnowledgeDetailViewModel(get()) }
     single { az.tribe.lifeplanner.usecases.GeneratePossibilitiesUseCase(get(), az.tribe.lifeplanner.domain.service.LocalPossibilityFallback()) }
     viewModel { params -> az.tribe.lifeplanner.ui.possibility.PossibilityModeViewModel(params.get(), get(), get(), get(), get()) }
     viewModel { az.tribe.lifeplanner.ui.goals.GoalsViewModel(get()) }

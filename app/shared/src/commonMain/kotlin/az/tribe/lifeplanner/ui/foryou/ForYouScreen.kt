@@ -40,6 +40,7 @@ import az.tribe.lifeplanner.ui.components.GradientHero
 import az.tribe.lifeplanner.ui.components.IconChip
 import az.tribe.lifeplanner.ui.components.ProgressRing
 import az.tribe.lifeplanner.ui.intro.FeatureIntroHost
+import az.tribe.lifeplanner.ui.navigation.Screen
 import az.tribe.lifeplanner.ui.intro.rememberFeatureIntroGate
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
 import az.tribe.lifeplanner.ui.theme.bouncyClickable
@@ -116,7 +117,14 @@ fun ForYouScreen(
                 FeedSection.entries.forEach { sec ->
                     val cards = grouped[sec].orEmpty()
                     if (cards.isNotEmpty()) {
-                        item(key = "h_${sec.name}") { SectionLabel(sec.label) }
+                        item(key = "h_${sec.name}") {
+                            SectionHeader(
+                                label = sec.label,
+                                onSeeAll = if (sec == FeedSection.LEARN) {
+                                    { onOpenRoute(Screen.LearnHub.route) }
+                                } else null,
+                            )
+                        }
                         items(cards, key = { it.id }) { fi ->
                             val accent = accentFor(fi)
                             FeedCard(
@@ -265,13 +273,33 @@ private fun LeadingVisual(item: FeedItem, accent: Color) {
 }
 
 @Composable
-private fun SectionLabel(text: String) {
-    Text(
-        text,
-        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-        color = MaterialTheme.modernColors.textPrimary,
-        modifier = Modifier.padding(top = LifePlannerDesign.Spacing.xs),
-    )
+private fun SectionHeader(label: String, onSeeAll: (() -> Unit)?) {
+    val c = MaterialTheme.modernColors
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(top = LifePlannerDesign.Spacing.xs),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            label,
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+            color = c.textPrimary,
+        )
+        if (onSeeAll != null) {
+            Row(
+                modifier = Modifier.bouncyClickable(onClick = onSeeAll),
+                horizontalArrangement = Arrangement.spacedBy(2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    "See all",
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                    color = c.primary,
+                )
+                Icon(PhosphorIcons.Regular.CaretRight, contentDescription = null, tint = c.primary, modifier = Modifier.size(LifePlannerDesign.IconSize.small))
+            }
+        }
+    }
 }
 
 @Composable

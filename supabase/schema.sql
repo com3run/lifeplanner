@@ -946,7 +946,8 @@ BEGIN
             'goal_dependencies', 'chat_sessions', 'chat_messages', 'review_reports',
             'reminders', 'custom_coaches', 'coach_groups', 'coach_group_members',
             'focus_sessions', 'coach_persona_overrides', 'user_situations',
-            'life_values', 'decisions', 'identity_statements', 'decision_profiles'
+            'life_values', 'decisions', 'identity_statements', 'decision_profiles',
+            'knowledge_reads'
         ])
     LOOP
         EXECUTE format(
@@ -966,3 +967,33 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 --       '0 3 * * *',
 --       $$SELECT cleanup_tombstones()$$
 --   );
+
+-- ────────────────────────────────────────────────────────────
+-- knowledge_reads  (Learn hub — which lessons a user has read)
+-- Composite PK (user_id, id): `id` is the KnowledgeBit id (e.g. 'tip_2min_rule'),
+-- which is shared across users, so the primary key is scoped per user.
+-- ────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS knowledge_reads (
+    id           TEXT        NOT NULL,
+    user_id      UUID        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    read_at      TEXT        NOT NULL,
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    -- sync metadata
+    updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    is_deleted   BOOLEAN     NOT NULL DEFAULT FALSE,
+    sync_version BIGINT      NOT NULL DEFAULT 0,
+    PRIMARY KEY (user_id, id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_knowledge_reads_user_id ON knowledge_reads(user_id);
+
+ALTER TABLE knowledge_reads ENABLE ROW LEVEL SECURITY;
+CREATE POLICY knowledge_reads_select ON knowledge_reads FOR SELECT TO authenticated USING ((select auth.uid()) = user_id);
+CREATE POLICY knowledge_reads_insert ON knowledge_reads FOR INSERT TO authenticated WITH CHECK ((select auth.uid()) = user_id);
+CREATE POLICY knowledge_reads_update ON knowledge_reads FOR UPDATE TO authenticated USING ((select auth.uid()) = user_id) WITH CHECK ((select auth.uid()) = user_id);
+CREATE POLICY knowledge_reads_delete ON knowledge_reads FOR DELETE TO authenticated USING ((select auth.uid()) = user_id);
+
+CREATE TRIGGER trg_knowledge_reads_sync
+    BEFORE UPDATE ON knowledge_reads
+    FOR EACH ROW EXECUTE FUNCTION update_sync_metadata();
