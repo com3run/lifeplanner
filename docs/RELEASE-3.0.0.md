@@ -37,7 +37,7 @@ recommendations), and Supabase-native monitoring.
 
 4. **UI8 / Dotion license.** Confirm on your UI8 account that the Dotion illustration pack tier permits use in a store-distributed app. (Only compiled VectorDrawables ship, not source SVGs.)
 
-5. **Play Console alert.** You received one — paste it; likely target-API / versionCode / data-safety (health data). Resolve before publishing.
+5. **Play Console alert — target API 36 (FIXED IN CODE).** Play requires apps to target Android 16 (API 36) by 31 Aug 2026. Bumped `android-targetSdk` 35 → 36 (`gradle/libs.versions.toml`; compileSdk already 37). Clears once a signed v3 build targeting 36 is published to production. Smoke-tested on the emulator.
 
 ## Pre-submit checks (against the consoles — I can't see them)
 - Android **versionCode 11 > last published** code.

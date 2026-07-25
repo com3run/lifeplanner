@@ -2,7 +2,7 @@
 agp = "9.2.1"
 android-compileSdk = "37"
 android-minSdk = "26"
-android-targetSdk = "35"
+android-targetSdk = "36"
 androidx-activityCompose = "1.10.1"
 # org.jetbrains.androidx.lifecycle — keep on a stable release only.
 # Upgrades: confirm latest stable via https://repo1.maven.org/maven2/org/jetbrains/androidx/lifecycle/lifecycle-viewmodel/maven-metadata.xml
