@@ -33,7 +33,7 @@ recommendations), and Supabase-native monitoring.
 2. **iOS `GoogleService-Info.plist`.** Missing from the checkout (git-ignored Firebase secret). Download from Firebase Console → the iOS app (`az.tribe.lifeplanner`) → save to `app/iosApp/iosApp/GoogleService-Info.plist`. Without it the Xcode app build fails.
 
 3. **iOS `Info.plist` / `iosApp.entitlements` — REVIEWED & RESOLVED.** The earlier uncommitted edits turned out to be a harmless Xcode alphabetical re-sort (no `Info.plist` keys or values changed; app group `group.az.tribe.lifeplanner` preserved — verified). The only real addition was an unused `com.apple.developer.healthkit.background-delivery` entitlement, now removed (commit `096b275`) to avoid a provisioning-mismatch signing failure. Both plists validated (`plutil -lint`).
-   - *(Separate, pre-existing:* `com.apple.developer.healthkit.access = [health-records]` requests Clinical Health Records the app doesn't use — worth revisiting to reduce App Store review friction, but not a blocker.)*
+   - *Also removed (commit `6fb2bef`):* the unused `com.apple.developer.healthkit.access = [health-records]` Clinical Records entitlement — verified unused (app only reads Steps/Weight/HeartRate/Sleep; no clinical API; no clinical usage-description key). Regular HealthKit (`com.apple.developer.healthkit = true`) is kept, so nothing breaks; this just avoids App Store clinical-records scrutiny.
 
 4. **UI8 / Dotion license.** Confirm on your UI8 account that the Dotion illustration pack tier permits use in a store-distributed app. (Only compiled VectorDrawables ship, not source SVGs.)
 
