@@ -643,6 +643,7 @@ fun App(
                         if (FeatureFlags.PILLAR_CAUSAL) appNavCausal(navController = navController)
                         if (FeatureFlags.PILLAR_BECOMING) appNavBecoming(navController = navController)
                         if (FeatureFlags.PILLAR_WIRING) appNavWiring(navController = navController)
+                        appNavKnowledge(navController = navController)
                     }
 
                     if (!useRail) {

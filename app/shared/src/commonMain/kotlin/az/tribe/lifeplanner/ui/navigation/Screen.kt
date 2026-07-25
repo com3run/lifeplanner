@@ -58,4 +58,5 @@ sealed class Screen(val route: String) {
     object DecisionReview : Screen("decision_review")
     object YourWiring : Screen("your_wiring")
     object PossibilityMode : Screen("possibility_mode/{goalId}")
+    object KnowledgeDetail : Screen("knowledge_detail/{id}")
 }

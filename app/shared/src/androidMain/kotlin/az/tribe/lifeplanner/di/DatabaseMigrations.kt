@@ -800,3 +800,19 @@ internal fun migrateToVersion35(db: SupportSQLiteDatabase) {
     addColumnSafe(db, "HabitEntity", "healthMetricType", "TEXT")
     addColumnSafe(db, "HabitEntity", "healthTarget", "REAL")
 }
+
+internal fun migrateToVersion36(db: SupportSQLiteDatabase) {
+    // Schema v36: KnowledgeReadEntity table (Learn hub read-state), matches migration 36.sqm
+    db.execSQL(
+        """
+        CREATE TABLE IF NOT EXISTS KnowledgeReadEntity (
+            id TEXT NOT NULL PRIMARY KEY,
+            readAt TEXT NOT NULL,
+            sync_updated_at TEXT,
+            is_deleted INTEGER NOT NULL DEFAULT 0,
+            sync_version INTEGER NOT NULL DEFAULT 0,
+            last_synced_at TEXT
+        )
+        """.trimIndent()
+    )
+}

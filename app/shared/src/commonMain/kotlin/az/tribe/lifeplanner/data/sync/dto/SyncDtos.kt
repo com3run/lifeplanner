@@ -41,6 +41,16 @@ data class LifeValueSyncDto(
 )
 
 @Serializable
+data class KnowledgeReadSyncDto(
+    val id: String,
+    @SerialName("user_id") val userId: String,
+    @SerialName("read_at") val readAt: String,
+    @SerialName("updated_at") val updatedAt: String? = null,
+    @SerialName("is_deleted") val isDeleted: Boolean = false,
+    @SerialName("sync_version") val syncVersion: Long = 0
+)
+
+@Serializable
 data class DecisionSyncDto(
     val id: String,
     @SerialName("user_id") val userId: String,

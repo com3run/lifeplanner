@@ -335,6 +335,7 @@ class HomeFeedBuilder(
                 title = k.title,
                 body = k.body,
                 emoji = k.emoji,
+                route = "knowledge_detail/${k.id}",
                 score = 50.0 - i,
             )
         }
