@@ -80,7 +80,7 @@ class ReviewTriggerEvaluatorTest {
     }
 
     @Test
-    fun `full lifecycle - prompt, record, wait, prompt again`() {
+    fun `full lifecycle - prompt then record then wait then prompt again`() {
         val settings = createSettings()
 
         // First prompt should be allowed

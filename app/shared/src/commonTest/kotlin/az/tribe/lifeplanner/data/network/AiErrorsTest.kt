@@ -12,7 +12,7 @@ import kotlin.test.assertTrue
 class AiErrorsTest {
 
     @Test
-    fun `auth failure tells the user to sign in, not to check the network`() {
+    fun `auth failure tells the user to sign in rather than check the network`() {
         val message = AiAuthRequiredException("AI proxy auth error 401: {}").toUserFacingAiMessage("generate questions")
 
         assertTrue(message.contains("Sign in"), "should tell the user to sign in, was: $message")

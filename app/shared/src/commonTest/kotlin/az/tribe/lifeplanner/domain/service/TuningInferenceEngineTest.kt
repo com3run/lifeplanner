@@ -13,7 +13,7 @@ class TuningInferenceEngineTest {
     private val engine = TuningInferenceEngine() // saturationSamples = 20
 
     @Test
-    fun `no evidence leaves every dial neutral, unconfident, and unreliable`() {
+    fun `no evidence leaves every dial neutral and unconfident and unreliable`() {
         val p = engine.infer(prior = null, window = BehaviorWindow(), newProfileId = "p1")
         TuningDial.entries.forEach { dial ->
             val s = p.dial(dial)
