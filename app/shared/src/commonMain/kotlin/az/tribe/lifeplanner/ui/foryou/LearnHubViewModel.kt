@@ -39,6 +39,8 @@ data class CollectionUi(
 data class LearnHubUi(
     val loading: Boolean = true,
     val level: Int = 1,
+    val levelTitle: String = "",
+    val totalXp: Int = 0,
     val readCount: Int = 0,
     val totalUnlocked: Int = 0,
     val recommended: List<KnowledgeBit> = emptyList(),
@@ -67,15 +69,17 @@ class LearnHubViewModel(
 
     private fun load() {
         viewModelScope.launch {
-            val level = runCatching { gamificationRepository.getUserProgress().first().currentLevel }
-                .getOrDefault(1)
+            val progress = runCatching { gamificationRepository.getUserProgress().first() }.getOrNull()
+            val level = progress?.currentLevel ?: 1
+            val levelTitle = progress?.title ?: ""
+            val totalXp = progress?.totalXp ?: 0
             val affinity = runCatching { buildAffinity() }.getOrDefault(emptyMap())
             val daySeed = Clock.System.now()
                 .toLocalDateTime(TimeZone.currentSystemDefault()).date.dayOfYear
 
             runCatching {
                 knowledgeRepository.readIds().collect { readIds ->
-                    _state.value = buildUi(level, affinity, readIds, daySeed)
+                    _state.value = buildUi(level, levelTitle, totalXp, affinity, readIds, daySeed)
                 }
             }.onFailure { Logger.w("LearnHubViewModel") { "readIds collect failed: ${it.message}" } }
         }
@@ -96,6 +100,8 @@ class LearnHubViewModel(
 
     private fun buildUi(
         level: Int,
+        levelTitle: String,
+        totalXp: Int,
         affinity: Map<KnowledgeTopic, Double>,
         readIds: Set<String>,
         daySeed: Int,
@@ -120,6 +126,8 @@ class LearnHubViewModel(
         return LearnHubUi(
             loading = false,
             level = level,
+            levelTitle = levelTitle,
+            totalXp = totalXp,
             readCount = unlockedAll.count { it.id in readIds },
             totalUnlocked = unlockedAll.size,
             recommended = recommended,
