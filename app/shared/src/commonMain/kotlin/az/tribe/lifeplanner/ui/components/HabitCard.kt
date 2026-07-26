@@ -272,7 +272,7 @@ fun HabitCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 CategoryIconBadge(
-                    category = habit.category,
+                    icon = habitIcon(habit.title, habit.category),
                     isCompleted = isCompletedToday
                 )
 
