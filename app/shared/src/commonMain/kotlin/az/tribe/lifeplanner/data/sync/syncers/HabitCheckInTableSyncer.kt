@@ -19,7 +19,12 @@ class HabitCheckInTableSyncer(
     private val settings = Settings()
 
     override suspend fun upsertRemote(dtos: List<HabitCheckInSyncDto>) {
-        supabase.postgrest[tableName].upsert(dtos)
+        // Resolve on the natural key, not the primary key. A check-in's id is generated per device,
+        // so the same logical check-in (same habit, same day) can carry different ids across devices.
+        // Upserting on `id` then hit the remote UNIQUE(user_id, habit_id, date) constraint and the
+        // whole push for this table failed. Upserting on the natural key updates the existing row
+        // instead, so a re-logged or cross-device check-in reconciles cleanly.
+        supabase.postgrest[tableName].upsert(dtos) { onConflict = "user_id,habit_id,date" }
     }
 
     override suspend fun getUnsyncedLocal(): List<HabitCheckInEntity> =
@@ -56,7 +61,15 @@ class HabitCheckInTableSyncer(
 
     override suspend fun upsertLocal(entity: HabitCheckInEntity) {
         db {
-            it.lifePlannerDBQueries.upsertHabitCheckInFromSync(
+            val q = it.lifePlannerDBQueries
+            // If a local check-in already exists for this (habit, date) under a DIFFERENT id, drop it
+            // first so the pull converges the local id to the remote one instead of leaving a duplicate
+            // row for the same day (which would then keep failing to push).
+            val existing = q.getCheckInByHabitAndDate(entity.habitId, entity.date).executeAsOneOrNull()
+            if (existing != null && existing.id != entity.id) {
+                q.deleteCheckIn(existing.id)
+            }
+            q.upsertHabitCheckInFromSync(
                 id = entity.id,
                 habitId = entity.habitId,
                 date = entity.date,
