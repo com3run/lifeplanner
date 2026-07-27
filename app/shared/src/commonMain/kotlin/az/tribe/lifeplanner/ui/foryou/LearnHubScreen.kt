@@ -41,6 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import az.tribe.lifeplanner.domain.service.KnowledgeBit
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
@@ -55,6 +56,16 @@ import com.adamglin.phosphoricons.regular.Check
 import com.adamglin.phosphoricons.regular.CheckCircle
 import com.adamglin.phosphoricons.regular.Lock
 import org.koin.compose.viewmodel.koinViewModel
+import androidx.compose.foundation.Image
+import androidx.compose.ui.layout.ContentScale
+import org.jetbrains.compose.resources.DrawableResource
+import org.jetbrains.compose.resources.painterResource
+import leanlifeplanner.app.shared.generated.resources.Res
+import leanlifeplanner.app.shared.generated.resources.illus_learn_habits
+import leanlifeplanner.app.shared.generated.resources.illus_learn_motivation
+import leanlifeplanner.app.shared.generated.resources.illus_learn_focus
+import leanlifeplanner.app.shared.generated.resources.illus_learn_hero
+import leanlifeplanner.app.shared.generated.resources.illus_learn_empty
 
 /**
  * The Learn hub. Your progress across the whole library, a personalized "Recommended for you" pick,
@@ -123,6 +134,34 @@ fun LearnHubScreen(
                     CollectionCard(cui, readIds = state.readIds, onOpen = onOpen)
                 }
             }
+
+            if (!state.loading && state.collections.isEmpty() && state.recommended.isEmpty()) {
+                item(key = "empty") {
+                    Column(
+                        Modifier.fillMaxWidth().padding(top = 24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
+                    ) {
+                        Image(
+                            painter = painterResource(Res.drawable.illus_learn_empty),
+                            contentDescription = null,
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier.size(180.dp),
+                        )
+                        Text(
+                            "Lessons unlock as you grow",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = c.textPrimary,
+                        )
+                        Text(
+                            "Keep building your goals and habits, and your first learning paths will appear here.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = c.textSecondary,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -141,7 +180,12 @@ private fun ProgressHeader(level: Int, levelTitle: String, totalXp: Int, read: I
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Row(horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(PhosphorIcons.Regular.BookOpen, contentDescription = null, tint = c.primary, modifier = Modifier.size(LifePlannerDesign.IconSize.medium))
+                    Image(
+                        painter = painterResource(Res.drawable.illus_learn_hero),
+                        contentDescription = null,
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier.size(48.dp),
+                    )
                     Column {
                         Text("Your learning", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = c.textPrimary)
                         if (levelTitle.isNotBlank()) {
@@ -260,7 +304,12 @@ private fun CollectionCard(cui: CollectionUi, readIds: Set<String>, onOpen: (Str
             verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm), verticalAlignment = Alignment.Top) {
-                Text(cui.collection.emoji, style = MaterialTheme.typography.headlineSmall)
+                Image(
+                    painter = painterResource(pathIllustration(cui.collection.id)),
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.size(width = 64.dp, height = 52.dp),
+                )
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(cui.collection.title, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = c.textPrimary)
                     Text(cui.collection.subtitle, style = MaterialTheme.typography.bodySmall, color = c.textSecondary)
@@ -291,6 +340,14 @@ private fun CollectionCard(cui: CollectionUi, readIds: Set<String>, onOpen: (Str
             }
         }
     }
+}
+
+/** The Style-B illustration for each learning path (falls back to the generic learning art). */
+private fun pathIllustration(collectionId: String): DrawableResource = when (collectionId) {
+    "col_habits" -> Res.drawable.illus_learn_habits
+    "col_motivation" -> Res.drawable.illus_learn_motivation
+    "col_mind" -> Res.drawable.illus_learn_focus
+    else -> Res.drawable.illus_learn_hero
 }
 
 private enum class NodeState { READ, NEXT, UNREAD, LOCKED, REWARD_EARNED, REWARD_LOCKED }
