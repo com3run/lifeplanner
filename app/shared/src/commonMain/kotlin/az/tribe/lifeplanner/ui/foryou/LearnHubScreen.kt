@@ -308,7 +308,7 @@ private fun CollectionCard(cui: CollectionUi, readIds: Set<String>, onOpen: (Str
                     painter = painterResource(pathIllustration(cui.collection.id)),
                     contentDescription = null,
                     contentScale = ContentScale.Fit,
-                    modifier = Modifier.size(width = 64.dp, height = 52.dp),
+                    modifier = Modifier.size(width = 88.dp, height = 70.dp),
                 )
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(cui.collection.title, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = c.textPrimary)
