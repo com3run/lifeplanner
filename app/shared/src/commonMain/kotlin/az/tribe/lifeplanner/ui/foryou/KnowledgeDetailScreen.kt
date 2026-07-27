@@ -1,16 +1,28 @@
 package az.tribe.lifeplanner.ui.foryou
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.layout.ContentScale
+import az.tribe.lifeplanner.domain.service.KnowledgeLibrary
+import org.jetbrains.compose.resources.DrawableResource
+import org.jetbrains.compose.resources.painterResource
+import leanlifeplanner.app.shared.generated.resources.Res
+import leanlifeplanner.app.shared.generated.resources.illus_learn_habits
+import leanlifeplanner.app.shared.generated.resources.illus_learn_motivation
+import leanlifeplanner.app.shared.generated.resources.illus_learn_focus
+import leanlifeplanner.app.shared.generated.resources.illus_learn_hero
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -77,13 +89,28 @@ fun KnowledgeDetailScreen(
         ) {
             item(key = "header") {
                 Column(verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm)) {
-                    Box(Modifier.size(64.dp), contentAlignment = Alignment.Center) {
+                    Box(Modifier.fillMaxWidth().height(150.dp)) {
                         Surface(
-                            color = c.primary.copy(alpha = 0.12f),
-                            shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.medium),
                             modifier = Modifier.fillMaxSize(),
+                            color = c.primary.copy(alpha = 0.08f),
+                            shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large),
                         ) {}
-                        Text(bit.emoji, style = MaterialTheme.typography.headlineMedium)
+                        Image(
+                            painter = painterResource(heroIllustration(bit.id)),
+                            contentDescription = null,
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier.align(Alignment.Center).height(120.dp),
+                        )
+                        Surface(
+                            modifier = Modifier.align(Alignment.BottomStart)
+                                .padding(LifePlannerDesign.Spacing.sm).size(40.dp),
+                            shape = CircleShape,
+                            color = c.cardBackground,
+                        ) {
+                            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                Text(bit.emoji, style = MaterialTheme.typography.titleMedium)
+                            }
+                        }
                     }
                     Text(
                         "LEARN · ${bit.readMin} MIN READ",
@@ -157,3 +184,12 @@ fun KnowledgeDetailScreen(
         }
     }
 }
+
+/** The path illustration for a lesson (matches the Learn hub), falling back to the generic hero. */
+private fun heroIllustration(lessonId: String): DrawableResource =
+    when (KnowledgeLibrary.collectionOf(lessonId)?.id) {
+        "col_habits" -> Res.drawable.illus_learn_habits
+        "col_motivation" -> Res.drawable.illus_learn_motivation
+        "col_mind" -> Res.drawable.illus_learn_focus
+        else -> Res.drawable.illus_learn_hero
+    }
