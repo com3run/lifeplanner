@@ -98,6 +98,18 @@ fun LearnHubScreen(
                 ProgressHeader(state.level, state.levelTitle, state.totalXp, state.readCount, state.totalUnlocked)
             }
 
+            state.continueLessonId?.let { id ->
+                item(key = "continue") {
+                    ContinueCard(
+                        title = state.continueLessonTitle.orEmpty(),
+                        pathTitle = state.continuePathTitle.orEmpty(),
+                        readMin = state.continueReadMin,
+                        isFresh = state.continueIsFresh,
+                        onClick = { onOpen(id) },
+                    )
+                }
+            }
+
             if (state.recommended.isNotEmpty()) {
                 item(key = "rec_label") { SectionLabel("Recommended for you") }
                 items(state.recommended, key = { "rec_${it.id}" }) { bit ->
@@ -183,6 +195,57 @@ private fun LessonCard(bit: KnowledgeBit, read: Boolean, onOpen: () -> Unit) {
                 Icon(PhosphorIcons.Regular.CheckCircle, contentDescription = "Read", tint = c.success, modifier = Modifier.size(LifePlannerDesign.IconSize.small))
             } else {
                 Icon(PhosphorIcons.Regular.CaretRight, contentDescription = null, tint = c.textTertiary, modifier = Modifier.size(LifePlannerDesign.IconSize.small))
+            }
+        }
+    }
+}
+
+@Composable
+private fun ContinueCard(
+    title: String,
+    pathTitle: String,
+    readMin: Int,
+    isFresh: Boolean,
+    onClick: () -> Unit,
+) {
+    val c = MaterialTheme.modernColors
+    Surface(
+        modifier = Modifier.fillMaxWidth().bouncyClickable(onClick = onClick),
+        color = c.primary,
+        shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large),
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(LifePlannerDesign.Padding.cardContent),
+            horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(
+                    if (isFresh) "START LEARNING" else "CONTINUE WHERE YOU LEFT OFF",
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                    color = Color.White.copy(alpha = 0.8f),
+                )
+                Text(
+                    title,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = Color.White,
+                )
+                Text(
+                    "$pathTitle · $readMin min read",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.White.copy(alpha = 0.85f),
+                )
+            }
+            Box(
+                Modifier.size(44.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.2f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    PhosphorIcons.Regular.CaretRight,
+                    contentDescription = "Continue",
+                    tint = Color.White,
+                    modifier = Modifier.size(LifePlannerDesign.IconSize.medium),
+                )
             }
         }
     }

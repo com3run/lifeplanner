@@ -46,6 +46,13 @@ data class LearnHubUi(
     val recommended: List<KnowledgeBit> = emptyList(),
     val collections: List<CollectionUi> = emptyList(),
     val readIds: Set<String> = emptySet(),
+    // "Continue where you left off": the single next lesson to resume, from the path already in
+    // progress (else the first not-yet-started path). Null when everything unlocked is read.
+    val continueLessonId: String? = null,
+    val continueLessonTitle: String? = null,
+    val continueReadMin: Int = 0,
+    val continuePathTitle: String? = null,
+    val continueIsFresh: Boolean = false,
 )
 
 /**
@@ -123,6 +130,11 @@ class LearnHubViewModel(
             )
         }
 
+        // Prefer the path already in progress; otherwise the first not-yet-started path.
+        val inProgress = collections.firstOrNull { it.readCount in 1 until it.total && it.nextUnreadId != null }
+        val continueCol = inProgress ?: collections.firstOrNull { it.nextUnreadId != null }
+        val continueBit = continueCol?.nextUnreadId?.let { KnowledgeLibrary.byId(it) }
+
         return LearnHubUi(
             loading = false,
             level = level,
@@ -133,6 +145,11 @@ class LearnHubViewModel(
             recommended = recommended,
             collections = collections,
             readIds = readIds,
+            continueLessonId = continueBit?.id,
+            continueLessonTitle = continueBit?.title,
+            continueReadMin = continueBit?.readMin ?: 0,
+            continuePathTitle = continueCol?.collection?.title,
+            continueIsFresh = inProgress == null,
         )
     }
 }
