@@ -50,7 +50,7 @@ class ForYouViewModel(
                     .flatMap { g ->
                         g.milestones.asSequence()
                             .filter { !it.isCompleted && (it.dueDate?.let { d -> d <= today } == true) }
-                            .map { m -> PlanItem(g.id, g.title, m.title, m.dueDate!!, m.dueDate!! < today) }
+                            .map { m -> PlanItem(g.id, m.id, g.title, m.title, m.dueDate!!, m.dueDate!! < today) }
                     }
                     .sortedBy { it.dueDate }
                     .toList()
@@ -77,6 +77,16 @@ class ForYouViewModel(
                 .onSuccess { _feed.value = it }
                 .onFailure { Logger.w("ForYouViewModel") { "Feed build failed: ${it.message}" } }
             _isLoading.value = false
+        }
+    }
+
+    /** Planner-style: tick a plan item (milestone) done right on the Today feed, no navigation. */
+    fun completePlanItem(milestoneId: String) {
+        viewModelScope.launch {
+            runCatching {
+                goalRepository.toggleMilestoneCompletion(milestoneId, true)
+                gamificationRepository.awardXp(az.tribe.lifeplanner.domain.model.XpRewards.MILESTONE_COMPLETED.toLong())
+            }.onFailure { Logger.w("ForYouViewModel") { "Complete plan item failed: ${it.message}" } }
         }
     }
 

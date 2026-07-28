@@ -53,7 +53,7 @@ class TodayViewModel(
                     .flatMap { g ->
                         g.milestones.asSequence()
                             .filter { !it.isCompleted && (it.dueDate?.let { d -> d <= today } == true) }
-                            .map { m -> PlanItem(g.id, g.title, m.title, m.dueDate!!, m.dueDate!! < today) }
+                            .map { m -> PlanItem(g.id, m.id, g.title, m.title, m.dueDate!!, m.dueDate!! < today) }
                     }
                     .sortedBy { it.dueDate }
                     .toList()
@@ -77,6 +77,14 @@ class TodayViewModel(
         }
     }
 
+    /** Planner-style: tick a plan item (milestone) done in place. */
+    fun completePlanItem(milestoneId: String) {
+        viewModelScope.launch {
+            runCatching { goalRepository.toggleMilestoneCompletion(milestoneId, true) }
+                .onFailure { Logger.w("TodayViewModel") { "Complete plan item failed: ${it.message}" } }
+        }
+    }
+
     fun checkInHabit(habitId: String) {
         viewModelScope.launch {
             runCatching {
@@ -93,6 +101,7 @@ data class HabitToday(val habit: Habit, val doneToday: Boolean)
 /** One scheduled item on today's plan: a milestone due today/overdue, with its parent goal. */
 data class PlanItem(
     val goalId: String,
+    val milestoneId: String,
     val goalTitle: String,
     val title: String,
     val dueDate: LocalDate,

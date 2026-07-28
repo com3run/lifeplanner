@@ -7,9 +7,10 @@ import az.tribe.lifeplanner.domain.model.WeatherCondition
  * Turns today's remaining hourly forecast into one short, plan-relevant nudge, "how might today's
  * weather change what I do?". Pure and platform-free so it is unit-testable.
  *
- * Only the hours from [nowHour] onward matter (we nudge about what's ahead, not the morning that
- * already happened). Picks a single most-salient signal in priority order: thunderstorm, heavy rain,
- * rain, then temperature extremes. Returns null when nothing stands out, so the UI can stay quiet.
+ * Only the hours from [nowHour] onward matter. Rain is communicated by its chance: a moderate chance
+ * shows the percentage, and a genuinely wet stretch (> [HEAVY_PROB]) also shows its window so the
+ * user knows roughly how long to wait it out. Priority: thunderstorm, rain, then temperature
+ * extremes. Returns null when nothing stands out, so the UI can stay quiet.
  */
 object WeatherAlertBuilder {
 
@@ -18,21 +19,43 @@ object WeatherAlertBuilder {
         if (ahead.isEmpty()) return null
 
         val storm = ahead.firstOrNull { WeatherCondition.fromWmo(it.wmoCode) == WeatherCondition.THUNDERSTORM }
-        if (storm != null) return "Thunderstorms likely around ${clock(storm.hour)}, keep today flexible."
-
-        val heavy = ahead.firstOrNull { WeatherCondition.fromWmo(it.wmoCode) == WeatherCondition.HEAVY_RAIN }
-        if (heavy != null) return "Heavy rain around ${clock(heavy.hour)}, plan indoor steps."
-
-        // Rain / showers / drizzle, or a high chance of precipitation.
-        val rain = ahead.firstOrNull {
-            val c = WeatherCondition.fromWmo(it.wmoCode)
-            c == WeatherCondition.RAIN || c == WeatherCondition.SHOWERS || c == WeatherCondition.DRIZZLE ||
-                it.precipitationProbability >= RAIN_PROB
+        if (storm != null) {
+            val p = storm.precipitationProbability
+            val chance = if (p in 1..100) " (~$p%)" else ""
+            return "Thunderstorms around ${clock(storm.hour)}$chance, keep today flexible."
         }
-        if (rain != null) {
-            val soon = rain.hour <= nowHour + 1
-            return if (soon) "Rain moving in, grab a jacket if you're heading out."
-            else "Rain likely around ${clock(rain.hour)}, an earlier walk beats a wet one."
+
+        // A genuinely wet window: only hours whose chance is actually high (> HEAVY_PROB). This is
+        // the "wait it out" period, so we don't flag a whole afternoon off a low-chance shower code.
+        val heavyPeak = ahead.filter { it.precipitationProbability > HEAVY_PROB }.maxByOrNull { it.precipitationProbability }
+        if (heavyPeak != null) {
+            val peakIdx = ahead.indexOf(heavyPeak)
+            var s = peakIdx
+            while (s - 1 >= 0 && ahead[s - 1].hour == ahead[s].hour - 1 && ahead[s - 1].precipitationProbability > HEAVY_PROB) s--
+            var e = peakIdx
+            while (e + 1 < ahead.size && ahead[e + 1].hour == ahead[e].hour + 1 && ahead[e + 1].precipitationProbability > HEAVY_PROB) e++
+            val peak = (s..e).maxOf { ahead[it].precipitationProbability }
+            return "Rain likely ${clock(ahead[s].hour)}–${clock(ahead[e].hour + 1)}, up to $peak%. A good window to stay in."
+        }
+
+        // Moderate chance: lead with the percentage, no window.
+        val notable = ahead.filter { it.precipitationProbability >= NOTABLE_PROB }
+        if (notable.isNotEmpty()) {
+            val onset = notable.first()
+            val peak = notable.maxOf { it.precipitationProbability }
+            return if (onset.hour <= nowHour + 1) "Rain moving in, ~$peak% chance, grab a jacket."
+            else "Rain possible around ${clock(onset.hour)}, ~$peak% chance."
+        }
+
+        // Rain in the forecast by condition, but low/unknown probability.
+        val rainCode = ahead.firstOrNull {
+            val c = WeatherCondition.fromWmo(it.wmoCode)
+            c == WeatherCondition.RAIN || c == WeatherCondition.HEAVY_RAIN ||
+                c == WeatherCondition.SHOWERS || c == WeatherCondition.DRIZZLE
+        }
+        if (rainCode != null) {
+            return if (rainCode.hour <= nowHour + 1) "Rain moving in, grab a jacket if you're heading out."
+            else "Rain likely around ${clock(rainCode.hour)}."
         }
 
         val hottest = ahead.maxByOrNull { it.temperatureC }
@@ -56,7 +79,8 @@ object WeatherAlertBuilder {
         return "$h12 $period"
     }
 
-    private const val RAIN_PROB = 60
+    private const val NOTABLE_PROB = 50 // mention rain at or above this chance
+    private const val HEAVY_PROB = 75   // only show a "wait it out" window above this chance
     private const val HOT_C = 32
     private const val FREEZING_C = 0
 }

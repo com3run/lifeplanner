@@ -492,12 +492,14 @@ fun App(
 
         // Contextual circle button action, changes per screen and hub tab (v2 behavior).
         val navContextAction: NavContextAction? = when (currentRoute) {
+            // Today's front-of-plan action: add to your plan.
             homeRoute -> NavContextAction(
-                icon = PhosphorIcons.Regular.MagnifyingGlass,
-                contentDescription = "Search"
-            ) {
-                navController.navigate(Screen.Search.route) { launchSingleTop = true }
-            }
+                icon = PhosphorIcons.Regular.Plus,
+                contentDescription = "Add to plan",
+                onClick = {
+                    navController.navigate(Screen.GoalWizard.route) { launchSingleTop = true }
+                },
+            )
             Screen.Journal.route -> when (hubSelectedTab) {
                 1 -> NavContextAction(
                     icon = PhosphorIcons.Regular.Flag,

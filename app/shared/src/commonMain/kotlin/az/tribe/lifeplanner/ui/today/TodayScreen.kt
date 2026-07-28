@@ -128,8 +128,8 @@ fun TodayScreen(
             if (plan.isEmpty()) {
                 item { Hint("Nothing scheduled for today. Add a milestone with a date to a goal and it shows up here.") }
             } else {
-                items(plan, key = { it.goalId + "|" + it.title }) { p ->
-                    PlanRow(item = p, onClick = { onOpenGoal(p.goalId) })
+                items(plan, key = { "plan_${it.milestoneId}" }) { p ->
+                    PlanRow(item = p, onComplete = { viewModel.completePlanItem(p.milestoneId) })
                 }
             }
 
@@ -191,11 +191,11 @@ private fun Hint(text: String) {
 }
 
 @Composable
-private fun PlanRow(item: PlanItem, onClick: () -> Unit) {
+private fun PlanRow(item: PlanItem, onComplete: () -> Unit) {
     val c = MaterialTheme.modernColors
     val overdueColor = Color(0xFFE53935)
     Surface(
-        modifier = Modifier.fillMaxWidth().bouncyClickable(onClick = onClick),
+        modifier = Modifier.fillMaxWidth(),
         color = c.cardBackground,
         shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large),
     ) {
@@ -204,9 +204,11 @@ private fun PlanRow(item: PlanItem, onClick: () -> Unit) {
             horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconChip(
-                icon = PhosphorIcons.Regular.Flag,
-                tint = if (item.overdue) overdueColor else c.primary,
+            Icon(
+                imageVector = PhosphorIcons.Regular.Circle,
+                contentDescription = "Mark done",
+                tint = if (item.overdue) overdueColor else c.textTertiary,
+                modifier = Modifier.size(LifePlannerDesign.IconSize.large).bouncyClickable(onClick = onComplete),
             )
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(item.title, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = c.textPrimary, maxLines = 1)

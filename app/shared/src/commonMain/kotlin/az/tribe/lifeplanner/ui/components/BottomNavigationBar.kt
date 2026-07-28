@@ -2,6 +2,14 @@ package az.tribe.lifeplanner.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
@@ -52,7 +60,7 @@ import az.tribe.lifeplanner.ui.theme.LifePlannerGradients
 data class NavContextAction(
     val icon: ImageVector,
     val contentDescription: String,
-    val onClick: () -> Unit
+    val onClick: () -> Unit,
 )
 
 private val NavBarHeight = 64.dp
@@ -181,12 +189,23 @@ fun BottomNavigationBar(
                         .clickable(onClick = action.onClick),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = action.icon,
-                        contentDescription = action.contentDescription,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(22.dp)
-                    )
+                    // Each tab gives the circle a different action; animate the swap (a spin + pop) so
+                    // the change is felt, not just quietly re-iconed.
+                    AnimatedContent(
+                        targetState = action.icon,
+                        transitionSpec = {
+                            (scaleIn(initialScale = 0.5f) + fadeIn() + slideInVertically { it / 2 }) togetherWith
+                                (scaleOut(targetScale = 0.5f) + fadeOut() + slideOutVertically { -it / 2 })
+                        },
+                        label = "fabActionSwap",
+                    ) { icon ->
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = action.contentDescription,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
                 }
             }
         }
