@@ -3,11 +3,14 @@ package az.tribe.lifeplanner.ui.goals
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import az.tribe.lifeplanner.domain.model.Goal
+import az.tribe.lifeplanner.domain.model.LifeValue
 import az.tribe.lifeplanner.domain.repository.GoalRepository
 import az.tribe.lifeplanner.domain.repository.LifeValueRepository
+import az.tribe.lifeplanner.domain.service.GoalValueInferrer
 import co.touchlab.kermit.Logger
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -31,6 +34,27 @@ class GoalDetailViewModel(
     val valueTitle: StateFlow<String?> =
         goal.map { g -> g?.valueId?.let { runCatching { lifeValueRepository.getLifeValueById(it)?.title }.getOrNull() } }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    /**
+     * For an unlinked goal, the best-fitting value we can infer, so the detail can offer a one-tap
+     * "this is my why" instead of nagging the user to go hunt through Edit. Null when linked already
+     * or when nothing fits (then the screen falls back to the category/coach framing).
+     */
+    val suggestedValue: StateFlow<LifeValue?> =
+        combine(goal, lifeValueRepository.observeAllLifeValues()) { g, values ->
+            if (g == null || g.valueId != null) null
+            else GoalValueInferrer.infer(g.category, g.title, g.description, values)
+                ?.let { id -> values.firstOrNull { it.id == id } }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    /** One-tap accept of a suggested (or chosen) value as this goal's why. */
+    fun linkValue(valueId: String) {
+        viewModelScope.launch {
+            val g = goal.value ?: return@launch
+            runCatching { goalRepository.updateGoal(g.copy(valueId = valueId)) }
+                .onFailure { Logger.w("GoalDetailViewModel") { "Link value failed: ${it.message}" } }
+        }
+    }
 
     fun toggleMilestone(id: String, completed: Boolean) {
         viewModelScope.launch {

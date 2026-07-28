@@ -143,10 +143,22 @@ fun GoalCreationWizardScreen(
     var goalCategory by remember { mutableStateOf(GoalCategory.CAREER) }
     var aiReasoning by remember { mutableStateOf<String?>(null) }
 
-    // Pillar 1: optional life-value link, set on the DETAILS step
+    // Pillar 1: the life-value link. No longer a manual chore, it is auto-inferred from the goal's
+    // category + text and pre-filled here; the user only taps if they want to change it.
     val lifeValues by viewModel.lifeValues.collectAsState()
     var selectedValueId by remember { mutableStateOf<String?>(null) }
+    var valueTouched by remember { mutableStateOf(false) }
     var showValueSheet by remember { mutableStateOf(false) }
+
+    // Prefill the inferred "why" once we have a title + category + the user's values, unless the
+    // user has already made a choice. Keeps the DETAILS step populated instead of blank.
+    androidx.compose.runtime.LaunchedEffect(goalTitle, goalCategory, goalDescription, lifeValues) {
+        if (!valueTouched && selectedValueId == null && goalTitle.isNotBlank()) {
+            selectedValueId = az.tribe.lifeplanner.domain.service.GoalValueInferrer.infer(
+                category = goalCategory, title = goalTitle, description = goalDescription, values = lifeValues,
+            )
+        }
+    }
 
     var goalTimeline by remember { mutableStateOf(GoalTimeline.SHORT_TERM) }
     var goalDueDate by remember {
@@ -658,7 +670,7 @@ fun GoalCreationWizardScreen(
             WhyThisGoalBottomSheet(
                 values = lifeValues,
                 selectedValueId = selectedValueId,
-                onSelect = { selectedValueId = it },
+                onSelect = { valueTouched = true; selectedValueId = it },
                 onDismiss = { showValueSheet = false }
             )
         }

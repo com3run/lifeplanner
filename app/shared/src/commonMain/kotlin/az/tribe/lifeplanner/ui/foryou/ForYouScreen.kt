@@ -33,6 +33,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import az.tribe.lifeplanner.domain.model.FeedItem
 import az.tribe.lifeplanner.domain.model.FeedKind
+import az.tribe.lifeplanner.domain.model.TodayWeather
 import az.tribe.lifeplanner.domain.model.UserProgress
 import az.tribe.lifeplanner.ui.components.AppButton
 import az.tribe.lifeplanner.ui.components.AppButtonVariant
@@ -40,8 +41,13 @@ import az.tribe.lifeplanner.ui.components.GradientHero
 import az.tribe.lifeplanner.ui.components.IconChip
 import az.tribe.lifeplanner.ui.components.ProgressRing
 import az.tribe.lifeplanner.ui.intro.FeatureIntroHost
+import az.tribe.lifeplanner.location.LocationPermissionState
+import az.tribe.lifeplanner.location.rememberLocationPermission
 import az.tribe.lifeplanner.ui.navigation.Screen
+import az.tribe.lifeplanner.ui.today.PlanItem
+import az.tribe.lifeplanner.ui.today.TodayWeatherViewModel
 import az.tribe.lifeplanner.ui.intro.rememberFeatureIntroGate
+import androidx.compose.runtime.LaunchedEffect
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
 import az.tribe.lifeplanner.ui.theme.bouncyClickable
 import az.tribe.lifeplanner.ui.theme.gradientColors
@@ -52,6 +58,7 @@ import com.adamglin.phosphoricons.regular.Brain
 import com.adamglin.phosphoricons.regular.CaretRight
 import com.adamglin.phosphoricons.regular.ClockCounterClockwise
 import com.adamglin.phosphoricons.regular.Fire
+import com.adamglin.phosphoricons.regular.Flag
 import com.adamglin.phosphoricons.regular.Lightning
 import com.adamglin.phosphoricons.regular.Sparkle
 import org.koin.compose.viewmodel.koinViewModel
@@ -74,7 +81,16 @@ fun ForYouScreen(
     val feed by viewModel.feed.collectAsState()
     val progress by viewModel.progress.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val plan by viewModel.todayPlan.collectAsState()
     val c = MaterialTheme.modernColors
+
+    // Today's weather (Open-Meteo). The permission lives in Compose; feed its state to the VM.
+    val weatherViewModel: TodayWeatherViewModel = koinViewModel()
+    val weatherState by weatherViewModel.state.collectAsState()
+    val locationPermission = rememberLocationPermission()
+    LaunchedEffect(locationPermission.state) {
+        weatherViewModel.onPermissionState(locationPermission.state == LocationPermissionState.GRANTED)
+    }
 
     var filter by remember { mutableStateOf<FeedSection?>(null) }
     val introGate = rememberFeatureIntroGate()
@@ -104,6 +120,26 @@ fun ForYouScreen(
             verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.md),
         ) {
             item { Header(progress) }
+
+            // Today's context: local weather + a plan-relevant heads-up (incoming rain, heat…).
+            when (val w = weatherState) {
+                is TodayWeatherViewModel.State.Loaded -> item(key = "weather") { WeatherCard(w.weather) }
+                TodayWeatherViewModel.State.NeedsPermission ->
+                    item(key = "weather_prompt") { WeatherPromptCard(onEnable = locationPermission.request) }
+                else -> Unit // Idle / Loading / Unavailable: stay quiet
+            }
+
+            // Today's plan, the planner lives on the front door now: a compact, always-visible strip
+            // of what's scheduled for today, above the filterable feed.
+            if (plan.isNotEmpty()) {
+                item(key = "plan_header") {
+                    SectionHeader(label = "Today's plan", onSeeAll = { onOpenRoute(Screen.Goals.route) })
+                }
+                items(plan, key = { "plan_${it.goalId}|${it.title}" }) { p ->
+                    PlanRow(item = p, onClick = { onOpenRoute("goal_detail_redesign/${p.goalId}") })
+                }
+            }
+
             item { FilterRow(selected = filter, onSelect = { filter = it }) }
 
             if (feed.isEmpty()) {
@@ -269,6 +305,107 @@ private fun LeadingVisual(item: FeedItem, accent: Color) {
             FeedKind.POSSIBILITY -> PhosphorIcons.Regular.Sparkle
         }
         IconChip(icon, tint = accent)
+    }
+}
+
+@Composable
+private fun WeatherCard(w: TodayWeather) {
+    val c = MaterialTheme.modernColors
+    Surface(Modifier.fillMaxWidth(), color = c.cardBackground, shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large)) {
+        Column(
+            Modifier.fillMaxWidth().padding(LifePlannerDesign.Padding.cardContent),
+            verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm), verticalAlignment = Alignment.CenterVertically) {
+                Text(w.condition.emoji, style = MaterialTheme.typography.headlineMedium)
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        buildString {
+                            w.placeName?.let { append(it); append(" · ") }
+                            append("${w.temperatureC}°")
+                        },
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = c.textPrimary,
+                        maxLines = 1,
+                    )
+                    Text(
+                        "${w.condition.label} · H ${w.highC}°  L ${w.lowC}°",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = c.textSecondary,
+                    )
+                }
+            }
+            w.alert?.let { alert ->
+                Surface(color = c.primary.copy(alpha = 0.12f), shape = RoundedCornerShape(8.dp)) {
+                    Text(
+                        alert,
+                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                        color = c.primary,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = LifePlannerDesign.Spacing.sm, vertical = LifePlannerDesign.Spacing.xs),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun WeatherPromptCard(onEnable: () -> Unit) {
+    val c = MaterialTheme.modernColors
+    Surface(Modifier.fillMaxWidth(), color = c.cardBackground, shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large)) {
+        Row(
+            Modifier.fillMaxWidth().padding(LifePlannerDesign.Padding.cardContent),
+            horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("🌤️", style = MaterialTheme.typography.headlineSmall)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text("See today's weather here", style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = c.textPrimary)
+                Text("Turn on location to plan around conditions like incoming rain.", style = MaterialTheme.typography.bodySmall, color = c.textSecondary)
+            }
+            AppButton(text = "Enable", onClick = onEnable, variant = AppButtonVariant.SECONDARY)
+        }
+    }
+}
+
+@Composable
+private fun PlanRow(item: PlanItem, onClick: () -> Unit) {
+    val c = MaterialTheme.modernColors
+    val overdueColor = Color(0xFFE53935)
+    Surface(
+        modifier = Modifier.fillMaxWidth().bouncyClickable(onClick = onClick),
+        color = c.cardBackground,
+        shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large),
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(LifePlannerDesign.Padding.cardContent),
+            horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconChip(
+                icon = PhosphorIcons.Regular.Flag,
+                tint = if (item.overdue) overdueColor else c.primary,
+            )
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(item.title, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = c.textPrimary, maxLines = 1)
+                Text(item.goalTitle, style = MaterialTheme.typography.bodySmall, color = c.textSecondary, maxLines = 1)
+            }
+            DueChip(overdue = item.overdue)
+        }
+    }
+}
+
+@Composable
+private fun DueChip(overdue: Boolean) {
+    val c = MaterialTheme.modernColors
+    val accent = if (overdue) Color(0xFFE53935) else c.primary
+    Surface(color = accent.copy(alpha = 0.12f), shape = RoundedCornerShape(8.dp)) {
+        Text(
+            if (overdue) "Overdue" else "Today",
+            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+            color = accent,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+        )
     }
 }
 

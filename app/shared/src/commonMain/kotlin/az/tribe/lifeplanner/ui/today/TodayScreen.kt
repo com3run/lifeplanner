@@ -63,10 +63,12 @@ fun TodayScreen(
     onBackClick: () -> Unit,
     showBack: Boolean = true,
     onOpenHabit: (String) -> Unit = {},
+    onOpenGoal: (String) -> Unit = {},
     viewModel: TodayViewModel = koinViewModel(),
 ) {
     val habits by viewModel.habitsToday.collectAsState()
     val possibilities by viewModel.possibilities.collectAsState()
+    val plan by viewModel.todayPlan.collectAsState()
     val c = MaterialTheme.modernColors
     val doneCount = habits.count { it.doneToday }
 
@@ -122,6 +124,15 @@ fun TodayScreen(
                 )
             }
 
+            item { SectionLabel("Today's plan") }
+            if (plan.isEmpty()) {
+                item { Hint("Nothing scheduled for today. Add a milestone with a date to a goal and it shows up here.") }
+            } else {
+                items(plan, key = { it.goalId + "|" + it.title }) { p ->
+                    PlanRow(item = p, onClick = { onOpenGoal(p.goalId) })
+                }
+            }
+
             item { SectionLabel("Right now you could…") }
             if (possibilities.isEmpty()) {
                 item { Hint("Add a goal or a habit and your next best move shows up here.") }
@@ -175,6 +186,47 @@ private fun Hint(text: String) {
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.modernColors.textSecondary,
             modifier = Modifier.padding(LifePlannerDesign.Padding.cardContent),
+        )
+    }
+}
+
+@Composable
+private fun PlanRow(item: PlanItem, onClick: () -> Unit) {
+    val c = MaterialTheme.modernColors
+    val overdueColor = Color(0xFFE53935)
+    Surface(
+        modifier = Modifier.fillMaxWidth().bouncyClickable(onClick = onClick),
+        color = c.cardBackground,
+        shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large),
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(LifePlannerDesign.Padding.cardContent),
+            horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconChip(
+                icon = PhosphorIcons.Regular.Flag,
+                tint = if (item.overdue) overdueColor else c.primary,
+            )
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(item.title, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = c.textPrimary, maxLines = 1)
+                Text(item.goalTitle, style = MaterialTheme.typography.bodySmall, color = c.textSecondary, maxLines = 1)
+            }
+            DueChip(overdue = item.overdue)
+        }
+    }
+}
+
+@Composable
+private fun DueChip(overdue: Boolean) {
+    val c = MaterialTheme.modernColors
+    val accent = if (overdue) Color(0xFFE53935) else c.primary
+    Surface(color = accent.copy(alpha = 0.12f), shape = RoundedCornerShape(8.dp)) {
+        Text(
+            if (overdue) "Overdue" else "Today",
+            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+            color = accent,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
         )
     }
 }

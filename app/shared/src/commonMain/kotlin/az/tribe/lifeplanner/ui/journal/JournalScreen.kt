@@ -41,7 +41,6 @@ import az.tribe.lifeplanner.ui.ability.AbilityCard
 import az.tribe.lifeplanner.ui.ability.AbilityViewModel
 import az.tribe.lifeplanner.ui.habit.HabitViewModel
 import az.tribe.lifeplanner.ui.habit.*
-import az.tribe.lifeplanner.ui.planner.WeeklyPlannerContent
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -122,6 +121,10 @@ fun JournalScreen(
         goals.filter { it.status != GoalStatus.COMPLETED }.sortedBy { it.dueDate }.take(3)
     }
 
+    val sortedEntries = remember(entries) {
+        entries.sortedWith(compareByDescending<JournalEntry> { it.date }.thenByDescending { it.createdAt })
+    }
+
     val nextMilestones = remember(goals) {
         goals.filter { it.status != GoalStatus.COMPLETED && it.milestones.isNotEmpty() }
             .mapNotNull { goal -> goal.milestones.firstOrNull { !it.isCompleted }?.let { goal to it } }
@@ -133,8 +136,8 @@ fun JournalScreen(
     val bannerTitle = when (currentTab) {
         1 -> "Goals"
         2 -> "Habits"
-        3 -> if (FeatureFlags.ABILITIES_ENABLED) "Abilities" else "Planner"
-        else -> "Planner"
+        3 -> if (FeatureFlags.ABILITIES_ENABLED) "Abilities" else "Journal"
+        else -> "Journal"
     }
     val bannerSubtitle = when (currentTab) {
         1 -> if (activeGoalCount == 0) "No active goals" else "$activeGoalCount active"
@@ -142,9 +145,9 @@ fun JournalScreen(
         3 -> if (FeatureFlags.ABILITIES_ENABLED) {
             if (abilities.isEmpty()) "No abilities yet" else "${abilities.size} abilities"
         } else {
-            "Weekly view"
+            if (entries.isEmpty()) "No entries yet" else "${entries.size} entries"
         }
-        else -> "Weekly view"
+        else -> if (entries.isEmpty()) "No entries yet" else "${entries.size} entries"
     }
 
     val snackbarHostState = remember { SnackbarHostState() }
@@ -176,15 +179,41 @@ fun JournalScreen(
                 )
             }
 
-            // ── Tab 0: Weekly Planner ───────────────────────────────────────
+            // ── Tab 0: Journal ──────────────────────────────────────────────
+            // The weekly Planner moved to the Today feed; this hub's first tab is now the Journal
+            // itself, the mood calendar plus a stream of reflections. Write via the contextual FAB.
             if (currentTab == 0) {
-                item(key = "weekly_planner") {
-                    WeeklyPlannerContent(
-                        habitsWithStatus = habitsWithStatus,
-                        onCheckIn = { habitViewModel.toggleCheckIn(it) },
-                        activeGoalCount = activeGoalCount,
-                        modifier = Modifier.padding(horizontal = 16.dp)
+                item(key = "mood_calendar") {
+                    MoodCalendar(
+                        entries = entries,
+                        selectedMonth = selectedMonth,
+                        isExpanded = isCalendarExpanded,
+                        onToggleExpand = { isCalendarExpanded = !isCalendarExpanded },
+                        onMonthChange = { viewModel.setSelectedMonth(it) },
+                        onDayClick = { viewModel.selectDay(it) },
                     )
+                }
+                if (entries.isEmpty()) {
+                    item(key = "journal_empty") {
+                        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 48.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("No journal entries yet", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
+                            Spacer(Modifier.height(6.dp))
+                            Text("Tap Write to capture your first reflection", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
+                        }
+                    }
+                } else {
+                    item(key = "recent_entries_header") {
+                        Text("Recent entries", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.onSurface)
+                    }
+                    items(items = sortedEntries, key = { "entry_${it.id}" }) { entry ->
+                        SwipeableJournalEntryCard(
+                            entry = entry,
+                            onClick = { onEntryClick(entry.id) },
+                            onDelete = { viewModel.deleteEntry(entry.id) },
+                            listState = listState,
+                            modifier = Modifier.padding(horizontal = 16.dp).animateItem()
+                        )
+                    }
                 }
             }
 
@@ -354,9 +383,9 @@ fun JournalScreen(
 @Composable
 private fun HubTabRow(selectedTab: Int, onTabSelected: (Int) -> Unit, modifier: Modifier = Modifier) {
     val tabs = if (FeatureFlags.ABILITIES_ENABLED)
-        listOf("Planner", "Goals", "Habits", "Abilities")
+        listOf("Journal", "Goals", "Habits", "Abilities")
     else
-        listOf("Planner", "Goals", "Habits")
+        listOf("Journal", "Goals", "Habits")
     Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         tabs.forEachIndexed { index, label ->
             val isSelected = selectedTab == index

@@ -35,6 +35,7 @@ sealed class Screen(val route: String) {
     object AddGoalFromTemplate : Screen("add_goal_from_template/{templateId}")
     object Reminders : Screen("reminders")
     object LifeBalance : Screen("life_balance")
+    object Trajectory : Screen("trajectory")
     object BackupSettings : Screen("backup_settings")
     object FocusSetup : Screen("focus_setup?goalId={goalId}&milestoneId={milestoneId}")
     object Retrospective : Screen("retrospective")

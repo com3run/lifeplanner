@@ -347,7 +347,10 @@ internal fun DetailsStep(
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        Text("Why this goal? (optional)", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 8.dp))
+        Text(
+            if (selectedValueTitle != null) "Why this goal? · auto-linked, tap to change" else "Why this goal? (optional)",
+            style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 8.dp),
+        )
         Surface(
             modifier = Modifier.fillMaxWidth().height(56.dp).clickable(onClick = onValueClick),
             shape = RoundedCornerShape(12.dp),

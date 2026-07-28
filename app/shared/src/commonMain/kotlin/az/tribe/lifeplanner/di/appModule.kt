@@ -152,7 +152,6 @@ import az.tribe.lifeplanner.usecases.UpdateGoalUseCase
 import az.tribe.lifeplanner.usecases.UpdateMilestoneUseCase
 import com.russhwolf.settings.Settings
 import az.tribe.lifeplanner.ui.theme.ThemeController
-import az.tribe.lifeplanner.ui.planner.WeeklyPlannerViewModel
 import io.github.jan.supabase.auth.auth
 import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
@@ -163,6 +162,11 @@ const val DB_NAME = "LifePlannerDB.db"
 val appModule = module {
 
     single { DatabaseDriverFactory() }
+    single { az.tribe.lifeplanner.location.LocationProvider() }
+    single { az.tribe.lifeplanner.data.trajectory.BalancePastReconstructor(get()) }
+    single<az.tribe.lifeplanner.domain.repository.WeatherRepository> {
+        az.tribe.lifeplanner.data.network.WeatherRepositoryImpl(get(), get())
+    }
     single { SharedDatabase(get()) }
     single { Settings() }
     single { ThemeController(get()) }
@@ -321,6 +325,7 @@ val appModule = module {
     factory { CreateGoalUseCase(get()) }
     factory { DeleteGoalUseCase(get()) }
     factory { az.tribe.lifeplanner.usecases.PromoteTopValuesToLifeValuesUseCase(get(), get(), get()) }
+    factory { az.tribe.lifeplanner.usecases.SeedDefaultLifeValuesUseCase(get(), get()) }
     factory { UpdateGoalUseCase(get()) }
     factory { AutoLinkGoalValuesUseCase(get(), get()) }
     factory { UpdateGoalProgressUseCase(get()) }
@@ -408,10 +413,12 @@ val appModule = module {
     viewModel { az.tribe.lifeplanner.ui.wiring.WiringViewModel(get()) }
     viewModelOf(::BackupViewModel)
     viewModelOf(::FocusViewModel)
-    viewModel { az.tribe.lifeplanner.ui.today.TodayViewModel(get(), get(), get()) }
+    viewModel { az.tribe.lifeplanner.ui.today.TodayViewModel(get(), get(), get(), get()) }
     single { az.tribe.lifeplanner.ui.foryou.HomeFeedBuilder(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single<az.tribe.lifeplanner.ui.intro.IntroSeenStore> { az.tribe.lifeplanner.ui.intro.SettingsIntroSeenStore() }
-    viewModel { az.tribe.lifeplanner.ui.foryou.ForYouViewModel(get(), get(), get()) }
+    viewModel { az.tribe.lifeplanner.ui.foryou.ForYouViewModel(get(), get(), get(), get()) }
+    viewModel { az.tribe.lifeplanner.ui.today.TodayWeatherViewModel(get()) }
+    viewModel { az.tribe.lifeplanner.ui.trajectory.TrajectoryViewModel(get(), get()) }
     viewModel { az.tribe.lifeplanner.ui.foryou.LearnHubViewModel(get(), get(), get(), get()) }
     viewModel { az.tribe.lifeplanner.ui.foryou.KnowledgeDetailViewModel(get()) }
     single { az.tribe.lifeplanner.usecases.GeneratePossibilitiesUseCase(get(), az.tribe.lifeplanner.domain.service.LocalPossibilityFallback()) }
@@ -431,6 +438,5 @@ val appModule = module {
     viewModelOf(::SearchViewModel)
     viewModelOf(::SmartHabitGeneratorViewModel)
     viewModelOf(::CoachOnboardingViewModel)
-    viewModelOf(::WeeklyPlannerViewModel)
     viewModelOf(::ScreenTimeInsightViewModel)
 }

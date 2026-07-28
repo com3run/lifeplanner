@@ -82,11 +82,11 @@ internal fun NavGraphBuilder.appNavHabits(navController: NavController) {
         )
     }
 
-    // Life Balance Screen, primary bottom nav tab; no back button in TopAppBar
+    // Life Balance Screen, reached from the You tab; show a back button
     composable(Screen.LifeBalance.route) {
         LifeBalanceScreen(
             onNavigateBack = { navController.popBackStack() },
-            showBackButton = false,
+            showBackButton = true,
             onCreateHabit = { _ ->
                 navController.navigate(Screen.HabitTracker.route)
             },
@@ -103,7 +103,17 @@ internal fun NavGraphBuilder.appNavHabits(navController: NavController) {
             },
             onNavigateToHabitCreation = { _ ->
                 navController.navigate(Screen.HabitTracker.route)
+            },
+            onNavigateToTrajectory = {
+                navController.navigate(Screen.Trajectory.route) { launchSingleTop = true }
             }
+        )
+    }
+
+    // Life-balance trajectory graph (explorable projections)
+    composable(Screen.Trajectory.route) {
+        az.tribe.lifeplanner.ui.trajectory.TrajectoryScreen(
+            onBackClick = { navController.popBackStack() }
         )
     }
 

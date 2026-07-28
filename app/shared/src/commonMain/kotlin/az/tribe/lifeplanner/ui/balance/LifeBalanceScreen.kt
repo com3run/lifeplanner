@@ -3,6 +3,10 @@ package az.tribe.lifeplanner.ui.balance
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Surface
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -56,7 +60,8 @@ fun LifeBalanceScreen(
     onCreateHabit: (LifeArea) -> Unit = {},
     onNavigateToCoach: (coachId: String, autoMessage: String) -> Unit = { _, _ -> },
     onNavigateToStoryReader: () -> Unit = {},
-    onNavigateToHabitCreation: (LifeArea) -> Unit = {}
+    onNavigateToHabitCreation: (LifeArea) -> Unit = {},
+    onNavigateToTrajectory: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -171,6 +176,29 @@ fun LifeBalanceScreen(
                     if (report != null) {
                         // Life Constellation, score + animated web + AI cross-area insight
                         item { LifeWebCard(report = report) }
+
+                        // Explorable trajectory graph (how it's gone / where it's heading / could be)
+                        item {
+                            Surface(
+                                onClick = onNavigateToTrajectory,
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text("📈", style = MaterialTheme.typography.headlineSmall)
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text("Your trajectory", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                                        Text("See how it's gone, where it's heading, and how far you could take it.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                    Text("›", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                        }
 
                         // Life Spectrum, proportional segment bar, focused areas in center
                         item { LifeBalanceSegmentBar(areaScores = report.areaScores) }

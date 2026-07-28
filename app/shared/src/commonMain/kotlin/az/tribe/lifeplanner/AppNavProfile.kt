@@ -90,6 +90,16 @@ internal fun NavGraphBuilder.appNavProfile(
                     launchSingleTop = true
                 }
             },
+            onNavigateToLifeBalance = {
+                navController.navigate(Screen.LifeBalance.route) {
+                    launchSingleTop = true
+                }
+            },
+            onNavigateToTrajectory = {
+                navController.navigate(Screen.Trajectory.route) {
+                    launchSingleTop = true
+                }
+            },
             onNavigateToBecoming = {
                 navController.navigate(Screen.Becoming.route) {
                     launchSingleTop = true

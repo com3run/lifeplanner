@@ -138,11 +138,8 @@ fun App(
 
         // One-time upgrade of pre-track-mode habits ("Drink 8 glasses" -> count habit).
         val backfillHabitTargets: az.tribe.lifeplanner.usecases.habit.BackfillHabitTargetsUseCase = koinInject()
-        // Link goals to the life value they clearly serve, so the why is shown, not asked.
-        val autoLinkGoalValues: az.tribe.lifeplanner.usecases.AutoLinkGoalValuesUseCase = koinInject()
         LaunchedEffect(Unit) {
             runCatching { backfillHabitTargets() }
-            runCatching { autoLinkGoalValues() }
         }
 
         val builtinCoachFetcher: az.tribe.lifeplanner.data.network.BuiltinCoachFetcher = koinInject()
@@ -166,10 +163,16 @@ fun App(
             }
         }
 
-        // Pillar 1: one-time migration of onboarding topValues → LifeValue rows (idempotent)
+        // Pillar 1: build the "why" layer, then link goals to it, in order so it works on one launch.
+        // 1) promote onboarding topValues → LifeValue rows, 2) seed category defaults if still none,
+        // 3) auto-link goals to whichever values now exist. All idempotent.
         val promoteTopValues: az.tribe.lifeplanner.usecases.PromoteTopValuesToLifeValuesUseCase = koinInject()
+        val seedDefaultValues: az.tribe.lifeplanner.usecases.SeedDefaultLifeValuesUseCase = koinInject()
+        val autoLinkGoalValues: az.tribe.lifeplanner.usecases.AutoLinkGoalValuesUseCase = koinInject()
         LaunchedEffect(authState) {
-            promoteTopValues()
+            runCatching { promoteTopValues() }
+            runCatching { seedDefaultValues() }
+            runCatching { autoLinkGoalValues() }
         }
         val lifecycleOwner = LocalLifecycleOwner.current
         DisposableEffect(lifecycleOwner) {

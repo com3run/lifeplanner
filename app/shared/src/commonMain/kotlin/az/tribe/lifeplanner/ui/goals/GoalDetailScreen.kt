@@ -75,6 +75,7 @@ fun GoalDetailScreen(
 ) {
     val goal by viewModel.goal.collectAsState()
     val valueTitle by viewModel.valueTitle.collectAsState()
+    val suggestedValue by viewModel.suggestedValue.collectAsState()
     val c = MaterialTheme.modernColors
     val introGate = rememberFeatureIntroGate()
     FeatureIntroHost(introGate)
@@ -141,23 +142,37 @@ fun GoalDetailScreen(
                         Modifier.fillMaxWidth().padding(LifePlannerDesign.Padding.cardContent),
                         verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm)
                     ) {
+                        val suggestion = suggestedValue
+                        // Three states, none of them a nag: linked (its why), a confident
+                        // suggestion (accept in one tap), or category+coach framing as the why.
+                        val headline = when {
+                            valueTitle != null -> "Toward $valueTitle"
+                            suggestion != null -> "Serves \"${suggestion.title}\"?"
+                            else -> "Part of your ${g.category.displayName} journey"
+                        }
+                        val body = when {
+                            valueTitle != null -> "This goal serves \"$valueTitle\". ${coach.name} coaches this, keep the why alive together."
+                            suggestion != null -> "This looks like it serves your value \"${suggestion.title}\". Link it as your why, or change it in Edit."
+                            else -> "${coach.name} coaches this area. Add a life value in Edit whenever you want to name the deeper why."
+                        }
                         Row(horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm), verticalAlignment = Alignment.CenterVertically) {
                             IconChip(PhosphorIcons.Regular.Compass, tint = c.secondary)
                             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                Text(if (valueTitle != null) "Toward $valueTitle" else "Not linked to a value yet", style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = c.textPrimary)
-                                Text(
-                                    if (valueTitle != null) "This goal serves \"$valueTitle\". ${coach.name} coaches this, keep the why alive together."
-                                    else "Tap Edit to connect it to a value, your why.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = c.textSecondary
-                                )
+                                Text(headline, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = c.textPrimary)
+                                Text(body, style = MaterialTheme.typography.bodySmall, color = c.textSecondary)
                             }
                         }
-                        if (valueTitle != null) {
-                            AppButton(
+                        when {
+                            valueTitle != null -> AppButton(
                                 text = "Talk it through with ${coach.name}",
                                 onClick = { onOpenCoach(coach.id) },
                                 variant = AppButtonVariant.SECONDARY,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            suggestion != null -> AppButton(
+                                text = "Yes, this is my why",
+                                onClick = { viewModel.linkValue(suggestion.id) },
+                                variant = AppButtonVariant.PRIMARY,
                                 modifier = Modifier.fillMaxWidth()
                             )
                         }

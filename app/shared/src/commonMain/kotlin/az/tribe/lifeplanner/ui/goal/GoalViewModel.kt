@@ -164,12 +164,20 @@ class GoalViewModel(
     fun createGoal(goal: Goal) {
         viewModelScope.launch {
             try {
-                createGoalUseCase(goal)
+                // Auto-link the "why": if no value was chosen, infer the best-fitting one from the
+                // goal's category + text so the Why-Chain is populated without manual busywork.
+                val finalGoal = if (goal.valueId == null) {
+                    val values = runCatching { lifeValueRepository.getActiveLifeValues() }.getOrDefault(emptyList())
+                    goal.copy(valueId = az.tribe.lifeplanner.domain.service.GoalValueInferrer.infer(
+                        category = goal.category, title = goal.title, description = goal.description, values = values,
+                    ))
+                } else goal
+                createGoalUseCase(finalGoal)
                 gamificationRepository.awardXp(XpRewards.GOAL_CREATED.toLong())
-                Analytics.goalCreated(goal.category.name, "manual")
-                val result = smartReminderManager.syncRemindersForGoal(goal)
+                Analytics.goalCreated(finalGoal.category.name, "manual")
+                val result = smartReminderManager.syncRemindersForGoal(finalGoal)
                 if (result.hasChanges) {
-                    _reminderEvent.emit("${result.total} smart reminder${if (result.total > 1) "s" else ""} set for \"${goal.title}\"")
+                    _reminderEvent.emit("${result.total} smart reminder${if (result.total > 1) "s" else ""} set for \"${finalGoal.title}\"")
                 }
                 _error.value = null
             } catch (e: Exception) {

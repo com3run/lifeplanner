@@ -49,6 +49,8 @@ import com.adamglin.phosphoricons.regular.ClockCounterClockwise
 import com.adamglin.phosphoricons.regular.CloudArrowUp
 import com.adamglin.phosphoricons.regular.CloudSlash
 import com.adamglin.phosphoricons.regular.ChartBar
+import com.adamglin.phosphoricons.regular.ChartLineUp
+import com.adamglin.phosphoricons.regular.Scales
 import com.adamglin.phosphoricons.regular.Scales
 import com.adamglin.phosphoricons.regular.Sliders
 import com.adamglin.phosphoricons.regular.SignOut
@@ -76,6 +78,8 @@ fun ProfileScreen(
     onNavigateToOnboardingRedesign: () -> Unit = {},
     onNavigateToDecisions: () -> Unit = {},
     onNavigateToCausalInsights: () -> Unit = {},
+    onNavigateToLifeBalance: () -> Unit = {},
+    onNavigateToTrajectory: () -> Unit = {},
     onNavigateToBecoming: () -> Unit = {},
     onNavigateToDecisionReview: () -> Unit = {},
     onNavigateToYourWiring: () -> Unit = {},
@@ -225,6 +229,8 @@ fun ProfileScreen(
             }
 
             item { ProfileSectionHeader("Settings") }
+            item { ProfileMenuItem(icon = PhosphorIcons.Regular.Scales, title = "Life Balance", subtitle = "Where your life areas stand right now", onClick = onNavigateToLifeBalance) }
+            item { ProfileMenuItem(icon = PhosphorIcons.Regular.ChartLineUp, title = "Your Trajectory", subtitle = "How it's gone, where it's heading, how far you could go", onClick = onNavigateToTrajectory) }
             item { ProfileMenuItem(icon = PhosphorIcons.Regular.Bell, title = "Reminders", subtitle = "Notification preferences", onClick = onNavigateToReminders) }
             item { ProfileMenuItem(icon = PhosphorIcons.Regular.CloudArrowUp, title = "Backup & Sync", subtitle = "Export and restore your data", onClick = onNavigateToBackup) }
             item { ProfileMenuItem(icon = PhosphorIcons.Regular.ClockCounterClockwise, title = "Day Retrospective", subtitle = "Browse past days and activity", onClick = { introGate.open(FeatureIntroCatalog.WEEKLY_REVIEW, introAccent, onNavigateToRetrospective) }) }
