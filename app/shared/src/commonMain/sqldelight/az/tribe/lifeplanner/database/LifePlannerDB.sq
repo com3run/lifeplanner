@@ -201,6 +201,14 @@ UPDATE MilestoneEntity
 SET isCompleted = ?, sync_updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
 WHERE id = ?;
 
+-- Touch a milestone's parent goal so GoalEntity-observing flows (observeAllGoals) re-emit after a
+-- milestone toggle; without this the goals query, which only invalidates on GoalEntity writes, would
+-- keep serving the stale milestone state.
+touchGoalByMilestone:
+UPDATE GoalEntity
+SET sync_updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+WHERE id = (SELECT goalId FROM MilestoneEntity WHERE id = ?);
+
 -- Existing tables remain the same
 CREATE TABLE GoalHistoryEntity (
     id TEXT NOT NULL PRIMARY KEY,

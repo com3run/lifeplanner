@@ -195,7 +195,7 @@ private fun PlanRow(item: PlanItem, onComplete: () -> Unit) {
     val c = MaterialTheme.modernColors
     val overdueColor = Color(0xFFE53935)
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().bouncyClickable(onClick = onComplete),
         color = c.cardBackground,
         shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large),
     ) {
@@ -208,7 +208,7 @@ private fun PlanRow(item: PlanItem, onComplete: () -> Unit) {
                 imageVector = PhosphorIcons.Regular.Circle,
                 contentDescription = "Mark done",
                 tint = if (item.overdue) overdueColor else c.textTertiary,
-                modifier = Modifier.size(LifePlannerDesign.IconSize.large).bouncyClickable(onClick = onComplete),
+                modifier = Modifier.size(LifePlannerDesign.IconSize.large),
             )
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(item.title, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = c.textPrimary, maxLines = 1)

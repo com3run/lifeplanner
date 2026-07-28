@@ -287,6 +287,8 @@ suspend fun SharedDatabase.toggleMilestoneCompletion(id: String, isCompleted: Bo
             isCompleted = if (isCompleted) 1L else 0L,
             id = id
         )
+        // Bump the parent goal so observeAllGoals re-emits and the toggle actually shows up.
+        db.lifePlannerDBQueries.touchGoalByMilestone(id = id)
     }
 }
 
