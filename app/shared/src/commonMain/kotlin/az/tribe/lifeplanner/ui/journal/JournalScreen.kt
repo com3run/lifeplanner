@@ -14,6 +14,7 @@ import com.adamglin.phosphoricons.regular.Sun
 import com.adamglin.phosphoricons.regular.Moon
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -80,7 +81,9 @@ fun JournalScreen(
     // Own tab state locally, the NavGraphBuilder closure captures selectedTab once at
     // graph-build time, so the parent parameter is stale after first composition.
     // We call onTabSelected as a side-effect so App.kt's navContextAction FAB stays in sync.
-    var currentTab by remember { mutableStateOf(selectedTab) }
+    // rememberSaveable so the chosen hub tab survives leaving to a detail screen and coming back
+    // (Compose Navigation disposes the composition; plain remember would reset us to the first tab).
+    var currentTab by rememberSaveable { mutableStateOf(selectedTab) }
 
     var isCalendarExpanded by remember { mutableStateOf(false) }
     var habitToEdit by remember { mutableStateOf<Habit?>(null) }

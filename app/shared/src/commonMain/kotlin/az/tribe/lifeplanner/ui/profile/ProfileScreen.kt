@@ -50,7 +50,7 @@ import com.adamglin.phosphoricons.regular.CloudArrowUp
 import com.adamglin.phosphoricons.regular.CloudSlash
 import com.adamglin.phosphoricons.regular.ChartBar
 import com.adamglin.phosphoricons.regular.ChartLineUp
-import com.adamglin.phosphoricons.regular.Scales
+import com.adamglin.phosphoricons.regular.MagnifyingGlass
 import com.adamglin.phosphoricons.regular.Scales
 import com.adamglin.phosphoricons.regular.Sliders
 import com.adamglin.phosphoricons.regular.SignOut
@@ -78,6 +78,7 @@ fun ProfileScreen(
     onNavigateToOnboardingRedesign: () -> Unit = {},
     onNavigateToDecisions: () -> Unit = {},
     onNavigateToCausalInsights: () -> Unit = {},
+    onNavigateToSearch: () -> Unit = {},
     onNavigateToLifeBalance: () -> Unit = {},
     onNavigateToTrajectory: () -> Unit = {},
     onNavigateToBecoming: () -> Unit = {},
@@ -229,6 +230,7 @@ fun ProfileScreen(
             }
 
             item { ProfileSectionHeader("Settings") }
+            item { ProfileMenuItem(icon = PhosphorIcons.Regular.MagnifyingGlass, title = "Search", subtitle = "Find goals, habits, journal entries, coaches", onClick = onNavigateToSearch) }
             item { ProfileMenuItem(icon = PhosphorIcons.Regular.Scales, title = "Life Balance", subtitle = "Where your life areas stand right now", onClick = onNavigateToLifeBalance) }
             item { ProfileMenuItem(icon = PhosphorIcons.Regular.ChartLineUp, title = "Your Trajectory", subtitle = "How it's gone, where it's heading, how far you could go", onClick = onNavigateToTrajectory) }
             item { ProfileMenuItem(icon = PhosphorIcons.Regular.Bell, title = "Reminders", subtitle = "Notification preferences", onClick = onNavigateToReminders) }
