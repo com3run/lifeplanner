@@ -78,6 +78,8 @@ import az.tribe.lifeplanner.ui.theme.bouncyClickable
 import az.tribe.lifeplanner.ui.theme.gradientColors
 import az.tribe.lifeplanner.ui.theme.modernColors
 import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Fill
+import com.adamglin.phosphoricons.fill.CheckCircle
 import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.Brain
 import com.adamglin.phosphoricons.regular.CaretDown
@@ -109,6 +111,7 @@ fun ForYouScreen(
     val progress by viewModel.progress.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val plan by viewModel.todayPlan.collectAsState()
+    val checkinPulse by viewModel.checkinPulse.collectAsState()
     val c = MaterialTheme.modernColors
 
     // Today's weather (Open-Meteo). The permission lives in Compose; feed its state to the VM.
@@ -167,7 +170,11 @@ fun ForYouScreen(
                 item(key = "plan_empty") { Hint("You're all caught up for today. Steps due today show up here.") }
             } else {
                 items(plan, key = { "plan_${it.milestoneId}" }) { p ->
-                    PlanRow(item = p, onComplete = { viewModel.completePlanItem(p.milestoneId) })
+                    PlanRow(
+                        item = p,
+                        onComplete = { viewModel.completePlanItem(p.milestoneId) },
+                        onOpen = { onOpenRoute("goal_detail_redesign/${p.goalId}") },
+                    )
                 }
             }
 
@@ -197,6 +204,7 @@ fun ForYouScreen(
                             FeedCard(
                                 item = fi,
                                 accent = accent,
+                                pulse = fi.actionHabitId?.let { checkinPulse[it] },
                                 onAction = { fi.actionHabitId?.let(viewModel::checkInHabit) },
                                 onOpen = {
                                     val route = fi.route ?: return@FeedCard
@@ -276,7 +284,13 @@ private fun FilterChip(label: String, active: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-private fun FeedCard(item: FeedItem, accent: Color, onAction: () -> Unit, onOpen: () -> Unit) {
+private fun FeedCard(
+    item: FeedItem,
+    accent: Color,
+    pulse: ForYouViewModel.CheckinPulse? = null,
+    onAction: () -> Unit,
+    onOpen: () -> Unit,
+) {
     val c = MaterialTheme.modernColors
     Surface(
         modifier = Modifier.fillMaxWidth().bouncyClickable(enabled = item.route != null, onClick = onOpen),
@@ -299,14 +313,41 @@ private fun FeedCard(item: FeedItem, accent: Color, onAction: () -> Unit, onOpen
                 }
             }
             if (item.actionLabel != null) {
-                AppButton(
-                    text = item.actionLabel,
-                    onClick = onAction,
-                    variant = AppButtonVariant.PRIMARY,
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                when {
+                    // Fully done: confirm in place with a check, held for a beat before the card leaves.
+                    pulse?.done == true -> CheckinConfirmRow(
+                        text = if (pulse.target > 1) "Done, all ${pulse.target} in 🎉" else "Nice, checked in ✓",
+                    )
+                    // Counting up: show progress and keep the button so the next tap adds one more.
+                    pulse != null -> AppButton(
+                        text = "Add one more · ${pulse.count}/${pulse.target}",
+                        onClick = onAction,
+                        variant = AppButtonVariant.PRIMARY,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    else -> AppButton(
+                        text = item.actionLabel,
+                        onClick = onAction,
+                        variant = AppButtonVariant.PRIMARY,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun CheckinConfirmRow(text: String) {
+    val c = MaterialTheme.modernColors
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(PhosphorIcons.Fill.CheckCircle, contentDescription = null, tint = c.success, modifier = Modifier.size(20.dp))
+        Spacer(Modifier.size(8.dp))
+        Text(text, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold), color = c.success)
     }
 }
 
@@ -622,11 +663,13 @@ private fun WeatherPromptCard(onEnable: () -> Unit) {
 
 /** Planner-style row: a tappable check circle ticks the milestone done in place (no navigation). */
 @Composable
-private fun PlanRow(item: PlanItem, onComplete: () -> Unit) {
+private fun PlanRow(item: PlanItem, onComplete: () -> Unit, onOpen: () -> Unit) {
     val c = MaterialTheme.modernColors
     val overdueColor = Color(0xFFE53935)
+    // Completion is deliberate: only the check circle marks the step done. Tapping the row body
+    // opens the goal for context, so a stray tap can never silently complete a milestone.
     Surface(
-        modifier = Modifier.fillMaxWidth().bouncyClickable(onClick = onComplete),
+        modifier = Modifier.fillMaxWidth().bouncyClickable(onClick = onOpen),
         color = c.cardBackground,
         shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large),
     ) {
@@ -639,7 +682,11 @@ private fun PlanRow(item: PlanItem, onComplete: () -> Unit) {
                 imageVector = PhosphorIcons.Regular.Circle,
                 contentDescription = "Mark done",
                 tint = if (item.overdue) overdueColor else c.textTertiary,
-                modifier = Modifier.size(LifePlannerDesign.IconSize.large),
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .bouncyClickable(onClick = onComplete)
+                    .padding(4.dp)
+                    .size(LifePlannerDesign.IconSize.large),
             )
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(item.title, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = c.textPrimary, maxLines = 1)

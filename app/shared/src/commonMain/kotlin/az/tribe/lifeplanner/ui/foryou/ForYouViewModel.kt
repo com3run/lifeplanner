@@ -7,9 +7,12 @@ import az.tribe.lifeplanner.domain.model.FeedItem
 import az.tribe.lifeplanner.domain.model.UserProgress
 import az.tribe.lifeplanner.domain.repository.GamificationRepository
 import az.tribe.lifeplanner.domain.repository.GoalRepository
+import az.tribe.lifeplanner.domain.repository.HabitRepository
 import az.tribe.lifeplanner.ui.today.PlanItem
 import az.tribe.lifeplanner.usecases.habit.CheckInHabitUseCase
 import co.touchlab.kermit.Logger
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -31,10 +34,22 @@ class ForYouViewModel(
     private val checkInHabitUseCase: CheckInHabitUseCase,
     private val gamificationRepository: GamificationRepository,
     private val goalRepository: GoalRepository,
+    private val habitRepository: HabitRepository,
 ) : ViewModel() {
 
     private val _feed = MutableStateFlow<List<FeedItem>>(emptyList())
     val feed: StateFlow<List<FeedItem>> = _feed.asStateFlow()
+
+    /**
+     * Just-checked-in feedback per habit, so the card can confirm the tap *in place* and hold there
+     * for a beat before the feed re-ranks and the card moves. Count habits accumulate here across
+     * taps ("2 of 3") and only re-rank once complete, so a tap never yanks the card away mid-progress.
+     */
+    data class CheckinPulse(val count: Int, val target: Int, val done: Boolean)
+    private val _checkinPulse = MutableStateFlow<Map<String, CheckinPulse>>(emptyMap())
+    val checkinPulse: StateFlow<Map<String, CheckinPulse>> = _checkinPulse.asStateFlow()
+    private val holdJobs = mutableMapOf<String, Job>()
+    private val holdMillis = 3000L
 
     /**
      * Today's plan, the planner on the home screen: incomplete milestones due today or overdue across
@@ -90,14 +105,33 @@ class ForYouViewModel(
         }
     }
 
-    /** Inline check-in from a "Do next" card. Rebuilds the feed so it reflects the new state. */
+    /**
+     * Inline check-in from a "Do next" card. Each tap adds one toward the habit's target (the data
+     * layer counts up), so a 3-a-day habit takes three taps rather than completing at once. The card
+     * confirms in place via [checkinPulse] and only after the hold elapses (and only once the habit
+     * is actually complete) does the feed re-rank, so completion feels registered instead of snatched.
+     */
     fun checkInHabit(habitId: String) {
         viewModelScope.launch {
-            runCatching {
-                checkInHabitUseCase(habitId)
+            val target = runCatching { habitRepository.getHabitById(habitId)?.targetCount ?: 1 }.getOrDefault(1)
+            val checkIn = runCatching {
+                val c = checkInHabitUseCase(habitId)
                 gamificationRepository.awardXp(az.tribe.lifeplanner.domain.model.XpRewards.HABIT_CHECK_IN.toLong())
-            }.onFailure { Logger.w("ForYouViewModel") { "Check-in failed: ${it.message}" } }
-            refresh()
+                c
+            }.onFailure { Logger.w("ForYouViewModel") { "Check-in failed: ${it.message}" } }.getOrNull()
+
+            val count = checkIn?.count ?: 1
+            val done = checkIn?.completed ?: (count >= target)
+            _checkinPulse.value = _checkinPulse.value + (habitId to CheckinPulse(count, target, done))
+
+            // Reset the hold on every tap: a burst of count taps keeps the card put and progressing.
+            holdJobs.remove(habitId)?.cancel()
+            holdJobs[habitId] = viewModelScope.launch {
+                delay(holdMillis)
+                _checkinPulse.value = _checkinPulse.value - habitId
+                holdJobs.remove(habitId)
+                if (done) refresh() // only re-rank once it's fully done and the confirmation has been seen
+            }
         }
     }
 }

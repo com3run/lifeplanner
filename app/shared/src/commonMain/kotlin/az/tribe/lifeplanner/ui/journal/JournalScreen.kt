@@ -251,21 +251,14 @@ fun JournalScreen(
                 )
             }
 
-            // Compact day-lens header shared across sub-tabs: the day label (Today / Yesterday / date)
-            // with an inline "Jump to today" on the same line whenever the lens is on another day.
-            item(key = "day_lens_header") {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        dayLabel(selectedDate, today),
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                    if (selectedDate != today) {
+            // The week strip and each tab's own content already show which day is selected, so we add
+            // no date label here, only a compact "Jump to today" link when the lens is off today.
+            if (selectedDate != today) {
+                item(key = "jump_today") {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.End,
+                    ) {
                         Text(
                             "Jump to today",
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
