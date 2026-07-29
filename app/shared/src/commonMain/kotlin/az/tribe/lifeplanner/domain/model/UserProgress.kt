@@ -121,6 +121,10 @@ object XpRewards {
     const val STREAK_BONUS_MULTIPLIER = 0.1f // 10% bonus per streak day
     const val PERFECT_DAY_BONUS = 25
 
+    // Mindfulness (breathing) XP
+    const val MINDFUL_BREATH = 4
+    const val MINDFUL_BREATH_BOX = 6
+
     // Focus session XP
     const val FOCUS_SESSION_15 = 10
     const val FOCUS_SESSION_25 = 20

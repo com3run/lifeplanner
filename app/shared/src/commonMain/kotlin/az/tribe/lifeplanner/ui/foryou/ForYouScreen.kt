@@ -9,6 +9,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
 import androidx.compose.ui.graphics.graphicsLayer
+import az.tribe.lifeplanner.ui.components.BreathingCard
 import az.tribe.lifeplanner.ui.components.rememberHapticManager
 import androidx.compose.foundation.background
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -542,96 +543,6 @@ private fun MetricTile(label: String, value: String, modifier: Modifier = Modifi
             Text(label, style = MaterialTheme.typography.labelSmall, color = c.textTertiary)
             Text(value, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = c.textPrimary)
         }
-    }
-}
-
-private const val BREATH_GOAL = 3
-
-/**
- * A tiny in-app "grow" moment: take a breath or two a day. The card expands into a breathing circle
- * that grows on the inhale and shrinks on the exhale; finishing counts toward a small daily goal
- * (persisted per day) and earns a little XP, like completing a micro-habit while you're already here.
- */
-@Composable
-private fun BreathingCard() {
-    val settings: Settings = koinInject()
-    val gamification: GamificationRepository = koinInject()
-    val scope = rememberCoroutineScope()
-    val c = MaterialTheme.modernColors
-    val dateKey = remember { "breaths_" + Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toString() }
-    var count by remember { mutableStateOf(settings.getInt(dateKey, 0)) }
-    var active by remember { mutableStateOf(false) }
-
-    AnimatedVisibility(visible = count < BREATH_GOAL || active) {
-        Surface(Modifier.fillMaxWidth(), color = c.cardBackground, shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large)) {
-            if (active) {
-                BreathingAnimation(
-                    onDone = {
-                        val next = (count + 1).coerceAtMost(BREATH_GOAL)
-                        count = next
-                        settings.putInt(dateKey, next)
-                        scope.launch { runCatching { gamification.awardXp(2) } }
-                        active = false
-                    },
-                    onCancel = { active = false },
-                )
-            } else {
-                Row(
-                    Modifier.fillMaxWidth().padding(LifePlannerDesign.Padding.cardContent),
-                    horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text("🫧", style = MaterialTheme.typography.headlineSmall)
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text("Take a breath", style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = c.textPrimary)
-                        Text(
-                            if (count == 0) "A moment to reset before you dive in." else "$count of $BREATH_GOAL today. One more?",
-                            style = MaterialTheme.typography.bodySmall, color = c.textSecondary,
-                        )
-                    }
-                    AppButton(text = "Breathe", onClick = { active = true }, variant = AppButtonVariant.SECONDARY)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun BreathingAnimation(onDone: () -> Unit, onCancel: () -> Unit) {
-    val c = MaterialTheme.modernColors
-    val total = 3
-    var inhaling by remember { mutableStateOf(false) }
-    var completed by remember { mutableStateOf(0) }
-    val scale by animateFloatAsState(
-        targetValue = if (inhaling) 1f else 0.55f,
-        animationSpec = tween(durationMillis = 3800, easing = FastOutSlowInEasing),
-        label = "breathScale",
-    )
-    LaunchedEffect(Unit) {
-        for (i in 0 until total) {
-            inhaling = true; delay(3800)
-            inhaling = false; delay(3800)
-            completed = i + 1
-        }
-        onDone()
-    }
-    Column(
-        Modifier.fillMaxWidth().padding(LifePlannerDesign.Padding.cardContent),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
-    ) {
-        Box(Modifier.size(150.dp), contentAlignment = Alignment.Center) {
-            Box(
-                Modifier.size(150.dp)
-                    .graphicsLayer { scaleX = scale; scaleY = scale }
-                    .clip(CircleShape)
-                    .background(Brush.radialGradient(listOf(c.primary.copy(alpha = 0.55f), c.primary.copy(alpha = 0.12f)))),
-            )
-            Text(if (inhaling) "In" else "Out", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold), color = c.textPrimary)
-        }
-        Text(if (inhaling) "Breathe in…" else "Breathe out…", style = MaterialTheme.typography.titleMedium, color = c.textPrimary)
-        Text("Breath ${(completed + 1).coerceAtMost(total)} of $total", style = MaterialTheme.typography.bodySmall, color = c.textSecondary)
-        TextButton(onClick = onCancel) { Text("Done for now") }
     }
 }
 
