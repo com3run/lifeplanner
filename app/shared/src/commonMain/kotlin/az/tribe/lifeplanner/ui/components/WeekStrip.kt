@@ -1,5 +1,6 @@
 package az.tribe.lifeplanner.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -18,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -48,6 +50,7 @@ fun WeekStrip(
     onSelect: (LocalDate) -> Unit,
     modifier: Modifier = Modifier,
     birthdayMonthDay: Pair<Int, Int>? = null,
+    flaggedDates: Set<LocalDate> = emptySet(),
 ) {
     val today = remember { Clock.System.todayIn(TimeZone.currentSystemDefault()) }
     // Dominant mood per day, for the smile on each cell.
@@ -73,10 +76,11 @@ fun WeekStrip(
                         day = day,
                         isSelected = day == selectedDate,
                         isToday = day == today,
+                        isFuture = day > today,
                         mood = moodByDay[day],
                         isBirthday = birthdayMonthDay?.let { day.monthNumber == it.first && day.dayOfMonth == it.second } ?: false,
-                        enabled = day <= today,
-                        onClick = { if (day <= today) onSelect(day) },
+                        isFlagged = day in flaggedDates,
+                        onClick = { onSelect(day) },
                     )
                 }
             }
@@ -89,9 +93,10 @@ private fun DayCell(
     day: LocalDate,
     isSelected: Boolean,
     isToday: Boolean,
+    isFuture: Boolean,
     mood: Mood?,
     isBirthday: Boolean,
-    enabled: Boolean,
+    isFlagged: Boolean,
     onClick: () -> Unit,
 ) {
     val c = MaterialTheme.modernColors
@@ -104,10 +109,10 @@ private fun DayCell(
     }
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(3.dp),
         modifier = Modifier
             .padding(horizontal = 2.dp)
-            .let { if (enabled) it.bouncyClickable(onClick = onClick) else it },
+            .bouncyClickable(onClick = onClick),
     ) {
         Text(
             letter,
@@ -134,12 +139,17 @@ private fun DayCell(
                     ),
                     color = when {
                         isSelected -> Color.White
-                        !enabled -> c.textTertiary.copy(alpha = 0.4f)
+                        isFuture -> c.textTertiary.copy(alpha = 0.5f)
                         isToday -> c.primary
                         else -> c.textPrimary
                     },
                 )
             }
         }
+        // A small flag dot marks days with a goal/milestone due.
+        Box(
+            modifier = Modifier.size(5.dp).clip(CircleShape)
+                .background(if (isFlagged) c.secondary else Color.Transparent),
+        )
     }
 }

@@ -139,6 +139,22 @@ fun JournalScreen(
         entries.filter { it.date == selectedDate }.sortedByDescending { it.createdAt }
     }
 
+    // What's planned per day (goal due dates + incomplete milestone due dates), for the strip flags
+    // and the "planned this day" card. Flags appear on any day, past or future.
+    val plannedByDay = remember(goals) {
+        val map = mutableMapOf<LocalDate, MutableList<String>>()
+        goals.forEach { g ->
+            if (g.status != GoalStatus.COMPLETED) {
+                map.getOrPut(g.dueDate) { mutableListOf() }.add("🎯 \"${g.title}\" due")
+                g.milestones.forEach { m ->
+                    if (!m.isCompleted) m.dueDate?.let { d -> map.getOrPut(d) { mutableListOf() }.add("${m.title} · ${g.title}") }
+                }
+            }
+        }
+        map
+    }
+    val plannedForSelected = plannedByDay[selectedDate].orEmpty()
+
     val upcomingGoals = remember(goals) {
         goals.filter { it.status != GoalStatus.COMPLETED }.sortedBy { it.dueDate }.take(3)
     }
@@ -207,8 +223,33 @@ fun JournalScreen(
                     selectedDate = selectedDate,
                     entries = entries,
                     onSelect = { selectedEpochDay = it.toEpochDays() },
+                    flaggedDates = plannedByDay.keys,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                 )
+            }
+
+            // Tapping a flagged day shows what's planned (on any tab).
+            if (plannedForSelected.isNotEmpty()) {
+                item(key = "planned_day") {
+                    Surface(
+                        onClick = { if (currentTab != 1) { currentTab = 1; onTabSelected(1) } },
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                    ) {
+                        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(
+                                "Planned ${dayLabel(selectedDate, today)}",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                            plannedForSelected.take(4).forEach { line ->
+                                Text(line, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            }
+                        }
+                    }
+                }
             }
 
             // ── Tab 0: Journal ──────────────────────────────────────────────
