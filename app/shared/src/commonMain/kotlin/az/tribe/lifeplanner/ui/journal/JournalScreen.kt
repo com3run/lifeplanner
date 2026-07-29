@@ -1,7 +1,11 @@
 package az.tribe.lifeplanner.ui.journal
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
+import org.jetbrains.compose.resources.painterResource
+import leanlifeplanner.app.shared.generated.resources.Res
+import leanlifeplanner.app.shared.generated.resources.illus_learn_habits
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -35,7 +39,6 @@ import az.tribe.lifeplanner.ui.home.CompactHomeMilestoneRow
 import az.tribe.lifeplanner.ui.home.HomeViewModel
 import az.tribe.lifeplanner.ui.components.DayEntriesBottomSheet
 import az.tribe.lifeplanner.ui.components.GlassCard
-import az.tribe.lifeplanner.ui.components.MoodCalendar
 import az.tribe.lifeplanner.ui.components.WeekStrip
 import az.tribe.lifeplanner.ui.theme.bouncyClickable
 import com.russhwolf.settings.Settings
@@ -82,7 +85,6 @@ fun JournalScreen(
     val entries by viewModel.entries.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val showNewEntryDialog by viewModel.showNewEntryDialog.collectAsState()
-    val selectedMonth by viewModel.selectedMonth.collectAsState()
     val selectedDay by viewModel.selectedDay.collectAsState()
 
     val goals by goalViewModel.goals.collectAsState()
@@ -103,7 +105,6 @@ fun JournalScreen(
     var selectedEpochDay by rememberSaveable { mutableStateOf(today.toEpochDays()) }
     val selectedDate = remember(selectedEpochDay) { LocalDate.fromEpochDays(selectedEpochDay) }
 
-    var isCalendarExpanded by remember { mutableStateOf(false) }
     var habitToEdit by remember { mutableStateOf<Habit?>(null) }
     val listState = rememberLazyListState()
     val error by viewModel.error.collectAsState()
@@ -194,8 +195,8 @@ fun JournalScreen(
     val bannerTitle = when (currentTab) {
         1 -> "Goals"
         2 -> "Habits"
-        3 -> if (FeatureFlags.ABILITIES_ENABLED) "Abilities" else "Journal"
-        else -> "Journal"
+        3 -> if (FeatureFlags.ABILITIES_ENABLED) "Abilities" else "Artifact"
+        else -> "Artifact"
     }
     val bannerSubtitle = when (currentTab) {
         1 -> if (activeGoalCount == 0) "No active goals" else "$activeGoalCount active"
@@ -275,16 +276,6 @@ fun JournalScreen(
             // ── Tab 0: Journal ──────────────────────────────────────────────
             // The mood calendar plus the selected day's reflections. Write via the contextual FAB.
             if (currentTab == 0) {
-                item(key = "mood_calendar") {
-                    MoodCalendar(
-                        entries = entries,
-                        selectedMonth = selectedMonth,
-                        isExpanded = isCalendarExpanded,
-                        onToggleExpand = { isCalendarExpanded = !isCalendarExpanded },
-                        onMonthChange = { viewModel.setSelectedMonth(it) },
-                        onDayClick = { selectedEpochDay = it.toEpochDays(); viewModel.setSelectedMonth(it) },
-                    )
-                }
                 item(key = "day_header") {
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
@@ -415,22 +406,33 @@ fun JournalScreen(
                         }
                     }
                 } else if (selectedDate != today) {
-                    // A read-only "what you did that day" view for past days.
+                    // A day view: what you did that day, done first then skipped.
+                    val doneOnDay = habitsWithStatus.filter { it.habit.id in habitDayCompletions }
+                    val skippedOnDay = habitsWithStatus.filter { it.habit.id !in habitDayCompletions }
                     item(key = "habits_day_header") {
-                        val done = habitsWithStatus.count { it.habit.id in habitDayCompletions }
                         Text(
-                            "${dayLabel(selectedDate, today)} · $done of ${habitsWithStatus.size} done",
+                            "${dayLabel(selectedDate, today)} · ${doneOnDay.size} of ${habitsWithStatus.size} done",
                             style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.onSurface,
                         )
                     }
-                    items(items = habitsWithStatus, key = { "dayhabit_${it.habit.id}" }) { hs ->
-                        PastDayHabitRow(
-                            title = hs.habit.title,
-                            done = hs.habit.id in habitDayCompletions,
-                            onClick = { requestPastToggle(hs.habit.id) },
-                            modifier = Modifier.padding(horizontal = 16.dp),
-                        )
+                    items(items = doneOnDay, key = { "done_${it.habit.id}" }) { hs ->
+                        PastDayHabitRow(hs.habit.title, done = true, onClick = { requestPastToggle(hs.habit.id) }, modifier = Modifier.padding(horizontal = 16.dp))
+                    }
+                    if (skippedOnDay.isNotEmpty()) {
+                        item(key = "skipped_header") {
+                            Text(
+                                "💤 ${skippedOnDay.size} skipped",
+                                style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        items(items = skippedOnDay, key = { "skip_${it.habit.id}" }) { hs ->
+                            PastDayHabitRow(hs.habit.title, done = false, onClick = { requestPastToggle(hs.habit.id) }, modifier = Modifier.padding(horizontal = 16.dp))
+                        }
+                    } else if (doneOnDay.isNotEmpty()) {
+                        item(key = "all_done") { AllDoneCelebration() }
                     }
                 } else if (allHabitsCaughtUp) {
                     item(key = "habits_caught_up") {
@@ -538,6 +540,23 @@ fun JournalScreen(
 private const val PAST_EDIT_WARNED_KEY = "past_edit_warned_v1"
 
 @Composable
+private fun AllDoneCelebration() {
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Image(
+            painter = painterResource(Res.drawable.illus_learn_habits),
+            contentDescription = null,
+            modifier = Modifier.height(120.dp),
+        )
+        Text("Every habit done", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+        Text("A perfect day. Nice one.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+@Composable
 private fun PastDayHabitRow(title: String, done: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Surface(
         onClick = onClick,
@@ -579,9 +598,9 @@ private fun dayLabel(date: LocalDate, today: LocalDate): String = when (date) {
 @Composable
 private fun HubTabRow(selectedTab: Int, onTabSelected: (Int) -> Unit, modifier: Modifier = Modifier) {
     val tabs = if (FeatureFlags.ABILITIES_ENABLED)
-        listOf("Journal", "Goals", "Habits", "Abilities")
+        listOf("Artifact", "Goals", "Habits", "Abilities")
     else
-        listOf("Journal", "Goals", "Habits")
+        listOf("Artifact", "Goals", "Habits")
     Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         tabs.forEachIndexed { index, label ->
             val isSelected = selectedTab == index

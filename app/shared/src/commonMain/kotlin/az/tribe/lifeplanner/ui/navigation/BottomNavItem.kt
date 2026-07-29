@@ -55,7 +55,7 @@ sealed class BottomNavItem(
         // Goals / Habits / Journal / Planner. v3 had pointed this at the standalone
         // GoalsRedesign screen.
         route = Screen.Journal.route,
-        title = "Journal",
+        title = "Artifact",
         selectedIcon = PhosphorIcons.Fill.SquaresFour,
         unselectedIcon = PhosphorIcons.Regular.SquaresFour
     )
