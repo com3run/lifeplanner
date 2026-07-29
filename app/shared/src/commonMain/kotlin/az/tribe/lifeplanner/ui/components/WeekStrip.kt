@@ -35,6 +35,7 @@ import az.tribe.lifeplanner.ui.theme.bouncyClickable
 import az.tribe.lifeplanner.ui.theme.modernColors
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.CalendarBlank
 import com.adamglin.phosphoricons.regular.CaretDown
 import com.adamglin.phosphoricons.regular.CaretLeft
 import com.adamglin.phosphoricons.regular.CaretRight
@@ -121,14 +122,32 @@ fun WeekStrip(
             )
         }
 
-        // Expand / collapse handle.
-        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            Icon(
-                imageVector = if (expanded) PhosphorIcons.Regular.CaretUp else PhosphorIcons.Regular.CaretDown,
-                contentDescription = if (expanded) "Collapse to week" else "Expand to month",
-                tint = c.textTertiary,
-                modifier = Modifier.bouncyClickable { expanded = !expanded }.padding(4.dp).size(18.dp),
-            )
+        // Expand / collapse handle: a small pill so it reads as a real toggle, not a stray chevron.
+        Box(Modifier.fillMaxWidth().padding(top = 2.dp), contentAlignment = Alignment.Center) {
+            Surface(
+                onClick = { expanded = !expanded },
+                shape = CircleShape,
+                color = c.primary.copy(alpha = 0.10f),
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(PhosphorIcons.Regular.CalendarBlank, contentDescription = null, tint = c.primary, modifier = Modifier.size(15.dp))
+                    Text(
+                        if (expanded) "Week" else "Month",
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                        color = c.primary,
+                    )
+                    Icon(
+                        imageVector = if (expanded) PhosphorIcons.Regular.CaretUp else PhosphorIcons.Regular.CaretDown,
+                        contentDescription = if (expanded) "Collapse to week" else "Expand to month",
+                        tint = c.primary,
+                        modifier = Modifier.size(13.dp),
+                    )
+                }
+            }
         }
     }
 }

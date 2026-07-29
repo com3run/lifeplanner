@@ -1,6 +1,15 @@
 package az.tribe.lifeplanner.ui.foryou
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.spring
+import androidx.compose.ui.graphics.graphicsLayer
+import az.tribe.lifeplanner.ui.components.rememberHapticManager
 import androidx.compose.foundation.background
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
@@ -313,41 +322,72 @@ private fun FeedCard(
                 }
             }
             if (item.actionLabel != null) {
-                when {
-                    // Fully done: confirm in place with a check, held for a beat before the card leaves.
-                    pulse?.done == true -> CheckinConfirmRow(
-                        text = if (pulse.target > 1) "Done, all ${pulse.target} in 🎉" else "Nice, checked in ✓",
-                    )
-                    // Counting up: show progress and keep the button so the next tap adds one more.
-                    pulse != null -> AppButton(
-                        text = "Add one more · ${pulse.count}/${pulse.target}",
-                        onClick = onAction,
-                        variant = AppButtonVariant.PRIMARY,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                    else -> AppButton(
-                        text = item.actionLabel,
-                        onClick = onAction,
-                        variant = AppButtonVariant.PRIMARY,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
+                val haptic = rememberHapticManager()
+                AnimatedContent(
+                    targetState = when {
+                        pulse?.done == true -> 2
+                        pulse != null -> 1
+                        else -> 0
+                    },
+                    transitionSpec = {
+                        (scaleIn(initialScale = 0.9f) + fadeIn()) togetherWith fadeOut()
+                    },
+                    label = "checkin_cta",
+                ) { state ->
+                    when (state) {
+                        // Fully done: a bold green confirmation with a check that springs in, held a beat.
+                        2 -> DoneConfirm(target = pulse?.target ?: 1)
+                        // Counting up: progress on the button; each tap adds one more with a tactile tick.
+                        1 -> AppButton(
+                            text = "Add one more · ${pulse?.count ?: 0}/${pulse?.target ?: 1}",
+                            onClick = { haptic.success(); onAction() },
+                            variant = AppButtonVariant.PRIMARY,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        else -> AppButton(
+                            text = item.actionLabel,
+                            onClick = { haptic.success(); onAction() },
+                            variant = AppButtonVariant.PRIMARY,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
                 }
             }
         }
     }
 }
 
+/** The satisfying "you did it" state: a filled green bar with a check that springs in. */
 @Composable
-private fun CheckinConfirmRow(text: String) {
+private fun DoneConfirm(target: Int) {
     val c = MaterialTheme.modernColors
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
+    val scale = remember { Animatable(0.5f) }
+    LaunchedEffect(Unit) {
+        scale.animateTo(1f, animationSpec = spring(dampingRatio = 0.42f, stiffness = 520f))
+    }
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = c.success,
+        shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.medium),
     ) {
-        Icon(PhosphorIcons.Fill.CheckCircle, contentDescription = null, tint = c.success, modifier = Modifier.size(20.dp))
-        Spacer(Modifier.size(8.dp))
-        Text(text, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold), color = c.success)
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 14.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                PhosphorIcons.Fill.CheckCircle,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(22.dp).graphicsLayer { scaleX = scale.value; scaleY = scale.value },
+            )
+            Spacer(Modifier.size(8.dp))
+            Text(
+                if (target > 1) "All $target done!" else "Checked in!",
+                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                color = Color.White,
+            )
+        }
     }
 }
 

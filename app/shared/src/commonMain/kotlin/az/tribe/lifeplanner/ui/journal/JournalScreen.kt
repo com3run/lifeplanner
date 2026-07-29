@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.*
 import org.jetbrains.compose.resources.painterResource
 import leanlifeplanner.app.shared.generated.resources.Res
 import leanlifeplanner.app.shared.generated.resources.illus_learn_habits
+import leanlifeplanner.app.shared.generated.resources.illus_learn_empty
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -197,8 +198,8 @@ fun JournalScreen(
     val bannerTitle = when (currentTab) {
         1 -> "Goals"
         2 -> "Habits"
-        3 -> if (FeatureFlags.ABILITIES_ENABLED) "Abilities" else "Artifact"
-        else -> "Artifact"
+        3 -> if (FeatureFlags.ABILITIES_ENABLED) "Abilities" else "Journal"
+        else -> "Journal"
     }
     val bannerSubtitle = when (currentTab) {
         1 -> if (activeGoalCount == 0) "No active goals" else "$activeGoalCount active"
@@ -309,18 +310,10 @@ fun JournalScreen(
                         }
                     } else {
                         item(key = "day_empty") {
-                            Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 40.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(
-                                    "Nothing journaled this day",
-                                    style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                                )
-                                Spacer(Modifier.height(6.dp))
-                                Text(
-                                    "Pick another day, or tap Write to add one",
-                                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                                )
-                            }
+                            WarmEmptyState(
+                                title = "Nothing journaled this day",
+                                subtitle = "Pick another day, or tap Write to add one",
+                            )
                         }
                     }
                 } else {
@@ -602,6 +595,33 @@ private fun TodayMoodPrompt(plannedCount: Int, onPick: (Mood) -> Unit, modifier:
     }
 }
 
+/** A gentle empty state: a warm illustration over a soft title + hint, instead of bare grey text. */
+@Composable
+private fun WarmEmptyState(title: String, subtitle: String) {
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Image(
+            painter = painterResource(Res.drawable.illus_learn_empty),
+            contentDescription = null,
+            modifier = Modifier.height(130.dp),
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            title,
+            style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Text(
+            subtitle,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+        )
+    }
+}
+
 @Composable
 private fun AllDoneCelebration() {
     Column(
@@ -661,9 +681,9 @@ private fun dayLabel(date: LocalDate, today: LocalDate): String = when (date) {
 @Composable
 private fun HubTabRow(selectedTab: Int, onTabSelected: (Int) -> Unit, modifier: Modifier = Modifier) {
     val tabs = if (FeatureFlags.ABILITIES_ENABLED)
-        listOf("Artifact", "Goals", "Habits", "Abilities")
+        listOf("Journal", "Goals", "Habits", "Abilities")
     else
-        listOf("Artifact", "Goals", "Habits")
+        listOf("Journal", "Goals", "Habits")
     Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         tabs.forEachIndexed { index, label ->
             val isSelected = selectedTab == index
