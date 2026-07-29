@@ -1,6 +1,13 @@
 # Spec: Community Journals ("Learn from the community")
 
-Status: **Draft for review** · Owner: Kamran · Drafted 2026-07-28
+Status: **v0 in progress** · Owner: Kamran · Drafted 2026-07-28
+
+**Decisions locked (2026-07-28):** §3.1 → **opt-in-per-entry** (default private, sharing is a
+free explicit act). v0 backend built: `supabase/community_journals.sql` (tables + RLS) and the
+`share-journal` / `report-content` edge functions. **To activate v0:** paste the SQL in the Supabase
+editor, deploy the two functions, ensure `SUPABASE_SERVICE_ROLE_KEY` + `OPENAI_API_KEY` are set in
+the functions' env, then build the client UI (next) behind `FeatureFlags.COMMUNITY_JOURNALS`.
+Still open: §7 premium system, §6 admin queue, §9 reads scope.
 
 ## 1. Summary
 

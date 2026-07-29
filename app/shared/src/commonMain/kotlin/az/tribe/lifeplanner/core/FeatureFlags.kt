@@ -41,4 +41,11 @@ object FeatureFlags {
 
     /** Possibility Mode. Back on since 2026-07-23: TRI-20 ships with an intro gate and a local no-AI fallback. */
     const val PILLAR_POSSIBILITY = true
+
+    /**
+     * Community Journals (v0): opt-in public sharing of a journal entry into a moderated community
+     * learning feed. Off until the backend (shared_journals table + share-journal/report-content
+     * edge functions) is deployed and internal review is in place. See docs/SPEC-community-journals.md.
+     */
+    const val COMMUNITY_JOURNALS = false
 }
