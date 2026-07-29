@@ -492,8 +492,14 @@ fun App(
 
         // Contextual circle button action, changes per screen and hub tab (v2 behavior).
         val navContextAction: NavContextAction? = when (currentRoute) {
-            // Today has no contextual FAB, the feed's own cards and rows carry the actions.
-            homeRoute -> null
+            // Today's FAB is Search: quick find + act from the front door.
+            homeRoute -> NavContextAction(
+                icon = PhosphorIcons.Regular.MagnifyingGlass,
+                contentDescription = "Search",
+                onClick = {
+                    navController.navigate(Screen.Search.route) { launchSingleTop = true }
+                },
+            )
             Screen.Journal.route -> when (hubSelectedTab) {
                 1 -> NavContextAction(
                     icon = PhosphorIcons.Regular.Flag,
