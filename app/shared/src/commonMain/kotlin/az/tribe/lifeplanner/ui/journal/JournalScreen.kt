@@ -46,6 +46,8 @@ import org.koin.compose.koinInject
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import az.tribe.lifeplanner.domain.enum.Mood
 import kotlinx.datetime.minus
 import kotlinx.datetime.todayIn
 import kotlin.time.Clock
@@ -64,7 +66,7 @@ import org.koin.compose.viewmodel.koinViewModel
 fun JournalScreen(
     onNavigateBack: () -> Unit,
     onEntryClick: (String) -> Unit = {},
-    onNavigateToWizard: () -> Unit = {},
+    onNavigateToWizard: (Mood?) -> Unit = {},
     isFromBottomNav: Boolean = false,
     selectedTab: Int = 0,
     onTabSelected: (Int) -> Unit = {},
@@ -249,6 +251,31 @@ fun JournalScreen(
                 )
             }
 
+            // Compact day-lens header shared across sub-tabs: the day label (Today / Yesterday / date)
+            // with an inline "Jump to today" on the same line whenever the lens is on another day.
+            item(key = "day_lens_header") {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        dayLabel(selectedDate, today),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    if (selectedDate != today) {
+                        Text(
+                            "Jump to today",
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.bouncyClickable { selectedEpochDay = today.toEpochDays() },
+                        )
+                    }
+                }
+            }
+
             // Tapping a flagged day shows what's planned (on any tab).
             if (plannedForSelected.isNotEmpty()) {
                 item(key = "planned_day") {
@@ -276,41 +303,31 @@ fun JournalScreen(
             // ── Tab 0: Journal ──────────────────────────────────────────────
             // The mood calendar plus the selected day's reflections. Write via the contextual FAB.
             if (currentTab == 0) {
-                item(key = "day_header") {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            dayLabel(selectedDate, today),
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
-                        if (selectedDate != today) {
-                            Text(
-                                "Jump to today",
-                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.bouncyClickable { selectedEpochDay = today.toEpochDays() },
+                if (dayEntries.isEmpty()) {
+                    if (selectedDate == today) {
+                        // No entry yet: lead with a warm, time-aware mood picker. Tapping a mood opens
+                        // the writer with that first step already chosen, so starting feels effortless.
+                        item(key = "today_mood_prompt") {
+                            TodayMoodPrompt(
+                                plannedCount = plannedForSelected.size,
+                                onPick = { mood -> onNavigateToWizard(mood) },
+                                modifier = Modifier.padding(horizontal = 16.dp),
                             )
                         }
-                    }
-                }
-                if (dayEntries.isEmpty()) {
-                    item(key = "day_empty") {
-                        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 40.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                if (selectedDate == today) "No entry yet today" else "Nothing journaled this day",
-                                style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                            )
-                            Spacer(Modifier.height(6.dp))
-                            Text(
-                                if (selectedDate == today) "Tap Write to capture a reflection" else "Pick another day, or tap Write to add one",
-                                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                            )
+                    } else {
+                        item(key = "day_empty") {
+                            Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 40.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    "Nothing journaled this day",
+                                    style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                )
+                                Spacer(Modifier.height(6.dp))
+                                Text(
+                                    "Pick another day, or tap Write to add one",
+                                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                                )
+                            }
                         }
                     }
                 } else {
@@ -538,6 +555,59 @@ fun JournalScreen(
 }
 
 private const val PAST_EDIT_WARNED_KEY = "past_edit_warned_v1"
+
+@Composable
+private fun TodayMoodPrompt(plannedCount: Int, onPick: (Mood) -> Unit, modifier: Modifier = Modifier) {
+    val hour = remember {
+        Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).hour
+    }
+    val greeting = when (hour) {
+        in 5..11 -> "Good morning"
+        in 12..16 -> "Good afternoon"
+        in 17..21 -> "Good evening"
+        else -> "Winding down"
+    }
+    // A gentle, predictable line that leans on today: what's on the plate, or an open invitation.
+    val context = when {
+        plannedCount == 1 -> "One thing planned today. How's it sitting with you?"
+        plannedCount > 1 -> "$plannedCount things planned today. How are you carrying them?"
+        hour in 5..11 -> "Fresh page for today. How are you starting out?"
+        hour >= 22 -> "The day's nearly done. How did it feel?"
+        else -> "A quiet moment for you. How's right now?"
+    }
+    // Warm-first order: lead with the brightest faces so the invite itself nudges the mood up.
+    val moods = listOf(Mood.VERY_HAPPY, Mood.HAPPY, Mood.NEUTRAL, Mood.SAD, Mood.VERY_SAD)
+
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.06f),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text("$greeting 👋", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+            Text(context, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+            Spacer(Modifier.height(8.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
+                moods.forEach { mood ->
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                        modifier = Modifier.bouncyClickable { onPick(mood) }.padding(horizontal = 2.dp, vertical = 4.dp),
+                    ) {
+                        Text(mood.emoji, fontSize = 34.sp)
+                        Text(mood.displayName, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f))
+                    }
+                }
+            }
+            Spacer(Modifier.height(4.dp))
+            Text("Pick a face to start, no pressure ✨", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
+        }
+    }
+}
 
 @Composable
 private fun AllDoneCelebration() {
