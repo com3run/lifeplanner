@@ -28,14 +28,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.datetime.LocalDate
+import co.touchlab.kermit.Logger
 import com.russhwolf.settings.Settings
 import kotlinx.coroutines.launch
 import kotlin.time.Clock
@@ -137,24 +134,37 @@ class HabitViewModel(
     val recentCheckIn: StateFlow<RecentCheckIn?> = _recentCheckIn.asStateFlow()
 
     // Day lens: when the hub selects a non-today day, this holds the habit ids completed that day so
-    // the Habits tab can show that day's activity. Null (or today) => empty; today uses the live list.
+    // the Habits tab can show (and edit) that day's activity. Null (or today) => empty.
     private val _lensDate = MutableStateFlow<LocalDate?>(null)
-    fun setLensDate(date: LocalDate?) { _lensDate.value = date }
+    private val _lensCompletions = MutableStateFlow<Set<String>>(emptySet())
+    val lensCompletions: StateFlow<Set<String>> = _lensCompletions.asStateFlow()
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val lensCompletions: StateFlow<Set<String>> = _lensDate
-        .flatMapLatest { date ->
-            if (date == null) flowOf(emptySet())
-            else flow {
-                emit(
-                    runCatching {
-                        habitRepository.getAllCheckInsInRange(date, date)
-                            .filter { it.completed }.map { it.habitId }.toSet()
-                    }.getOrDefault(emptySet()),
-                )
-            }
+    fun setLensDate(date: LocalDate?) {
+        _lensDate.value = date
+        refreshLens()
+    }
+
+    private fun refreshLens() {
+        val date = _lensDate.value
+        viewModelScope.launch {
+            _lensCompletions.value = if (date == null) emptySet()
+            else runCatching {
+                habitRepository.getAllCheckInsInRange(date, date).filter { it.completed }.map { it.habitId }.toSet()
+            }.getOrDefault(emptySet())
         }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
+    }
+
+    /** Toggle a habit's completion for a specific (past) day, then refresh the lens. */
+    fun toggleCheckInForDate(habitId: String, date: LocalDate) {
+        viewModelScope.launch {
+            runCatching {
+                val existing = habitRepository.getCheckInByHabitAndDate(habitId, date)
+                if (existing != null && existing.completed) habitRepository.deleteCheckIn(existing.id)
+                else habitRepository.checkIn(habitId, date)
+            }.onFailure { Logger.w("HabitViewModel") { "past toggle failed: ${it.message}" } }
+            refreshLens()
+        }
+    }
 
     private var isCreatingHabit = false
 

@@ -38,6 +38,8 @@ import az.tribe.lifeplanner.ui.components.GlassCard
 import az.tribe.lifeplanner.ui.components.MoodCalendar
 import az.tribe.lifeplanner.ui.components.WeekStrip
 import az.tribe.lifeplanner.ui.theme.bouncyClickable
+import com.russhwolf.settings.Settings
+import org.koin.compose.koinInject
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
@@ -161,6 +163,16 @@ fun JournalScreen(
     val habitDayCompletions by habitViewModel.lensCompletions.collectAsState()
     LaunchedEffect(selectedDate) {
         habitViewModel.setLensDate(if (selectedDate == today) null else selectedDate)
+    }
+    // Past-edit guard: warn once before letting the user change a previous day's habits.
+    val settings: Settings = koinInject()
+    var pendingPastToggle by remember { mutableStateOf<String?>(null) }
+    fun requestPastToggle(habitId: String) {
+        if (settings.getBoolean(PAST_EDIT_WARNED_KEY, false)) {
+            habitViewModel.toggleCheckInForDate(habitId, selectedDate)
+        } else {
+            pendingPastToggle = habitId
+        }
     }
 
     val upcomingGoals = remember(goals) {
@@ -416,6 +428,7 @@ fun JournalScreen(
                         PastDayHabitRow(
                             title = hs.habit.title,
                             done = hs.habit.id in habitDayCompletions,
+                            onClick = { requestPastToggle(hs.habit.id) },
                             modifier = Modifier.padding(horizontal = 16.dp),
                         )
                     }
@@ -500,12 +513,34 @@ fun JournalScreen(
                 onConfirm = { updatedHabit -> habitViewModel.updateHabit(updatedHabit); habitToEdit = null }
             )
         }
+
+        // Past-edit warning, shown once before changing a previous day's habits.
+        pendingPastToggle?.let { habitId ->
+            AlertDialog(
+                onDismissRequest = { pendingPastToggle = null },
+                title = { Text("Change a past day?") },
+                text = { Text("Editing ${dayLabel(selectedDate, today)} updates your streaks and stats, not just today. Continue?") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        settings.putBoolean(PAST_EDIT_WARNED_KEY, true)
+                        habitViewModel.toggleCheckInForDate(habitId, selectedDate)
+                        pendingPastToggle = null
+                    }) { Text("Continue") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { pendingPastToggle = null }) { Text("Cancel") }
+                },
+            )
+        }
     }
 }
 
+private const val PAST_EDIT_WARNED_KEY = "past_edit_warned_v1"
+
 @Composable
-private fun PastDayHabitRow(title: String, done: Boolean, modifier: Modifier = Modifier) {
+private fun PastDayHabitRow(title: String, done: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Surface(
+        onClick = onClick,
         modifier = modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(12.dp),

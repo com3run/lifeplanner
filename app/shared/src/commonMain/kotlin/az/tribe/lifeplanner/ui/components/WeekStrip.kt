@@ -12,11 +12,17 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,6 +33,12 @@ import az.tribe.lifeplanner.domain.enum.Mood
 import az.tribe.lifeplanner.domain.model.JournalEntry
 import az.tribe.lifeplanner.ui.theme.bouncyClickable
 import az.tribe.lifeplanner.ui.theme.modernColors
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.CaretDown
+import com.adamglin.phosphoricons.regular.CaretLeft
+import com.adamglin.phosphoricons.regular.CaretRight
+import com.adamglin.phosphoricons.regular.CaretUp
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
@@ -36,12 +48,11 @@ import kotlinx.datetime.todayIn
 import kotlin.time.Clock
 
 /**
- * A scrollable "day lens", mood-calendar style: swipe left/right through weeks, each day showing its
- * journal mood emoji (or a birthday cake), with today ringed and the selected day filled. Wide
- * screens show two weeks per page. Shared across the hub tabs so the chosen day sticks.
+ * A scrollable "day lens", mood-calendar style: swipe through weeks (two per page on wide screens),
+ * or expand to a full month grid with month nav. Each day shows its journal mood emoji (or a birthday
+ * cake), a flag dot when a goal/milestone is due, today ringed, and the selected day filled.
  *
- * [birthdayMonthDay] is (month 1-12, day); when a day matches, it shows a 🎂. Null until the app
- * captures the user's birthday.
+ * [birthdayMonthDay] is (month 1-12, day). [flaggedDates] get a small marker.
  */
 @Composable
 fun WeekStrip(
@@ -52,8 +63,8 @@ fun WeekStrip(
     birthdayMonthDay: Pair<Int, Int>? = null,
     flaggedDates: Set<LocalDate> = emptySet(),
 ) {
+    val c = MaterialTheme.modernColors
     val today = remember { Clock.System.todayIn(TimeZone.currentSystemDefault()) }
-    // Dominant mood per day, for the smile on each cell.
     val moodByDay: Map<LocalDate, Mood> = remember(entries) {
         entries.groupBy { it.date }.mapValues { (_, dayEntries) ->
             dayEntries.groupBy { it.mood }.maxByOrNull { it.value.size }!!.key
@@ -61,27 +72,116 @@ fun WeekStrip(
     }
     val baseWeekStart = remember(today) { today.minus(DatePeriod(days = today.dayOfWeek.ordinal)) }
 
-    BoxWithConstraints(modifier.fillMaxWidth()) {
-        val weeksPerPage = if (maxWidth >= 600.dp) 2 else 1
-        val pageCount = 105
-        val center = pageCount / 2
-        val pagerState = rememberPagerState(initialPage = center) { pageCount }
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    var viewMonthEpochDay by rememberSaveable { mutableStateOf(firstOfMonth(selectedDate).toEpochDays()) }
+    // The month view follows the selected date; month arrows move the view without changing selection.
+    LaunchedEffect(selectedDate) {
+        viewMonthEpochDay = firstOfMonth(selectedDate).toEpochDays()
+    }
+    val viewMonth = LocalDate.fromEpochDays(viewMonthEpochDay)
 
-        HorizontalPager(state = pagerState) { page ->
-            val weekStart = baseWeekStart.plus(DatePeriod(days = (page - center) * 7 * weeksPerPage))
-            val days = (0 until 7 * weeksPerPage).map { weekStart.plus(DatePeriod(days = it)) }
+    Column(modifier.fillMaxWidth()) {
+        if (!expanded) {
+            BoxWithConstraints(Modifier.fillMaxWidth()) {
+                val weeksPerPage = if (maxWidth >= 600.dp) 2 else 1
+                val pageCount = 105
+                val center = pageCount / 2
+                val pagerState = rememberPagerState(initialPage = center) { pageCount }
+                HorizontalPager(state = pagerState) { page ->
+                    val weekStart = baseWeekStart.plus(DatePeriod(days = (page - center) * 7 * weeksPerPage))
+                    val days = (0 until 7 * weeksPerPage).map { weekStart.plus(DatePeriod(days = it)) }
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                        days.forEach { day ->
+                            DayCell(
+                                day = day,
+                                showLetter = true,
+                                isSelected = day == selectedDate,
+                                isToday = day == today,
+                                isFuture = day > today,
+                                mood = moodByDay[day],
+                                isBirthday = birthdayMonthDay.matches(day),
+                                isFlagged = day in flaggedDates,
+                                onClick = { onSelect(day) },
+                            )
+                        }
+                    }
+                }
+            }
+        } else {
+            MonthView(
+                monthStart = viewMonth,
+                selectedDate = selectedDate,
+                today = today,
+                moodByDay = moodByDay,
+                flaggedDates = flaggedDates,
+                birthdayMonthDay = birthdayMonthDay,
+                onSelect = onSelect,
+                onPrev = { viewMonthEpochDay = firstOfMonth(viewMonth.minus(DatePeriod(months = 1))).toEpochDays() },
+                onNext = { viewMonthEpochDay = firstOfMonth(viewMonth.plus(DatePeriod(months = 1))).toEpochDays() },
+            )
+        }
+
+        // Expand / collapse handle.
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            Icon(
+                imageVector = if (expanded) PhosphorIcons.Regular.CaretUp else PhosphorIcons.Regular.CaretDown,
+                contentDescription = if (expanded) "Collapse to week" else "Expand to month",
+                tint = c.textTertiary,
+                modifier = Modifier.bouncyClickable { expanded = !expanded }.padding(4.dp).size(18.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun MonthView(
+    monthStart: LocalDate,
+    selectedDate: LocalDate,
+    today: LocalDate,
+    moodByDay: Map<LocalDate, Mood>,
+    flaggedDates: Set<LocalDate>,
+    birthdayMonthDay: Pair<Int, Int>?,
+    onSelect: (LocalDate) -> Unit,
+    onPrev: () -> Unit,
+    onNext: () -> Unit,
+) {
+    val c = MaterialTheme.modernColors
+    val daysInMonth = (monthStart.plus(DatePeriod(months = 1)).toEpochDays() - monthStart.toEpochDays()).toInt()
+    val lead = monthStart.dayOfWeek.ordinal // Mon=0
+    val rows = (lead + daysInMonth + 6) / 7
+    val monthName = monthStart.month.name.lowercase().replaceFirstChar { it.uppercase() }
+
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Icon(PhosphorIcons.Regular.CaretLeft, "Previous month", tint = c.textSecondary, modifier = Modifier.bouncyClickable(onClick = onPrev).size(20.dp))
+            Text("$monthName ${monthStart.year}", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold), color = c.textPrimary)
+            Icon(PhosphorIcons.Regular.CaretRight, "Next month", tint = c.textSecondary, modifier = Modifier.bouncyClickable(onClick = onNext).size(20.dp))
+        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+            listOf("M", "T", "W", "T", "F", "S", "S").forEach {
+                Text(it, style = MaterialTheme.typography.labelSmall, color = c.textTertiary)
+            }
+        }
+        for (r in 0 until rows) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                days.forEach { day ->
-                    DayCell(
-                        day = day,
-                        isSelected = day == selectedDate,
-                        isToday = day == today,
-                        isFuture = day > today,
-                        mood = moodByDay[day],
-                        isBirthday = birthdayMonthDay?.let { day.monthNumber == it.first && day.dayOfMonth == it.second } ?: false,
-                        isFlagged = day in flaggedDates,
-                        onClick = { onSelect(day) },
-                    )
+                for (col in 0 until 7) {
+                    val dayNum = r * 7 + col - lead + 1
+                    if (dayNum in 1..daysInMonth) {
+                        val day = monthStart.plus(DatePeriod(days = dayNum - 1))
+                        DayCell(
+                            day = day,
+                            showLetter = false,
+                            isSelected = day == selectedDate,
+                            isToday = day == today,
+                            isFuture = day > today,
+                            mood = moodByDay[day],
+                            isBirthday = birthdayMonthDay.matches(day),
+                            isFlagged = day in flaggedDates,
+                            onClick = { onSelect(day) },
+                        )
+                    } else {
+                        Box(Modifier.size(38.dp))
+                    }
                 }
             }
         }
@@ -91,6 +191,7 @@ fun WeekStrip(
 @Composable
 private fun DayCell(
     day: LocalDate,
+    showLetter: Boolean,
     isSelected: Boolean,
     isToday: Boolean,
     isFuture: Boolean,
@@ -100,8 +201,6 @@ private fun DayCell(
     onClick: () -> Unit,
 ) {
     val c = MaterialTheme.modernColors
-    val letter = day.dayOfWeek.name.take(1)
-    // Emoji takes priority as the day's "face"; otherwise show the date number.
     val emoji = when {
         isBirthday -> "🎂"
         mood != null -> mood.emoji
@@ -110,15 +209,15 @@ private fun DayCell(
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(3.dp),
-        modifier = Modifier
-            .padding(horizontal = 2.dp)
-            .bouncyClickable(onClick = onClick),
+        modifier = Modifier.padding(horizontal = 2.dp).bouncyClickable(onClick = onClick),
     ) {
-        Text(
-            letter,
-            style = MaterialTheme.typography.labelSmall,
-            color = if (isSelected) c.primary else c.textTertiary,
-        )
+        if (showLetter) {
+            Text(
+                day.dayOfWeek.name.take(1),
+                style = MaterialTheme.typography.labelSmall,
+                color = if (isSelected) c.primary else c.textTertiary,
+            )
+        }
         Box(contentAlignment = Alignment.Center, modifier = Modifier.size(38.dp)) {
             Surface(
                 shape = CircleShape,
@@ -146,10 +245,11 @@ private fun DayCell(
                 )
             }
         }
-        // A small flag dot marks days with a goal/milestone due.
-        Box(
-            modifier = Modifier.size(5.dp).clip(CircleShape)
-                .background(if (isFlagged) c.secondary else Color.Transparent),
-        )
+        Box(Modifier.size(5.dp).clip(CircleShape).background(if (isFlagged) c.secondary else Color.Transparent))
     }
 }
+
+private fun firstOfMonth(d: LocalDate): LocalDate = LocalDate(d.year, d.monthNumber, 1)
+
+private fun Pair<Int, Int>?.matches(day: LocalDate): Boolean =
+    this?.let { day.monthNumber == it.first && day.dayOfMonth == it.second } ?: false
