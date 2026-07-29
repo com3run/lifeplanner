@@ -63,6 +63,7 @@ fun WeekStrip(
     modifier: Modifier = Modifier,
     birthdayMonthDay: Pair<Int, Int>? = null,
     flaggedDates: Set<LocalDate> = emptySet(),
+    practicedDates: Set<LocalDate> = emptySet(),
 ) {
     val c = MaterialTheme.modernColors
     val today = remember { Clock.System.todayIn(TimeZone.currentSystemDefault()) }
@@ -73,6 +74,22 @@ fun WeekStrip(
     }
     val baseWeekStart = remember(today) { today.minus(DatePeriod(days = today.dayOfWeek.ordinal)) }
 
+    // Current practice streak: consecutive practiced days ending today (or yesterday, so an as-yet
+    // unfinished today doesn't read as a broken streak). Powers the fire headline.
+    val streak = remember(practicedDates, today) {
+        var count = 0
+        var day = if (today in practicedDates) today else today.minus(DatePeriod(days = 1))
+        while (day in practicedDates) {
+            count++
+            day = day.minus(DatePeriod(days = 1))
+        }
+        count
+    }
+    val practicedThisWeek = remember(practicedDates, baseWeekStart, today) {
+        (0..6).map { baseWeekStart.plus(DatePeriod(days = it)) }
+            .count { it <= today && it in practicedDates }
+    }
+
     var expanded by rememberSaveable { mutableStateOf(false) }
     var viewMonthEpochDay by rememberSaveable { mutableStateOf(firstOfMonth(selectedDate).toEpochDays()) }
     // The month view follows the selected date; month arrows move the view without changing selection.
@@ -82,6 +99,28 @@ fun WeekStrip(
     val viewMonth = LocalDate.fromEpochDays(viewMonthEpochDay)
 
     Column(modifier.fillMaxWidth()) {
+        // Fire-streak headline, in the spirit of "practiced N days in a row".
+        if (streak > 0) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("🔥", style = MaterialTheme.typography.titleLarge)
+                Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                    Text(
+                        "Practiced $streak ${if (streak == 1) "day" else "days"} in a row!",
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                        color = c.textPrimary,
+                    )
+                    Text(
+                        "$practicedThisWeek of 7 days this week",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = c.textSecondary,
+                    )
+                }
+            }
+        }
         if (!expanded) {
             BoxWithConstraints(Modifier.fillMaxWidth()) {
                 val weeksPerPage = if (maxWidth >= 600.dp) 2 else 1
@@ -100,6 +139,7 @@ fun WeekStrip(
                                 isToday = day == today,
                                 isFuture = day > today,
                                 mood = moodByDay[day],
+                                isPracticed = day in practicedDates,
                                 isBirthday = birthdayMonthDay.matches(day),
                                 isFlagged = day in flaggedDates,
                                 onClick = { onSelect(day) },
@@ -115,6 +155,7 @@ fun WeekStrip(
                 today = today,
                 moodByDay = moodByDay,
                 flaggedDates = flaggedDates,
+                practicedDates = practicedDates,
                 birthdayMonthDay = birthdayMonthDay,
                 onSelect = onSelect,
                 onPrev = { viewMonthEpochDay = firstOfMonth(viewMonth.minus(DatePeriod(months = 1))).toEpochDays() },
@@ -159,6 +200,7 @@ private fun MonthView(
     today: LocalDate,
     moodByDay: Map<LocalDate, Mood>,
     flaggedDates: Set<LocalDate>,
+    practicedDates: Set<LocalDate>,
     birthdayMonthDay: Pair<Int, Int>?,
     onSelect: (LocalDate) -> Unit,
     onPrev: () -> Unit,
@@ -194,6 +236,7 @@ private fun MonthView(
                             isToday = day == today,
                             isFuture = day > today,
                             mood = moodByDay[day],
+                            isPracticed = day in practicedDates,
                             isBirthday = birthdayMonthDay.matches(day),
                             isFlagged = day in flaggedDates,
                             onClick = { onSelect(day) },
@@ -215,6 +258,7 @@ private fun DayCell(
     isToday: Boolean,
     isFuture: Boolean,
     mood: Mood?,
+    isPracticed: Boolean,
     isBirthday: Boolean,
     isFlagged: Boolean,
     onClick: () -> Unit,
@@ -222,6 +266,7 @@ private fun DayCell(
     val c = MaterialTheme.modernColors
     val emoji = when {
         isBirthday -> "🎂"
+        isPracticed -> "🔥"
         mood != null -> mood.emoji
         else -> null
     }

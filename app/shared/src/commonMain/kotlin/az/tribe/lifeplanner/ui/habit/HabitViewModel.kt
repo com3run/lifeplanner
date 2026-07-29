@@ -126,6 +126,24 @@ class HabitViewModel(
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    /**
+     * Days (last ~90) on which at least one habit was completed. Drives the hub strip's fire-streak
+     * styling and the "practiced N days in a row" headline. Recomputes when habits or check-ins change
+     * (observeHabitsWithTodayStatus reflects check-in writes).
+     */
+    val practicedDates: StateFlow<Set<LocalDate>> = habitRepository.observeHabitsWithTodayStatus()
+        .map {
+            val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+            val start = today.minus(90, DateTimeUnit.DAY)
+            runCatching { habitRepository.getAllCheckInsInRange(start, today) }
+                .getOrDefault(emptyList())
+                .filter { it.completed }
+                .map { it.date }
+                .toSet()
+        }
+        .catch { emit(emptySet()) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
+
     private val _showAddHabitDialog = MutableStateFlow(false)
     val showAddHabitDialog: StateFlow<Boolean> = _showAddHabitDialog.asStateFlow()
 
