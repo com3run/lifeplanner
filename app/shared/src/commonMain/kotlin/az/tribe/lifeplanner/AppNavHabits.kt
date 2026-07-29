@@ -49,6 +49,13 @@ internal fun NavGraphBuilder.appNavHabits(navController: NavController) {
         )
     }
 
+    // Conversational habit setup (the friendly default entry).
+    composable(Screen.HabitChat.route) {
+        az.tribe.lifeplanner.ui.habit.HabitChatScreen(
+            onBackClick = { navController.popBackStack() }
+        )
+    }
+
     composable(Screen.AddHabit.route) {
         AddHabitScreen(
             onHabitSaved = { navController.popBackStack() },

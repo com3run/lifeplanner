@@ -505,7 +505,7 @@ fun App(
                     icon = PhosphorIcons.Regular.Sparkle,
                     contentDescription = "New Habit"
                 ) {
-                    navController.navigate(Screen.SmartHabitGenerator.route) { launchSingleTop = true }
+                    navController.navigate(Screen.HabitChat.route) { launchSingleTop = true }
                 }
                 3 -> if (FeatureFlags.ABILITIES_ENABLED) NavContextAction(
                     icon = PhosphorIcons.Regular.Star,

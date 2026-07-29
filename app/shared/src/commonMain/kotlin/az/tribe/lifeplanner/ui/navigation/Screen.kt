@@ -49,6 +49,7 @@ sealed class Screen(val route: String) {
     object Search : Screen("search?filter={filter}")
     object GoalWizard : Screen("goal_wizard")
     object SmartHabitGenerator : Screen("smart_habit_generator")
+    object HabitChat : Screen("habit_chat")
     object CoachOnboarding : Screen("coach_onboarding")
     object CoachIntro : Screen("coach_intro/{coachId}")
     object ScreenTimeInsight : Screen("screen_time_insight")
