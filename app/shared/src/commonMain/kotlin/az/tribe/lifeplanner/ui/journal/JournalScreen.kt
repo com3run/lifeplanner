@@ -35,6 +35,7 @@ import az.tribe.lifeplanner.ui.components.DayEntriesBottomSheet
 import az.tribe.lifeplanner.ui.components.GlassCard
 import az.tribe.lifeplanner.ui.components.MoodCalendar
 import az.tribe.lifeplanner.ui.components.WeekStrip
+import az.tribe.lifeplanner.ui.theme.bouncyClickable
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
@@ -204,6 +205,7 @@ fun JournalScreen(
             item(key = "week_strip") {
                 WeekStrip(
                     selectedDate = selectedDate,
+                    entries = entries,
                     onSelect = { selectedEpochDay = it.toEpochDays() },
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                 )
@@ -223,13 +225,26 @@ fun JournalScreen(
                     )
                 }
                 item(key = "day_header") {
-                    Text(
-                        dayLabel(selectedDate, today),
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            dayLabel(selectedDate, today),
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        if (selectedDate != today) {
+                            Text(
+                                "Jump to today",
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.bouncyClickable { selectedEpochDay = today.toEpochDays() },
+                            )
+                        }
+                    }
                 }
                 if (dayEntries.isEmpty()) {
                     item(key = "day_empty") {
