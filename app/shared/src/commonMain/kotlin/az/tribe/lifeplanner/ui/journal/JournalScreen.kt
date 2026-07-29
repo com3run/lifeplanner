@@ -9,6 +9,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.CheckCircle
+import com.adamglin.phosphoricons.regular.Circle
 import com.adamglin.phosphoricons.regular.Sparkle
 import com.adamglin.phosphoricons.regular.Sun
 import com.adamglin.phosphoricons.regular.Moon
@@ -154,6 +156,12 @@ fun JournalScreen(
         map
     }
     val plannedForSelected = plannedByDay[selectedDate].orEmpty()
+
+    // Habits day lens: which habits were completed on the selected (non-today) day.
+    val habitDayCompletions by habitViewModel.lensCompletions.collectAsState()
+    LaunchedEffect(selectedDate) {
+        habitViewModel.setLensDate(if (selectedDate == today) null else selectedDate)
+    }
 
     val upcomingGoals = remember(goals) {
         goals.filter { it.status != GoalStatus.COMPLETED }.sortedBy { it.dueDate }.take(3)
@@ -394,6 +402,23 @@ fun JournalScreen(
                             Text("Tap New Habit to start building consistency", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
                         }
                     }
+                } else if (selectedDate != today) {
+                    // A read-only "what you did that day" view for past days.
+                    item(key = "habits_day_header") {
+                        val done = habitsWithStatus.count { it.habit.id in habitDayCompletions }
+                        Text(
+                            "${dayLabel(selectedDate, today)} · $done of ${habitsWithStatus.size} done",
+                            style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+                    items(items = habitsWithStatus, key = { "dayhabit_${it.habit.id}" }) { hs ->
+                        PastDayHabitRow(
+                            title = hs.habit.title,
+                            done = hs.habit.id in habitDayCompletions,
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                        )
+                    }
                 } else if (allHabitsCaughtUp) {
                     item(key = "habits_caught_up") {
                         Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 48.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -473,6 +498,34 @@ fun JournalScreen(
                 habit = habit,
                 onDismiss = { habitToEdit = null },
                 onConfirm = { updatedHabit -> habitViewModel.updateHabit(updatedHabit); habitToEdit = null }
+            )
+        }
+    }
+}
+
+@Composable
+private fun PastDayHabitRow(title: String, done: Boolean, modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(12.dp),
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = if (done) PhosphorIcons.Regular.CheckCircle else PhosphorIcons.Regular.Circle,
+                contentDescription = if (done) "Done" else "Not done",
+                tint = if (done) Color(0xFF34C759) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                modifier = Modifier.size(22.dp),
+            )
+            Text(
+                title,
+                style = MaterialTheme.typography.bodyLarge,
+                color = if (done) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1, overflow = TextOverflow.Ellipsis,
             )
         }
     }
