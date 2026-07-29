@@ -34,6 +34,13 @@ import az.tribe.lifeplanner.ui.home.HomeViewModel
 import az.tribe.lifeplanner.ui.components.DayEntriesBottomSheet
 import az.tribe.lifeplanner.ui.components.GlassCard
 import az.tribe.lifeplanner.ui.components.MoodCalendar
+import az.tribe.lifeplanner.ui.components.WeekStrip
+import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.minus
+import kotlinx.datetime.todayIn
+import kotlin.time.Clock
 import az.tribe.lifeplanner.ui.components.SwipeableGoalItem
 import az.tribe.lifeplanner.ui.components.SwipeableHabitCard
 import az.tribe.lifeplanner.ui.goal.GoalViewModel
@@ -85,6 +92,12 @@ fun JournalScreen(
     // (Compose Navigation disposes the composition; plain remember would reset us to the first tab).
     var currentTab by rememberSaveable { mutableStateOf(selectedTab) }
 
+    // Shared "day lens": the selected date persists across the hub's sub-tabs (rememberSaveable via
+    // epoch-day). The WeekStrip and the Journal tab both read/write it.
+    val today = remember { Clock.System.todayIn(TimeZone.currentSystemDefault()) }
+    var selectedEpochDay by rememberSaveable { mutableStateOf(today.toEpochDays()) }
+    val selectedDate = remember(selectedEpochDay) { LocalDate.fromEpochDays(selectedEpochDay) }
+
     var isCalendarExpanded by remember { mutableStateOf(false) }
     var habitToEdit by remember { mutableStateOf<Habit?>(null) }
     val listState = rememberLazyListState()
@@ -118,6 +131,11 @@ fun JournalScreen(
     val sortedGoals = remember(goals) {
         val order = mapOf(GoalStatus.IN_PROGRESS to 0, GoalStatus.NOT_STARTED to 1, GoalStatus.COMPLETED to 2)
         goals.sortedBy { order[it.status] ?: 3 }
+    }
+
+    // Entries for the currently selected day (the Journal tab's day lens).
+    val dayEntries = remember(entries, selectedDate) {
+        entries.filter { it.date == selectedDate }.sortedByDescending { it.createdAt }
     }
 
     val upcomingGoals = remember(goals) {
@@ -182,9 +200,17 @@ fun JournalScreen(
                 )
             }
 
+            // Persistent day lens, shared across all sub-tabs.
+            item(key = "week_strip") {
+                WeekStrip(
+                    selectedDate = selectedDate,
+                    onSelect = { selectedEpochDay = it.toEpochDays() },
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                )
+            }
+
             // ── Tab 0: Journal ──────────────────────────────────────────────
-            // The weekly Planner moved to the Today feed; this hub's first tab is now the Journal
-            // itself, the mood calendar plus a stream of reflections. Write via the contextual FAB.
+            // The mood calendar plus the selected day's reflections. Write via the contextual FAB.
             if (currentTab == 0) {
                 item(key = "mood_calendar") {
                     MoodCalendar(
@@ -193,22 +219,35 @@ fun JournalScreen(
                         isExpanded = isCalendarExpanded,
                         onToggleExpand = { isCalendarExpanded = !isCalendarExpanded },
                         onMonthChange = { viewModel.setSelectedMonth(it) },
-                        onDayClick = { viewModel.selectDay(it) },
+                        onDayClick = { selectedEpochDay = it.toEpochDays(); viewModel.setSelectedMonth(it) },
                     )
                 }
-                if (entries.isEmpty()) {
-                    item(key = "journal_empty") {
-                        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 48.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("No journal entries yet", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
+                item(key = "day_header") {
+                    Text(
+                        dayLabel(selectedDate, today),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+                if (dayEntries.isEmpty()) {
+                    item(key = "day_empty") {
+                        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 40.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                if (selectedDate == today) "No entry yet today" else "Nothing journaled this day",
+                                style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                            )
                             Spacer(Modifier.height(6.dp))
-                            Text("Tap Write to capture your first reflection", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
+                            Text(
+                                if (selectedDate == today) "Tap Write to capture a reflection" else "Pick another day, or tap Write to add one",
+                                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                            )
                         }
                     }
                 } else {
-                    item(key = "recent_entries_header") {
-                        Text("Recent entries", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.onSurface)
-                    }
-                    items(items = sortedEntries, key = { "entry_${it.id}" }) { entry ->
+                    items(items = dayEntries, key = { "entry_${it.id}" }) { entry ->
                         SwipeableJournalEntryCard(
                             entry = entry,
                             onClick = { onEntryClick(entry.id) },
@@ -380,6 +419,16 @@ fun JournalScreen(
                 onConfirm = { updatedHabit -> habitViewModel.updateHabit(updatedHabit); habitToEdit = null }
             )
         }
+    }
+}
+
+private fun dayLabel(date: LocalDate, today: LocalDate): String = when (date) {
+    today -> "Today"
+    today.minus(DatePeriod(days = 1)) -> "Yesterday"
+    else -> {
+        val dow = date.dayOfWeek.name.lowercase().replaceFirstChar { it.uppercase() }.take(3)
+        val mon = date.month.name.lowercase().replaceFirstChar { it.uppercase() }.take(3)
+        "$dow, $mon ${date.dayOfMonth}"
     }
 }
 
