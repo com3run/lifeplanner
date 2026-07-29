@@ -165,7 +165,6 @@ fun JournalScreen(
 
     // Habits day lens: which habits were completed on the selected (non-today) day.
     val habitDayCompletions by habitViewModel.lensCompletions.collectAsState()
-    val practicedDates by habitViewModel.practicedDates.collectAsState()
     LaunchedEffect(selectedDate) {
         habitViewModel.setLensDate(if (selectedDate == today) null else selectedDate)
     }
@@ -249,7 +248,6 @@ fun JournalScreen(
                     entries = entries,
                     onSelect = { selectedEpochDay = it.toEpochDays() },
                     flaggedDates = plannedByDay.keys,
-                    practicedDates = practicedDates,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                 )
             }

@@ -35,11 +35,10 @@ import az.tribe.lifeplanner.ui.theme.bouncyClickable
 import az.tribe.lifeplanner.ui.theme.modernColors
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
-import com.adamglin.phosphoricons.regular.CalendarBlank
-import com.adamglin.phosphoricons.regular.CaretDown
+import com.adamglin.phosphoricons.regular.ArrowsInSimple
+import com.adamglin.phosphoricons.regular.ArrowsOutSimple
 import com.adamglin.phosphoricons.regular.CaretLeft
 import com.adamglin.phosphoricons.regular.CaretRight
-import com.adamglin.phosphoricons.regular.CaretUp
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
@@ -63,7 +62,6 @@ fun WeekStrip(
     modifier: Modifier = Modifier,
     birthdayMonthDay: Pair<Int, Int>? = null,
     flaggedDates: Set<LocalDate> = emptySet(),
-    practicedDates: Set<LocalDate> = emptySet(),
 ) {
     val c = MaterialTheme.modernColors
     val today = remember { Clock.System.todayIn(TimeZone.currentSystemDefault()) }
@@ -74,22 +72,6 @@ fun WeekStrip(
     }
     val baseWeekStart = remember(today) { today.minus(DatePeriod(days = today.dayOfWeek.ordinal)) }
 
-    // Current practice streak: consecutive practiced days ending today (or yesterday, so an as-yet
-    // unfinished today doesn't read as a broken streak). Powers the fire headline.
-    val streak = remember(practicedDates, today) {
-        var count = 0
-        var day = if (today in practicedDates) today else today.minus(DatePeriod(days = 1))
-        while (day in practicedDates) {
-            count++
-            day = day.minus(DatePeriod(days = 1))
-        }
-        count
-    }
-    val practicedThisWeek = remember(practicedDates, baseWeekStart, today) {
-        (0..6).map { baseWeekStart.plus(DatePeriod(days = it)) }
-            .count { it <= today && it in practicedDates }
-    }
-
     var expanded by rememberSaveable { mutableStateOf(false) }
     var viewMonthEpochDay by rememberSaveable { mutableStateOf(firstOfMonth(selectedDate).toEpochDays()) }
     // The month view follows the selected date; month arrows move the view without changing selection.
@@ -99,26 +81,20 @@ fun WeekStrip(
     val viewMonth = LocalDate.fromEpochDays(viewMonthEpochDay)
 
     Column(modifier.fillMaxWidth()) {
-        // Fire-streak headline, in the spirit of "practiced N days in a row".
-        if (streak > 0) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
+        // Expand / collapse control, top-right, using the fullscreen-style icon (out = expand to
+        // month, in = collapse back to the week).
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            Surface(
+                onClick = { expanded = !expanded },
+                shape = CircleShape,
+                color = c.primary.copy(alpha = 0.10f),
             ) {
-                Text("🔥", style = MaterialTheme.typography.titleLarge)
-                Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                    Text(
-                        "Practiced $streak ${if (streak == 1) "day" else "days"} in a row!",
-                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                        color = c.textPrimary,
-                    )
-                    Text(
-                        "$practicedThisWeek of 7 days this week",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = c.textSecondary,
-                    )
-                }
+                Icon(
+                    imageVector = if (expanded) PhosphorIcons.Regular.ArrowsInSimple else PhosphorIcons.Regular.ArrowsOutSimple,
+                    contentDescription = if (expanded) "Collapse to week" else "Expand to month",
+                    tint = c.primary,
+                    modifier = Modifier.padding(7.dp).size(18.dp),
+                )
             }
         }
         if (!expanded) {
@@ -139,7 +115,6 @@ fun WeekStrip(
                                 isToday = day == today,
                                 isFuture = day > today,
                                 mood = moodByDay[day],
-                                isPracticed = day in practicedDates,
                                 isBirthday = birthdayMonthDay.matches(day),
                                 isFlagged = day in flaggedDates,
                                 onClick = { onSelect(day) },
@@ -155,40 +130,11 @@ fun WeekStrip(
                 today = today,
                 moodByDay = moodByDay,
                 flaggedDates = flaggedDates,
-                practicedDates = practicedDates,
                 birthdayMonthDay = birthdayMonthDay,
                 onSelect = onSelect,
                 onPrev = { viewMonthEpochDay = firstOfMonth(viewMonth.minus(DatePeriod(months = 1))).toEpochDays() },
                 onNext = { viewMonthEpochDay = firstOfMonth(viewMonth.plus(DatePeriod(months = 1))).toEpochDays() },
             )
-        }
-
-        // Expand / collapse handle: a small pill so it reads as a real toggle, not a stray chevron.
-        Box(Modifier.fillMaxWidth().padding(top = 2.dp), contentAlignment = Alignment.Center) {
-            Surface(
-                onClick = { expanded = !expanded },
-                shape = CircleShape,
-                color = c.primary.copy(alpha = 0.10f),
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(PhosphorIcons.Regular.CalendarBlank, contentDescription = null, tint = c.primary, modifier = Modifier.size(15.dp))
-                    Text(
-                        if (expanded) "Week" else "Month",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                        color = c.primary,
-                    )
-                    Icon(
-                        imageVector = if (expanded) PhosphorIcons.Regular.CaretUp else PhosphorIcons.Regular.CaretDown,
-                        contentDescription = if (expanded) "Collapse to week" else "Expand to month",
-                        tint = c.primary,
-                        modifier = Modifier.size(13.dp),
-                    )
-                }
-            }
         }
     }
 }
@@ -200,7 +146,6 @@ private fun MonthView(
     today: LocalDate,
     moodByDay: Map<LocalDate, Mood>,
     flaggedDates: Set<LocalDate>,
-    practicedDates: Set<LocalDate>,
     birthdayMonthDay: Pair<Int, Int>?,
     onSelect: (LocalDate) -> Unit,
     onPrev: () -> Unit,
@@ -236,7 +181,6 @@ private fun MonthView(
                             isToday = day == today,
                             isFuture = day > today,
                             mood = moodByDay[day],
-                            isPracticed = day in practicedDates,
                             isBirthday = birthdayMonthDay.matches(day),
                             isFlagged = day in flaggedDates,
                             onClick = { onSelect(day) },
@@ -258,7 +202,6 @@ private fun DayCell(
     isToday: Boolean,
     isFuture: Boolean,
     mood: Mood?,
-    isPracticed: Boolean,
     isBirthday: Boolean,
     isFlagged: Boolean,
     onClick: () -> Unit,
@@ -266,7 +209,6 @@ private fun DayCell(
     val c = MaterialTheme.modernColors
     val emoji = when {
         isBirthday -> "🎂"
-        isPracticed -> "🔥"
         mood != null -> mood.emoji
         else -> null
     }
