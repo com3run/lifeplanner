@@ -492,14 +492,8 @@ fun App(
 
         // Contextual circle button action, changes per screen and hub tab (v2 behavior).
         val navContextAction: NavContextAction? = when (currentRoute) {
-            // Today's front-of-plan action: add to your plan.
-            homeRoute -> NavContextAction(
-                icon = PhosphorIcons.Regular.Plus,
-                contentDescription = "Add to plan",
-                onClick = {
-                    navController.navigate(Screen.GoalWizard.route) { launchSingleTop = true }
-                },
-            )
+            // Today has no contextual FAB, the feed's own cards and rows carry the actions.
+            homeRoute -> null
             Screen.Journal.route -> when (hubSelectedTab) {
                 1 -> NavContextAction(
                     icon = PhosphorIcons.Regular.Flag,
