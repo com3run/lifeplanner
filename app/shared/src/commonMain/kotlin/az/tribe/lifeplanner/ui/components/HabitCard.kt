@@ -265,7 +265,9 @@ fun HabitCard(
 
                 .padding(LifePlannerDesign.Padding.standard)
         ) {
-            // Top row: icon + title + check circle
+            // One clean row: icon, title + one compact subtitle, (+1 for count), check.
+            // Minimised per Kamran: dropped the weekly dots, frequency chip, focus button,
+            // description and progress bar so the card is just "see it, tick it".
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -294,44 +296,25 @@ fun HabitCard(
                         overflow = TextOverflow.Ellipsis
                     )
 
-                    if (isCountBased && !isCompletedToday) {
+                    // A single subtitle: progress for count habits, else the streak, else nothing.
+                    if (!isCompletedToday) {
                         val unitLabel = habit.unit?.takeIf { it.isNotBlank() } ?: "times"
-                        Text(
-                            text = "$todayCount / ${habit.targetCount} $unitLabel",
-                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
-                            color = categoryColor
-                        )
-                    } else if (habit.description.isNotBlank() && !isCompletedToday) {
-                        Text(
-                            text = habit.description,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
+                        when {
+                            isCountBased -> Text(
+                                text = "$todayCount / ${habit.targetCount} $unitLabel",
+                                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                                color = categoryColor,
+                            )
+                            habit.currentStreak > 0 -> Text(
+                                text = "🔥 ${habit.currentStreak} day${if (habit.currentStreak > 1) "s" else ""}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     }
                 }
 
-                // Focus timer shortcut
-                if (onFocusClick != null) {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .size(32.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f))
-                            .clickable(onClick = onFocusClick)
-                    ) {
-                        Icon(
-                            imageVector = PhosphorIcons.Regular.Timer,
-                            contentDescription = "Focus",
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                }
-
-                // +1 increment button for count-based habits
+                // +1 increment button for count-based habits (the only secondary action kept).
                 if (isCountBased && !isCompletedToday && onIncrement != null) {
                     Surface(
                         onClick = onIncrement,
@@ -350,65 +333,6 @@ fun HabitCard(
                 CheckInCircle(
                     isCompleted = isCompletedToday,
                     onClick = onCheckIn
-                )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Bottom row: weekly dots + stats
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Weekly completion dots
-                if (habitWithStatus.weeklyCompletions.isNotEmpty()) {
-                    WeeklyDots(
-                        completions = habitWithStatus.weeklyCompletions,
-                        categoryColor = habit.category.backgroundColor()
-                    )
-                }
-
-                Spacer(modifier = Modifier.weight(1f))
-
-                // Stats: the streak is the star (owner call: no Build/Break status pill).
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    if (habit.currentStreak > 0) {
-                        if (habit.type == HabitType.QUIT) {
-                            DaysCleanPill(days = habit.currentStreak)
-                        } else {
-                            StreakBadge(streak = habit.currentStreak)
-                        }
-                    }
-
-                    FrequencyChip(frequency = habit.frequency)
-                }
-            }
-
-            // Count progress for count-based habits: plain words plus a bar,
-            // "3 of 8 glasses today", not an abstract percentage.
-            if (isCountBased && !isCompletedToday && habit.targetCount > 0) {
-                val progress = (todayCount.toFloat() / habit.targetCount).coerceIn(0f, 1f)
-                val unitLabel = habit.unit ?: "times"
-                val remaining = (habit.targetCount - todayCount).coerceAtLeast(0)
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(
-                    text = "$todayCount of ${habit.targetCount} $unitLabel today, $remaining to go",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                LinearProgressIndicator(
-                    progress = { progress },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(3.dp)
-                        .clip(RoundedCornerShape(2.dp)),
-                    color = categoryColor,
-                    trackColor = categoryColor.copy(alpha = 0.15f)
                 )
             }
         }
