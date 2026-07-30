@@ -57,6 +57,7 @@ fun JournalCreationWizardScreen(
     var generatedTitle by remember { mutableStateOf("") }
     var generatedContent by remember { mutableStateOf("") }
     var generatedTags by remember { mutableStateOf<List<String>>(emptyList()) }
+    var detectedDecision by remember { mutableStateOf<DetectedDecision?>(null) }
 
     // Back handler
     val canGoBack = !isGenerating
@@ -148,6 +149,7 @@ fun JournalCreationWizardScreen(
                                     generatedTitle = it.title
                                     generatedContent = it.content
                                     generatedTags = it.tags
+                                    detectedDecision = it.detectedDecision
                                 }
                             } catch (e: Exception) {
                                 Logger.e("JournalCreationWizard", e) { "AI journal generation failed" }
@@ -162,6 +164,7 @@ fun JournalCreationWizardScreen(
                         generatedTitle = ""
                         generatedContent = ""
                         generatedTags = emptyList()
+                        detectedDecision = null
                         currentStep = JournalWizardStep.REVIEW_SAVE
                     }
                 )
@@ -192,7 +195,8 @@ fun JournalCreationWizardScreen(
                                     linkedGoalId = selectedGoalId,
                                     linkedHabitId = selectedHabitId,
                                     tags = generatedTags,
-                                    promptUsed = selectedPrompt
+                                    promptUsed = selectedPrompt,
+                                    detectedDecision = detectedDecision,
                                 )
                                 onNavigateBack()
                             }

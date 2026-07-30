@@ -54,7 +54,9 @@ fun DecisionJournalScreen(
 ) {
     val decisions by viewModel.decisions.collectAsState()
     val choicePoints by viewModel.choicePoints.collectAsState()
+    val pendingDecisions by viewModel.pendingDecisions.collectAsState()
     var activeChoicePoint by remember { mutableStateOf<ChoicePoint?>(null) }
+    var activePendingDecision by remember { mutableStateOf<Decision?>(null) }
 
     Scaffold(
         containerColor = MaterialTheme.modernColors.background,
@@ -90,6 +92,13 @@ fun DecisionJournalScreen(
                 }
             }
 
+            if (pendingDecisions.isNotEmpty()) {
+                item { SectionHeader("From your journal") }
+                items(pendingDecisions, key = { it.id }) { d ->
+                    PendingDecisionCard(d, onClick = { activePendingDecision = d })
+                }
+            }
+
             item { SectionHeader("Decision journal") }
             if (decisions.isEmpty()) {
                 item {
@@ -112,6 +121,29 @@ fun DecisionJournalScreen(
             onResolve = { action, reasoning -> viewModel.resolve(cp, action, reasoning) },
             onDismiss = { activeChoicePoint = null }
         )
+    }
+
+    activePendingDecision?.let { d ->
+        PendingDecisionSheet(
+            decision = d,
+            onConfirm = { chosenOption, reasoning -> viewModel.confirm(d, chosenOption, reasoning) },
+            onDismissDecision = { viewModel.dismiss(d) },
+            onDismiss = { activePendingDecision = null }
+        )
+    }
+}
+
+@Composable
+private fun PendingDecisionCard(d: Decision, onClick: () -> Unit) {
+    Surface(
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable(onClick = onClick),
+        color = MaterialTheme.modernColors.secondaryContainer,
+        shape = RoundedCornerShape(14.dp)
+    ) {
+        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(d.question, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = MaterialTheme.modernColors.onSecondaryContainer, maxLines = 2)
+            Text("Tap to log or dismiss", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.modernColors.onSecondaryContainer)
+        }
     }
 }
 

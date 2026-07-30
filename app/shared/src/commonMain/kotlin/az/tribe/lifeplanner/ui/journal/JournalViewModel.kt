@@ -5,17 +5,23 @@ import androidx.lifecycle.viewModelScope
 import az.tribe.lifeplanner.data.mapper.createNewJournalEntry
 import az.tribe.lifeplanner.data.network.AiProxyService
 import az.tribe.lifeplanner.domain.enum.Mood
+import az.tribe.lifeplanner.domain.model.Decision
+import az.tribe.lifeplanner.domain.model.DecisionSource
+import az.tribe.lifeplanner.domain.model.DecisionStatus
 import az.tribe.lifeplanner.domain.model.Goal
 import az.tribe.lifeplanner.domain.model.Habit
 import az.tribe.lifeplanner.domain.model.JournalEntry
 import az.tribe.lifeplanner.domain.model.JournalPrompts
 import az.tribe.lifeplanner.domain.model.XpRewards
+import az.tribe.lifeplanner.domain.repository.DecisionRepository
 import az.tribe.lifeplanner.domain.repository.GamificationRepository
 import az.tribe.lifeplanner.domain.repository.JournalRepository
 import az.tribe.lifeplanner.usecases.journal.CreateJournalEntryUseCase
 import az.tribe.lifeplanner.usecases.journal.DeleteJournalEntryUseCase
 import az.tribe.lifeplanner.usecases.journal.UpdateJournalEntryUseCase
 import co.touchlab.kermit.Logger
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -37,6 +43,7 @@ class JournalViewModel(
     private val deleteEntryUseCase: DeleteJournalEntryUseCase,
     private val aiProxyService: AiProxyService,
     private val gamificationRepository: GamificationRepository,
+    private val decisionRepository: DecisionRepository,
 ) : ViewModel() {
 
     private val _isLoading = MutableStateFlow(true)
@@ -78,7 +85,8 @@ class JournalViewModel(
         linkedGoalId: String? = null,
         linkedHabitId: String? = null,
         tags: List<String> = emptyList(),
-        promptUsed: String? = null
+        promptUsed: String? = null,
+        detectedDecision: DetectedDecision? = null,
     ) {
         viewModelScope.launch {
             try {
@@ -93,11 +101,42 @@ class JournalViewModel(
                 )
                 createEntryUseCase(entry)
                 gamificationRepository.awardXp(XpRewards.JOURNAL_ENTRY.toLong())
+                // Fall back to the last AI result so both entry-creation flows capture a decision.
+                logDetectedDecision(detectedDecision ?: _aiResult.value?.detectedDecision, linkedGoalId)
                 _showNewEntryDialog.value = false
                 refreshPrompt()
             } catch (e: Exception) {
                 _error.value = "Failed to create entry: ${e.message}"
             }
+        }
+    }
+
+    /**
+     * Persist an AI-detected decision as a PENDING/JOURNAL [Decision]. It is surfaced later as a
+     * gentle "want to log this?" nudge in the Decision Journal, not confirmed here. Best-effort:
+     * a failure must never fail the journal save.
+     */
+    @OptIn(ExperimentalUuidApi::class)
+    private suspend fun logDetectedDecision(detected: DetectedDecision?, linkedGoalId: String?) {
+        val decision = detected ?: return
+        if (decision.question.isBlank()) return
+        try {
+            val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+            decisionRepository.insertDecision(
+                Decision(
+                    id = Uuid.random().toString(),
+                    question = decision.question,
+                    optionsConsidered = decision.optionsConsidered,
+                    chosenOption = decision.leaning,   // the AI's guess, editable on confirm
+                    reasoning = decision.reasoning,
+                    relatedGoalId = linkedGoalId,
+                    decidedAt = now,
+                    source = DecisionSource.JOURNAL,
+                    status = DecisionStatus.PENDING,
+                )
+            )
+        } catch (e: Exception) {
+            Logger.w("JournalViewModel") { "Logging detected decision failed: ${e.message}" }
         }
     }
 

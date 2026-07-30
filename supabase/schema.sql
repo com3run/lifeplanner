@@ -832,11 +832,17 @@ CREATE TABLE decisions (
     actual_outcome      TEXT,
     outcome_reviewed_at TEXT,
     outcome_quality     TEXT,
+    source              TEXT        NOT NULL DEFAULT 'CHOICE_POINT',
+    status              TEXT        NOT NULL DEFAULT 'CONFIRMED',
     -- sync metadata
     updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
     is_deleted   BOOLEAN     NOT NULL DEFAULT FALSE,
     sync_version BIGINT      NOT NULL DEFAULT 0
 );
+
+-- Idempotent for existing deployments (v37: journal-detected decisions await confirmation).
+ALTER TABLE decisions ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'CHOICE_POINT';
+ALTER TABLE decisions ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'CONFIRMED';
 
 CREATE INDEX idx_decisions_user_id ON decisions(user_id);
 CREATE INDEX idx_decisions_goal ON decisions(related_goal_id);

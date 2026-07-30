@@ -65,6 +65,8 @@ data class DecisionSyncDto(
     @SerialName("actual_outcome") val actualOutcome: String? = null,
     @SerialName("outcome_reviewed_at") val outcomeReviewedAt: String? = null,
     @SerialName("outcome_quality") val outcomeQuality: String? = null,
+    val source: String = "CHOICE_POINT",
+    val status: String = "CONFIRMED",
     @SerialName("updated_at") val updatedAt: String? = null,
     @SerialName("is_deleted") val isDeleted: Boolean = false,
     @SerialName("sync_version") val syncVersion: Long = 0

@@ -816,3 +816,9 @@ internal fun migrateToVersion36(db: SupportSQLiteDatabase) {
         """.trimIndent()
     )
 }
+
+internal fun migrateToVersion37(db: SupportSQLiteDatabase) {
+    // Schema v37: journal-detected decisions await confirmation, matches migration 37.sqm
+    addColumnSafe(db, "DecisionEntity", "source", "TEXT NOT NULL DEFAULT 'CHOICE_POINT'")
+    addColumnSafe(db, "DecisionEntity", "status", "TEXT NOT NULL DEFAULT 'CONFIRMED'")
+}

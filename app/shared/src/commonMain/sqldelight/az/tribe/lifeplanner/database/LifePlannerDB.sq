@@ -2352,6 +2352,8 @@ CREATE TABLE DecisionEntity (
     actualOutcome TEXT,
     outcomeReviewedAt TEXT,
     outcomeQuality TEXT,
+    source TEXT NOT NULL DEFAULT 'CHOICE_POINT',
+    status TEXT NOT NULL DEFAULT 'CONFIRMED',
     sync_updated_at TEXT,
     is_deleted INTEGER NOT NULL DEFAULT 0,
     sync_version INTEGER NOT NULL DEFAULT 0,
@@ -2370,13 +2372,13 @@ selectDecisionsByGoal:
 SELECT * FROM DecisionEntity WHERE relatedGoalId = ? AND is_deleted = 0 ORDER BY decidedAt DESC;
 
 insertDecision:
-INSERT OR REPLACE INTO DecisionEntity(id, question, optionsConsidered, chosenOption, reasoning, relatedGoalId, expectedOutcome, confidence, decidedAt, actualOutcome, outcomeReviewedAt, outcomeQuality, sync_updated_at, is_deleted, sync_version, last_synced_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT OR REPLACE INTO DecisionEntity(id, question, optionsConsidered, chosenOption, reasoning, relatedGoalId, expectedOutcome, confidence, decidedAt, actualOutcome, outcomeReviewedAt, outcomeQuality, source, status, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 updateDecision:
 UPDATE DecisionEntity
 SET question = ?, optionsConsidered = ?, chosenOption = ?, reasoning = ?, relatedGoalId = ?,
-    expectedOutcome = ?, confidence = ?, decidedAt = ?, actualOutcome = ?, outcomeReviewedAt = ?, outcomeQuality = ?,
+    expectedOutcome = ?, confidence = ?, decidedAt = ?, actualOutcome = ?, outcomeReviewedAt = ?, outcomeQuality = ?, status = ?,
     sync_updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
 WHERE id = ?;
 
@@ -2400,8 +2402,8 @@ purgeDeletedDecisions:
 DELETE FROM DecisionEntity WHERE is_deleted = 1 AND last_synced_at IS NOT NULL;
 
 upsertDecisionFromSync:
-INSERT OR REPLACE INTO DecisionEntity(id, question, optionsConsidered, chosenOption, reasoning, relatedGoalId, expectedOutcome, confidence, decidedAt, actualOutcome, outcomeReviewedAt, outcomeQuality, sync_updated_at, is_deleted, sync_version, last_synced_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT OR REPLACE INTO DecisionEntity(id, question, optionsConsidered, chosenOption, reasoning, relatedGoalId, expectedOutcome, confidence, decidedAt, actualOutcome, outcomeReviewedAt, outcomeQuality, source, status, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 -- ============== IdentityStatementEntity (Pillar 5: "I'm becoming someone who…") ==============
 -- Identity layer above XP/levels, tied to a LifeValue (Pillar 1) via valueId (soft ref).
