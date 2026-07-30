@@ -10,6 +10,10 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
 import androidx.compose.ui.graphics.graphicsLayer
 import az.tribe.lifeplanner.ui.components.BreathingCard
+import az.tribe.lifeplanner.domain.model.CalendarEvent
+import az.tribe.lifeplanner.ui.calendar.CalendarPermissionState
+import az.tribe.lifeplanner.ui.calendar.CalendarViewModel
+import az.tribe.lifeplanner.ui.calendar.rememberCalendarPermission
 import az.tribe.lifeplanner.ui.components.rememberHapticManager
 import androidx.compose.foundation.background
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -27,6 +31,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -39,12 +44,12 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -52,6 +57,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -62,6 +68,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import az.tribe.lifeplanner.domain.model.FeedItem
@@ -91,7 +98,9 @@ import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Fill
 import com.adamglin.phosphoricons.fill.CheckCircle
 import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.ArrowsOutSimple
 import com.adamglin.phosphoricons.regular.Brain
+import com.adamglin.phosphoricons.regular.CalendarBlank
 import com.adamglin.phosphoricons.regular.CaretDown
 import com.adamglin.phosphoricons.regular.CaretRight
 import com.adamglin.phosphoricons.regular.Circle
@@ -100,9 +109,13 @@ import com.adamglin.phosphoricons.regular.Fire
 import com.adamglin.phosphoricons.regular.Flag
 import com.adamglin.phosphoricons.regular.Lightning
 import com.adamglin.phosphoricons.regular.Sparkle
+import com.adamglin.phosphoricons.regular.X
 import org.koin.compose.viewmodel.koinViewModel
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.todayIn
 import kotlin.time.Clock
 
 /**
@@ -124,6 +137,19 @@ fun ForYouScreen(
     val checkinPulse by viewModel.checkinPulse.collectAsState()
     val c = MaterialTheme.modernColors
 
+    // Today's device-calendar events, folded into "Today's plan" so the plan reflects real
+    // appointments, not just goal milestones. Read-only; empty (and silent) without permission.
+    val calendarViewModel: CalendarViewModel = koinViewModel()
+    val calendarPermission = rememberCalendarPermission()
+    val todayEvents by calendarViewModel.dayEvents.collectAsState()
+    val tz = remember { TimeZone.currentSystemDefault() }
+    LaunchedEffect(calendarPermission.state) {
+        if (calendarPermission.state == CalendarPermissionState.GRANTED) {
+            calendarViewModel.loadDay(Clock.System.todayIn(tz))
+        }
+    }
+    val calendarConnected = calendarPermission.state == CalendarPermissionState.GRANTED
+
     // Today's weather (Open-Meteo). The permission lives in Compose; feed its state to the VM.
     val weatherViewModel: TodayWeatherViewModel = koinViewModel()
     val weatherState by weatherViewModel.state.collectAsState()
@@ -131,7 +157,7 @@ fun ForYouScreen(
     LaunchedEffect(locationPermission.state) {
         weatherViewModel.onPermissionState(locationPermission.state == LocationPermissionState.GRANTED)
     }
-    var showWeatherSheet by remember { mutableStateOf(false) }
+    var showWeatherDetail by remember { mutableStateOf(false) }
 
     var filter by remember { mutableStateOf<FeedSection?>(null) }
     val introGate = rememberFeatureIntroGate()
@@ -141,6 +167,7 @@ fun ForYouScreen(
     }
     val grouped = remember(visible) { visible.groupBy { it.kind.section() } }
 
+    Box(Modifier.fillMaxSize()) {
     Scaffold(
         containerColor = c.background,
         topBar = {
@@ -163,7 +190,7 @@ fun ForYouScreen(
             // The header is now weather-forward when we have it: one understandable widget instead of
             // a big greeting. Falls back to the greeting hero when weather isn't available yet.
             val loadedWeather = (weatherState as? TodayWeatherViewModel.State.Loaded)?.weather
-            item { TodayHero(progress = progress, weather = loadedWeather, onExpand = { showWeatherSheet = true }) }
+            item { TodayHero(progress = progress, weather = loadedWeather, onExpand = { showWeatherDetail = true }) }
 
             // Hourly detail lives inside the tap-to-expand weather popup, not as a second feed card.
             if (weatherState is TodayWeatherViewModel.State.NeedsPermission) {
@@ -176,7 +203,13 @@ fun ForYouScreen(
             // Today's plan, planner-style: tick items off right here instead of jumping to Goals.
             // Always shown (with an empty state) so it never silently disappears once you're caught up.
             item(key = "plan_header") { SectionHeader(label = "Today's plan", onSeeAll = null) }
-            if (plan.isEmpty()) {
+            // Calendar events lead the plan: they are time-anchored, so they read top-of-day.
+            if (calendarConnected && todayEvents.isNotEmpty()) {
+                items(todayEvents, key = { "cal_${it.id}" }) { event ->
+                    CalendarPlanRow(event = event, tz = tz)
+                }
+            }
+            if (plan.isEmpty() && !(calendarConnected && todayEvents.isNotEmpty())) {
                 item(key = "plan_empty") { Hint("You're all caught up for today. Steps due today show up here.") }
             } else {
                 items(plan, key = { "plan_${it.milestoneId}" }) { p ->
@@ -211,16 +244,17 @@ fun ForYouScreen(
                         }
                         items(cards, key = { it.id }) { fi ->
                             val accent = accentFor(fi)
+                            // Opening the card's destination (a feature the user hasn't met explains
+                            // itself first via the intro gate). Shared by the card body and the button.
+                            val open: () -> Unit = { fi.route?.let { route -> introGate.open(fi.introId, accent) { onOpenRoute(route) } } }
                             FeedCard(
                                 item = fi,
                                 accent = accent,
                                 pulse = fi.actionHabitId?.let { checkinPulse[it] },
-                                onAction = { fi.actionHabitId?.let(viewModel::checkInHabit) },
-                                onOpen = {
-                                    val route = fi.route ?: return@FeedCard
-                                    // A feature the user has never met explains itself first.
-                                    introGate.open(fi.introId, accent) { onOpenRoute(route) }
-                                },
+                                // Habit cards check in inline; every other action button opens the
+                                // place to act, so the labeled button always does what it says.
+                                onAction = { fi.actionHabitId?.let(viewModel::checkInHabit) ?: open() },
+                                onOpen = open,
                             )
                         }
                     }
@@ -229,9 +263,16 @@ fun ForYouScreen(
         }
     }
 
-    val sheetWeather = (weatherState as? TodayWeatherViewModel.State.Loaded)?.weather
-    if (showWeatherSheet && sheetWeather != null) {
-        WeatherDetailSheet(weather = sheetWeather, onDismiss = { showWeatherSheet = false })
+        val detailWeather = (weatherState as? TodayWeatherViewModel.State.Loaded)?.weather
+        AnimatedVisibility(
+            visible = showWeatherDetail && detailWeather != null,
+            enter = fadeIn(),
+            exit = fadeOut(),
+        ) {
+            detailWeather?.let { w ->
+                WeatherDetailFullScreen(weather = w, onDismiss = { showWeatherDetail = false })
+            }
+        }
     }
 
     FeatureIntroHost(introGate)
@@ -443,7 +484,7 @@ private fun TodayHero(progress: UserProgress?, weather: TodayWeather?, onExpand:
             subtitle = subtitle,
             gradient = heroMoodGradient(weather.condition, hour),
             trailing = {
-                Icon(PhosphorIcons.Regular.CaretDown, contentDescription = "Weather details", tint = Color.White.copy(alpha = 0.85f))
+                Icon(PhosphorIcons.Regular.ArrowsOutSimple, contentDescription = "Expand weather", tint = Color.White.copy(alpha = 0.85f))
             },
         )
     }
@@ -471,43 +512,102 @@ private fun heroMoodGradient(condition: WeatherCondition, hour: Int): Brush {
     return Brush.linearGradient(colors)
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * Fullscreen weather detail. Opens over the whole screen showing the mood gradient with a big
+ * current-conditions headline; as the user scrolls, the backdrop washes to the theme surface
+ * ("turns white") and the top toolbar gains a solid background so the close (X) stays legible.
+ */
 @Composable
-private fun WeatherDetailSheet(weather: TodayWeather, onDismiss: () -> Unit) {
+private fun WeatherDetailFullScreen(weather: TodayWeather, onDismiss: () -> Unit) {
     val c = MaterialTheme.modernColors
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
     val nowHour = now.hour
     val nowLabel = timeLabel(now.hour, now.minute)
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, containerColor = c.background) {
-        Column(
-            Modifier.fillMaxWidth().padding(horizontal = LifePlannerDesign.Padding.screenHorizontal).padding(bottom = 32.dp),
+    val gradient = heroMoodGradient(weather.condition, nowHour)
+
+    val listState = rememberLazyListState()
+    // 0f at the very top (hero gradient in full) → 1f once the headline scrolls away.
+    val collapse by remember {
+        derivedStateOf {
+            if (listState.firstVisibleItemIndex > 0) 1f
+            else (listState.firstVisibleItemScrollOffset / 420f).coerceIn(0f, 1f)
+        }
+    }
+    val toolbarTint = lerp(Color.White, c.textPrimary, collapse)
+
+    Box(Modifier.fillMaxSize().background(gradient)) {
+        // The theme surface wash that fades in over the gradient as you scroll.
+        Box(Modifier.fillMaxSize().background(c.background.copy(alpha = collapse)))
+
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
+                top = 104.dp,
+                bottom = 40.dp,
+                start = LifePlannerDesign.Padding.screenHorizontal,
+                end = LifePlannerDesign.Padding.screenHorizontal,
+            ),
             verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.md),
         ) {
-            // Current
-            Row(horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm), verticalAlignment = Alignment.CenterVertically) {
-                Text(weather.condition.emoji, style = MaterialTheme.typography.displaySmall)
-                Column(Modifier.weight(1f)) {
-                    Text("${weather.temperatureC}°  ${weather.condition.label}", style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold), color = c.textPrimary)
+            // Big current-conditions headline, over the gradient (white text throughout).
+            item(key = "wx_head") {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
-                        buildString {
-                            weather.placeName?.let { append(it); append(" · ") }
-                            append("as of $nowLabel")
-                        },
-                        style = MaterialTheme.typography.bodyMedium, color = c.textSecondary,
+                        weather.placeName ?: today(),
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                        color = Color.White.copy(alpha = 0.9f),
+                    )
+                    Text(weather.condition.emoji, style = MaterialTheme.typography.displayMedium)
+                    Text(
+                        "${weather.temperatureC}°",
+                        style = MaterialTheme.typography.displayLarge.copy(fontWeight = FontWeight.Bold),
+                        color = Color.White,
+                    )
+                    Text(
+                        weather.condition.label,
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Medium),
+                        color = Color.White.copy(alpha = 0.95f),
+                    )
+                    Text(
+                        "H ${weather.highC}°    L ${weather.lowC}°",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color.White.copy(alpha = 0.85f),
                     )
                 }
             }
-            weather.alert?.let {
-                Surface(color = c.primary.copy(alpha = 0.12f), shape = RoundedCornerShape(8.dp)) {
-                    Text(it, style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium), color = c.primary, modifier = Modifier.fillMaxWidth().padding(horizontal = LifePlannerDesign.Spacing.sm, vertical = LifePlannerDesign.Spacing.xs))
+
+            weather.alert?.let { alert ->
+                item(key = "wx_alert") {
+                    Surface(color = Color.White.copy(alpha = 0.2f), shape = RoundedCornerShape(12.dp)) {
+                        Text(
+                            alert,
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                            color = Color.White,
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = LifePlannerDesign.Spacing.sm, vertical = LifePlannerDesign.Spacing.xs),
+                        )
+                    }
                 }
             }
 
-            // Metric grid
+            if (weather.hourly.isNotEmpty()) {
+                item(key = "wx_hourly") {
+                    Surface(color = c.cardBackground, shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large)) {
+                        Column(
+                            Modifier.padding(LifePlannerDesign.Padding.cardContent),
+                            verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
+                        ) {
+                            Text("Weather by the hour", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold), color = c.textPrimary)
+                            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm)) {
+                                weather.hourly.forEach { h -> HourCell(h, isNow = h.hour == nowHour) }
+                            }
+                        }
+                    }
+                }
+            }
+
             val d = weather.details
             val metrics = buildList {
-                add("High / Low" to "${weather.highC}° / ${weather.lowC}°")
                 d?.feelsLikeC?.let { add("Feels like" to "$it°") }
                 d?.humidityPct?.let { add("Humidity" to "$it%") }
                 d?.windSpeedKmh?.let { add("Wind" to "$it km/h") }
@@ -517,20 +617,39 @@ private fun WeatherDetailSheet(weather: TodayWeather, onDismiss: () -> Unit) {
                 d?.sunset?.let { add("Sunset" to it) }
             }
             metrics.chunked(2).forEach { row ->
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm)) {
-                    row.forEach { (label, value) -> MetricTile(label, value, Modifier.weight(1f)) }
-                    if (row.size == 1) Spacer(Modifier.weight(1f))
+                item(key = "wx_m_${row.first().first}") {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm)) {
+                        row.forEach { (label, value) -> MetricTile(label, value, Modifier.weight(1f)) }
+                        if (row.size == 1) Spacer(Modifier.weight(1f))
+                    }
                 }
             }
 
-            if (weather.hourly.isNotEmpty()) {
-                Text("Weather by the hour", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold), color = c.textPrimary)
-                Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm)) {
-                    weather.hourly.forEach { h -> HourCell(h, isNow = h.hour == nowHour) }
-                }
+            item(key = "wx_src") {
+                Text("As of $nowLabel · Source: ${weather.source}", style = MaterialTheme.typography.labelSmall, color = c.textTertiary)
             }
+        }
 
-            Text("As of $nowLabel · Source: ${weather.source}", style = MaterialTheme.typography.labelSmall, color = c.textTertiary)
+        // Toolbar: close (X) on the left. Transparent over the gradient, solid once it turns white.
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(c.background.copy(alpha = collapse))
+                .statusBarsPadding()
+                .padding(horizontal = LifePlannerDesign.Spacing.xs, vertical = LifePlannerDesign.Spacing.xs),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(onClick = onDismiss) {
+                Icon(PhosphorIcons.Regular.X, contentDescription = "Close", tint = toolbarTint)
+            }
+            if (collapse > 0.5f) {
+                Text(
+                    "${weather.temperatureC}°  ${weather.condition.label}",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = toolbarTint,
+                    modifier = Modifier.padding(start = LifePlannerDesign.Spacing.xs),
+                )
+            }
         }
     }
 }
@@ -613,6 +732,55 @@ private fun WeatherPromptCard(onEnable: () -> Unit) {
 }
 
 /** Planner-style row: a tappable check circle ticks the milestone done in place (no navigation). */
+@Composable
+private fun CalendarPlanRow(event: CalendarEvent, tz: TimeZone) {
+    val c = MaterialTheme.modernColors
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = c.cardBackground,
+        shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large),
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(LifePlannerDesign.Padding.cardContent),
+            horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = PhosphorIcons.Regular.CalendarBlank,
+                contentDescription = null,
+                tint = c.primary,
+                modifier = Modifier.padding(4.dp).size(LifePlannerDesign.IconSize.large),
+            )
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(event.title, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = c.textPrimary, maxLines = 1)
+                event.location?.let {
+                    Text(it, style = MaterialTheme.typography.bodySmall, color = c.textSecondary, maxLines = 1)
+                }
+            }
+            Surface(color = c.primary.copy(alpha = 0.12f), shape = RoundedCornerShape(8.dp)) {
+                Text(
+                    eventTimeLabel(event, tz),
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                    color = c.primary,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                )
+            }
+        }
+    }
+}
+
+private fun eventTimeLabel(event: CalendarEvent, tz: TimeZone): String {
+    if (event.allDay) return "All day"
+    val dt = Instant.fromEpochMilliseconds(event.startEpochMillis).toLocalDateTime(tz)
+    val hour12 = when (val h = dt.hour % 12) {
+        0 -> 12
+        else -> h
+    }
+    val minute = dt.minute.toString().padStart(2, '0')
+    val meridiem = if (dt.hour < 12) "AM" else "PM"
+    return "$hour12:$minute $meridiem"
+}
+
 @Composable
 private fun PlanRow(item: PlanItem, onComplete: () -> Unit, onOpen: () -> Unit) {
     val c = MaterialTheme.modernColors
