@@ -49,7 +49,9 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import az.tribe.lifeplanner.domain.enum.Mood
+import az.tribe.lifeplanner.domain.service.GoalOptimizer
 import kotlinx.datetime.minus
+import kotlinx.datetime.plus
 import kotlinx.datetime.todayIn
 import kotlin.time.Clock
 import az.tribe.lifeplanner.ui.components.SwipeableGoalItem
@@ -181,6 +183,14 @@ fun JournalScreen(
 
     val upcomingGoals = remember(goals) {
         goals.filter { it.status != GoalStatus.COMPLETED }.sortedBy { it.dueDate }.take(3)
+    }
+
+    // Goal tune-ups: deterministic one-tap optimizations (reschedule overdue, close out finished,
+    // finish near-done, revisit stalled). Session-dismissed ones drop until next open.
+    var dismissedTuneUps by remember { mutableStateOf(setOf<String>()) }
+    val goalSuggestions = remember(goals, today, dismissedTuneUps) {
+        GoalOptimizer.suggestions(goals, today)
+            .filterNot { "${it.goalId}:${it.kind}" in dismissedTuneUps }
     }
 
     val sortedEntries = remember(entries) {
@@ -331,6 +341,27 @@ fun JournalScreen(
 
             // ── Tab 1: Goals ────────────────────────────────────────────────
             else if (currentTab == 1) {
+                if (goalSuggestions.isNotEmpty()) {
+                    item(key = "goal_tuneups") {
+                        GoalTuneUpCard(
+                            suggestions = goalSuggestions,
+                            onApply = { s ->
+                                when (s.kind) {
+                                    GoalOptimizer.Kind.READY_TO_COMPLETE ->
+                                        goalViewModel.updateGoalStatus(s.goalId, GoalStatus.COMPLETED)
+                                    GoalOptimizer.Kind.RESCHEDULE_OVERDUE ->
+                                        goals.firstOrNull { it.id == s.goalId }?.let { g ->
+                                            goalViewModel.updateGoal(g.copy(dueDate = today.plus(DatePeriod(days = GoalOptimizer.RESCHEDULE_DAYS))))
+                                        }
+                                    GoalOptimizer.Kind.FINISH_ALMOST, GoalOptimizer.Kind.REFOCUS_STALE ->
+                                        goals.firstOrNull { it.id == s.goalId }?.let(onGoalClick)
+                                }
+                            },
+                            onDismiss = { s -> dismissedTuneUps = dismissedTuneUps + "${s.goalId}:${s.kind}" },
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                        )
+                    }
+                }
                 if (nextMilestones.isNotEmpty()) {
                     item(key = "next_steps_header") {
                         Text("Next Steps (${nextMilestones.size})", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.onSurface)
@@ -593,6 +624,62 @@ private fun TodayMoodPrompt(plannedCount: Int, onPick: (Mood) -> Unit, modifier:
             Text("Pick a face to start, no pressure ✨", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
         }
     }
+}
+
+/** The "Goal tune-ups" card: a few one-tap optimizations so the plan stays honest with the calendar. */
+@Composable
+private fun GoalTuneUpCard(
+    suggestions: List<GoalOptimizer.Suggestion>,
+    onApply: (GoalOptimizer.Suggestion) -> Unit,
+    onDismiss: (GoalOptimizer.Suggestion) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.06f),
+    ) {
+        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(
+                "✨ Tune-ups",
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.primary,
+            )
+            suggestions.forEachIndexed { index, s ->
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(
+                        "${tuneUpEmoji(s.kind)}  ${s.message}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(20.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            s.actionLabel,
+                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.bouncyClickable { onApply(s) },
+                        )
+                        Text(
+                            "Not now",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            modifier = Modifier.bouncyClickable { onDismiss(s) },
+                        )
+                    }
+                }
+                if (index < suggestions.lastIndex) {
+                    Box(Modifier.fillMaxWidth().height(1.dp).background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)))
+                }
+            }
+        }
+    }
+}
+
+private fun tuneUpEmoji(kind: GoalOptimizer.Kind): String = when (kind) {
+    GoalOptimizer.Kind.READY_TO_COMPLETE -> "✅"
+    GoalOptimizer.Kind.RESCHEDULE_OVERDUE -> "📅"
+    GoalOptimizer.Kind.FINISH_ALMOST -> "🏁"
+    GoalOptimizer.Kind.REFOCUS_STALE -> "🤔"
 }
 
 /** A gentle empty state: a warm illustration over a soft title + hint, instead of bare grey text. */
