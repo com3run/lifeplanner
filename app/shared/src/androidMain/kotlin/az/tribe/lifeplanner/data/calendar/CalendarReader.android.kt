@@ -20,21 +20,23 @@ actual class CalendarReader {
 
     actual suspend fun isAvailable(): Boolean = true
 
-    actual suspend fun readUpcomingEvents(days: Int): List<CalendarEvent> = withContext(Dispatchers.IO) {
+    actual suspend fun readUpcomingEvents(days: Int): List<CalendarEvent> {
+        val now = System.currentTimeMillis()
+        return readEvents(now, now + days.toLong() * 24L * 60L * 60L * 1000L)
+    }
+
+    actual suspend fun readEvents(startEpochMillis: Long, endEpochMillis: Long): List<CalendarEvent> = withContext(Dispatchers.IO) {
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CALENDAR)
             != PackageManager.PERMISSION_GRANTED
         ) {
             return@withContext emptyList()
         }
 
-        val now = System.currentTimeMillis()
-        val end = now + days.toLong() * 24L * 60L * 60L * 1000L
-
         // Instances (rather than Events) expands recurring events into concrete occurrences within
-        // the window, which is what "upcoming events" means to the user.
+        // the window, which is what "events for this day" means to the user.
         val uri = CalendarContract.Instances.CONTENT_URI.buildUpon().let { b ->
-            ContentUris.appendId(b, now)
-            ContentUris.appendId(b, end)
+            ContentUris.appendId(b, startEpochMillis)
+            ContentUris.appendId(b, endEpochMillis)
             b.build()
         }
         val projection = arrayOf(

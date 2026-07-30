@@ -10,6 +10,7 @@ import platform.EventKit.EKEntityType
 import platform.EventKit.EKEvent
 import platform.EventKit.EKEventStore
 import platform.Foundation.NSDate
+import platform.Foundation.NSTimeIntervalSince1970
 import platform.Foundation.dateByAddingTimeInterval
 import platform.Foundation.timeIntervalSince1970
 
@@ -21,12 +22,22 @@ actual class CalendarReader {
     actual suspend fun isAvailable(): Boolean = true
 
     actual suspend fun readUpcomingEvents(days: Int): List<CalendarEvent> {
+        val start = NSDate()
+        val end = start.dateByAddingTimeInterval(days.toDouble() * 24.0 * 60.0 * 60.0)
+        return readMatching(start, end)
+    }
+
+    actual suspend fun readEvents(startEpochMillis: Long, endEpochMillis: Long): List<CalendarEvent> {
+        val start = NSDate(timeIntervalSinceReferenceDate = startEpochMillis / 1000.0 - NSTimeIntervalSince1970)
+        val end = NSDate(timeIntervalSinceReferenceDate = endEpochMillis / 1000.0 - NSTimeIntervalSince1970)
+        return readMatching(start, end)
+    }
+
+    private fun readMatching(start: NSDate, end: NSDate): List<CalendarEvent> {
         val status = EKEventStore.authorizationStatusForEntityType(EKEntityType.EKEntityTypeEvent)
         val granted = status == EKAuthorizationStatusAuthorized || status == EKAuthorizationStatusFullAccess
         if (!granted) return emptyList()
 
-        val start = NSDate()
-        val end = start.dateByAddingTimeInterval(days.toDouble() * 24.0 * 60.0 * 60.0)
         val predicate = store.predicateForEventsWithStartDate(start, endDate = end, calendars = null)
 
         @Suppress("UNCHECKED_CAST")

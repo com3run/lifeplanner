@@ -35,6 +35,7 @@ import az.tribe.lifeplanner.domain.model.Goal
 import az.tribe.lifeplanner.domain.model.Habit
 import az.tribe.lifeplanner.domain.model.JournalEntry
 import az.tribe.lifeplanner.domain.model.Milestone
+import az.tribe.lifeplanner.ui.calendar.CalendarDayEvents
 import az.tribe.lifeplanner.ui.components.CompactGoalRow
 import az.tribe.lifeplanner.ui.home.CompactHomeMilestoneRow
 import az.tribe.lifeplanner.ui.home.HomeViewModel
@@ -302,6 +303,15 @@ fun JournalScreen(
                         }
                     }
                 }
+            }
+
+            // Device-calendar events for the selected day (shared across tabs, mirrors the day lens).
+            // Renders itself only when calendar permission is granted and the day has events.
+            item(key = "calendar_day_events") {
+                CalendarDayEvents(
+                    selectedDate = selectedDate,
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                )
             }
 
             // ── Tab 0: Journal ──────────────────────────────────────────────
