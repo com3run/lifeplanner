@@ -286,7 +286,10 @@ private fun CalendarToggleRow(
     onToggle: (Boolean) -> Unit,
 ) {
     val calendar = selection.calendar
-    val dotColor = calendar.colorArgb?.let { Color(it.toInt()) } ?: MaterialTheme.colorScheme.primary
+    // Force full alpha: some providers hand back a calendar color with a zero alpha byte, which
+    // would render the dot invisible.
+    val dotColor = calendar.colorArgb?.let { Color(it.toInt()).copy(alpha = 1f) }
+        ?: MaterialTheme.colorScheme.primary
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.small),

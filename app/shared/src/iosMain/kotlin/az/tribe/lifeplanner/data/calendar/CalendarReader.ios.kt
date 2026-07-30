@@ -5,6 +5,9 @@ package az.tribe.lifeplanner.data.calendar
 import az.tribe.lifeplanner.domain.model.CalendarEvent
 import az.tribe.lifeplanner.domain.model.DeviceCalendar
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.get
+import platform.CoreGraphics.CGColorGetComponents
+import platform.CoreGraphics.CGColorGetNumberOfComponents
 import platform.EventKit.EKAuthorizationStatusAuthorized
 import platform.EventKit.EKAuthorizationStatusFullAccess
 import platform.EventKit.EKCalendar
@@ -51,9 +54,7 @@ actual class CalendarReader {
                     EKSourceType.EKSourceTypeBirthdays -> "birthdays"
                     else -> null
                 },
-                // EKCalendar exposes a CGColor; converting it is not worth the cinterop, so the UI
-                // falls back to a theme tint.
-                colorArgb = null,
+                colorArgb = calendar.argbColor(),
                 isPrimary = calendar.calendarIdentifier == store.defaultCalendarForNewEvents?.calendarIdentifier,
                 isReadOnly = !calendar.allowsContentModifications,
             )
@@ -96,4 +97,30 @@ actual class CalendarReader {
             )
         }.sortedBy { it.startEpochMillis }
     }
+}
+
+/**
+ * EventKit exposes a calendar's color as a CGColor. Flatten it to the same packed ARGB long
+ * Android's CALENDAR_COLOR gives us, so the settings screen shows real per-calendar colors on both
+ * platforms. Returns null for color spaces we don't recognise; the UI then falls back to a theme tint.
+ */
+@OptIn(ExperimentalForeignApi::class)
+private fun EKCalendar.argbColor(): Long? {
+    val cgColor = this.CGColor ?: return null
+    val components = CGColorGetComponents(cgColor) ?: return null
+    val r: Double
+    val g: Double
+    val b: Double
+    val a: Double
+    when (CGColorGetNumberOfComponents(cgColor).toInt()) {
+        2 -> { // grayscale + alpha
+            r = components[0]; g = components[0]; b = components[0]; a = components[1]
+        }
+        4 -> { // RGBA
+            r = components[0]; g = components[1]; b = components[2]; a = components[3]
+        }
+        else -> return null
+    }
+    fun channel(value: Double): Long = (value.coerceIn(0.0, 1.0) * 255.0).toLong()
+    return (channel(a) shl 24) or (channel(r) shl 16) or (channel(g) shl 8) or channel(b)
 }
