@@ -52,6 +52,8 @@ import az.tribe.lifeplanner.ui.onboarding.IntroFlow
 import az.tribe.lifeplanner.ui.components.BottomNavigationBar
 import az.tribe.lifeplanner.ui.components.NavigationRailBar
 import az.tribe.lifeplanner.ui.components.CelebrationOverlay
+import az.tribe.lifeplanner.domain.model.TodayWeather
+import az.tribe.lifeplanner.ui.foryou.WeatherDetailFullScreen
 import az.tribe.lifeplanner.ui.components.CelebrationType
 import az.tribe.lifeplanner.ui.components.NavContextAction
 import az.tribe.lifeplanner.ui.gamification.GamificationEvent
@@ -278,6 +280,9 @@ fun App(
         var showGlobalCelebration by remember { mutableStateOf(false) }
         var globalCelebrationType by remember { mutableStateOf(CelebrationType.BADGE_UNLOCKED) }
         var globalCelebrationMessage by remember { mutableStateOf("") }
+
+        // Full-screen weather detail, hoisted to the root so it draws above the bottom nav bar.
+        var weatherDetail by remember { mutableStateOf<TodayWeather?>(null) }
 
         // Collect gamification events for global celebrations
         LaunchedEffect(Unit) {
@@ -636,7 +641,7 @@ fun App(
                         appNavHabits(navController = navController)
                         appNavHabitDetailRedesign(navController = navController)
                         appNavToday(navController = navController)
-                        appNavForYou(navController = navController)
+                        appNavForYou(navController = navController, onOpenWeather = { weatherDetail = it })
                         if (FeatureFlags.PILLAR_POSSIBILITY) appNavPossibilityMode(navController = navController)
                         appNavGoalsRedesign(navController = navController)
                         appNavGoalDetailRedesign(navController = navController)
@@ -667,6 +672,11 @@ fun App(
                         message = globalCelebrationMessage,
                         onDismiss = { showGlobalCelebration = false }
                     )
+
+                    // Weather detail covers the whole content column, including the bottom nav bar.
+                    weatherDetail?.let { w ->
+                        WeatherDetailFullScreen(weather = w, onDismiss = { weatherDetail = null })
+                    }
                 }
             }
         }

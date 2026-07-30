@@ -128,6 +128,7 @@ import kotlin.time.Clock
 @Composable
 fun ForYouScreen(
     onOpenRoute: (String) -> Unit,
+    onOpenWeather: (TodayWeather) -> Unit,
     viewModel: ForYouViewModel = koinViewModel(),
 ) {
     val feed by viewModel.feed.collectAsState()
@@ -157,8 +158,6 @@ fun ForYouScreen(
     LaunchedEffect(locationPermission.state) {
         weatherViewModel.onPermissionState(locationPermission.state == LocationPermissionState.GRANTED)
     }
-    var showWeatherDetail by remember { mutableStateOf(false) }
-
     var filter by remember { mutableStateOf<FeedSection?>(null) }
     val introGate = rememberFeatureIntroGate()
     val visible = remember(feed, filter) {
@@ -167,7 +166,6 @@ fun ForYouScreen(
     }
     val grouped = remember(visible) { visible.groupBy { it.kind.section() } }
 
-    Box(Modifier.fillMaxSize()) {
     Scaffold(
         containerColor = c.background,
         topBar = {
@@ -190,7 +188,7 @@ fun ForYouScreen(
             // The header is now weather-forward when we have it: one understandable widget instead of
             // a big greeting. Falls back to the greeting hero when weather isn't available yet.
             val loadedWeather = (weatherState as? TodayWeatherViewModel.State.Loaded)?.weather
-            item { TodayHero(progress = progress, weather = loadedWeather, onExpand = { showWeatherDetail = true }) }
+            item { TodayHero(progress = progress, weather = loadedWeather, onExpand = { loadedWeather?.let(onOpenWeather) }) }
 
             // Hourly detail lives inside the tap-to-expand weather popup, not as a second feed card.
             if (weatherState is TodayWeatherViewModel.State.NeedsPermission) {
@@ -259,18 +257,6 @@ fun ForYouScreen(
                         }
                     }
                 }
-            }
-        }
-    }
-
-        val detailWeather = (weatherState as? TodayWeatherViewModel.State.Loaded)?.weather
-        AnimatedVisibility(
-            visible = showWeatherDetail && detailWeather != null,
-            enter = fadeIn(),
-            exit = fadeOut(),
-        ) {
-            detailWeather?.let { w ->
-                WeatherDetailFullScreen(weather = w, onDismiss = { showWeatherDetail = false })
             }
         }
     }
@@ -523,7 +509,7 @@ private fun heroMoodGradient(condition: WeatherCondition, hour: Int): Brush {
  * ("turns white") and the top toolbar gains a solid background so the close (X) stays legible.
  */
 @Composable
-private fun WeatherDetailFullScreen(weather: TodayWeather, onDismiss: () -> Unit) {
+fun WeatherDetailFullScreen(weather: TodayWeather, onDismiss: () -> Unit) {
     val c = MaterialTheme.modernColors
     val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
     val nowHour = now.hour

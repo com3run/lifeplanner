@@ -45,7 +45,6 @@ import androidx.compose.ui.unit.dp
 import az.tribe.lifeplanner.domain.model.XpRewards
 import az.tribe.lifeplanner.domain.repository.GamificationRepository
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
-import az.tribe.lifeplanner.ui.theme.bouncyClickable
 import az.tribe.lifeplanner.ui.theme.modernColors
 import com.russhwolf.settings.Settings
 import kotlinx.coroutines.delay
@@ -56,21 +55,75 @@ import org.koin.compose.koinInject
 import kotlin.time.Clock
 
 private const val BREATH_GOAL = 3
-private const val BOX_UNLOCK_AT = 5 // completed sessions before Box Breathing opens up
 private const val KEY_SESSIONS_TOTAL = "breath_sessions_total"
-private const val KEY_TECHNIQUE = "breath_technique"
 
-/** A breathing technique, each with its own symbol so they read as distinct rituals. */
-enum class BreathTechnique(val id: String, val label: String, val symbol: String, val xp: Int) {
-    CALM("calm", "Calm Breath", "🫧", XpRewards.MINDFUL_BREATH),
-    BOX("box", "Box Breathing", "⬜", XpRewards.MINDFUL_BREATH_BOX),
+/** One phase of a breath: a spoken label, a short orb caption, its length, and the orb's end scale. */
+data class BreathPhase(val label: String, val short: String, val durationMs: Int, val targetScale: Float)
+
+/**
+ * A breathing technique. Techniques are chosen automatically by the user's mindfulness level (see
+ * [BREATH_LEVELS]) and are never named in the UI, the app just guides the breath. Each is [rounds]
+ * repeats of [phases]; [boxStyle] techniques render the square-frame tracer instead of the orb.
+ * [label] is for code/analytics only and is never shown.
+ */
+enum class BreathTechnique(
+    val id: String,
+    val label: String,
+    val symbol: String,
+    val xp: Int,
+    val rounds: Int,
+    val phases: List<BreathPhase>,
+    val boxStyle: Boolean = false,
+) {
+    CALM("calm", "Calm Breath", "🫧", XpRewards.MINDFUL_BREATH, 3, listOf(
+        BreathPhase("Breathe in", "In", 3800, 1f),
+        BreathPhase("Breathe out", "Out", 3800, 0.55f),
+    )),
+    EXTENDED_EXHALE("ext_exhale", "Extended Exhale", "🌊", XpRewards.MINDFUL_BREATH, 4, listOf(
+        BreathPhase("Breathe in", "In", 4000, 1f),
+        BreathPhase("Long exhale", "Out", 6000, 0.5f),
+    )),
+    BOX("box", "Box Breathing", "⬜", XpRewards.MINDFUL_BREATH_BOX, 3, listOf(
+        BreathPhase("Breathe in", "In", 4000, 1f),
+        BreathPhase("Hold", "Hold", 4000, 1f),
+        BreathPhase("Breathe out", "Out", 4000, 0.55f),
+        BreathPhase("Hold", "Hold", 4000, 0.55f),
+    ), boxStyle = true),
+    RELAXING_478("relax478", "4-7-8 Breath", "🌙", XpRewards.MINDFUL_BREATH_BOX, 3, listOf(
+        BreathPhase("Breathe in", "In", 4000, 1f),
+        BreathPhase("Hold", "Hold", 7000, 1f),
+        BreathPhase("Breathe out", "Out", 8000, 0.5f),
+    )),
+    RESONANT("resonant", "Resonant Breath", "💫", XpRewards.MINDFUL_BREATH_BOX, 5, listOf(
+        BreathPhase("Breathe in", "In", 5500, 1f),
+        BreathPhase("Breathe out", "Out", 5500, 0.5f),
+    )),
 }
+
+/** Lifetime completed-session count required for each technique. Order = unlock order. */
+private val BREATH_LEVELS: List<Pair<Int, BreathTechnique>> = listOf(
+    0 to BreathTechnique.CALM,
+    3 to BreathTechnique.EXTENDED_EXHALE,
+    8 to BreathTechnique.BOX,
+    15 to BreathTechnique.RELAXING_478,
+    25 to BreathTechnique.RESONANT,
+)
+
+/** The technique the user has grown into at [sessions] lifetime sessions (the highest unlocked). */
+private fun techniqueForSessions(sessions: Int): BreathTechnique =
+    BREATH_LEVELS.last { sessions >= it.first }.second
+
+/** Lifetime sessions at which the next technique unlocks, or null once every rhythm is unlocked. */
+private fun nextUnlockAt(sessions: Int): Int? =
+    BREATH_LEVELS.firstOrNull { sessions < it.first }?.first
+
+private fun todayBreathKey(): String =
+    "breaths_" + Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
 
 /**
  * A tiny in-app "grow" moment: take a breath or two a day. Finishing a session earns mindfulness XP
- * and counts toward a small daily goal. After [BOX_UNLOCK_AT] lifetime sessions, Box Breathing opens
- * up as a second technique, tracked with a square frame that traces one side per phase instead of a
- * bare countdown.
+ * and counts toward a small daily goal. The breathing pattern deepens on its own as the user builds
+ * a practice (see [BREATH_LEVELS]), no technique picker, no names, just a fresh rhythm now and then.
  */
 @Composable
 fun BreathingCard() {
@@ -80,21 +133,13 @@ fun BreathingCard() {
     val scope = rememberCoroutineScope()
     val c = MaterialTheme.modernColors
 
-    val dateKey = remember { "breaths_" + Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toString() }
+    val dateKey = remember { todayBreathKey() }
     var count by remember { mutableStateOf(settings.getInt(dateKey, 0)) }
     var sessionsTotal by remember { mutableStateOf(settings.getInt(KEY_SESSIONS_TOTAL, 0)) }
     var active by remember { mutableStateOf(false) }
     var justUnlocked by remember { mutableStateOf(false) }
 
-    val boxUnlocked = sessionsTotal >= BOX_UNLOCK_AT
-    var selected by remember {
-        mutableStateOf(
-            BreathTechnique.entries.firstOrNull { it.id == settings.getString(KEY_TECHNIQUE, BreathTechnique.CALM.id) }
-                ?: BreathTechnique.CALM
-        )
-    }
-    // A locked technique can never be the active one.
-    val technique = if (!boxUnlocked && selected == BreathTechnique.BOX) BreathTechnique.CALM else selected
+    val technique = techniqueForSessions(sessionsTotal)
 
     AnimatedVisibility(visible = count < BREATH_GOAL || active) {
         Surface(Modifier.fillMaxWidth(), color = c.cardBackground, shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large)) {
@@ -106,9 +151,10 @@ fun BreathingCard() {
                         count = next
                         settings.putInt(dateKey, next)
                         val newTotal = sessionsTotal + 1
-                        if (sessionsTotal < BOX_UNLOCK_AT && newTotal >= BOX_UNLOCK_AT) justUnlocked = true
-                        sessionsTotal = newTotal
+                        // Crossing into a higher level reveals a fresh rhythm (still unnamed).
+                        if (techniqueForSessions(newTotal) != techniqueForSessions(sessionsTotal)) justUnlocked = true
                         settings.putInt(KEY_SESSIONS_TOTAL, newTotal)
+                        sessionsTotal = newTotal
                         scope.launch { runCatching { gamification.awardXp(technique.xp.toLong()) } }
                         haptic.success()
                         active = false
@@ -136,18 +182,16 @@ fun BreathingCard() {
                         AppButton(text = "Breathe", onClick = { active = true }, variant = AppButtonVariant.SECONDARY)
                     }
 
+                    // A quiet sense of progression: a fresh rhythm on level-up, or how far to the next.
+                    val remaining = nextUnlockAt(sessionsTotal)?.minus(sessionsTotal)
                     when {
                         justUnlocked -> Text(
-                            "🎉 Box Breathing unlocked! Give it a try.",
+                            "🎉 A new breath unlocked — a fresh rhythm to try.",
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
                             color = c.primary,
                         )
-                        boxUnlocked -> TechniqueChips(
-                            selected = technique,
-                            onSelect = { t -> selected = t; settings.putString(KEY_TECHNIQUE, t.id) },
-                        )
-                        else -> Text(
-                            "⬜ Box Breathing unlocks in ${BOX_UNLOCK_AT - sessionsTotal} more",
+                        remaining != null -> Text(
+                            if (remaining == 1) "1 more breath to your next rhythm" else "$remaining more breaths to your next rhythm",
                             style = MaterialTheme.typography.labelSmall,
                             color = c.textTertiary,
                         )
@@ -158,54 +202,69 @@ fun BreathingCard() {
     }
 }
 
+/**
+ * A self-contained guided breath for use outside the feed card (e.g. the "take a breath" nudge).
+ * Auto-selects the level-appropriate technique, awards XP and advances the practice on completion,
+ * then calls [onClose]. Cancelling just closes without counting.
+ */
 @Composable
-private fun TechniqueChips(selected: BreathTechnique, onSelect: (BreathTechnique) -> Unit) {
+fun GuidedBreathSession(onClose: () -> Unit) {
+    val settings: Settings = koinInject()
+    val gamification: GamificationRepository = koinInject()
+    val haptic = rememberHapticManager()
+    val scope = rememberCoroutineScope()
     val c = MaterialTheme.modernColors
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        BreathTechnique.entries.forEach { t ->
-            val isSel = t == selected
-            Surface(
-                modifier = Modifier.bouncyClickable { onSelect(t) },
-                shape = RoundedCornerShape(50),
-                color = if (isSel) c.primary.copy(alpha = 0.14f) else Color.Transparent,
-                border = if (isSel) null else androidx.compose.foundation.BorderStroke(1.dp, c.textTertiary.copy(alpha = 0.4f)),
-            ) {
-                Text(
-                    "${t.symbol}  ${t.label}",
-                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = if (isSel) FontWeight.SemiBold else FontWeight.Normal),
-                    color = if (isSel) c.primary else c.textSecondary,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                )
-            }
-        }
+
+    val sessionsTotal = remember { settings.getInt(KEY_SESSIONS_TOTAL, 0) }
+    val technique = techniqueForSessions(sessionsTotal)
+
+    Surface(Modifier.fillMaxWidth(), color = c.cardBackground, shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large)) {
+        BreathingSession(
+            technique = technique,
+            onDone = {
+                settings.putInt(KEY_SESSIONS_TOTAL, sessionsTotal + 1)
+                val dateKey = todayBreathKey()
+                settings.putInt(dateKey, settings.getInt(dateKey, 0) + 1)
+                scope.launch { runCatching { gamification.awardXp(technique.xp.toLong()) } }
+                haptic.success()
+                onClose()
+            },
+            onCancel = onClose,
+        )
     }
 }
 
 @Composable
 private fun BreathingSession(technique: BreathTechnique, onDone: () -> Unit, onCancel: () -> Unit) {
-    when (technique) {
-        BreathTechnique.CALM -> CalmBreathVisual(onDone, onCancel)
-        BreathTechnique.BOX -> BoxBreathVisual(onDone, onCancel)
-    }
+    if (technique.boxStyle) BoxBreathVisual(technique, onDone, onCancel)
+    else PacedBreathVisual(technique, onDone, onCancel)
 }
 
-/** The original "grow" circle: swells on the inhale, settles on the exhale. */
+/**
+ * The "grow" orb: it swells and settles through the technique's phases. Timing is driven by explicit
+ * per-phase delays (so hold phases actually hold), while the orb scale eases toward each phase's
+ * target over that phase's duration.
+ */
 @Composable
-private fun CalmBreathVisual(onDone: () -> Unit, onCancel: () -> Unit) {
+private fun PacedBreathVisual(technique: BreathTechnique, onDone: () -> Unit, onCancel: () -> Unit) {
     val c = MaterialTheme.modernColors
-    val total = 3
-    var inhaling by remember { mutableStateOf(false) }
-    var completed by remember { mutableStateOf(0) }
+    val phases = technique.phases
+    val rounds = technique.rounds
+    var round by remember { mutableStateOf(0) }
+    var phaseIdx by remember { mutableStateOf(0) }
+    val current = phases[phaseIdx]
     val scale by animateFloatAsState(
-        targetValue = if (inhaling) 1f else 0.55f,
-        animationSpec = tween(durationMillis = 3800, easing = FastOutSlowInEasing),
-        label = "breathScale",
+        targetValue = current.targetScale,
+        animationSpec = tween(durationMillis = current.durationMs, easing = FastOutSlowInEasing),
+        label = "pacedScale",
     )
     LaunchedEffect(Unit) {
-        for (i in 0 until total) {
-            inhaling = true; delay(3800)
-            inhaling = false; delay(3800)
-            completed = i + 1
+        for (r in 0 until rounds) {
+            round = r
+            for (i in phases.indices) {
+                phaseIdx = i
+                delay(phases[i].durationMs.toLong())
+            }
         }
         onDone()
     }
@@ -221,23 +280,24 @@ private fun CalmBreathVisual(onDone: () -> Unit, onCancel: () -> Unit) {
                     .clip(CircleShape)
                     .background(Brush.radialGradient(listOf(c.primary.copy(alpha = 0.55f), c.primary.copy(alpha = 0.12f)))),
             )
-            Text(if (inhaling) "In" else "Out", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold), color = c.textPrimary)
+            Text(current.short, style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold), color = c.textPrimary)
         }
-        Text(if (inhaling) "Breathe in…" else "Breathe out…", style = MaterialTheme.typography.titleMedium, color = c.textPrimary)
-        Text("Breath ${(completed + 1).coerceAtMost(total)} of $total", style = MaterialTheme.typography.bodySmall, color = c.textSecondary)
+        Text("${current.label}…", style = MaterialTheme.typography.titleMedium, color = c.textPrimary)
+        Text("Breath ${(round + 1).coerceAtMost(rounds)} of $rounds", style = MaterialTheme.typography.bodySmall, color = c.textSecondary)
         TextButton(onClick = onCancel) { Text("Done for now") }
     }
 }
 
 /**
  * Box breathing: inhale, hold, exhale, hold, four equal phases. A square frame traces one side per
- * phase so the passing time reads as motion around the box, not a number ticking down.
+ * phase so the passing time reads as motion around the box, not a number ticking down. Phase count,
+ * durations, and labels come from [technique].
  */
 @Composable
-private fun BoxBreathVisual(onDone: () -> Unit, onCancel: () -> Unit) {
+private fun BoxBreathVisual(technique: BreathTechnique, onDone: () -> Unit, onCancel: () -> Unit) {
     val c = MaterialTheme.modernColors
-    val rounds = 3
-    val phaseMs = 4000
+    val rounds = technique.rounds
+    val phases = technique.phases
     var currentSide by remember { mutableStateOf(0) }
     var round by remember { mutableStateOf(0) }
     val sideProgress = remember { Animatable(0f) }
@@ -248,19 +308,14 @@ private fun BoxBreathVisual(onDone: () -> Unit, onCancel: () -> Unit) {
             for (side in 0..3) {
                 currentSide = side
                 sideProgress.snapTo(0f)
-                sideProgress.animateTo(1f, animationSpec = tween(phaseMs, easing = LinearEasing))
+                sideProgress.animateTo(1f, animationSpec = tween(phases[side].durationMs, easing = LinearEasing))
             }
         }
         onDone()
     }
 
     val p = sideProgress.value
-    val phaseLabel = when (currentSide) {
-        0 -> "Breathe in"
-        1 -> "Hold"
-        2 -> "Breathe out"
-        else -> "Hold"
-    }
+    val phaseLabel = phases[currentSide].label
     // Inner square breathes with the phase: grows on inhale, holds, shrinks on exhale, holds.
     val innerScale = when (currentSide) {
         0 -> 0.55f + 0.45f * p
