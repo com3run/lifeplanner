@@ -95,7 +95,14 @@ class HomeFeedBuilder(
                     // to show yet, so the fit reason still earns its place.
                     body = whyFor(o.goalId)?.let { "Toward $it." } ?: o.fitReason,
                     category = o.category,
-                    actionLabel = if (o.type == ActionOptionType.HABIT) "Check in" else null,
+                    // Every "Do next" card gets one clear, labeled action so the tap is never a
+                    // mystery: habits check in inline; the rest open the right place to act.
+                    actionLabel = when (o.type) {
+                        ActionOptionType.HABIT -> "Check in"
+                        ActionOptionType.GOAL -> "Open goal"
+                        ActionOptionType.MILESTONE -> "Open step"
+                        ActionOptionType.FOCUS -> "Start focus"
+                    },
                     actionHabitId = if (o.type == ActionOptionType.HABIT) o.refId else null,
                     route = when (o.type) {
                         ActionOptionType.HABIT -> "habit_detail_redesign/${o.refId}"

@@ -386,12 +386,17 @@ private fun FeedCard(
                             variant = AppButtonVariant.PRIMARY,
                             modifier = Modifier.fillMaxWidth(),
                         )
-                        else -> AppButton(
-                            text = item.actionLabel,
-                            onClick = { haptic.success(); onAction() },
-                            variant = AppButtonVariant.PRIMARY,
-                            modifier = Modifier.fillMaxWidth(),
-                        )
+                        else -> {
+                            // Habit check-in is the primary act (filled + success buzz); navigation
+                            // actions (Open goal / step / focus) are secondary with a lighter tap.
+                            val isCheckIn = item.actionHabitId != null
+                            AppButton(
+                                text = item.actionLabel,
+                                onClick = { if (isCheckIn) haptic.success() else haptic.click(); onAction() },
+                                variant = if (isCheckIn) AppButtonVariant.PRIMARY else AppButtonVariant.SECONDARY,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
                     }
                 }
             }
