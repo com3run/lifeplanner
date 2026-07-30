@@ -1,18 +1,28 @@
 # Spec: Sequences ("Guided bundles → skills")
 
-**Status:** Draft for review. Target: **next release**, shipped **behind a feature flag**
-(`FeatureFlags.SEQUENCES_ENABLED = false`) so it can merge incrementally and integrate later without
-touching current behavior. Nothing below is wired into a live surface until the flag flips.
+**Status:** Draft, **deferred / parked for later**. Target: a **future release**, shipped **behind a
+feature flag** (`FeatureFlags.SEQUENCES_ENABLED = false`). Not being built now.
+
+**Direction locked (2026-07-30):**
+- **v0 = Workout sequences**, then **expand to Yoga**. (Generic "any exercise" is later; the first
+  concrete flavor is guided workouts.)
+- **Do NOT author exercise content ourselves.** Exercise data (names, target muscles, equipment,
+  demo images/GIFs, instructions) comes from a **ready-made third-party exercise API**, cached
+  locally. We build the *sequencing + tracking*, not an exercise library.
+- **Integration is deferred** — pick and wire the API when we actually start this. See §4a for
+  candidates and the (important) **cost** note.
 
 ## 1. Summary
 
 A **Sequence** is an ordered, guided bundle of steps the user works through toward one outcome. Two
 flavors from the same model:
 
-1. **Exercise sequence** (v0 anchor) — a hand-built ordered list of activities: "Morning Reset =
-   ① 5 breaths → ② 10 pushups → ③ 2-min plank → ④ journal one line." A lightweight guided routine.
+1. **Workout sequence** (v0 anchor) — an ordered list of exercises sourced from a ready-made API:
+   "Full-body Reset = ① 10 pushups → ② 15 squats → ③ 30s plank → ④ 10 lunges," each exercise carrying
+   its API-provided demo image, target muscle, and instructions. **Yoga sequences are the next
+   expansion** using the same model (yoga poses are just exercises from a yoga-capable source).
 2. **Skill path** (the extension the user asked for) — "to earn *Consistent Runner*, do this bundle:
-   build the *Run 3x/week* habit, complete the *First 5K* goal, finish the *Form basics* exercise."
+   build the *Run 3x/week* habit, complete the *First 5K* goal, finish the *Form basics* workout."
    Completing the path awards/levels a **skill**.
 
 The key design bet: **the "skill" a path earns is an existing [Ability]** (`domain/model/Ability.kt`,
@@ -28,8 +38,11 @@ and habits already are.
 
 **Goals (v0, behind flag)**
 - Create a sequence: title, emoji, ordered steps.
-- Step types: **exercise** (one-off checkable item, optional duration/reps note), **habit** (link an
-  existing or new habit), **goal** (link an existing goal), **milestone** (a specific goal milestone).
+- Step types: **exercise** (an item picked from the third-party exercise API, with reps/duration),
+  **habit** (link an existing or new habit), **goal** (link an existing goal), **milestone** (a
+  specific goal milestone).
+- **Workout builder**: search/browse the API's exercise catalog (by muscle, equipment) and add
+  exercises as steps; each carries its demo image + instructions, cached locally for offline use.
 - **Run/track a sequence**: step through it, mark steps done, see progress; a step backed by a
   habit/goal reflects that entity's real completion state (single source of truth).
 - **Skill path**: optionally attach a sequence to an Ability; finishing steps grants Ability XP.
@@ -91,10 +104,17 @@ Follows the project's fixed conventions (CLAUDE.md §Database, §Cloud sync). Sc
 | sequence_id | TEXT | FK, cascade |
 | order_index | INTEGER | author order |
 | type | TEXT | `EXERCISE` \| `HABIT` \| `GOAL` \| `MILESTONE` |
-| title | TEXT | shown label (denormalized for EXERCISE; cache for linked types) |
+| title | TEXT | shown label (exercise name from API; cache for linked types) |
 | ref_id | TEXT? | habit/goal/milestone id (null for EXERCISE) |
-| detail | TEXT? | e.g. "10 reps", "2 min" (EXERCISE only) |
+| detail | TEXT? | e.g. "10 reps", "30s" (EXERCISE only) |
+| api_exercise_id | TEXT? | third-party exercise id (EXERCISE only) |
+| image_url | TEXT? | cached demo image/GIF url (EXERCISE only) |
+| target_muscle | TEXT? | from API (EXERCISE only) |
+| equipment | TEXT? | from API (EXERCISE only) |
 | + standard sync columns | | |
+
+We sync only the *reference* + our cached display fields, not the API's full payload. Images are
+cached to disk (Coil already in the app) so a saved workout works offline even if the API is down.
 
 **SequenceRunEntity** (ROUTINE mode only — one row per pass)
 | col | type | notes |
@@ -110,6 +130,28 @@ a PATH (rare) need a persisted checkmark, stored on a single implicit run row.
 Sync: three `TableSyncer`s (`Sequence`, `SequenceStep`, `SequenceRun`) + DTOs in `SyncDtos.kt`,
 registered in `SyncerFactory`. Supabase tables mirror the columns with RLS `user_id = auth.uid()`,
 same as goals/habits.
+
+## 4a. Exercise content source (ready-made API)
+
+We do **not** build an exercise library. Steps of type `EXERCISE` reference a third-party catalog.
+Decision deferred until build; candidates and trade-offs:
+
+| Option | Cost | Content | Notes |
+|---|---|---|---|
+| **wger** (`wger.de` API) | **Free, open-source (AGPL data, CC-BY exercises)** | Strength + some mobility; community-curated; images vary | Self-hostable; no key needed for read; best fit for cost-conscious start |
+| **ExerciseDB** (RapidAPI) | Free tier (rate-limited), **paid** above | ~1300 exercises w/ GIFs, muscle, equipment | Great media; RapidAPI key; watch quota/cost |
+| **API-Ninjas Exercises** | Free tier, **paid** above | Names + instructions, **no images** | Cheap but no demo media |
+| **Yoga**: dedicated pose APIs / datasets | mostly **free/open** | Yoga poses w/ images + Sanskrit names | Slot in for the Yoga expansion; same `EXERCISE` model |
+
+**💰 Cost flag (important):** the richest media (ExerciseDB) sits behind a paid quota. To start free,
+lean **wger** (open, no key), and only consider a paid tier if media quality forces it. Any key goes
+**server-side via a small edge function** (like `ai-proxy`), never in the client — so we can swap
+providers, cache, and rate-limit centrally without shipping a key.
+
+**Integration shape (when we build):** a `WorkoutCatalogService` (Ktor) behind an interface, backed
+by an edge function that proxies the chosen API + caches responses. The client only ever talks to our
+proxy, mirroring the existing `ai-proxy` pattern. Catalog results are cached locally so browsing and
+saved workouts work offline.
 
 ## 5. Domain / architecture
 
@@ -161,28 +203,37 @@ expand/collapse and card patterns, and (later) the chat-create flow all already 
   `ABILITIES_ENABLED` on for the *skill* half; **exercise/routine sequences work with Abilities off**.
   v0 can ship Routine fully and Path as "earns a skill" only when Abilities is also enabled.
 
-## 8. Build phases (each independently mergeable behind the flag)
+## 8. Build phases (each independently mergeable behind the flag) — PARKED
 
-1. **Data + sync**: schema v31, entities, mappers, repository, 3 syncers, Supabase tables + RLS.
-   No UI. Verifiable by tests + a debug seed.
+Not scheduled yet. When we pick this up:
+
+1. **Data + sync**: schema v31, entities (incl. API exercise fields), mappers, repository, 3 syncers,
+   Supabase tables + RLS. No UI. Verifiable by tests + a debug seed.
 2. **Progress calculator + use cases** with unit tests (pure logic first, like `GoalOptimizer`).
-3. **List + create/edit UI** (Routine mode only) behind the flag; a Sequences sub-tab.
-4. **Run/track UI** with step resolution (exercise/habit/goal), reusing check-in + celebration.
-5. **Skill paths**: `skillAbilityId`, Ability XP on completion (requires `ABILITIES_ENABLED`).
-6. **Fast-follows** (post-release): AI-generated sequences, reminders, sharing sequences.
+3. **Workout catalog integration**: pick the API (§4a — likely wger to start), edge-function proxy +
+   cache, `WorkoutCatalogService`, exercise search/browse. This is the piece with the **cost call**.
+4. **List + create/edit UI** (workout builder: browse catalog → add exercises) behind the flag; a
+   Sequences sub-tab.
+5. **Run/track UI** with step resolution (exercise/habit/goal), reusing check-in + celebration.
+6. **Skill paths**: `skillAbilityId`, Ability XP on completion (requires `ABILITIES_ENABLED`).
+7. **Yoga expansion**: add a yoga-capable catalog source; same model.
+8. **Fast-follows**: AI-generated workouts, reminders, sharing sequences.
 
-## 9. Open questions (need your call before build)
+## 9. Decisions & open questions
 
-1. **Sub-tab vs. Habits-section** for the entry point (§6) — recommend sub-tab.
-2. **Naming**: "Sequences" internally — is that the user-facing word, or "Routines" / "Paths" /
-   "Playbooks"? (Affects copy + the Ability tie-in wording.)
-3. **Routine XP**: how much per completed run, and should runs build their own streak separate from
-   habit streaks? (Proposal: small fixed XP per run, own streak.)
-4. **Path ↔ Ability**: one Ability per path, or can a path feed several abilities? (Proposal: one, to
-   keep progress legible.)
-5. **Exercise steps in PATH mode**: allowed (proposal: yes, checked once) or Path = links-only?
-6. Do we want a small set of **built-in starter sequences** (e.g. "Morning Reset", "Wind-down") to
-   seed the feature, like built-in coaches? (Proposal: yes, 2–3, ship with the release.)
+**Locked (2026-07-30):**
+- Scope order: **Workout first → Yoga next** (§1).
+- **Ready-made exercise API**, not self-authored content; key server-side via an edge proxy (§4a).
+- **Deferred** — parked for a future release; flag stays off; nothing built now.
+- Prefer a **free/open** source (wger) to start; treat paid media APIs as a later, cost-gated upgrade.
+
+**Still open (decide when we start):**
+1. **Entry point**: a "Sequences" sub-tab in the Artifact hub (recommended) vs. a Habits-tab section.
+2. **User-facing name**: "Workouts" for v0? "Sequences" / "Routines" as the umbrella once yoga lands?
+3. **Exercise API pick**: wger (free) vs. ExerciseDB (paid, richer GIFs) — §4a.
+4. **Routine XP / streak**: small fixed XP per completed workout + its own streak? (Proposal: yes.)
+5. **Path ↔ Ability**: one Ability per path (proposal) or several.
 
 ---
-*Once §9 is decided, Phase 1 (data + sync) is the first PR — no user-visible change, flag stays off.*
+*Parked. When revived: settle §9's open items, then Phase 1 (data + sync) is the first PR, no
+user-visible change, flag off. The workout-catalog phase (3) is where the API cost decision lands.*
