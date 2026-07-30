@@ -13,4 +13,6 @@ data class CalendarEvent(
     val allDay: Boolean,
     val location: String? = null,
     val calendarName: String? = null,
+    /** Id of the [DeviceCalendar] this came from, so the user's per-calendar toggles can filter it. */
+    val calendarId: String? = null,
 )

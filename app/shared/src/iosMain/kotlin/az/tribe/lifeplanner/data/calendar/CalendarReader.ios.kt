@@ -3,12 +3,15 @@
 package az.tribe.lifeplanner.data.calendar
 
 import az.tribe.lifeplanner.domain.model.CalendarEvent
+import az.tribe.lifeplanner.domain.model.DeviceCalendar
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.EventKit.EKAuthorizationStatusAuthorized
 import platform.EventKit.EKAuthorizationStatusFullAccess
+import platform.EventKit.EKCalendar
 import platform.EventKit.EKEntityType
 import platform.EventKit.EKEvent
 import platform.EventKit.EKEventStore
+import platform.EventKit.EKSourceType
 import platform.Foundation.NSDate
 import platform.Foundation.NSTimeIntervalSince1970
 import platform.Foundation.dateByAddingTimeInterval
@@ -20,6 +23,42 @@ actual class CalendarReader {
     private val store = EKEventStore()
 
     actual suspend fun isAvailable(): Boolean = true
+
+    private fun isAuthorized(): Boolean {
+        val status = EKEventStore.authorizationStatusForEntityType(EKEntityType.EKEntityTypeEvent)
+        return status == EKAuthorizationStatusAuthorized || status == EKAuthorizationStatusFullAccess
+    }
+
+    actual suspend fun listCalendars(): List<DeviceCalendar> {
+        if (!isAuthorized()) return emptyList()
+
+        @Suppress("UNCHECKED_CAST")
+        val calendars = store.calendarsForEntityType(EKEntityType.EKEntityTypeEvent) as? List<EKCalendar>
+            ?: return emptyList()
+
+        return calendars.map { calendar ->
+            val source = calendar.source
+            DeviceCalendar(
+                id = calendar.calendarIdentifier,
+                displayName = calendar.title.takeIf { it.isNotBlank() } ?: "(unnamed)",
+                // EventKit exposes the account as the source title ("iCloud", "Gmail", the address).
+                accountName = source?.title?.takeIf { it.isNotBlank() },
+                accountType = when (source?.sourceType) {
+                    EKSourceType.EKSourceTypeLocal -> "local"
+                    EKSourceType.EKSourceTypeExchange -> "com.android.exchange"
+                    EKSourceType.EKSourceTypeCalDAV, EKSourceType.EKSourceTypeMobileMe -> "caldav"
+                    EKSourceType.EKSourceTypeSubscribed -> "subscribed"
+                    EKSourceType.EKSourceTypeBirthdays -> "birthdays"
+                    else -> null
+                },
+                // EKCalendar exposes a CGColor; converting it is not worth the cinterop, so the UI
+                // falls back to a theme tint.
+                colorArgb = null,
+                isPrimary = calendar.calendarIdentifier == store.defaultCalendarForNewEvents?.calendarIdentifier,
+                isReadOnly = !calendar.allowsContentModifications,
+            )
+        }.sortedWith(compareBy({ it.accountName ?: "" }, { it.displayName }))
+    }
 
     actual suspend fun readUpcomingEvents(days: Int): List<CalendarEvent> {
         val start = NSDate()
@@ -34,9 +73,7 @@ actual class CalendarReader {
     }
 
     private fun readMatching(start: NSDate, end: NSDate): List<CalendarEvent> {
-        val status = EKEventStore.authorizationStatusForEntityType(EKEntityType.EKEntityTypeEvent)
-        val granted = status == EKAuthorizationStatusAuthorized || status == EKAuthorizationStatusFullAccess
-        if (!granted) return emptyList()
+        if (!isAuthorized()) return emptyList()
 
         val predicate = store.predicateForEventsWithStartDate(start, endDate = end, calendars = null)
 
@@ -55,6 +92,7 @@ actual class CalendarReader {
                 allDay = event.allDay,
                 location = event.location?.takeIf { it.isNotBlank() },
                 calendarName = event.calendar?.title,
+                calendarId = event.calendar?.calendarIdentifier,
             )
         }.sortedBy { it.startEpochMillis }
     }

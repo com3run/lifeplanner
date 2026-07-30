@@ -313,6 +313,7 @@ val appModule = module {
     single { HealthDataManager() }
     single<HealthRepository> { HealthRepositoryImpl(get(), get(), get()) }
     single { CalendarReader() }
+    single { az.tribe.lifeplanner.data.calendar.CalendarPreferences(get()) }
 
     // Behavior tracking
     single<BehaviorRepository> { BehaviorRepositoryImpl(get()) }

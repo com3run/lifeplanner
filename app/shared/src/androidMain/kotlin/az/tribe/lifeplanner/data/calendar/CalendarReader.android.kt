@@ -9,6 +9,7 @@ import android.content.pm.PackageManager
 import android.provider.CalendarContract
 import androidx.core.content.ContextCompat
 import az.tribe.lifeplanner.domain.model.CalendarEvent
+import az.tribe.lifeplanner.domain.model.DeviceCalendar
 import co.touchlab.kermit.Logger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -20,17 +21,65 @@ actual class CalendarReader {
 
     actual suspend fun isAvailable(): Boolean = true
 
+    private fun hasPermission(): Boolean =
+        ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CALENDAR) ==
+            PackageManager.PERMISSION_GRANTED
+
+    actual suspend fun listCalendars(): List<DeviceCalendar> = withContext(Dispatchers.IO) {
+        if (!hasPermission()) return@withContext emptyList()
+
+        val projection = arrayOf(
+            CalendarContract.Calendars._ID,
+            CalendarContract.Calendars.CALENDAR_DISPLAY_NAME,
+            CalendarContract.Calendars.ACCOUNT_NAME,
+            CalendarContract.Calendars.ACCOUNT_TYPE,
+            CalendarContract.Calendars.CALENDAR_COLOR,
+            CalendarContract.Calendars.IS_PRIMARY,
+            CalendarContract.Calendars.CALENDAR_ACCESS_LEVEL,
+        )
+
+        val calendars = mutableListOf<DeviceCalendar>()
+        try {
+            context.contentResolver.query(
+                CalendarContract.Calendars.CONTENT_URI,
+                projection,
+                null,
+                null,
+                "${CalendarContract.Calendars.ACCOUNT_NAME} ASC, ${CalendarContract.Calendars.CALENDAR_DISPLAY_NAME} ASC",
+            )?.use { c ->
+                val idIdx = c.getColumnIndexOrThrow(CalendarContract.Calendars._ID)
+                val nameIdx = c.getColumnIndexOrThrow(CalendarContract.Calendars.CALENDAR_DISPLAY_NAME)
+                val accountIdx = c.getColumnIndexOrThrow(CalendarContract.Calendars.ACCOUNT_NAME)
+                val typeIdx = c.getColumnIndexOrThrow(CalendarContract.Calendars.ACCOUNT_TYPE)
+                val colorIdx = c.getColumnIndexOrThrow(CalendarContract.Calendars.CALENDAR_COLOR)
+                val primaryIdx = c.getColumnIndexOrThrow(CalendarContract.Calendars.IS_PRIMARY)
+                val accessIdx = c.getColumnIndexOrThrow(CalendarContract.Calendars.CALENDAR_ACCESS_LEVEL)
+                while (c.moveToNext()) {
+                    val access = if (c.isNull(accessIdx)) 0 else c.getInt(accessIdx)
+                    calendars += DeviceCalendar(
+                        id = c.getLong(idIdx).toString(),
+                        displayName = c.getString(nameIdx)?.takeIf { it.isNotBlank() } ?: "(unnamed)",
+                        accountName = c.getString(accountIdx)?.takeIf { it.isNotBlank() },
+                        accountType = c.getString(typeIdx)?.takeIf { it.isNotBlank() },
+                        colorArgb = if (c.isNull(colorIdx)) null else c.getInt(colorIdx).toLong() and 0xFFFFFFFFL,
+                        isPrimary = !c.isNull(primaryIdx) && c.getInt(primaryIdx) == 1,
+                        isReadOnly = access < CalendarContract.Calendars.CAL_ACCESS_CONTRIBUTOR,
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            Logger.w("CalendarReader") { "Failed to list calendars: ${e.message}" }
+        }
+        calendars
+    }
+
     actual suspend fun readUpcomingEvents(days: Int): List<CalendarEvent> {
         val now = System.currentTimeMillis()
         return readEvents(now, now + days.toLong() * 24L * 60L * 60L * 1000L)
     }
 
     actual suspend fun readEvents(startEpochMillis: Long, endEpochMillis: Long): List<CalendarEvent> = withContext(Dispatchers.IO) {
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CALENDAR)
-            != PackageManager.PERMISSION_GRANTED
-        ) {
-            return@withContext emptyList()
-        }
+        if (!hasPermission()) return@withContext emptyList()
 
         // Instances (rather than Events) expands recurring events into concrete occurrences within
         // the window, which is what "events for this day" means to the user.
@@ -47,6 +96,7 @@ actual class CalendarReader {
             CalendarContract.Instances.ALL_DAY,
             CalendarContract.Instances.EVENT_LOCATION,
             CalendarContract.Instances.CALENDAR_DISPLAY_NAME,
+            CalendarContract.Instances.CALENDAR_ID,
         )
 
         val events = mutableListOf<CalendarEvent>()
@@ -61,6 +111,7 @@ actual class CalendarReader {
                 val allDayIdx = c.getColumnIndexOrThrow(CalendarContract.Instances.ALL_DAY)
                 val locIdx = c.getColumnIndexOrThrow(CalendarContract.Instances.EVENT_LOCATION)
                 val calIdx = c.getColumnIndexOrThrow(CalendarContract.Instances.CALENDAR_DISPLAY_NAME)
+                val calIdIdx = c.getColumnIndexOrThrow(CalendarContract.Instances.CALENDAR_ID)
                 while (c.moveToNext()) {
                     val begin = c.getLong(beginIdx)
                     events += CalendarEvent(
@@ -72,6 +123,7 @@ actual class CalendarReader {
                         allDay = c.getInt(allDayIdx) == 1,
                         location = c.getString(locIdx)?.takeIf { it.isNotBlank() },
                         calendarName = c.getString(calIdx)?.takeIf { it.isNotBlank() },
+                        calendarId = if (c.isNull(calIdIdx)) null else c.getLong(calIdIdx).toString(),
                     )
                 }
             }

@@ -70,6 +70,11 @@ internal fun NavGraphBuilder.appNavProfile(
                     launchSingleTop = true
                 }
             },
+            onNavigateToCalendarSettings = {
+                navController.navigate(Screen.CalendarSettings.route) {
+                    launchSingleTop = true
+                }
+            },
             onNavigateToReminders = {
                 navController.navigate(Screen.Reminders.route) {
                     launchSingleTop = true
@@ -176,6 +181,13 @@ internal fun NavGraphBuilder.appNavProfile(
                     popUpTo(0) { inclusive = true }
                 }
             }
+        )
+    }
+
+    // Calendar Integration Settings
+    composable(Screen.CalendarSettings.route) {
+        az.tribe.lifeplanner.ui.calendar.CalendarSettingsScreen(
+            onNavigateBack = { navController.popBackStack() }
         )
     }
 

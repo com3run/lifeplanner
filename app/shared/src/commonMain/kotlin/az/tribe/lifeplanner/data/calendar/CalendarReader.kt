@@ -3,6 +3,7 @@
 package az.tribe.lifeplanner.data.calendar
 
 import az.tribe.lifeplanner.domain.model.CalendarEvent
+import az.tribe.lifeplanner.domain.model.DeviceCalendar
 
 /**
  * Reads events from the device calendar. One-way (import only) for now.
@@ -13,6 +14,13 @@ import az.tribe.lifeplanner.domain.model.CalendarEvent
 expect class CalendarReader() {
     /** Whether the platform exposes a calendar provider at all. */
     suspend fun isAvailable(): Boolean
+
+    /**
+     * Every calendar the device exposes (one per mail account, plus shared/holiday/birthday ones).
+     * Empty if permission is missing. Used by Calendar settings so the user can see exactly which
+     * accounts we read from and switch individual calendars off.
+     */
+    suspend fun listCalendars(): List<DeviceCalendar>
 
     /** Events from now through [days] ahead, sorted by start time. Empty if permission is missing. */
     suspend fun readUpcomingEvents(days: Int = 7): List<CalendarEvent>

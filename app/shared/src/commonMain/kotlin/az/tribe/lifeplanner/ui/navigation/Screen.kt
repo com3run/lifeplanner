@@ -41,6 +41,7 @@ sealed class Screen(val route: String) {
     object Retrospective : Screen("retrospective")
     object CoachProfile : Screen("coach_profile/{coachId}")
     object Health : Screen("health")
+    object CalendarSettings : Screen("calendar_settings")
     object Feedback : Screen("feedback")
     object StoryReader : Screen("story_reader")
     object Abilities : Screen("abilities")

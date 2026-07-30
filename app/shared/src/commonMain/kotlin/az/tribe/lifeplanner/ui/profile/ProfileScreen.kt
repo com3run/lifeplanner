@@ -30,7 +30,11 @@ import az.tribe.lifeplanner.ui.intro.FeatureIntroHost
 import az.tribe.lifeplanner.ui.intro.rememberFeatureIntroGate
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
 import az.tribe.lifeplanner.ui.auth.AuthBottomSheet
+import az.tribe.lifeplanner.domain.model.sourceLabel
+import az.tribe.lifeplanner.ui.calendar.CalendarPermissionState
+import az.tribe.lifeplanner.ui.calendar.CalendarViewModel
 import az.tribe.lifeplanner.ui.calendar.rememberCalendarPermission
+import az.tribe.lifeplanner.ui.health.HealthPermissionState
 import az.tribe.lifeplanner.ui.health.HealthViewModel
 import az.tribe.lifeplanner.ui.viewmodel.AuthState
 import az.tribe.lifeplanner.ui.viewmodel.AuthViewModel
@@ -65,9 +69,11 @@ fun ProfileScreen(
     gamificationViewModel: GamificationViewModel = koinViewModel(),
     weeklyEngagementViewModel: WeeklyEngagementViewModel = koinViewModel(),
     healthViewModel: HealthViewModel = koinViewModel(),
+    calendarViewModel: CalendarViewModel = koinViewModel(),
     homeViewModel: HomeViewModel = koinViewModel(),
     onNavigateToAchievements: () -> Unit,
     onNavigateToHealth: () -> Unit = {},
+    onNavigateToCalendarSettings: () -> Unit = {},
     onNavigateToReminders: () -> Unit,
     onNavigateToBackup: () -> Unit,
     onNavigateToRetrospective: () -> Unit = {},
@@ -105,6 +111,28 @@ fun ProfileScreen(
     val recentSession by homeViewModel.recentSession.collectAsState()
     val recentCoach by homeViewModel.recentCoach.collectAsState()
     val calendarPermission = rememberCalendarPermission()
+    val deviceCalendars by calendarViewModel.calendars.collectAsState()
+
+    // Once connected, the Integrations row should say *what* is connected, not just "Connected".
+    LaunchedEffect(calendarPermission.state) {
+        if (calendarPermission.state == CalendarPermissionState.GRANTED) {
+            calendarViewModel.loadCalendars()
+        }
+    }
+    val calendarSummary = remember(deviceCalendars) {
+        if (deviceCalendars.isEmpty()) null else {
+            val enabled = deviceCalendars.count { it.enabled }
+            val accounts = deviceCalendars.filter { it.enabled }
+                .map { it.calendar.sourceLabel }
+                .distinct()
+            val account = when {
+                accounts.size == 1 -> accounts.first()
+                accounts.size > 1 -> "${accounts.size} accounts"
+                else -> null
+            }
+            listOfNotNull("$enabled of ${deviceCalendars.size} calendars", account).joinToString(" • ")
+        }
+    }
 
     var showAccountSheet by remember { mutableStateOf(false) }
     var showAiProviderDialog by remember { mutableStateOf(false) }
@@ -215,17 +243,23 @@ fun ProfileScreen(
                     onClick = { showAiProviderDialog = true }
                 )
             }
-            item {
-                HealthConnectionCard(
-                    permissionState = healthPermissionState,
-                    onConnect = onNavigateToHealth,
-                    onSync = { healthViewModel.syncHealth() }
-                )
+            // Health only needs a home here until it's connected — once it is, the dashboard owns
+            // it (including manual sync), so the card would just be a duplicate entry point.
+            if (healthPermissionState != HealthPermissionState.GRANTED) {
+                item {
+                    HealthConnectionCard(
+                        permissionState = healthPermissionState,
+                        onConnect = onNavigateToHealth,
+                        onSync = { healthViewModel.syncHealth() }
+                    )
+                }
             }
             item {
                 CalendarIntegrationCard(
                     permissionState = calendarPermission.state,
-                    onConnect = calendarPermission.request
+                    calendarSummary = calendarSummary,
+                    onConnect = calendarPermission.request,
+                    onManage = onNavigateToCalendarSettings
                 )
             }
 
