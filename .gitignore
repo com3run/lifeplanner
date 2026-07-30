@@ -25,7 +25,7 @@ firebase-debug.log
 supabase/.temp/
 .env*
 app/androidApp/google-services.json
-iosApp/iosApp/GoogleService-Info.plist
+app/iosApp/iosApp/GoogleService-Info.plist
 .vercel
 .claude/*
 !.claude/skills/
