@@ -37,7 +37,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import az.tribe.lifeplanner.domain.model.ChoicePoint
 import az.tribe.lifeplanner.domain.model.Decision
+import az.tribe.lifeplanner.ui.components.InlineEmptyState
 import az.tribe.lifeplanner.ui.theme.modernColors
+import leanlifeplanner.app.shared.generated.resources.Res
+import leanlifeplanner.app.shared.generated.resources.illus_empty_decisions
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.ArrowLeft
@@ -146,11 +149,10 @@ fun DecisionJournalScreen(
                 item { SectionHeader("Decision journal") }
                 if (decisions.isEmpty()) {
                     item {
-                        Text(
-                            "Decisions you make at choice points will show up here, what you chose, and why.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.modernColors.textSecondary,
-                            modifier = Modifier.padding(vertical = 12.dp)
+                        InlineEmptyState(
+                            illustration = Res.drawable.illus_empty_decisions,
+                            title = "No decisions yet",
+                            subtitle = "Choices you make at choice points land here, what you picked and why.",
                         )
                     }
                 } else {

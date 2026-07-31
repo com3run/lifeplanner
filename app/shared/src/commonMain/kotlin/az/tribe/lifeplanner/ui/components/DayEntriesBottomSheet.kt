@@ -38,6 +38,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import az.tribe.lifeplanner.domain.model.JournalEntry
+import leanlifeplanner.app.shared.generated.resources.Res
+import leanlifeplanner.app.shared.generated.resources.illus_empty_journal
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.number
 
@@ -106,18 +108,14 @@ fun DayEntriesBottomSheet(
 
             // Entries List
             if (entries.isEmpty()) {
-                // Empty state
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(32.dp),
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Text(
-                        text = "No entries for this day",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    InlineEmptyState(
+                        illustration = Res.drawable.illus_empty_journal,
+                        title = "No entries for this day",
+                        subtitle = "Add one and it'll show up here",
                     )
                     FilledTonalButton(onClick = onAddEntry) {
                         Icon(PhosphorIcons.Regular.Plus, contentDescription = null)

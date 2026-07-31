@@ -5,7 +5,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import org.jetbrains.compose.resources.painterResource
 import leanlifeplanner.app.shared.generated.resources.Res
-import leanlifeplanner.app.shared.generated.resources.illus_learn_habits
+import leanlifeplanner.app.shared.generated.resources.illus_empty_schedule
 import leanlifeplanner.app.shared.generated.resources.illus_empty_box
 import leanlifeplanner.app.shared.generated.resources.illus_empty_goals
 import leanlifeplanner.app.shared.generated.resources.illus_empty_journal
@@ -46,6 +46,7 @@ import az.tribe.lifeplanner.ui.home.CompactHomeMilestoneRow
 import az.tribe.lifeplanner.ui.home.HomeViewModel
 import az.tribe.lifeplanner.ui.components.DayEntriesBottomSheet
 import az.tribe.lifeplanner.ui.components.GlassCard
+import az.tribe.lifeplanner.ui.components.InlineEmptyState
 import az.tribe.lifeplanner.ui.components.WeekStrip
 import az.tribe.lifeplanner.ui.components.WeeklyEngagementCard
 import az.tribe.lifeplanner.ui.components.WeeklyEngagementViewModel
@@ -339,7 +340,7 @@ fun JournalScreen(
                     // stand in here, but asking how you feel before there is anything on the page
                     // is a prompt, not a state — the writer collects the mood as its first step.
                     item(key = "day_empty") {
-                        WarmEmptyState(
+                        InlineEmptyState(
                             illustration = Res.drawable.illus_empty_journal,
                             title = if (selectedDate == today) "Nothing journaled today"
                             else "Nothing journaled this day",
@@ -432,7 +433,7 @@ fun JournalScreen(
 
                 if (sortedGoals.isEmpty()) {
                     item(key = "goals_empty") {
-                        WarmEmptyState(
+                        InlineEmptyState(
                             illustration = Res.drawable.illus_empty_goals,
                             title = "No goals yet",
                             subtitle = "Tap Add Goal to set your first target",
@@ -454,8 +455,8 @@ fun JournalScreen(
             else if (currentTab == 2) {
                 if (habitsWithStatus.isEmpty()) {
                     item(key = "habits_empty") {
-                        WarmEmptyState(
-                            illustration = Res.drawable.illus_learn_habits,
+                        InlineEmptyState(
+                            illustration = Res.drawable.illus_empty_schedule,
                             title = "No habits yet",
                             subtitle = "Tap New Habit to start building consistency",
                         )
@@ -522,7 +523,7 @@ fun JournalScreen(
             else if (currentTab == 3 && FeatureFlags.ABILITIES_ENABLED) {
                 if (abilities.isEmpty()) {
                     item(key = "abilities_empty") {
-                        WarmEmptyState(
+                        InlineEmptyState(
                             illustration = Res.drawable.illus_empty_box,
                             title = "No abilities yet",
                             subtitle = "Tap Add Ability to start leveling up",
@@ -671,37 +672,6 @@ private fun tuneUpEmoji(kind: GoalOptimizer.Kind): String = when (kind) {
     GoalOptimizer.Kind.REFOCUS_STALE -> "🤔"
 }
 
-/** A gentle empty state: a warm illustration over a soft title + hint, instead of bare grey text. */
-@Composable
-private fun WarmEmptyState(
-    illustration: DrawableResource,
-    title: String,
-    subtitle: String,
-) {
-    Column(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        Image(
-            painter = painterResource(illustration),
-            contentDescription = null,
-            modifier = Modifier.height(130.dp),
-        )
-        Spacer(Modifier.height(6.dp))
-        Text(
-            title,
-            style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-        Text(
-            subtitle,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-        )
-    }
-}
-
 @Composable
 private fun AllDoneCelebration() {
     Column(
@@ -710,7 +680,7 @@ private fun AllDoneCelebration() {
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Image(
-            painter = painterResource(Res.drawable.illus_learn_habits),
+            painter = painterResource(Res.drawable.illus_empty_schedule),
             contentDescription = null,
             modifier = Modifier.height(120.dp),
         )
