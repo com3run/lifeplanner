@@ -67,7 +67,6 @@ import org.koin.compose.viewmodel.koinViewModel
 fun ProfileScreen(
     authViewModel: AuthViewModel = koinInject(),
     gamificationViewModel: GamificationViewModel = koinViewModel(),
-    weeklyEngagementViewModel: WeeklyEngagementViewModel = koinViewModel(),
     healthViewModel: HealthViewModel = koinViewModel(),
     calendarViewModel: CalendarViewModel = koinViewModel(),
     homeViewModel: HomeViewModel = koinViewModel(),
@@ -106,7 +105,6 @@ fun ProfileScreen(
     val isLocalOnlyGuest by authViewModel.isLocalOnlyGuest.collectAsState()
     val userProgress by gamificationViewModel.userProgress.collectAsState()
     val badges by gamificationViewModel.badges.collectAsState()
-    val weeklyEngagement by weeklyEngagementViewModel.engagement.collectAsState()
     val healthPermissionState by healthViewModel.permissionState.collectAsState()
     val recentSession by homeViewModel.recentSession.collectAsState()
     val recentCoach by homeViewModel.recentCoach.collectAsState()
@@ -155,7 +153,6 @@ fun ProfileScreen(
 
     LaunchedEffect(Unit) {
         gamificationViewModel.refresh()
-        weeklyEngagementViewModel.load()
     }
 
     Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { padding ->
@@ -169,9 +166,11 @@ fun ProfileScreen(
             ),
             verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.md)
         ) {
-            if (authState is AuthState.Authenticated) {
+            // Guests level up too, so the hero (which now carries XP/level/streak) is not
+            // signed-in-only the way the old identity-only header was.
+            if (currentUser != null) {
                 item {
-                    UserProfileHeaderCard(
+                    PlayerCardHero(
                         user = currentUser,
                         userProgress = userProgress,
                         syncStatus = syncStatus,
@@ -208,8 +207,6 @@ fun ProfileScreen(
                     }
                 }
             }
-
-            item { userProgress?.let { progress -> ProfileStatsCard(progress, weeklyEngagement) } }
 
             item { ProfileSectionHeader("AI Coach & Achievements") }
             item {

@@ -44,6 +44,8 @@ import az.tribe.lifeplanner.ui.home.HomeViewModel
 import az.tribe.lifeplanner.ui.components.DayEntriesBottomSheet
 import az.tribe.lifeplanner.ui.components.GlassCard
 import az.tribe.lifeplanner.ui.components.WeekStrip
+import az.tribe.lifeplanner.ui.components.WeeklyEngagementCard
+import az.tribe.lifeplanner.ui.components.WeeklyEngagementViewModel
 import az.tribe.lifeplanner.ui.theme.bouncyClickable
 import com.russhwolf.settings.Settings
 import org.koin.compose.koinInject
@@ -88,7 +90,8 @@ fun JournalScreen(
     goalViewModel: GoalViewModel = koinViewModel(),
     habitViewModel: HabitViewModel = koinViewModel(),
     abilityViewModel: AbilityViewModel = koinViewModel(),
-    homeViewModel: HomeViewModel = koinViewModel()
+    homeViewModel: HomeViewModel = koinViewModel(),
+    weeklyEngagementViewModel: WeeklyEngagementViewModel = koinViewModel()
 ) {
     val entries by viewModel.entries.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
@@ -106,6 +109,13 @@ fun JournalScreen(
     // rememberSaveable so the chosen hub tab survives leaving to a detail screen and coming back
     // (Compose Navigation disposes the composition; plain remember would reset us to the first tab).
     var currentTab by rememberSaveable { mutableStateOf(selectedTab) }
+
+    // The hub is long-lived, so the view model's own init-time load would go stale. Recount on every
+    // return to the Journal tab, where the card lives.
+    val weeklyEngagement by weeklyEngagementViewModel.engagement.collectAsState()
+    LaunchedEffect(currentTab) {
+        if (currentTab == 0) weeklyEngagementViewModel.load()
+    }
 
     // Shared "day lens": the selected date persists across the hub's sub-tabs (rememberSaveable via
     // epoch-day). The WeekStrip and the Journal tab both read/write it.
@@ -319,6 +329,14 @@ fun JournalScreen(
             // ── Tab 0: Journal ──────────────────────────────────────────────
             // The mood calendar plus the selected day's reflections. Write via the contextual FAB.
             if (currentTab == 0) {
+                // The week's output across every artifact type, sitting with the artifacts rather
+                // than on the profile, where it read as identity instead of activity.
+                item(key = "this_week") {
+                    weeklyEngagement?.let {
+                        WeeklyEngagementCard(it, modifier = Modifier.padding(horizontal = 16.dp))
+                    }
+                }
+
                 if (dayEntries.isEmpty()) {
                     if (selectedDate == today) {
                         // No entry yet: lead with a warm, time-aware mood picker. Tapping a mood opens

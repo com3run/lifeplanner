@@ -3,6 +3,7 @@ package az.tribe.lifeplanner.ui.profile
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -13,6 +14,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -23,27 +26,38 @@ import az.tribe.lifeplanner.data.sync.SyncState
 import az.tribe.lifeplanner.data.sync.SyncStatus
 import az.tribe.lifeplanner.domain.model.User
 import az.tribe.lifeplanner.domain.model.UserProgress
-import az.tribe.lifeplanner.ui.components.GlassCard
 import az.tribe.lifeplanner.ui.components.GradientProgressBar
+import az.tribe.lifeplanner.ui.components.ProgressRing
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
-import az.tribe.lifeplanner.ui.theme.LifePlannerGradients
+import az.tribe.lifeplanner.ui.theme.Motion
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
-import com.adamglin.phosphoricons.regular.ArrowsClockwise
-import com.adamglin.phosphoricons.regular.Brain
 import com.adamglin.phosphoricons.regular.Cloud
 import com.adamglin.phosphoricons.regular.CloudArrowUp
 import com.adamglin.phosphoricons.regular.CloudCheck
 import com.adamglin.phosphoricons.regular.CloudSlash
-import com.adamglin.phosphoricons.regular.Flag
-import com.adamglin.phosphoricons.regular.Note
+import com.adamglin.phosphoricons.regular.Fire
+import com.adamglin.phosphoricons.regular.Lightning
 import com.adamglin.phosphoricons.regular.PencilSimple
-import com.adamglin.phosphoricons.regular.Timer
+import com.adamglin.phosphoricons.regular.TrendUp
 import com.adamglin.phosphoricons.regular.User
 import com.adamglin.phosphoricons.regular.WarningCircle
 
+/** Amber used for the level badge and the leading edge of the XP bar, the one "trophy" accent. */
+private val LEVEL_GOLD = Color(0xFFFFD479)
+private val LEVEL_GOLD_DEEP = Color(0xFFF5A623)
+private val LEVEL_GOLD_INK = Color(0xFF4A3200)
+
+/**
+ * The You tab's hero: a player card. Identity (avatar, name, rank) and progression (XP ring, level
+ * badge, stat pods, XP-to-next-level bar) in one surface, so the most motivating numbers in the app
+ * lead the screen instead of sitting in a muted card below it.
+ *
+ * Motion is reserved for meaning (D10): the ring and bar sweep in to *show* how far along the level
+ * is, the XP counts up, and the streak flame only breathes once a streak is actually worth keeping.
+ */
 @Composable
-internal fun UserProfileHeaderCard(
+internal fun PlayerCardHero(
     user: User?,
     userProgress: UserProgress?,
     syncStatus: SyncStatus,
@@ -91,31 +105,74 @@ internal fun UserProfileHeaderCard(
     )
     val syncIconAlpha = if (syncStatus.state == SyncState.SYNCING) pulseAlpha else 1f
 
+    // Held at 0 for the first frame so the ring and the bar visibly fill toward the real value
+    // rather than snapping to it (animate*AsState alone starts *at* its target).
+    var levelTarget by remember { mutableStateOf(0f) }
+    LaunchedEffect(userProgress?.levelProgress) {
+        levelTarget = userProgress?.levelProgress ?: 0f
+    }
+    val barProgress by animateFloatAsState(
+        targetValue = levelTarget,
+        animationSpec = tween(Motion.Duration.slow, easing = Motion.emphasized),
+        label = "xpBar",
+    )
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(LifePlannerDesign.CornerRadius.large))
+            .clip(RoundedCornerShape(LifePlannerDesign.CornerRadius.extraLarge))
             .background(Brush.linearGradient(listOf(gradientStart, gradientEnd)))
-            .padding(24.dp)
     ) {
+        // A single soft light source from the top-left, so the card reads as lit rather than flat.
         Box(
-            modifier = Modifier.align(Alignment.TopEnd).clickable(enabled = isRetryable) { onRetrySync() }.padding(4.dp)
+            modifier = Modifier
+                .matchParentSize()
+                .background(
+                    // Tight enough to read as a highlight in the corner; a wider one just washes
+                    // the gradient out to a flat mauve.
+                    Brush.radialGradient(
+                        colors = listOf(Color.White.copy(alpha = 0.13f), Color.Transparent),
+                        center = Offset(0f, 0f),
+                        radius = 440f,
+                    )
+                )
+        )
+
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .clickable(enabled = isRetryable) { onRetrySync() }
+                .padding(20.dp)
         ) {
             Icon(syncIcon, contentDescription = null, modifier = Modifier.size(20.dp).alpha(syncIconAlpha), tint = syncIconColor)
         }
 
         Column(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Box(modifier = Modifier.size(88.dp).background(Color.White.copy(alpha = 0.2f), CircleShape).padding(3.dp)) {
-                Box(modifier = Modifier.fillMaxSize().clip(CircleShape).background(MaterialTheme.colorScheme.surface), contentAlignment = Alignment.Center) {
-                    if (!user?.selectedSymbol.isNullOrEmpty()) {
-                        Text(user?.selectedSymbol ?: "", fontSize = 40.sp)
-                    } else {
-                        Icon(PhosphorIcons.Regular.User, contentDescription = null, modifier = Modifier.size(44.dp), tint = MaterialTheme.colorScheme.primary)
+            Box(contentAlignment = Alignment.Center) {
+                ProgressRing(
+                    progress = levelTarget,
+                    diameter = 104.dp,
+                    strokeWidth = 6.dp,
+                    color = Color.White,
+                    trackColor = Color.White.copy(alpha = 0.22f),
+                ) {
+                    Box(
+                        modifier = Modifier.size(84.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surface),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (!user?.selectedSymbol.isNullOrEmpty()) {
+                            Text(user.selectedSymbol ?: "", fontSize = 40.sp)
+                        } else {
+                            Icon(PhosphorIcons.Regular.User, contentDescription = null, modifier = Modifier.size(44.dp), tint = MaterialTheme.colorScheme.primary)
+                        }
                     }
+                }
+                userProgress?.let { progress ->
+                    LevelBadge(level = progress.currentLevel, modifier = Modifier.align(Alignment.BottomEnd))
                 }
             }
 
@@ -133,104 +190,107 @@ internal fun UserProfileHeaderCard(
                 color = Color.White.copy(alpha = if (isGuest) 0.5f else 0.8f)
             )
 
-            if (user?.email != null) {
-                userProgress?.let { progress ->
-                    Surface(shape = RoundedCornerShape(50), color = Color.White.copy(alpha = 0.2f)) {
-                        Text(
-                            "Level ${progress.currentLevel} · ${progress.title}",
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color.White,
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-private val WEEK_COLOR_HABITS  = Color(0xFF4CAF50)
-private val WEEK_COLOR_GOALS   = Color(0xFF6366F1)
-private val WEEK_COLOR_JOURNAL = Color(0xFFFF9800)
-private val WEEK_COLOR_FOCUS   = Color(0xFF6C63FF)
-private val WEEK_COLOR_AI      = Color(0xFF26A69A)
-
-@Composable
-internal fun ProfileStatsCard(progress: UserProgress, engagement: WeeklyEngagement? = null) {
-    GlassCard(modifier = Modifier.fillMaxWidth(), cornerRadius = LifePlannerDesign.CornerRadius.large) {
-        Column {
-            Box(modifier = Modifier.fillMaxWidth().height(4.dp).background(LifePlannerGradients.primary))
-            Column(modifier = Modifier.padding(LifePlannerDesign.Padding.standard)) {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                    ProfileModernStatItem(value = formatCompact(progress.totalXp), label = "Total XP", accentColor = MaterialTheme.colorScheme.primary)
-                    ProfileModernStatItem(value = "Lv.${progress.currentLevel}", label = "Level", accentColor = MaterialTheme.colorScheme.secondary)
-                    ProfileModernStatItem(value = "${progress.currentStreak}", label = "Streak", accentColor = MaterialTheme.colorScheme.tertiary)
-                }
-                Spacer(modifier = Modifier.height(20.dp))
-                Column {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Progress to Level ${progress.currentLevel + 1}", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
-                        Text("${progress.xpRemainingForNextLevel} XP left", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    Spacer(modifier = Modifier.height(10.dp))
-                    GradientProgressBar(progress = progress.levelProgress, gradient = LifePlannerGradients.primary, modifier = Modifier.fillMaxWidth(), height = 10.dp)
-                }
-
-                if (engagement != null) {
-                    Spacer(modifier = Modifier.height(20.dp))
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                    Spacer(modifier = Modifier.height(14.dp))
+            userProgress?.let { progress ->
+                Surface(shape = RoundedCornerShape(50), color = Color.White.copy(alpha = 0.2f)) {
                     Text(
-                        "This Week",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        progress.title.uppercase(),
+                        style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.5.sp),
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        WeeklyMiniStat(PhosphorIcons.Regular.ArrowsClockwise, WEEK_COLOR_HABITS, engagement.habitCheckIns, "Habits")
-                        WeeklyMiniStat(PhosphorIcons.Regular.Flag,            WEEK_COLOR_GOALS,   engagement.goalsCreated,          "Goals")
-                        WeeklyMiniStat(PhosphorIcons.Regular.Note,            WEEK_COLOR_JOURNAL, engagement.journalEntries,        "Journal")
-                        WeeklyMiniStat(PhosphorIcons.Regular.Timer,           WEEK_COLOR_FOCUS,   engagement.focusSessionsCompleted,"Focus")
-                        WeeklyMiniStat(PhosphorIcons.Regular.Brain,           WEEK_COLOR_AI,      engagement.aiCoachMessages,       "AI")
+                }
+
+                Spacer(Modifier.height(12.dp))
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                    val xpAnim = remember { Animatable(0f) }
+                    LaunchedEffect(progress.totalXp) {
+                        xpAnim.animateTo(progress.totalXp.toFloat(), tween(Motion.Duration.slow, easing = Motion.emphasized))
                     }
+                    StatPod(PhosphorIcons.Regular.Lightning, formatCompact(xpAnim.value.toInt()), "Total XP")
+                    StatPod(PhosphorIcons.Regular.TrendUp, "${progress.currentLevel}", "Level")
+                    // A streak only earns a heartbeat once it's long enough to be worth protecting.
+                    StatPod(PhosphorIcons.Regular.Fire, "${progress.currentStreak}", "Streak", pulse = progress.currentStreak >= 3)
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                Column(Modifier.fillMaxWidth()) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        HeroCaption("LVL ${progress.currentLevel}")
+                        HeroCaption("LVL ${progress.currentLevel + 1}")
+                    }
+                    Spacer(Modifier.height(6.dp))
+                    GradientProgressBar(
+                        progress = barProgress,
+                        gradient = Brush.horizontalGradient(listOf(Color.White, LEVEL_GOLD)),
+                        modifier = Modifier.fillMaxWidth(),
+                        height = 10.dp,
+                        trackColor = Color.White.copy(alpha = 0.2f),
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        "${progress.xpInCurrentLevel} / ${progress.xpForCurrentLevel} XP · ${progress.xpRemainingForNextLevel} to go",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White.copy(alpha = 0.7f),
+                    )
                 }
             }
         }
     }
 }
 
+/** The level number, sitting on the XP ring like a rank insignia. */
 @Composable
-private fun WeeklyMiniStat(icon: ImageVector, color: Color, value: Int, label: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Icon(imageVector = icon, contentDescription = null, tint = color, modifier = Modifier.size(16.dp))
-        Spacer(Modifier.height(4.dp))
+private fun LevelBadge(level: Int, modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .size(34.dp)
+            .clip(CircleShape)
+            .background(Brush.linearGradient(listOf(LEVEL_GOLD, LEVEL_GOLD_DEEP)))
+            .border(2.dp, Color.White, CircleShape),
+        contentAlignment = Alignment.Center
+    ) {
         Text(
-            text = "$value",
-            style = MaterialTheme.typography.titleSmall,
+            "$level",
+            style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.Bold,
-            color = color
-        )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = 10.sp
+            color = LEVEL_GOLD_INK,
         )
     }
 }
 
 @Composable
-private fun ProfileModernStatItem(value: String, label: String, accentColor: Color) {
+private fun StatPod(icon: ImageVector, value: String, label: String, pulse: Boolean = false) {
+    val transition = rememberInfiniteTransition()
+    val breathe by transition.animateFloat(
+        initialValue = 1f, targetValue = 1.12f,
+        animationSpec = infiniteRepeatable(animation = tween(1100, easing = Motion.standard), repeatMode = RepeatMode.Reverse)
+    )
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
-            modifier = Modifier.size(48.dp).clip(CircleShape).background(accentColor.copy(alpha = 0.12f)),
+            modifier = Modifier
+                .size(44.dp)
+                .scale(if (pulse) breathe else 1f)
+                .clip(CircleShape)
+                .background(Color.White.copy(alpha = 0.18f)),
             contentAlignment = Alignment.Center
         ) {
-            Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = accentColor)
+            Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
         }
-        Spacer(modifier = Modifier.height(6.dp))
-        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.height(6.dp))
+        Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color.White)
+        HeroCaption(label.uppercase())
     }
+}
+
+@Composable
+private fun HeroCaption(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.sp),
+        fontWeight = FontWeight.Medium,
+        color = Color.White.copy(alpha = 0.7f),
+    )
 }

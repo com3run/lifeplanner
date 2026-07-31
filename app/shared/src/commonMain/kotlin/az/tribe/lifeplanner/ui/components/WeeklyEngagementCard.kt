@@ -1,4 +1,4 @@
-package az.tribe.lifeplanner.ui.profile
+package az.tribe.lifeplanner.ui.components
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -29,7 +29,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import az.tribe.lifeplanner.ui.components.GlassCard
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
 import az.tribe.lifeplanner.ui.theme.LifePlannerGradients
 import com.adamglin.PhosphorIcons
@@ -126,19 +125,22 @@ internal fun WeeklyEngagementCard(
                             icon = PhosphorIcons.Regular.ArrowsClockwise,
                             color = COLOR_HABITS,
                             value = engagement.habitCheckIns,
-                            label = "Check-ins"
+                            label = "Check-ins",
+                            modifier = Modifier.weight(1f)
                         )
                         EngagementStat(
                             icon = PhosphorIcons.Regular.Flag,
                             color = COLOR_GOALS,
                             value = engagement.goalsCreated,
-                            label = "Goals"
+                            label = "Goals",
+                            modifier = Modifier.weight(1f)
                         )
                         EngagementStat(
                             icon = PhosphorIcons.Regular.Note,
                             color = COLOR_JOURNAL,
                             value = engagement.journalEntries,
-                            label = "Journal"
+                            label = "Journal",
+                            modifier = Modifier.weight(1f)
                         )
                     }
 
@@ -153,15 +155,18 @@ internal fun WeeklyEngagementCard(
                             icon = PhosphorIcons.Regular.Timer,
                             color = COLOR_FOCUS,
                             value = engagement.focusSessionsCompleted,
-                            label = "Focus sessions"
+                            label = "Focus sessions",
+                            modifier = Modifier.weight(1f)
                         )
                         EngagementStat(
                             icon = PhosphorIcons.Regular.Brain,
                             color = COLOR_AI,
                             value = engagement.aiCoachMessages,
-                            label = "AI messages"
+                            label = "AI messages",
+                            modifier = Modifier.weight(1f)
                         )
-                        // Spacer to balance the row visually
+                        // Keeps the two stats under the first two of the row above rather than
+                        // spreading them across the full width.
                         Box(modifier = Modifier.weight(1f))
                     }
                 }
@@ -206,7 +211,8 @@ private fun EngagementStat(
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
         )
     }
 }

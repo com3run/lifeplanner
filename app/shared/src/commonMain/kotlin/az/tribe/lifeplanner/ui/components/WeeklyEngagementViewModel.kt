@@ -1,4 +1,4 @@
-package az.tribe.lifeplanner.ui.profile
+package az.tribe.lifeplanner.ui.components
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
