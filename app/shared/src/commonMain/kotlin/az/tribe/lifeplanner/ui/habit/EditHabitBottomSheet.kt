@@ -1,6 +1,8 @@
 package az.tribe.lifeplanner.ui.habit
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -96,9 +98,12 @@ internal fun EditHabitBottomSheet(
         containerColor = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
     ) {
+        // Scrollable: the form is taller than the sheet on ordinary phone screens, so without this
+        // the Save button sits below the fold and the sheet cannot be submitted at all.
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
                 .navigationBarsPadding()
         ) {
             // Header
