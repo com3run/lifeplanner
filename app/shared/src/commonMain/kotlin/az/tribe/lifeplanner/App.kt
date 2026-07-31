@@ -147,11 +147,16 @@ fun App(
         val builtinCoachFetcher: az.tribe.lifeplanner.data.network.BuiltinCoachFetcher = koinInject()
         val personaApiFetcher: az.tribe.lifeplanner.data.network.PersonaApiFetcher = koinInject()
         val systemPromptFetcher: az.tribe.lifeplanner.data.network.SystemPromptFetcher = koinInject()
+        val knowledgeFetcher: az.tribe.lifeplanner.data.network.KnowledgeFetcher = koinInject()
         LaunchedEffect(Unit) {
+            // Learn content first: the cached library is a local read, and having it in place before
+            // anything renders avoids the map flashing the bundled lessons and then swapping.
+            knowledgeFetcher.loadCache()
             builtinCoachFetcher.fetch()
             personaApiFetcher.loadCache()  // instant local load before network
             personaApiFetcher.fetch()       // refresh + persist to local DB and Supabase
             systemPromptFetcher.fetch()
+            knowledgeFetcher.fetch()        // refresh lessons + persist to local DB
         }
 
         // Sync widget data on every app resume (processes pending widget check-ins)

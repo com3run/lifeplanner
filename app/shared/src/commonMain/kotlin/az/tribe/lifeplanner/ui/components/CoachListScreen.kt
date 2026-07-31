@@ -266,6 +266,7 @@ private fun ChatListRow(
                     icon != null -> icon()
                     imageUrl != null -> AsyncImage(
                         model = imageUrl,
+                        alignment = Alignment.TopCenter,
                         contentDescription = null,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize().clip(CircleShape)

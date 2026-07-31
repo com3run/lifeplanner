@@ -63,6 +63,7 @@ actual class DatabaseDriverFactory {
                     migrateToVersion36(db)
                     migrateToVersion37(db)
                     migrateToVersion38(db)
+                    migrateToVersion39(db)
                 }
 
                 override fun onDowngrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) {

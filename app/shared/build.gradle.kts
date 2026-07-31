@@ -195,7 +195,7 @@ sqldelight {
         create("LifePlannerDB") {
             packageName.set("az.tribe.lifeplanner.database")
             schemaOutputDirectory = file("src/commonMain/sqldelight/databases")
-            version = 38 // 22: HabitEntity.unit, 23: CachedPersonaEntity, 24: HabitCheckInEntity.count, 26: CachedPersonaEntity.slug+avatar_url, 27: UserSituationEntity, 28: ScreenTimeEventEntity + UserActivityPattern behavioral columns, 29: LifeValueEntity table, 30: GoalEntity.valueId, 31: DecisionEntity table, 32: Goal.predictedDueDate + Milestone.estimatedEffort, 33: IdentityStatementEntity table, 34: DecisionProfileEntity table, 35: HabitEntity.healthMetricType+healthTarget, 36: KnowledgeReadEntity table (Learn hub read-state), 37: DecisionEntity.source+status (journal-detected decisions await confirmation)
+            version = 39 // 22: HabitEntity.unit, 23: CachedPersonaEntity, 24: HabitCheckInEntity.count, 26: CachedPersonaEntity.slug+avatar_url, 27: UserSituationEntity, 28: ScreenTimeEventEntity + UserActivityPattern behavioral columns, 29: LifeValueEntity table, 30: GoalEntity.valueId, 31: DecisionEntity table, 32: Goal.predictedDueDate + Milestone.estimatedEffort, 33: IdentityStatementEntity table, 34: DecisionProfileEntity table, 35: HabitEntity.healthMetricType+healthTarget, 36: KnowledgeReadEntity table (Learn hub read-state), 37: DecisionEntity.source+status (journal-detected decisions await confirmation), 38: HabitEntity.completionSource (internal sessions auto-complete linked habits), 39: KnowledgeLesson/KnowledgeCollection content cache (Learn lessons authored in Supabase)
             generateAsync.set(true)
         }
     }

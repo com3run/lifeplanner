@@ -827,3 +827,39 @@ internal fun migrateToVersion38(db: SupportSQLiteDatabase) {
     // Schema v38: which in-app session completes a habit, matches migration 38.sqm
     addColumnSafe(db, "HabitEntity", "completionSource", "TEXT")
 }
+
+internal fun migrateToVersion39(db: SupportSQLiteDatabase) {
+    // Schema v39: Learn content cache, matches migration 39.sqm. Server-owned content, so no
+    // sync columns; the fetcher replaces the contents wholesale.
+    db.execSQL(
+        """
+        CREATE TABLE IF NOT EXISTS KnowledgeLessonEntity (
+            id TEXT NOT NULL PRIMARY KEY,
+            title TEXT NOT NULL,
+            body TEXT NOT NULL,
+            emoji TEXT NOT NULL,
+            minLevel INTEGER NOT NULL DEFAULT 1,
+            readMin INTEGER NOT NULL DEFAULT 2,
+            detail TEXT NOT NULL DEFAULT '[]',
+            takeaway TEXT NOT NULL DEFAULT '',
+            source TEXT,
+            topics TEXT NOT NULL DEFAULT '[]',
+            sortOrder INTEGER NOT NULL DEFAULT 0,
+            fetchedAt TEXT NOT NULL
+        )
+        """.trimIndent()
+    )
+    db.execSQL(
+        """
+        CREATE TABLE IF NOT EXISTS KnowledgeCollectionEntity (
+            id TEXT NOT NULL PRIMARY KEY,
+            title TEXT NOT NULL,
+            subtitle TEXT NOT NULL,
+            emoji TEXT NOT NULL,
+            lessonIds TEXT NOT NULL DEFAULT '[]',
+            sortOrder INTEGER NOT NULL DEFAULT 0,
+            fetchedAt TEXT NOT NULL
+        )
+        """.trimIndent()
+    )
+}

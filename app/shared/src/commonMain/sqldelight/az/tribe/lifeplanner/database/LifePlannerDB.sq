@@ -2338,6 +2338,55 @@ upsertKnowledgeReadFromSync:
 INSERT OR REPLACE INTO KnowledgeReadEntity(id, readAt, sync_updated_at, is_deleted, sync_version, last_synced_at)
 VALUES (?, ?, ?, ?, ?, ?);
 
+-- ============== Learn content cache (server-owned, one-way pull from Supabase) ==============
+-- Lesson *content* is authored in Supabase and cached here so the Learn map works offline and on
+-- the next cold start. Deliberately outside the syncer set: this is not user data, it never gets
+-- pushed, and there is nothing to merge. `detail`, `topics` and `lessonIds` hold JSON arrays.
+CREATE TABLE KnowledgeLessonEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    title TEXT NOT NULL,
+    body TEXT NOT NULL,
+    emoji TEXT NOT NULL,
+    minLevel INTEGER NOT NULL DEFAULT 1,
+    readMin INTEGER NOT NULL DEFAULT 2,
+    detail TEXT NOT NULL DEFAULT '[]',
+    takeaway TEXT NOT NULL DEFAULT '',
+    source TEXT,
+    topics TEXT NOT NULL DEFAULT '[]',
+    sortOrder INTEGER NOT NULL DEFAULT 0,
+    fetchedAt TEXT NOT NULL
+);
+
+CREATE TABLE KnowledgeCollectionEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    title TEXT NOT NULL,
+    subtitle TEXT NOT NULL,
+    emoji TEXT NOT NULL,
+    lessonIds TEXT NOT NULL DEFAULT '[]',
+    sortOrder INTEGER NOT NULL DEFAULT 0,
+    fetchedAt TEXT NOT NULL
+);
+
+selectAllKnowledgeLessons:
+SELECT * FROM KnowledgeLessonEntity ORDER BY sortOrder ASC;
+
+selectAllKnowledgeCollections:
+SELECT * FROM KnowledgeCollectionEntity ORDER BY sortOrder ASC;
+
+upsertKnowledgeLesson:
+INSERT OR REPLACE INTO KnowledgeLessonEntity(id, title, body, emoji, minLevel, readMin, detail, takeaway, source, topics, sortOrder, fetchedAt)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+upsertKnowledgeCollection:
+INSERT OR REPLACE INTO KnowledgeCollectionEntity(id, title, subtitle, emoji, lessonIds, sortOrder, fetchedAt)
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+deleteAllKnowledgeLessons:
+DELETE FROM KnowledgeLessonEntity;
+
+deleteAllKnowledgeCollections:
+DELETE FROM KnowledgeCollectionEntity;
+
 -- ============== DecisionEntity (Pillar 3: decisions as first-class objects) ==============
 -- optionsConsidered stored as a newline-delimited string; outcomeQuality as the enum name.
 CREATE TABLE DecisionEntity (

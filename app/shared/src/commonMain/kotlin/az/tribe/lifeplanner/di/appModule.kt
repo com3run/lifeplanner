@@ -276,6 +276,7 @@ val appModule = module {
     single { BuiltinCoachFetcher(get()) }
     single { PersonaApiFetcher(get(), get()) }
     single { SystemPromptFetcher(get()) }
+    single { az.tribe.lifeplanner.data.network.KnowledgeFetcher(get(), get()) }
 
     // Repositories
     single<GeminiService> { GeminiServiceImpl(get<AiProxyService>()) }

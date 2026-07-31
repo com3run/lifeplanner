@@ -1,5 +1,6 @@
 package az.tribe.lifeplanner.domain.service
 
+import az.tribe.lifeplanner.data.repository.KnowledgeContentStore
 import az.tribe.lifeplanner.domain.enum.BadgeType
 
 /**
@@ -56,7 +57,20 @@ data class KnowledgeCollection(
  */
 object KnowledgeLibrary {
 
-    val all: List<KnowledgeBit> = listOf(
+    /**
+     * The live library: whatever Supabase last published, falling back to [bundledLessons] until
+     * the fetcher has anything to offer. Every existing caller reads through here, so moving the
+     * content to the server changed no call site.
+     */
+    val all: List<KnowledgeBit>
+        get() = KnowledgeContentStore.currentLessons(bundledLessons)
+
+    /**
+     * The lessons compiled into this build. They are the offline floor and the first-launch content,
+     * not the source of truth: edit lessons in Supabase (see `supabase/knowledge_lessons.sql`), and
+     * regenerate this seed with `KnowledgeSeedGeneratorTest` if you change them here.
+     */
+    val bundledLessons: List<KnowledgeBit> = listOf(
         KnowledgeBit(
             "tip_2min_rule", "The 2-minute rule",
             "Any habit can be started in 2 minutes. 'Read before bed' becomes 'open the book.' 'Run 5km' becomes 'put on your shoes.' Make starting frictionless and momentum takes care of the rest.",
@@ -359,11 +373,15 @@ object KnowledgeLibrary {
     /** The lesson with this [id], or null if it is not in the library (e.g. a stale deep link). */
     fun byId(id: String): KnowledgeBit? = all.firstOrNull { it.id == id }
 
+    /** The published learning paths, falling back to [bundledCollections]. */
+    val collections: List<KnowledgeCollection>
+        get() = KnowledgeContentStore.currentCollections(bundledCollections)
+
     /**
      * The learning paths, in the order they should appear in the hub. Every lesson belongs to exactly
      * one collection; as content grows a path should build toward roughly eight lessons.
      */
-    val collections: List<KnowledgeCollection> = listOf(
+    val bundledCollections: List<KnowledgeCollection> = listOf(
         KnowledgeCollection(
             "col_habits", "Building habits that stick",
             "The science of starting small and staying consistent.",

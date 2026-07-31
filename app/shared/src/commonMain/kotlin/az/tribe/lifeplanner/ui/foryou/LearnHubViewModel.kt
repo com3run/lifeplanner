@@ -2,6 +2,7 @@ package az.tribe.lifeplanner.ui.foryou
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import az.tribe.lifeplanner.data.repository.KnowledgeContentStore
 import az.tribe.lifeplanner.domain.repository.GamificationRepository
 import az.tribe.lifeplanner.domain.repository.GoalRepository
 import az.tribe.lifeplanner.domain.repository.HabitRepository
@@ -17,6 +18,7 @@ import co.touchlab.kermit.Logger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
@@ -86,7 +88,12 @@ class LearnHubViewModel(
                 .toLocalDateTime(TimeZone.currentSystemDefault()).date.dayOfYear
 
             runCatching {
-                knowledgeRepository.readIds().collect { readIds ->
+                // Rebuild on either signal: the user reading something, or Supabase publishing a
+                // library that differs from the one this session started with.
+                combine(
+                    knowledgeRepository.readIds(),
+                    KnowledgeContentStore.lessons,
+                ) { readIds, _ -> readIds }.collect { readIds ->
                     val ui = buildUi(level, levelTitle, totalXp, affinity, readIds, daySeed)
                     _state.value = ui
                     backfillZoneBadges(ui)
