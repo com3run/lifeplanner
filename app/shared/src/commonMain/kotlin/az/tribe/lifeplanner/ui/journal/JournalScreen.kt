@@ -247,23 +247,17 @@ fun JournalScreen(
             }
         }
     ) { padding ->
+        // Clearance for the app's floating bottom nav pill, which draws over this screen.
+        val navBarInset = padding.calculateBottomPadding() + 84.dp
+
+        Box(Modifier.fillMaxSize()) {
         LazyColumn(
             state = listState,
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(top = padding.calculateTopPadding(), bottom = padding.calculateBottomPadding() + 84.dp),
+            // Extra bottom room for the pinned sub-tab switcher so the last row isn't hidden.
+            contentPadding = PaddingValues(top = padding.calculateTopPadding(), bottom = navBarInset + 56.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            item(key = "hub_tabs") {
-                HubTabRow(
-                    selectedTab = currentTab,
-                    onTabSelected = { tab ->
-                        currentTab = tab
-                        onTabSelected(tab)
-                    },
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                )
-            }
-
             // Persistent day lens, shared across all sub-tabs.
             item(key = "week_strip") {
                 WeekStrip(
@@ -338,23 +332,16 @@ fun JournalScreen(
                 }
 
                 if (dayEntries.isEmpty()) {
-                    if (selectedDate == today) {
-                        // No entry yet: lead with a warm, time-aware mood picker. Tapping a mood opens
-                        // the writer with that first step already chosen, so starting feels effortless.
-                        item(key = "today_mood_prompt") {
-                            TodayMoodPrompt(
-                                plannedCount = plannedForSelected.size,
-                                onPick = { mood -> onNavigateToWizard(mood) },
-                                modifier = Modifier.padding(horizontal = 16.dp),
-                            )
-                        }
-                    } else {
-                        item(key = "day_empty") {
-                            WarmEmptyState(
-                                title = "Nothing journaled this day",
-                                subtitle = "Pick another day, or tap Write to add one",
-                            )
-                        }
+                    // An empty day reads as an empty day, today included. The mood picker used to
+                    // stand in here, but asking how you feel before there is anything on the page
+                    // is a prompt, not a state — the writer collects the mood as its first step.
+                    item(key = "day_empty") {
+                        WarmEmptyState(
+                            title = if (selectedDate == today) "Nothing journaled today"
+                            else "Nothing journaled this day",
+                            subtitle = if (selectedDate == today) "Tap Write to start today's entry"
+                            else "Pick another day, or tap Write to add one",
+                        )
                     }
                 } else {
                     items(items = dayEntries, key = { "entry_${it.id}" }) { entry ->
@@ -549,6 +536,29 @@ fun JournalScreen(
             }
         }
 
+        // Sub-tab switcher, pinned just above the app's bottom nav instead of scrolling away at
+        // the top. Kept compact so it reads as a switcher for the nav bar, not a second toolbar.
+        Surface(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .padding(bottom = navBarInset),
+            shape = RoundedCornerShape(50),
+            color = MaterialTheme.colorScheme.surface,
+            shadowElevation = 6.dp,
+        ) {
+            HubTabRow(
+                selectedTab = currentTab,
+                onTabSelected = { tab ->
+                    currentTab = tab
+                    onTabSelected(tab)
+                },
+                modifier = Modifier.padding(4.dp),
+            )
+        }
+        }
+
         // Journal entry sheet, accessible from any tab via FAB
         if (showNewEntryDialog) {
             NewJournalEntryBottomSheet(
@@ -602,59 +612,6 @@ fun JournalScreen(
 }
 
 private const val PAST_EDIT_WARNED_KEY = "past_edit_warned_v1"
-
-@Composable
-private fun TodayMoodPrompt(plannedCount: Int, onPick: (Mood) -> Unit, modifier: Modifier = Modifier) {
-    val hour = remember {
-        Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).hour
-    }
-    val greeting = when (hour) {
-        in 5..11 -> "Good morning"
-        in 12..16 -> "Good afternoon"
-        in 17..21 -> "Good evening"
-        else -> "Winding down"
-    }
-    // A gentle, predictable line that leans on today: what's on the plate, or an open invitation.
-    val context = when {
-        plannedCount == 1 -> "One thing planned today. How's it sitting with you?"
-        plannedCount > 1 -> "$plannedCount things planned today. How are you carrying them?"
-        hour in 5..11 -> "Fresh page for today. How are you starting out?"
-        hour >= 22 -> "The day's nearly done. How did it feel?"
-        else -> "A quiet moment for you. How's right now?"
-    }
-    // Warm-first order: lead with the brightest faces so the invite itself nudges the mood up.
-    val moods = listOf(Mood.VERY_HAPPY, Mood.HAPPY, Mood.NEUTRAL, Mood.SAD, Mood.VERY_SAD)
-
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.06f),
-    ) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Text("$greeting 👋", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-            Text(context, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
-            Spacer(Modifier.height(8.dp))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
-                moods.forEach { mood ->
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(2.dp),
-                        modifier = Modifier.bouncyClickable { onPick(mood) }.padding(horizontal = 2.dp, vertical = 4.dp),
-                    ) {
-                        Text(mood.emoji, fontSize = 34.sp)
-                        Text(mood.displayName, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f))
-                    }
-                }
-            }
-            Spacer(Modifier.height(4.dp))
-            Text("Pick a face to start, no pressure ✨", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
-        }
-    }
-}
 
 /** The "Goal tune-ups" card: a few one-tap optimizations so the plan stays honest with the calendar. */
 @Composable
@@ -801,23 +758,24 @@ private fun HubTabRow(selectedTab: Int, onTabSelected: (Int) -> Unit, modifier: 
         listOf("Journal", "Goals", "Habits", "Abilities")
     else
         listOf("Journal", "Goals", "Habits")
-    Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    // Compact: this now sits docked above the bottom nav, where a full-height segmented control
+    // would crowd the nav pill.
+    Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
         tabs.forEachIndexed { index, label ->
             val isSelected = selectedTab == index
             Surface(
                 onClick = { onTabSelected(index) },
                 shape = RoundedCornerShape(50),
                 color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
-                border = if (!isSelected) BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)) else null,
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
                     text = label,
-                    style = MaterialTheme.typography.labelLarge,
+                    style = MaterialTheme.typography.labelMedium,
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                     color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(vertical = 10.dp)
+                    modifier = Modifier.padding(vertical = 8.dp)
                 )
             }
         }
