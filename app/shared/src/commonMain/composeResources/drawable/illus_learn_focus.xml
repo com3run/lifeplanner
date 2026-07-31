@@ -11,6 +11,27 @@
         android:fillColor="#FF7C3AED"
         android:pathData="M109 150c0-2.21 1.79-4 4-4h14c2.21 0 4 1.79 4 4v1c0 2.21-1.79 4-4 4h-14c-2.21 0-4-1.79-4-4z"/>
     <path
+        android:fillColor="#FF7C3AED"
+        android:pathData="M111 112h18v22h-18z"/>
+    <path
+        android:pathData="M86 86c0-18.78 15.22-34 34-34s34 15.22 34 34 -15.22 34 -34 34 -34 -15.22 -34 -34z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="120"
+                android:startY="52"
+                android:endX="120"
+                android:endY="120">
+                <item
+                    android:color="#FFA78BFA"
+                    android:offset="0"/>
+                <item
+                    android:color="#FF8B5CF6"
+                    android:offset="1"/>
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path
         android:fillAlpha="0.92"
         android:strokeColor="#FFFFFFFF"
         android:strokeAlpha="0.92"
