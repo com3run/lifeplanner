@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import az.tribe.lifeplanner.domain.model.XpRewards
 import az.tribe.lifeplanner.domain.repository.GamificationRepository
 import az.tribe.lifeplanner.domain.repository.KnowledgeRepository
+import az.tribe.lifeplanner.domain.service.KnowledgeBit
 import az.tribe.lifeplanner.domain.service.KnowledgeLibrary
 import co.touchlab.kermit.Logger
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -37,6 +38,25 @@ class KnowledgeDetailViewModel(
 
     /** The zone badge just cleared, if this lesson finished a path. */
     val earnedBadgeName: StateFlow<String?> = _earnedBadgeName.asStateFlow()
+
+    private val _nextLesson = MutableStateFlow<KnowledgeBit?>(null)
+
+    /**
+     * The lesson to offer at the end of this one, so reading continues along a path instead of
+     * bouncing back to the hub. Unread and unlocked only; null when nothing is left to read.
+     */
+    val nextLesson: StateFlow<KnowledgeBit?> = _nextLesson.asStateFlow()
+
+    /** Call when the reader opens [id]: resolves what comes after it. */
+    fun onOpened(id: String) {
+        viewModelScope.launch {
+            runCatching {
+                val read = knowledgeRepository.readIds().first()
+                val level = gamificationRepository.getUserProgress().first().currentLevel
+                _nextLesson.value = KnowledgeLibrary.nextAfter(id, read, level)
+            }.onFailure { Logger.w("KnowledgeDetailViewModel") { "next after $id failed: ${it.message}" } }
+        }
+    }
 
     fun onLessonCompleted(id: String) {
         if (handled) return

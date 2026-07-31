@@ -1,10 +1,16 @@
 package az.tribe.lifeplanner.ui.foryou
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -37,67 +43,103 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import az.tribe.lifeplanner.domain.service.KnowledgeBit
 import az.tribe.lifeplanner.ui.components.AppButton
 import az.tribe.lifeplanner.ui.components.AppButtonVariant
+import az.tribe.lifeplanner.ui.components.GuidedBreathSession
+import az.tribe.lifeplanner.ui.components.KeepScreenOn
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
+import az.tribe.lifeplanner.ui.theme.bouncyClickable
 import az.tribe.lifeplanner.ui.theme.modernColors
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
-import com.adamglin.phosphoricons.regular.ArrowLeft
+import com.adamglin.phosphoricons.regular.ArrowRight
+import com.adamglin.phosphoricons.regular.X
+import com.russhwolf.settings.Settings
+import org.koin.compose.koinInject
+import kotlin.time.Clock
 
 /**
- * The full Learn lesson behind a "For You" knowledge card. Expands the one-line teaser into the real
- * lesson: a short read, a "try this" takeaway, honest attribution, and two ways to act on it, turn
- * the idea into a habit or a goal. Shared across Android and iOS.
+ * A Learn lesson in **reader mode**: the app gets out of the way (no tabs, no cards competing for
+ * attention, big set text) and the lesson becomes a short *session* rather than a page you can
+ * bounce off. A session runs [SESSION_MS]; the lesson counts as read once the reader has both
+ * reached the end and stayed for it.
+ *
+ * Fast readers are not punished for being fast: reaching the end early offers a guided breath to
+ * spend the remaining seconds on, which counts as a breath in its own right. Shared Android + iOS.
+ *
+ * The end of a lesson is a decision, not a chore: instead of "turn this into a habit / goal" the
+ * reader says what they make of it, gets a line back, and is handed straight to the next lesson.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun KnowledgeDetailScreen(
     bit: KnowledgeBit,
     onBackClick: () -> Unit,
-    onStartHabit: () -> Unit,
-    onSetGoal: () -> Unit,
-    /** Fired once the reader has actually reached the end of the lesson and stayed a moment. */
+    /** Open another lesson in place (the "next up" hand-off at the end of this one). */
+    onOpenLesson: (String) -> Unit = {},
+    nextLesson: KnowledgeBit? = null,
+    /** Fired once the reader has reached the end of the lesson *and* the session has run its course. */
     onCompleted: () -> Unit = {},
     earnedXp: Int = 0,
     earnedBadgeName: String? = null,
 ) {
     val c = MaterialTheme.modernColors
+    val settings: Settings = koinInject()
     val listState = rememberLazyListState()
 
-    // "Read" has to mean read. canScrollForward goes false both when the reader scrolls to the
-    // bottom and when a short lesson fits without scrolling; the dwell then rules out the case of
-    // opening a lesson and immediately backing out.
-    val atEnd by remember { derivedStateOf { !listState.canScrollForward } }
-    LaunchedEffect(atEnd) {
-        if (atEnd) {
-            delay(READ_DWELL_MS)
-            onCompleted()
+    // The session clock. Stored as a start stamp (not a tick count) so backgrounding, rotation, and
+    // recomposition can't rewind it, and reading with the screen off isn't rewarded either way.
+    val startedAt by rememberSaveable(bit.id) { mutableStateOf(Clock.System.now().toEpochMilliseconds()) }
+    var elapsedMs by remember(bit.id) { mutableStateOf(0L) }
+    LaunchedEffect(bit.id) {
+        while (elapsedMs < SESSION_MS) {
+            elapsedMs = Clock.System.now().toEpochMilliseconds() - startedAt
+            delay(250)
         }
+        elapsedMs = SESSION_MS
     }
+    val sessionDone = elapsedMs >= SESSION_MS
+
+    // "Read" has to mean read. canScrollForward goes false both when the reader scrolls to the
+    // bottom and when a short lesson fits without scrolling.
+    val atEnd by remember { derivedStateOf { !listState.canScrollForward } }
+    val finished = atEnd && sessionDone
+    LaunchedEffect(finished) { if (finished) onCompleted() }
+
+    var breathing by remember { mutableStateOf(false) }
+    var reflection by remember(bit.id) { mutableStateOf(settings.getStringOrNull(reflectionKey(bit.id))) }
+
+    // The screen stays awake for the session: a two-minute read shouldn't be interrupted by a
+    // display timeout the reader has to keep tapping away.
+    KeepScreenOn(enabled = !sessionDone)
 
     Scaffold(
         containerColor = c.background,
         topBar = {
-            TopAppBar(
-                title = { Text("Learn", fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = "Back", tint = c.textPrimary)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = c.background,
-                    titleContentColor = c.textPrimary,
-                ),
-            )
+            Column {
+                TopAppBar(
+                    // Reader mode: no title bar shouting "Learn", just the way out.
+                    title = {},
+                    navigationIcon = {
+                        IconButton(onClick = onBackClick) {
+                            Icon(PhosphorIcons.Regular.X, contentDescription = "Close", tint = c.textTertiary)
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = c.background),
+                )
+                SessionProgressLine(fraction = (elapsedMs.toFloat() / SESSION_MS).coerceIn(0f, 1f))
+            }
         },
     ) { padding ->
         LazyColumn(
@@ -137,21 +179,26 @@ fun KnowledgeDetailScreen(
                         }
                     }
                     Text(
-                        "LEARN · ${bit.readMin} MIN READ",
+                        KnowledgeLibrary.collectionOf(bit.id)?.title?.uppercase() ?: "LEARN",
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                         color = c.primary,
                     )
                     Text(
                         bit.title,
-                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold, lineHeight = 38.sp),
                         color = c.textPrimary,
                     )
                 }
             }
 
+            // Set for reading, not for scanning: larger type, loose line height, one idea per block.
             val paragraphs = bit.detail.ifEmpty { listOf(bit.body) }
             items(paragraphs, key = { it }) { paragraph ->
-                Text(paragraph, style = MaterialTheme.typography.bodyLarge, color = c.textSecondary)
+                Text(
+                    paragraph,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontSize = 19.sp, lineHeight = 32.sp),
+                    color = c.textPrimary.copy(alpha = 0.88f),
+                )
             }
 
             if (bit.takeaway.isNotBlank()) {
@@ -170,7 +217,11 @@ fun KnowledgeDetailScreen(
                                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                                 color = c.primary,
                             )
-                            Text(bit.takeaway, style = MaterialTheme.typography.bodyMedium, color = c.textPrimary)
+                            Text(
+                                bit.takeaway,
+                                style = MaterialTheme.typography.bodyLarge.copy(fontSize = 17.sp, lineHeight = 27.sp),
+                                color = c.textPrimary,
+                            )
                         }
                     }
                 }
@@ -178,10 +229,16 @@ fun KnowledgeDetailScreen(
 
             bit.source?.let { src ->
                 item(key = "source") {
-                    Text(
-                        "Source: $src",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = c.textTertiary,
+                    Text("Source: $src", style = MaterialTheme.typography.labelSmall, color = c.textTertiary)
+                }
+            }
+
+            // Read faster than the session? Sit with it, or spend the rest of the minute breathing.
+            if (atEnd && !sessionDone) {
+                item(key = "settle") {
+                    SettleCard(
+                        secondsLeft = ((SESSION_MS - elapsedMs) / 1000L).toInt().coerceAtLeast(0),
+                        onBreathe = { breathing = true },
                     )
                 }
             }
@@ -203,11 +260,7 @@ fun KnowledgeDetailScreen(
                                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                                     color = c.success,
                                 )
-                                Text(
-                                    "Lesson complete.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = c.textSecondary,
-                                )
+                                Text("Lesson complete.", style = MaterialTheme.typography.bodySmall, color = c.textSecondary)
                             }
                             if (earnedBadgeName != null) {
                                 Text(
@@ -221,31 +274,175 @@ fun KnowledgeDetailScreen(
                 }
             }
 
-            item(key = "actions") {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
-                    modifier = Modifier.padding(top = LifePlannerDesign.Spacing.sm),
-                ) {
-                    AppButton(
-                        text = "Turn this into a habit",
-                        onClick = onStartHabit,
-                        variant = AppButtonVariant.PRIMARY,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                    AppButton(
-                        text = "Set a goal around it",
-                        onClick = onSetGoal,
-                        variant = AppButtonVariant.SECONDARY,
-                        modifier = Modifier.fillMaxWidth(),
+            // The close of the session: a decision about the idea, then straight into the next read.
+            item(key = "reflection") {
+                AnimatedVisibility(visible = sessionDone, enter = fadeIn() + expandVertically()) {
+                    ReflectionCard(
+                        bit = bit,
+                        choice = reflection,
+                        onChoose = {
+                            reflection = it
+                            settings.putString(reflectionKey(bit.id), it)
+                        },
                     )
                 }
+            }
+
+            if (nextLesson != null) {
+                item(key = "next") {
+                    AnimatedVisibility(visible = sessionDone, enter = fadeIn() + expandVertically()) {
+                        NextLessonCard(next = nextLesson, onOpen = { onOpenLesson(nextLesson.id) })
+                    }
+                }
+            }
+        }
+    }
+
+    if (breathing) {
+        GuidedBreathSession(onClose = { breathing = false })
+    }
+}
+
+/** How long a Learn session runs. Long enough to actually land, short enough to say yes to. */
+private const val SESSION_MS = 120_000L
+
+private val REFLECTION_CHOICES = listOf("I'll try it", "Already do this", "Not for me")
+
+private fun reflectionKey(lessonId: String) = "lesson_decision_$lessonId"
+
+/** The session clock as a hairline under the toolbar: present, but nothing to watch. */
+@Composable
+private fun SessionProgressLine(fraction: Float) {
+    val c = MaterialTheme.modernColors
+    val animated by animateFloatAsState(targetValue = fraction, label = "sessionProgress")
+    Box(Modifier.fillMaxWidth().height(2.dp).background(c.primary.copy(alpha = 0.10f))) {
+        Box(Modifier.fillMaxWidth(animated).height(2.dp).background(c.primary.copy(alpha = 0.55f)))
+    }
+}
+
+/** Shown to readers who finish ahead of the clock: sit with it, or breathe out the difference. */
+@Composable
+private fun SettleCard(secondsLeft: Int, onBreathe: () -> Unit) {
+    val c = MaterialTheme.modernColors
+    Surface(
+        color = c.cardBackground,
+        shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(
+            Modifier.fillMaxWidth().padding(LifePlannerDesign.Padding.cardContent),
+            verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
+        ) {
+            Text(
+                "Quick reader.",
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                color = c.textPrimary,
+            )
+            Text(
+                "${secondsLeft}s left in this session. Reading it is half of it, letting it land is the other half.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = c.textSecondary,
+            )
+            AppButton(
+                text = "Breathe while it lands",
+                onClick = onBreathe,
+                variant = AppButtonVariant.SECONDARY,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    }
+}
+
+/**
+ * The end of a lesson as a decision. Three answers, one line back from the app, and the choice is
+ * remembered so returning to the lesson shows what you decided last time.
+ */
+@Composable
+private fun ReflectionCard(bit: KnowledgeBit, choice: String?, onChoose: (String) -> Unit) {
+    val c = MaterialTheme.modernColors
+    Surface(
+        color = c.cardBackground,
+        shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(
+            Modifier.fillMaxWidth().padding(LifePlannerDesign.Padding.cardContent),
+            verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
+        ) {
+            Text(
+                "So, what do you make of it?",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = c.textPrimary,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.xs)) {
+                REFLECTION_CHOICES.forEach { option ->
+                    val selected = option == choice
+                    Surface(
+                        modifier = Modifier.weight(1f).bouncyClickable { onChoose(option) },
+                        color = if (selected) c.primary else c.primary.copy(alpha = 0.10f),
+                        shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.full),
+                    ) {
+                        Text(
+                            option,
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                            color = if (selected) c.background else c.primary,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp),
+                        )
+                    }
+                }
+            }
+            if (choice != null) {
+                Text(
+                    responseTo(choice, bit),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = c.textSecondary,
+                )
             }
         }
     }
 }
 
-/** Long enough that opening and immediately leaving does not count as having read the lesson. */
-private const val READ_DWELL_MS = 2500L
+/** What the app says back. Short, specific to the decision, never a lecture. */
+private fun responseTo(choice: String, bit: KnowledgeBit): String = when (choice) {
+    REFLECTION_CHOICES[0] ->
+        bit.takeaway.ifBlank { "Good. The smallest version of it, today, beats the perfect version later." }
+    REFLECTION_CHOICES[1] -> "Then you already have the evidence. Watch for the week it starts slipping."
+    else -> "Fair enough. Deciding what you won't do is worth as much as deciding what you will."
+}
+
+/** The hand-off: reading is a path, so the next step is right here rather than back in the hub. */
+@Composable
+private fun NextLessonCard(next: KnowledgeBit, onOpen: () -> Unit) {
+    val c = MaterialTheme.modernColors
+    val path = KnowledgeLibrary.collectionOf(next.id)?.title
+    Surface(
+        modifier = Modifier.fillMaxWidth().bouncyClickable(onClick = onOpen),
+        color = c.primary.copy(alpha = 0.10f),
+        shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large),
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(LifePlannerDesign.Padding.cardContent),
+            horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(next.emoji, style = MaterialTheme.typography.headlineSmall)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    if (path != null) "NEXT IN ${path.uppercase()}" else "NEXT UP",
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                    color = c.primary,
+                )
+                Text(
+                    next.title,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                    color = c.textPrimary,
+                )
+                Text("${next.readMin} min", style = MaterialTheme.typography.labelSmall, color = c.textSecondary)
+            }
+            Icon(PhosphorIcons.Regular.ArrowRight, contentDescription = null, tint = c.primary, modifier = Modifier.size(20.dp))
+        }
+    }
+}
 
 /** The path illustration for a lesson (matches the Learn hub), falling back to the generic hero. */
 private fun heroIllustration(lessonId: String): DrawableResource =

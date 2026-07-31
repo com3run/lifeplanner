@@ -1,5 +1,6 @@
 package az.tribe.lifeplanner
 
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.navigation.NavController
@@ -30,17 +31,26 @@ internal fun NavGraphBuilder.appNavKnowledge(navController: NavController) {
         val id = backStackEntry.arguments?.read { getStringOrNull("id") } ?: return@composable
         val bit = KnowledgeLibrary.byId(id) ?: return@composable
 
-        // Reaching the end of the lesson is what counts as reading it: that marks it read, pays the
+        // Finishing the reading session is what counts as reading it: that marks it read, pays the
         // XP once, and clears the zone if it was the path's last lesson.
         val readVm: KnowledgeDetailViewModel = koinViewModel()
         val earnedXp by readVm.earnedXp.collectAsState()
         val earnedBadge by readVm.earnedBadgeName.collectAsState()
+        val next by readVm.nextLesson.collectAsState()
+        LaunchedEffect(id) { readVm.onOpened(id) }
 
         KnowledgeDetailScreen(
             bit = bit,
             onBackClick = { navController.popBackStack() },
-            onStartHabit = { navController.navigate(Screen.AddHabit.route) { launchSingleTop = true } },
-            onSetGoal = { navController.navigate(Screen.GoalWizard.route) { launchSingleTop = true } },
+            // Lesson to lesson replaces this entry rather than stacking, so Back is always one step
+            // back to the hub however far along a path the reader has walked.
+            onOpenLesson = { nextId ->
+                navController.navigate("knowledge_detail/$nextId") {
+                    popUpTo(Screen.KnowledgeDetail.route) { inclusive = true }
+                    launchSingleTop = true
+                }
+            },
+            nextLesson = next,
             onCompleted = { readVm.onLessonCompleted(id) },
             earnedXp = earnedXp,
             earnedBadgeName = earnedBadge,

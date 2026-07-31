@@ -441,4 +441,31 @@ object KnowledgeLibrary {
     /** How many lessons stand between the user and [badge], for the achievements progress bar. */
     fun lessonCountFor(badge: BadgeType): Int =
         collections.firstOrNull { badgeFor(it.id) == badge }?.lessonIds?.size ?: 0
+
+    /**
+     * Where to go after finishing [lessonId]: the next lesson the user can actually read.
+     *
+     * Reading is a path, not a list of one-offs, so a finished lesson always offers the next step
+     * rather than dropping the reader back into a menu. Preference order is the rest of the current
+     * path, then any other path, skipping anything already [read] or still above [level]. Null only
+     * when the whole unlocked library has been read.
+     */
+    fun nextAfter(lessonId: String, read: Set<String> = emptySet(), level: Int = Int.MAX_VALUE): KnowledgeBit? {
+        fun eligible(id: String) = id != lessonId && id !in read && (byId(id)?.minLevel ?: Int.MAX_VALUE) <= level
+
+        val current = collectionOf(lessonId)
+        if (current != null) {
+            val idx = current.lessonIds.indexOf(lessonId)
+            // Forward in this path first, then back over anything skipped earlier in it.
+            current.lessonIds.drop(idx + 1).firstOrNull(::eligible)?.let { return byId(it) }
+            current.lessonIds.take(idx).firstOrNull(::eligible)?.let { return byId(it) }
+        }
+        // Then the next path along, wrapping, so finishing one subject opens the following one.
+        val start = collections.indexOfFirst { it.id == current?.id }.coerceAtLeast(0)
+        for (offset in 1..collections.size) {
+            val col = collections[(start + offset) % collections.size]
+            col.lessonIds.firstOrNull(::eligible)?.let { return byId(it) }
+        }
+        return null
+    }
 }
