@@ -102,7 +102,7 @@ fun MetacognitiveReviewScreen(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun DecisionGradeCard(d: Decision, onGrade: (OutcomeQuality) -> Unit) {
+internal fun DecisionGradeCard(d: Decision, onGrade: (OutcomeQuality) -> Unit) {
     Surface(modifier = Modifier.fillMaxWidth(), color = MaterialTheme.modernColors.cardBackground, shape = RoundedCornerShape(14.dp)) {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(d.question, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = MaterialTheme.modernColors.textPrimary, maxLines = 2)

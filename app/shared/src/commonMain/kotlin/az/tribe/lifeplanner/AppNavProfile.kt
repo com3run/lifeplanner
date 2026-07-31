@@ -58,32 +58,19 @@ internal fun NavGraphBuilder.appNavProfile(
             } else fadeOut(tween(300))
         }
     ) {
-        val settings: Settings = koinInject()
         ProfileScreen(
             onNavigateToAchievements = {
                 navController.navigate(Screen.Achievements.route) {
                     launchSingleTop = true
                 }
             },
-            onNavigateToHealth = {
-                navController.navigate(Screen.Health.route) {
+            onNavigateToSettings = {
+                navController.navigate(Screen.Settings.route) {
                     launchSingleTop = true
                 }
             },
-            onNavigateToCalendarSettings = {
-                navController.navigate(Screen.CalendarSettings.route) {
-                    launchSingleTop = true
-                }
-            },
-            onNavigateToReminders = {
-                navController.navigate(Screen.Reminders.route) {
-                    launchSingleTop = true
-                }
-            },
-            onNavigateToBackup = {
-                navController.navigate(Screen.BackupSettings.route) {
-                    launchSingleTop = true
-                }
+            onNavigateToRoute = { route ->
+                navController.navigate(route) { launchSingleTop = true }
             },
             onNavigateToDecisions = {
                 navController.navigate(Screen.DecisionJournal.route) {
@@ -105,18 +92,8 @@ internal fun NavGraphBuilder.appNavProfile(
                     launchSingleTop = true
                 }
             },
-            onNavigateToTrajectory = {
-                navController.navigate(Screen.Trajectory.route) {
-                    launchSingleTop = true
-                }
-            },
             onNavigateToBecoming = {
                 navController.navigate(Screen.Becoming.route) {
-                    launchSingleTop = true
-                }
-            },
-            onNavigateToDecisionReview = {
-                navController.navigate(Screen.DecisionReview.route) {
                     launchSingleTop = true
                 }
             },
@@ -170,17 +147,35 @@ internal fun NavGraphBuilder.appNavProfile(
                     launchSingleTop = true
                 }
             },
+        )
+    }
+
+    // Settings, the single home for everything that configures the app.
+    composable(Screen.Settings.route) {
+        val settings: Settings = koinInject()
+        az.tribe.lifeplanner.ui.settings.SettingsScreen(
+            onBackClick = { navController.popBackStack() },
+            onNavigateToReminders = {
+                navController.navigate(Screen.Reminders.route) { launchSingleTop = true }
+            },
+            onNavigateToBackup = {
+                navController.navigate(Screen.BackupSettings.route) { launchSingleTop = true }
+            },
             onNavigateToFeedback = {
-                navController.navigate(Screen.Feedback.route) {
-                    launchSingleTop = true
-                }
+                navController.navigate(Screen.Feedback.route) { launchSingleTop = true }
+            },
+            onNavigateToHealth = {
+                navController.navigate(Screen.Health.route) { launchSingleTop = true }
+            },
+            onNavigateToCalendarSettings = {
+                navController.navigate(Screen.CalendarSettings.route) { launchSingleTop = true }
             },
             onResetOnboarding = {
                 settings.remove(CoachOnboardingViewModel.COACH_ONBOARDING_KEY)
                 navController.navigate(Screen.CoachOnboarding.route) {
                     popUpTo(0) { inclusive = true }
                 }
-            }
+            },
         )
     }
 

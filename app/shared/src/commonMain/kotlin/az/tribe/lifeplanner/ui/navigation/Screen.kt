@@ -33,6 +33,7 @@ sealed class Screen(val route: String) {
     object EditGroup : Screen("edit_group/{groupId}")
     object Templates : Screen("templates")
     object AddGoalFromTemplate : Screen("add_goal_from_template/{templateId}")
+    object Settings : Screen("settings")
     object Reminders : Screen("reminders")
     object LifeBalance : Screen("life_balance")
     object Trajectory : Screen("trajectory")
