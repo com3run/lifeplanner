@@ -1,5 +1,7 @@
 package az.tribe.lifeplanner.domain.service
 
+import az.tribe.lifeplanner.domain.enum.BadgeType
+
 /**
  * What a lesson is about. Used to match lessons to what the user is actually doing, so the feed can
  * surface the ones most relevant to them (building habits, stalling goals, poor sleep, and so on).
@@ -405,4 +407,20 @@ object KnowledgeLibrary {
     /** The collection a lesson belongs to, or null if it is not filed under one. */
     fun collectionOf(lessonId: String): KnowledgeCollection? =
         collections.firstOrNull { lessonId in it.lessonIds }
+
+    /**
+     * The badge earned for clearing a path. Null for any collection that has no badge of its own,
+     * so adding a collection is not silently a promise of a reward.
+     */
+    fun badgeFor(collectionId: String): BadgeType? = when (collectionId) {
+        "col_habits" -> BadgeType.LEARN_HABITS
+        "col_motivation" -> BadgeType.LEARN_MOTIVATION
+        "col_mind" -> BadgeType.LEARN_MIND
+        "col_rest" -> BadgeType.LEARN_REST
+        else -> null
+    }
+
+    /** How many lessons stand between the user and [badge], for the achievements progress bar. */
+    fun lessonCountFor(badge: BadgeType): Int =
+        collections.firstOrNull { badgeFor(it.id) == badge }?.lessonIds?.size ?: 0
 }

@@ -87,9 +87,24 @@ class LearnHubViewModel(
 
             runCatching {
                 knowledgeRepository.readIds().collect { readIds ->
-                    _state.value = buildUi(level, levelTitle, totalXp, affinity, readIds, daySeed)
+                    val ui = buildUi(level, levelTitle, totalXp, affinity, readIds, daySeed)
+                    _state.value = ui
+                    backfillZoneBadges(ui)
                 }
             }.onFailure { Logger.w("LearnHubViewModel") { "readIds collect failed: ${it.message}" } }
+        }
+    }
+
+    /**
+     * Awards the badge for any zone that is already cleared. Lesson completion normally hands out
+     * the badge, but paths finished before zone badges existed never fired that event, so opening
+     * the hub settles the debt. [GamificationRepository.awardBadge] is a no-op when already held.
+     */
+    private suspend fun backfillZoneBadges(ui: LearnHubUi) {
+        ui.collections.filter { it.isComplete }.forEach { cui ->
+            val badge = KnowledgeLibrary.badgeFor(cui.collection.id) ?: return@forEach
+            runCatching { gamificationRepository.awardBadge(badge) }
+                .onFailure { Logger.w("LearnHubViewModel") { "backfill ${badge.name} failed: ${it.message}" } }
         }
     }
 

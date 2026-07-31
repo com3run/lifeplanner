@@ -51,6 +51,12 @@ enum class BadgeType(
     COMEBACK("Comeback King", "Return after a 7+ day break", 0xFF00BCD4),
     PERFECTIONIST("Perfectionist", "Complete a goal at 100% progress", 0xFF4CAF50),
 
+    // Learning Badges, one per Learn zone (a path is only cleared once every lesson in it is read)
+    LEARN_HABITS("Habit Scholar", "Clear the Building habits that stick path", 0xFF7A5AF8),
+    LEARN_MOTIVATION("Fire Keeper", "Clear the Staying motivated path", 0xFFFF6B35),
+    LEARN_MIND("Clear Mind", "Clear the Focus and the mind path", 0xFF26A69A),
+    LEARN_REST("Well Rested", "Clear the Rest and recovery path", 0xFF5C6BC0),
+
     // Focus Badges
     FOCUS_FIRST("First Focus", "Complete your first focus session", 0xFFFF6B35),
     FOCUS_HOUR("Hour Power", "Complete a 60-minute focus session", 0xFFE65100),

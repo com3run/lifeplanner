@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.layout.ContentScale
@@ -33,6 +34,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -58,8 +64,25 @@ fun KnowledgeDetailScreen(
     onBackClick: () -> Unit,
     onStartHabit: () -> Unit,
     onSetGoal: () -> Unit,
+    /** Fired once the reader has actually reached the end of the lesson and stayed a moment. */
+    onCompleted: () -> Unit = {},
+    earnedXp: Int = 0,
+    earnedBadgeName: String? = null,
 ) {
     val c = MaterialTheme.modernColors
+    val listState = rememberLazyListState()
+
+    // "Read" has to mean read. canScrollForward goes false both when the reader scrolls to the
+    // bottom and when a short lesson fits without scrolling; the dwell then rules out the case of
+    // opening a lesson and immediately backing out.
+    val atEnd by remember { derivedStateOf { !listState.canScrollForward } }
+    LaunchedEffect(atEnd) {
+        if (atEnd) {
+            delay(READ_DWELL_MS)
+            onCompleted()
+        }
+    }
+
     Scaffold(
         containerColor = c.background,
         topBar = {
@@ -78,6 +101,7 @@ fun KnowledgeDetailScreen(
         },
     ) { padding ->
         LazyColumn(
+            state = listState,
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(
                 top = padding.calculateTopPadding() + LifePlannerDesign.Spacing.sm,
@@ -162,6 +186,41 @@ fun KnowledgeDetailScreen(
                 }
             }
 
+            if (earnedXp > 0 || earnedBadgeName != null) {
+                item(key = "reward") {
+                    Surface(
+                        color = c.success.copy(alpha = 0.12f),
+                        shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Column(
+                            Modifier.fillMaxWidth().padding(LifePlannerDesign.Padding.cardContent),
+                            verticalArrangement = Arrangement.spacedBy(2.dp),
+                        ) {
+                            if (earnedXp > 0) {
+                                Text(
+                                    "+$earnedXp XP",
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = c.success,
+                                )
+                                Text(
+                                    "Lesson complete.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = c.textSecondary,
+                                )
+                            }
+                            if (earnedBadgeName != null) {
+                                Text(
+                                    "🏅 Zone cleared, $earnedBadgeName earned",
+                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = c.textPrimary,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
             item(key = "actions") {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
@@ -184,6 +243,9 @@ fun KnowledgeDetailScreen(
         }
     }
 }
+
+/** Long enough that opening and immediately leaving does not count as having read the lesson. */
+private const val READ_DWELL_MS = 2500L
 
 /** The path illustration for a lesson (matches the Learn hub), falling back to the generic hero. */
 private fun heroIllustration(lessonId: String): DrawableResource =

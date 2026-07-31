@@ -429,7 +429,7 @@ val appModule = module {
     viewModel { az.tribe.lifeplanner.ui.today.TodayWeatherViewModel(get()) }
     viewModel { az.tribe.lifeplanner.ui.trajectory.TrajectoryViewModel(get(), get()) }
     viewModel { az.tribe.lifeplanner.ui.foryou.LearnHubViewModel(get(), get(), get(), get()) }
-    viewModel { az.tribe.lifeplanner.ui.foryou.KnowledgeDetailViewModel(get()) }
+    viewModel { az.tribe.lifeplanner.ui.foryou.KnowledgeDetailViewModel(get(), get()) }
     single { az.tribe.lifeplanner.usecases.GeneratePossibilitiesUseCase(get(), az.tribe.lifeplanner.domain.service.LocalPossibilityFallback()) }
     viewModel { params -> az.tribe.lifeplanner.ui.possibility.PossibilityModeViewModel(params.get(), get(), get(), get(), get()) }
     viewModel { az.tribe.lifeplanner.ui.goals.GoalsViewModel(get()) }

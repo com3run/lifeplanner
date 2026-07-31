@@ -42,7 +42,11 @@ import com.adamglin.phosphoricons.regular.Repeat
 import com.adamglin.phosphoricons.regular.Rocket
 import com.adamglin.phosphoricons.regular.Scales
 import com.adamglin.phosphoricons.regular.Shield
+import com.adamglin.phosphoricons.regular.Books
+import com.adamglin.phosphoricons.regular.Lightbulb
+import com.adamglin.phosphoricons.regular.Moon
 import com.adamglin.phosphoricons.regular.Sparkle
+import com.adamglin.phosphoricons.regular.Student
 import com.adamglin.phosphoricons.regular.Sun
 import com.adamglin.phosphoricons.regular.Target
 import com.adamglin.phosphoricons.regular.Timer
@@ -109,6 +113,12 @@ fun badgeIcon(type: BadgeType): ImageVector = when (type) {
     BadgeType.FOCUS_HOUR -> PhosphorIcons.Regular.ClockCountdown
     BadgeType.FOCUS_10 -> PhosphorIcons.Regular.Crosshair
     BadgeType.FOCUS_50 -> PhosphorIcons.Regular.Brain
+
+    // Learning
+    BadgeType.LEARN_HABITS -> PhosphorIcons.Regular.Books
+    BadgeType.LEARN_MOTIVATION -> PhosphorIcons.Regular.Lightbulb
+    BadgeType.LEARN_MIND -> PhosphorIcons.Regular.Student
+    BadgeType.LEARN_REST -> PhosphorIcons.Regular.Moon
 }
 
 /**

@@ -37,7 +37,10 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -90,6 +93,9 @@ fun LearnHubScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val c = MaterialTheme.modernColors
+    // Cleared zones start folded; re-opening one is a deliberate act, and it survives leaving the
+    // screen so re-reading a lesson doesn't collapse the trail under you on the way back.
+    var expandedZones by rememberSaveable { mutableStateOf(emptySet<String>()) }
 
     Scaffold(
         containerColor = c.background,
@@ -135,12 +141,35 @@ fun LearnHubScreen(
                 }
             }
 
+            // Zones you have finished fold away to a single line. Walking past cleared ground to
+            // reach the trail you are actually on is the main thing wrong with a long map.
             state.collections.forEach { cui ->
-                item(key = "zone_${cui.collection.id}") {
-                    ZoneHeader(cui)
-                }
-                item(key = "trail_${cui.collection.id}") {
-                    ZoneTrail(cui = cui, readIds = state.readIds, onOpen = onOpen)
+                if (cui.isComplete) {
+                    item(key = "zone_${cui.collection.id}") {
+                        ClearedZoneRow(
+                            cui = cui,
+                            expanded = expandedZones.contains(cui.collection.id),
+                            onToggle = {
+                                expandedZones = if (expandedZones.contains(cui.collection.id)) {
+                                    expandedZones - cui.collection.id
+                                } else {
+                                    expandedZones + cui.collection.id
+                                }
+                            },
+                        )
+                    }
+                    if (expandedZones.contains(cui.collection.id)) {
+                        item(key = "trail_${cui.collection.id}") {
+                            ZoneTrail(cui = cui, readIds = state.readIds, onOpen = onOpen)
+                        }
+                    }
+                } else {
+                    item(key = "zone_${cui.collection.id}") {
+                        ZoneHeader(cui)
+                    }
+                    item(key = "trail_${cui.collection.id}") {
+                        ZoneTrail(cui = cui, readIds = state.readIds, onOpen = onOpen)
+                    }
                 }
             }
 
@@ -321,6 +350,44 @@ private fun ZoneHeader(cui: CollectionUi) {
                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                 color = if (cui.isComplete) c.success else c.primary,
                 modifier = Modifier.padding(horizontal = LifePlannerDesign.Spacing.sm, vertical = 4.dp),
+            )
+        }
+    }
+}
+
+/** A finished zone, folded to one line with its badge. Tap to walk it again. */
+@Composable
+private fun ClearedZoneRow(cui: CollectionUi, expanded: Boolean, onToggle: () -> Unit) {
+    val c = MaterialTheme.modernColors
+    Surface(
+        modifier = Modifier.fillMaxWidth().bouncyClickable(onClick = onToggle),
+        color = c.successContainer,
+        shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large),
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = LifePlannerDesign.Padding.cardContent, vertical = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("🏅", style = MaterialTheme.typography.titleMedium)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                Text(
+                    cui.collection.title,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                    color = c.onSuccessContainer,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    "Cleared · all ${cui.total} lessons",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = c.onSuccessContainer,
+                )
+            }
+            Text(
+                if (expanded) "Hide" else "Revisit",
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                color = c.onSuccessContainer,
             )
         }
     }

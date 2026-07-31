@@ -1,6 +1,7 @@
 package az.tribe.lifeplanner.domain.model
 
 import az.tribe.lifeplanner.domain.enum.BadgeType
+import az.tribe.lifeplanner.domain.service.KnowledgeLibrary
 import kotlinx.datetime.LocalDateTime
 import kotlinx.serialization.Serializable
 
@@ -50,6 +51,9 @@ object BadgeRequirements {
         BadgeType.FOCUS_10 -> 10
         BadgeType.FOCUS_50 -> 50
         BadgeType.GETTING_STARTED -> 10
+        // Derived from the library so adding lessons to a path moves its bar automatically.
+        BadgeType.LEARN_HABITS, BadgeType.LEARN_MOTIVATION,
+        BadgeType.LEARN_MIND, BadgeType.LEARN_REST -> KnowledgeLibrary.lessonCountFor(type)
     }
 
     /**
@@ -66,7 +70,9 @@ object BadgeRequirements {
 
         BadgeType.STREAK_14, BadgeType.GOAL_10, BadgeType.JOURNAL_10, BadgeType.HABIT_5,
         BadgeType.FOCUS_HOUR, BadgeType.HEALTH_FOCUS, BadgeType.CAREER_FOCUS,
-        BadgeType.COMEBACK -> 3
+        BadgeType.COMEBACK,
+        BadgeType.LEARN_HABITS, BadgeType.LEARN_MOTIVATION,
+        BadgeType.LEARN_MIND, BadgeType.LEARN_REST -> 3
 
         BadgeType.STREAK_7, BadgeType.GOAL_5,
         BadgeType.PERFECTIONIST, BadgeType.GETTING_STARTED -> 2
@@ -102,6 +108,9 @@ object BadgeRequirements {
         BadgeType.FOCUS_10, BadgeType.FOCUS_50 -> BadgeCategory.SPECIAL
 
         BadgeType.GETTING_STARTED -> BadgeCategory.SPECIAL
+
+        BadgeType.LEARN_HABITS, BadgeType.LEARN_MOTIVATION,
+        BadgeType.LEARN_MIND, BadgeType.LEARN_REST -> BadgeCategory.LEARNING
     }
 }
 
@@ -110,6 +119,7 @@ enum class BadgeCategory(val displayName: String) {
     GOALS("Goals"),
     HABITS("Habits"),
     JOURNAL("Journal"),
+    LEARNING("Learning"),
     CATEGORY("Categories"),
     SPECIAL("Special")
 }
