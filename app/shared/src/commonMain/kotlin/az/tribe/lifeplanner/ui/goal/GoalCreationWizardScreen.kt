@@ -614,8 +614,14 @@ fun GoalCreationWizardScreen(
                     onToggleAiMilestone = { idx ->
                         aiMilestones[idx] = aiMilestones[idx].copy(second = !aiMilestones[idx].second)
                     },
+                    goalTitle = goalTitle,
+                    goalCategory = goalCategory,
+                    goalDescription = goalDescription,
                     customMilestones = customMilestones,
                     onRemoveCustom = { customMilestones.removeAt(it) },
+                    onAddSuggested = { title ->
+                        if (customMilestones.none { it.equals(title, ignoreCase = true) }) customMilestones.add(title)
+                    },
                     customInput = customMilestoneInput,
                     onCustomInputChange = { customMilestoneInput = it },
                     onAddCustom = {

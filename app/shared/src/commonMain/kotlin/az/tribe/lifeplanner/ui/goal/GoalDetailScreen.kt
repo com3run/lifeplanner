@@ -57,7 +57,6 @@ import az.tribe.lifeplanner.ui.dependency.GoalDependencyViewModel
 import az.tribe.lifeplanner.ui.goal.AiReasoningCard
 import az.tribe.lifeplanner.ui.goal.CoachInsightCard
 import az.tribe.lifeplanner.ui.goal.CompletedGoalBanner
-import az.tribe.lifeplanner.ui.goal.EmptyMilestonesCard
 import az.tribe.lifeplanner.ui.goal.GoalNotFoundState
 import az.tribe.lifeplanner.ui.goal.ModernMilestonesCard
 import az.tribe.lifeplanner.ui.goal.GoalDescriptionCard
@@ -298,10 +297,19 @@ fun GoalDetailScreen(
                         onAddMilestone = { showAddMilestoneDialog = true }
                     )
                 }
-            } else if (!isCompleted) {
-                item {
-                    EmptyMilestonesCard(
-                        onAddMilestone = { showAddMilestoneDialog = true }
+            }
+
+            // The coach's draft of the next steps, always available on a live goal (not just an
+            // empty one): editing a plan beats inventing one, and one tap takes a step as-is.
+            if (!isCompleted) {
+                item(key = "coach_milestones") {
+                    CoachMilestonesCard(
+                        goalTitle = goal.title,
+                        category = goal.category,
+                        description = goal.description,
+                        existingTitles = goal.milestones.map { it.title },
+                        onAdd = { title -> viewModel.addMilestone(goalId, title) },
+                        modifier = Modifier.padding(horizontal = 16.dp),
                     )
                 }
             }

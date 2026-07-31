@@ -39,6 +39,7 @@ import az.tribe.lifeplanner.ui.components.GradientHero
 import az.tribe.lifeplanner.ui.components.IconChip
 import az.tribe.lifeplanner.ui.components.ProgressRing
 import az.tribe.lifeplanner.ui.components.StateView
+import az.tribe.lifeplanner.ui.goal.CoachMilestonesCard
 import az.tribe.lifeplanner.ui.goal.GoalJourneyCard
 import az.tribe.lifeplanner.ui.intro.FeatureIntroCatalog
 import az.tribe.lifeplanner.ui.intro.FeatureIntroHost
@@ -199,16 +200,20 @@ fun GoalDetailScreen(
                     modifier = Modifier.padding(top = LifePlannerDesign.Spacing.xs),
                 )
             }
-            if (g.milestones.isEmpty()) {
-                item {
-                    Surface(Modifier.fillMaxWidth(), color = c.cardBackground, shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large)) {
-                        Text("No milestones yet, break this goal into a few steps from Edit.", style = MaterialTheme.typography.bodySmall, color = c.textTertiary, modifier = Modifier.padding(LifePlannerDesign.Padding.cardContent))
-                    }
-                }
-            } else {
-                items(g.milestones, key = { it.id }) { m ->
-                    MilestoneRow(m, onToggle = { viewModel.toggleMilestone(m.id, !m.isCompleted) })
-                }
+            items(g.milestones, key = { it.id }) { m ->
+                MilestoneRow(m, onToggle = { viewModel.toggleMilestone(m.id, !m.isCompleted) })
+            }
+
+            // The coach's draft, always here rather than only on an empty goal: a plan is easier to
+            // edit than to invent, so the next step is always one tap (or one reword) away.
+            item(key = "coach_milestones") {
+                CoachMilestonesCard(
+                    goalTitle = g.title,
+                    category = g.category,
+                    description = g.description,
+                    existingTitles = g.milestones.map { it.title },
+                    onAdd = { viewModel.addMilestone(it) },
+                )
             }
 
             // Pillar 6: the divergent way out when an in-progress goal stalls.

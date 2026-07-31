@@ -2,6 +2,7 @@ package az.tribe.lifeplanner.ui.goals
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import az.tribe.lifeplanner.data.mapper.createNewMilestone
 import az.tribe.lifeplanner.domain.model.Goal
 import az.tribe.lifeplanner.domain.model.LifeValue
 import az.tribe.lifeplanner.domain.repository.GoalRepository
@@ -53,6 +54,22 @@ class GoalDetailViewModel(
             val g = goal.value ?: return@launch
             runCatching { goalRepository.updateGoal(g.copy(valueId = valueId)) }
                 .onFailure { Logger.w("GoalDetailViewModel") { "Link value failed: ${it.message}" } }
+        }
+    }
+
+    /**
+     * Adds a step to the plan, whether it came from the coach's draft, a reworded version of it, or
+     * the user's own line. Blank titles and exact repeats are dropped rather than surfaced as errors,
+     * since the card is a fast tap-tap-tap surface and a double tap should be a no-op.
+     */
+    fun addMilestone(title: String) {
+        val text = title.trim()
+        if (text.isEmpty()) return
+        viewModelScope.launch {
+            val g = goal.value ?: return@launch
+            if (g.milestones.any { it.title.equals(text, ignoreCase = true) }) return@launch
+            runCatching { goalRepository.addMilestone(goalId, createNewMilestone(text)) }
+                .onFailure { Logger.w("GoalDetailViewModel") { "Add milestone failed: ${it.message}" } }
         }
     }
 

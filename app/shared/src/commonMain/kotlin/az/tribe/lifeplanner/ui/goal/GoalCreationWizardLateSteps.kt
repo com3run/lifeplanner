@@ -44,6 +44,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -54,6 +55,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import az.tribe.lifeplanner.domain.enum.GoalCategory
 import az.tribe.lifeplanner.domain.enum.GoalTimeline
+import az.tribe.lifeplanner.domain.model.CoachPersona
+import az.tribe.lifeplanner.domain.service.MilestoneCoach
 import az.tribe.lifeplanner.ui.components.backgroundColor
 import az.tribe.lifeplanner.ui.utils.formatHuman
 import kotlinx.datetime.LocalDate
@@ -480,13 +483,24 @@ internal fun MilestonesStep(
     isAiPath: Boolean,
     aiMilestones: List<Pair<String, Boolean>>,
     onToggleAiMilestone: (Int) -> Unit,
+    goalTitle: String,
+    goalCategory: GoalCategory,
+    goalDescription: String,
     customMilestones: List<String>,
     onRemoveCustom: (Int) -> Unit,
+    onAddSuggested: (String) -> Unit,
     customInput: String,
     onCustomInputChange: (String) -> Unit,
     onAddCustom: () -> Unit,
     onNext: () -> Unit
 ) {
+    // On the hand-written path there is no AI draft, so the category coach opens with steps read off
+    // the title the user just typed (local and instant, see MilestoneCoach). Tap to take one.
+    val coach = remember(goalCategory) { CoachPersona.getByCategory(goalCategory) }
+    val coachSuggestions = remember(goalTitle, goalCategory, goalDescription) {
+        if (isAiPath) emptyList()
+        else MilestoneCoach.suggest(title = goalTitle, category = goalCategory, description = goalDescription)
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -522,8 +536,35 @@ internal fun MilestonesStep(
             Spacer(modifier = Modifier.height(20.dp))
         }
 
+        if (coachSuggestions.isNotEmpty()) {
+            Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)) {
+                Row(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(PhosphorIcons.Regular.Sparkle, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
+                    Text("${coach.name} suggests, tap to add", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium)
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                MilestoneCoach.opener(coach.name, goalCategory),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 10.dp)
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                coachSuggestions.forEach { suggestion ->
+                    val takenAt = customMilestones.indexOfFirst { it.equals(suggestion, ignoreCase = true) }
+                    MilestoneToggleItem(
+                        title = suggestion,
+                        selected = takenAt >= 0,
+                        onClick = { if (takenAt >= 0) onRemoveCustom(takenAt) else onAddSuggested(suggestion) },
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(20.dp))
+        }
+
         Text(
-            text = if (isAiPath && aiMilestones.isNotEmpty()) "Add your own" else "Add milestones",
+            text = if ((isAiPath && aiMilestones.isNotEmpty()) || coachSuggestions.isNotEmpty()) "Add your own" else "Add milestones",
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier.padding(bottom = 10.dp)
