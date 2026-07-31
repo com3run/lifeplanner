@@ -1,0 +1,60 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="240dp"
+    android:height="190dp"
+    android:viewportWidth="240"
+    android:viewportHeight="190">
+    <path
+        android:pathData="M120 66C104 54 78 54 58 60v78c20-6 46-6 62 6z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="90"
+                android:startY="54"
+                android:endX="90"
+                android:endY="144">
+                <item
+                    android:color="#FFA5B4FC"
+                    android:offset="0"/>
+                <item
+                    android:color="#FF818CF8"
+                    android:offset="1"/>
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path
+        android:pathData="M120 66c16-12 42-12 62-6v78c-20-6-46-6-62 6z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="150"
+                android:startY="54"
+                android:endX="150"
+                android:endY="144">
+                <item
+                    android:color="#FFC4B5FD"
+                    android:offset="0"/>
+                <item
+                    android:color="#FFA78BFA"
+                    android:offset="1"/>
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path
+        android:fillAlpha="0.85"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeAlpha="0.85"
+        android:strokeWidth="2.6"
+        android:strokeLineCap="round"
+        android:pathData="M72 80c14-4 28-4 38 2M72 98c14-4 28-4 38 2M72 116c14-4 24-4 34 2"/>
+    <path
+        android:fillAlpha="0.85"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeAlpha="0.85"
+        android:strokeWidth="2.6"
+        android:strokeLineCap="round"
+        android:pathData="M168 80c-14-4-28-4-38 2M168 98c-14-4-28-4-38 2M168 116c-14-4-24-4-34 2"/>
+    <path
+        android:fillColor="#FFFCD34D"
+        android:pathData="M150 40l3 8 8 3-8 3-3 8-3-8-8-3 8-3z"/>
+</vector>
