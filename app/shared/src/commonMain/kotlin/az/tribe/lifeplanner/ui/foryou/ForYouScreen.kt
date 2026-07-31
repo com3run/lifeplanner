@@ -208,17 +208,17 @@ fun ForYouScreen(
             item(key = "breath") { BreathingCard() }
 
             // Today's plan, planner-style: tick items off right here instead of jumping to Goals.
-            // Always shown (with an empty state) so it never silently disappears once you're caught up.
-            item(key = "plan_header") { SectionHeader(label = "Today's plan", onSeeAll = null) }
-            // Calendar events lead the plan: they are time-anchored, so they read top-of-day.
-            if (calendarConnected && todayEvents.isNotEmpty()) {
-                items(todayEvents, key = { "cal_${it.id}" }) { event ->
-                    CalendarPlanRow(event = event, tz = tz)
+            // Only rendered when the day actually has something in it. A header over a "you're all
+            // caught up" line is just chrome on an empty day, and it pushes the feed down.
+            val hasCalendarToday = calendarConnected && todayEvents.isNotEmpty()
+            if (plan.isNotEmpty() || hasCalendarToday) {
+                item(key = "plan_header") { SectionHeader(label = "Today's plan", onSeeAll = null) }
+                // Calendar events lead the plan: they are time-anchored, so they read top-of-day.
+                if (hasCalendarToday) {
+                    items(todayEvents, key = { "cal_${it.id}" }) { event ->
+                        CalendarPlanRow(event = event, tz = tz)
+                    }
                 }
-            }
-            if (plan.isEmpty() && !(calendarConnected && todayEvents.isNotEmpty())) {
-                item(key = "plan_empty") { Hint("You're all caught up for today. Steps due today show up here.") }
-            } else {
                 items(plan, key = { "plan_${it.milestoneId}" }) { p ->
                     PlanRow(
                         item = p,
