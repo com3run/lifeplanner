@@ -23,7 +23,14 @@ import platform.Foundation.timeIntervalSince1970
 @OptIn(ExperimentalForeignApi::class)
 actual class CalendarReader {
 
-    private val store = EKEventStore()
+    /**
+     * A fresh store per read, deliberately. This class is a Koin singleton, so a long-lived
+     * EKEventStore would be constructed before the user grants calendar access and would keep
+     * serving its empty pre-authorization snapshot — calendars and events both come back empty
+     * until the app is restarted. Creating the store at read time is cheap and always sees the
+     * current authorization.
+     */
+    private fun store() = EKEventStore()
 
     actual suspend fun isAvailable(): Boolean = true
 
@@ -34,6 +41,8 @@ actual class CalendarReader {
 
     actual suspend fun listCalendars(): List<DeviceCalendar> {
         if (!isAuthorized()) return emptyList()
+
+        val store = store()
 
         @Suppress("UNCHECKED_CAST")
         val calendars = store.calendarsForEntityType(EKEntityType.EKEntityTypeEvent) as? List<EKCalendar>
@@ -76,6 +85,7 @@ actual class CalendarReader {
     private fun readMatching(start: NSDate, end: NSDate): List<CalendarEvent> {
         if (!isAuthorized()) return emptyList()
 
+        val store = store()
         val predicate = store.predicateForEventsWithStartDate(start, endDate = end, calendars = null)
 
         @Suppress("UNCHECKED_CAST")
