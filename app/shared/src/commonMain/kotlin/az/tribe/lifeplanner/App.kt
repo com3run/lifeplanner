@@ -390,6 +390,12 @@ fun App(
 
         // React to auth state changes, navigate to the right screen
         LaunchedEffect(authState) {
+            // On iOS the NavHost below composes *after* this effect's first run, so the graph is
+            // briefly unset and any navigate() here throws "Navigation graph has not been set" —
+            // which aborts the process on startup. Wait for the first back stack entry rather than
+            // bailing out, so the signed-out and verification redirects still fire on a cold start.
+            navController.currentBackStackEntryFlow.firstOrNull()
+
             when {
                 // Authenticated or Guest → ensure on Home or force coach onboarding
                 authState is AuthState.Authenticated || authState is AuthState.Guest -> {
