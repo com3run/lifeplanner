@@ -35,6 +35,8 @@ import az.tribe.lifeplanner.domain.model.Goal
 import az.tribe.lifeplanner.domain.model.Habit
 import az.tribe.lifeplanner.domain.model.JournalEntry
 import az.tribe.lifeplanner.domain.model.Milestone
+import az.tribe.lifeplanner.domain.service.HabitTrackMode
+import az.tribe.lifeplanner.domain.service.trackMode
 import az.tribe.lifeplanner.ui.calendar.CalendarDayEvents
 import az.tribe.lifeplanner.ui.components.CompactGoalRow
 import az.tribe.lifeplanner.ui.home.CompactHomeMilestoneRow
@@ -497,7 +499,7 @@ fun JournalScreen(
                                 onEdit = { habitToEdit = habitWithStatus.habit },
                                 onCardClick = { onHabitClick(habitWithStatus.habit.id) },
                                 onFocusClick = onNavigateToFocus,
-                                onIncrement = if (habitWithStatus.habit.targetCount > 1) {
+                                onIncrement = if (habitWithStatus.habit.trackMode == HabitTrackMode.COUNT) {
                                     { habitViewModel.incrementCheckIn(habitWithStatus.habit.id) }
                                 } else null,
                                 modifier = Modifier.padding(horizontal = 16.dp).animateItem()

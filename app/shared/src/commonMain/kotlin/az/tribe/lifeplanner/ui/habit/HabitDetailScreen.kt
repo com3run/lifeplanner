@@ -18,11 +18,15 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.foundation.clickable
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -35,6 +39,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import az.tribe.lifeplanner.domain.enum.HabitType
+import az.tribe.lifeplanner.domain.service.KnowledgeBit
 import az.tribe.lifeplanner.ui.components.AppButton
 import az.tribe.lifeplanner.ui.components.AppButtonVariant
 import az.tribe.lifeplanner.ui.components.GradientHero
@@ -78,6 +83,7 @@ import kotlin.time.Clock
 fun HabitDetailScreen(
     habitId: String,
     onBackClick: () -> Unit,
+    onOpenLesson: (String) -> Unit = {},
     viewModel: HabitDetailViewModel = koinViewModel { parametersOf(habitId) },
 ) {
     val habit by viewModel.habit.collectAsState()
@@ -85,12 +91,19 @@ fun HabitDetailScreen(
     val goalTitle by viewModel.linkedGoalTitle.collectAsState()
     val completedDates by viewModel.completedDates.collectAsState()
     val rate by viewModel.completionRate.collectAsState()
+    val lessons by viewModel.relatedLessons.collectAsState()
     val c = MaterialTheme.modernColors
 
     var showEdit by remember { mutableStateOf(false) }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(Unit) {
+        viewModel.xpEvent.collect { xp -> if (xp > 0) snackbarHostState.showSnackbar("+$xp XP") }
+    }
+
     Scaffold(
         containerColor = c.background,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Habit", fontWeight = FontWeight.Bold) },
@@ -187,6 +200,23 @@ fun HabitDetailScreen(
                                 Text("Supports $gt", style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = c.textPrimary)
                                 Text("Every check-in moves this goal forward.", style = MaterialTheme.typography.bodySmall, color = c.textSecondary)
                             }
+                        }
+                    }
+                }
+            }
+
+            // Why this works: lessons matched to what this habit is about, so the knowledge shows up
+            // next to the practice instead of waiting to be found in the Learn hub.
+            if (lessons.isNotEmpty()) {
+                item {
+                    Column(verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm)) {
+                        Text(
+                            "Why this works",
+                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                            color = c.textPrimary,
+                        )
+                        lessons.forEach { lesson ->
+                            RelatedLessonRow(lesson = lesson, onClick = { onOpenLesson(lesson.id) })
                         }
                     }
                 }
@@ -312,6 +342,40 @@ private fun ConsistencyCard(completedDates: Set<LocalDate>, accent: Color) {
                 Spacer(Modifier.size(8.dp))
                 Box(Modifier.size(12.dp).clip(RoundedCornerShape(3.dp)).background(accent))
                 Text("done", style = MaterialTheme.typography.labelSmall, color = c.textTertiary)
+            }
+        }
+    }
+}
+
+/**
+ * One lesson in the habit's "Why this works" shelf: emoji, title, and how long it takes to read.
+ * Tapping opens the full lesson in the existing Learn detail screen.
+ */
+@Composable
+private fun RelatedLessonRow(lesson: KnowledgeBit, onClick: () -> Unit) {
+    val c = MaterialTheme.modernColors
+    Surface(
+        Modifier.fillMaxWidth().clickable(onClick = onClick),
+        color = c.cardBackground,
+        shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large),
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(LifePlannerDesign.Padding.cardContent),
+            horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(lesson.emoji, style = MaterialTheme.typography.titleLarge)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    lesson.title,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                    color = c.textPrimary,
+                )
+                Text(
+                    "${lesson.readMin} min read",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = c.textTertiary,
+                )
             }
         }
     }

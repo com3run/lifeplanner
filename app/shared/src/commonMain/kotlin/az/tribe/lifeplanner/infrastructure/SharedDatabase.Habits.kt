@@ -53,7 +53,8 @@ suspend fun SharedDatabase.insertHabit(habit: HabitEntity) {
             type = habit.type,
             unit = habit.unit,
             healthMetricType = habit.healthMetricType,
-            healthTarget = habit.healthTarget
+            healthTarget = habit.healthTarget,
+            completionSource = habit.completionSource
         )
     }
 }
@@ -70,7 +71,8 @@ suspend fun SharedDatabase.updateHabit(
     type: String,
     unit: String? = null,
     healthMetricType: String? = null,
-    healthTarget: Double? = null
+    healthTarget: Double? = null,
+    completionSource: String? = null
 ) {
     this { db ->
         db.lifePlannerDBQueries.updateHabit(
@@ -85,6 +87,7 @@ suspend fun SharedDatabase.updateHabit(
             unit = unit,
             healthMetricType = healthMetricType,
             healthTarget = healthTarget,
+            completionSource = completionSource,
             id = id
         )
     }

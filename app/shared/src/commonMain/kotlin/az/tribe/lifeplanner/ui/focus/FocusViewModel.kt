@@ -17,6 +17,8 @@ import az.tribe.lifeplanner.usecases.ToggleMilestoneCompletionUseCase
 import az.tribe.lifeplanner.usecases.UpdateGoalProgressUseCase
 import az.tribe.lifeplanner.usecases.UpdateGoalStatusUseCase
 import az.tribe.lifeplanner.data.analytics.Analytics
+import az.tribe.lifeplanner.domain.enum.HabitCompletionSource
+import az.tribe.lifeplanner.usecases.habit.CreditHabitsFromSessionUseCase
 import co.touchlab.kermit.Logger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -43,7 +45,8 @@ class FocusViewModel(
     private val toggleMilestoneCompletionUseCase: ToggleMilestoneCompletionUseCase,
     private val getGoalByIdUseCase: GetGoalByIdUseCase,
     private val updateGoalProgressUseCase: UpdateGoalProgressUseCase,
-    private val updateGoalStatusUseCase: UpdateGoalStatusUseCase
+    private val updateGoalStatusUseCase: UpdateGoalStatusUseCase,
+    private val creditHabitsFromSession: CreditHabitsFromSessionUseCase
 ) : ViewModel() {
 
     // Independent scope for cleanup work that must survive ViewModel cancellation
@@ -409,6 +412,7 @@ class FocusViewModel(
                     )
                 }
             }
+            rewardCompletedSession(xp, elapsedMinutes)
             _focusEvents.emit(FocusEvent.SessionCompleted(xp, elapsedMinutes))
             loadTodayStats()
             loadAllTimeStats()
@@ -481,6 +485,24 @@ class FocusViewModel(
         }
     }
 
+    /**
+     * Pays out a finished session: the XP it earned, and any habit the user linked to Focus.
+     *
+     * The XP award used to be missing here — a completed session wrote [FocusSession.xpEarned] and
+     * showed "+X XP" on the complete screen, but only an *interrupted* session (see [onCleared])
+     * ever credited the user's total. Both normal completion paths now pay out properly.
+     */
+    private suspend fun rewardCompletedSession(xp: Int, minutes: Int) {
+        if (xp > 0) {
+            runCatching { gamificationRepository.awardXp(xp.toLong()) }
+                .onFailure { Logger.w("FocusViewModel") { "focus xp award failed: ${it.message}" } }
+        }
+        val credits = creditHabitsFromSession(HabitCompletionSource.FOCUS, minutes)
+        credits.firstOrNull { it.completed }?.let { credit ->
+            _focusEvents.emit(FocusEvent.HabitCredited(credit.habit.title, credit.xpAwarded))
+        }
+    }
+
     private fun onTimerComplete() {
         val duration = _durationMinutes.value
         val xp = calculateXpForDuration(duration)
@@ -504,6 +526,7 @@ class FocusViewModel(
                     )
                 }
             }
+            rewardCompletedSession(xp, duration)
             _focusEvents.emit(FocusEvent.SessionCompleted(xp, duration))
             loadTodayStats()
             loadAllTimeStats()

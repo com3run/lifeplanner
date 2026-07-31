@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 import az.tribe.lifeplanner.domain.enum.GoalCategory
+import az.tribe.lifeplanner.domain.enum.HabitCompletionSource
 import az.tribe.lifeplanner.domain.enum.HabitFrequency
 import az.tribe.lifeplanner.domain.enum.HabitType
 import az.tribe.lifeplanner.domain.enum.HealthMetricType
@@ -31,14 +32,8 @@ import com.adamglin.phosphoricons.regular.Check
 import com.adamglin.phosphoricons.regular.Clock
 import com.adamglin.phosphoricons.regular.Sparkle
 import com.adamglin.phosphoricons.regular.X
+import az.tribe.lifeplanner.domain.service.HabitTrackMode
 import org.koin.compose.viewmodel.koinViewModel
-
-/** How a habit is measured: single check, N actions a day, or minutes a day. */
-internal enum class HabitTrackMode(val label: String) {
-    CHECK("Just check"),
-    COUNT("Count"),
-    MINUTES("Minutes"),
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,10 +56,11 @@ fun AddHabitScreen(
     var titleErrorText by remember { mutableStateOf("") }
     // Collected so the duplicate check below sees the real list (the flow is WhileSubscribed).
     val existingHabits by viewModel.habits.collectAsState()
-    var trackMode by remember { mutableStateOf(HabitTrackMode.CHECK) }
+    var trackMode by remember { mutableStateOf(HabitTrackMode.SINGLE) }
     var userPickedTrackMode by remember { mutableStateOf(false) }
     var countTargetText by remember { mutableStateOf("") }
     var countUnitText by remember { mutableStateOf("") }
+    var completionSource by remember { mutableStateOf(HabitCompletionSource.MANUAL) }
 
     // "Drink 8 glasses of water" should become an 8-action habit without extra typing:
     // infer count/minutes from the title until the user picks a mode themselves.
@@ -74,15 +70,15 @@ fun AddHabitScreen(
         if (parsed != null && parsed.first > 1) {
             val (count, unit) = parsed
             if (unit == "min" || unit == "hrs") {
-                trackMode = HabitTrackMode.MINUTES
+                trackMode = HabitTrackMode.DURATION
                 countTargetText = (if (unit == "hrs") count * 60 else count).toString()
             } else {
                 trackMode = HabitTrackMode.COUNT
                 countTargetText = count.toString()
                 countUnitText = unit
             }
-        } else if (trackMode != HabitTrackMode.CHECK) {
-            trackMode = HabitTrackMode.CHECK
+        } else if (trackMode != HabitTrackMode.SINGLE) {
+            trackMode = HabitTrackMode.SINGLE
             countTargetText = ""
             countUnitText = ""
         }
@@ -305,17 +301,18 @@ fun AddHabitScreen(
                             frequency = selectedFrequency,
                             type = selectedHabitType,
                             targetCount = when (trackMode) {
-                                HabitTrackMode.CHECK -> 1
+                                HabitTrackMode.SINGLE -> 1
                                 else -> target ?: 1
                             },
                             unit = when (trackMode) {
-                                HabitTrackMode.CHECK -> null
+                                HabitTrackMode.SINGLE -> null
                                 HabitTrackMode.COUNT -> countUnitText.trim().ifBlank { "times" }
-                                HabitTrackMode.MINUTES -> "min"
+                                HabitTrackMode.DURATION -> "min"
                             },
                             reminderTime = reminderTime,
                             healthMetricType = healthMetric,
-                            healthTarget = healthTargetText.toDoubleOrNull()
+                            healthTarget = healthTargetText.toDoubleOrNull(),
+                            completionSource = completionSource
                         )
                         onHabitSaved()
                     }
@@ -497,7 +494,7 @@ fun AddHabitScreen(
                             onClick = {
                                 userPickedTrackMode = true
                                 trackMode = mode
-                                if (mode == HabitTrackMode.MINUTES) countUnitText = ""
+                                if (mode == HabitTrackMode.DURATION) countUnitText = ""
                             },
                             label = {
                                 Text(
@@ -536,7 +533,7 @@ fun AddHabitScreen(
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                } else if (trackMode == HabitTrackMode.MINUTES) {
+                } else if (trackMode == HabitTrackMode.DURATION) {
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = countTargetText,
@@ -548,6 +545,13 @@ fun AddHabitScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
+                Spacer(modifier = Modifier.height(16.dp))
+                CompletionSourcePicker(
+                    selected = completionSource,
+                    trackMode = trackMode,
+                    targetCount = countTargetText.toIntOrNull() ?: 1,
+                    onSelect = { completionSource = it }
+                )
             }
 
             // ── Time of day ──────────────────────────────────────────────────

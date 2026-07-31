@@ -35,6 +35,9 @@ internal fun NavGraphBuilder.appNavHabits(navController: NavController) {
             },
             onOpenDetail = { id ->
                 navController.navigate("habit_detail_redesign/$id") { launchSingleTop = true }
+            },
+            onOpenLesson = { id ->
+                navController.navigate("knowledge_detail/$id") { launchSingleTop = true }
             }
         )
     }

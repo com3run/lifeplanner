@@ -143,6 +143,7 @@ CREATE TABLE habits (
     unit              TEXT,
     health_metric_type TEXT,
     health_target     DOUBLE PRECISION,
+    completion_source TEXT,
     -- sync metadata
     updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
     is_deleted   BOOLEAN     NOT NULL DEFAULT FALSE,

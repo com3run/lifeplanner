@@ -1,6 +1,7 @@
 package az.tribe.lifeplanner.domain.model
 
 import az.tribe.lifeplanner.domain.enum.GoalCategory
+import az.tribe.lifeplanner.domain.enum.HabitCompletionSource
 import az.tribe.lifeplanner.domain.enum.HabitFrequency
 import az.tribe.lifeplanner.domain.enum.HabitType
 import az.tribe.lifeplanner.domain.enum.HealthMetricType
@@ -27,7 +28,9 @@ data class Habit(
     val type: HabitType = HabitType.BUILD,
     /** When set, health data auto-completes this habit (STEPS/SLEEP need [healthTarget] reached, WEIGHT/HEART_RATE any reading today). */
     val healthMetricType: HealthMetricType? = null,
-    val healthTarget: Double? = null
+    val healthTarget: Double? = null,
+    /** Which in-app session credits this habit. [HabitCompletionSource.MANUAL] means only the user's own tap does. */
+    val completionSource: HabitCompletionSource = HabitCompletionSource.MANUAL
 )
 
 data class HabitCheckIn(

@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import az.tribe.lifeplanner.domain.enum.GoalStatus
 import az.tribe.lifeplanner.domain.model.FeedItem
 import az.tribe.lifeplanner.domain.model.UserProgress
+import az.tribe.lifeplanner.domain.model.XpRewards
 import az.tribe.lifeplanner.domain.repository.GamificationRepository
 import az.tribe.lifeplanner.domain.repository.GoalRepository
 import az.tribe.lifeplanner.domain.repository.HabitRepository
@@ -13,7 +14,10 @@ import az.tribe.lifeplanner.usecases.habit.CheckInHabitUseCase
 import co.touchlab.kermit.Logger
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -78,6 +82,10 @@ class ForYouViewModel(
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    /** XP a just-finished action earned, one-shot, so the feed can confirm the reward in a snackbar. */
+    private val _xpEvent = MutableSharedFlow<Int>()
+    val xpEvent: SharedFlow<Int> = _xpEvent.asSharedFlow()
+
     init {
         refresh()
     }
@@ -100,7 +108,8 @@ class ForYouViewModel(
         viewModelScope.launch {
             runCatching {
                 goalRepository.toggleMilestoneCompletion(milestoneId, true)
-                gamificationRepository.awardXp(az.tribe.lifeplanner.domain.model.XpRewards.MILESTONE_COMPLETED.toLong())
+                gamificationRepository.awardXp(XpRewards.MILESTONE_COMPLETED.toLong())
+                _xpEvent.emit(XpRewards.MILESTONE_COMPLETED)
             }.onFailure { Logger.w("ForYouViewModel") { "Complete plan item failed: ${it.message}" } }
         }
     }
@@ -116,7 +125,8 @@ class ForYouViewModel(
             val target = runCatching { habitRepository.getHabitById(habitId)?.targetCount ?: 1 }.getOrDefault(1)
             val checkIn = runCatching {
                 val c = checkInHabitUseCase(habitId)
-                gamificationRepository.awardXp(az.tribe.lifeplanner.domain.model.XpRewards.HABIT_CHECK_IN.toLong())
+                gamificationRepository.awardXp(XpRewards.HABIT_CHECK_IN.toLong())
+                _xpEvent.emit(XpRewards.HABIT_CHECK_IN)
                 c
             }.onFailure { Logger.w("ForYouViewModel") { "Check-in failed: ${it.message}" } }.getOrNull()
 

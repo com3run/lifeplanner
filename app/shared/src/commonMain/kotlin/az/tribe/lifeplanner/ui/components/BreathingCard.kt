@@ -43,7 +43,9 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import az.tribe.lifeplanner.domain.model.XpRewards
+import az.tribe.lifeplanner.domain.enum.HabitCompletionSource
 import az.tribe.lifeplanner.domain.repository.GamificationRepository
+import az.tribe.lifeplanner.usecases.habit.CreditHabitsFromSessionUseCase
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
 import az.tribe.lifeplanner.ui.theme.modernColors
 import com.russhwolf.settings.Settings
@@ -129,6 +131,7 @@ private fun todayBreathKey(): String =
 fun BreathingCard() {
     val settings: Settings = koinInject()
     val gamification: GamificationRepository = koinInject()
+    val creditHabits: CreditHabitsFromSessionUseCase = koinInject()
     val haptic = rememberHapticManager()
     val scope = rememberCoroutineScope()
     val c = MaterialTheme.modernColors
@@ -155,7 +158,12 @@ fun BreathingCard() {
                         if (techniqueForSessions(newTotal) != techniqueForSessions(sessionsTotal)) justUnlocked = true
                         settings.putInt(KEY_SESSIONS_TOTAL, newTotal)
                         sessionsTotal = newTotal
-                        scope.launch { runCatching { gamification.awardXp(technique.xp.toLong()) } }
+                        scope.launch {
+                            runCatching { gamification.awardXp(technique.xp.toLong()) }
+                            // A finished breath also counts toward any habit linked to breathing,
+                            // so "three breaths a day" is tracked by doing it, not by ticking it.
+                            runCatching { creditHabits(HabitCompletionSource.BREATHING) }
+                        }
                         haptic.success()
                         active = false
                     },
@@ -211,6 +219,7 @@ fun BreathingCard() {
 fun GuidedBreathSession(onClose: () -> Unit) {
     val settings: Settings = koinInject()
     val gamification: GamificationRepository = koinInject()
+    val creditHabits: CreditHabitsFromSessionUseCase = koinInject()
     val haptic = rememberHapticManager()
     val scope = rememberCoroutineScope()
     val c = MaterialTheme.modernColors
@@ -225,7 +234,10 @@ fun GuidedBreathSession(onClose: () -> Unit) {
                 settings.putInt(KEY_SESSIONS_TOTAL, sessionsTotal + 1)
                 val dateKey = todayBreathKey()
                 settings.putInt(dateKey, settings.getInt(dateKey, 0) + 1)
-                scope.launch { runCatching { gamification.awardXp(technique.xp.toLong()) } }
+                scope.launch {
+                    runCatching { gamification.awardXp(technique.xp.toLong()) }
+                    runCatching { creditHabits(HabitCompletionSource.BREATHING) }
+                }
                 haptic.success()
                 onClose()
             },

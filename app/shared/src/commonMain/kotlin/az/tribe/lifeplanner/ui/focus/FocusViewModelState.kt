@@ -10,6 +10,9 @@ enum class TimerState {
 sealed class FocusEvent {
     data class SessionCompleted(val xpEarned: Int, val durationMinutes: Int) : FocusEvent()
     data class SessionCancelled(val partialXp: Int) : FocusEvent()
+
+    /** A habit linked to Focus was completed by this session, so the user can be told. */
+    data class HabitCredited(val habitTitle: String, val xpEarned: Int) : FocusEvent()
 }
 
 data class MilestoneItem(

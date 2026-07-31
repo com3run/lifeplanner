@@ -51,6 +51,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -166,8 +168,15 @@ fun ForYouScreen(
     }
     val grouped = remember(visible) { visible.groupBy { it.kind.section() } }
 
+    // Confirm what an action was worth. Ticking a plan item or a habit used to award XP silently.
+    val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(Unit) {
+        viewModel.xpEvent.collect { xp -> if (xp > 0) snackbarHostState.showSnackbar("+$xp XP") }
+    }
+
     Scaffold(
         containerColor = c.background,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("For You", fontWeight = FontWeight.Bold) },

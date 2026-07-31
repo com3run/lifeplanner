@@ -6,6 +6,7 @@ import az.tribe.lifeplanner.domain.repository.GamificationRepository
 import az.tribe.lifeplanner.domain.repository.GoalRepository
 import az.tribe.lifeplanner.domain.repository.HabitRepository
 import az.tribe.lifeplanner.domain.repository.KnowledgeRepository
+import az.tribe.lifeplanner.domain.service.HabitTopicMapper
 import az.tribe.lifeplanner.domain.service.KnowledgeBit
 import az.tribe.lifeplanner.domain.service.KnowledgeCollection
 import az.tribe.lifeplanner.domain.service.KnowledgeLibrary
@@ -93,15 +94,18 @@ class LearnHubViewModel(
     }
 
     private suspend fun buildAffinity(): Map<KnowledgeTopic, Double> {
-        val habitCount = runCatching { habitRepository.getAllHabits().size }.getOrDefault(0)
+        val habits = runCatching { habitRepository.getAllHabits() }.getOrDefault(emptyList())
         val goalCount = runCatching { goalRepository.getAllGoals().size }.getOrDefault(0)
         // Every topic starts with a small baseline so nothing is ever fully starved, then the areas
         // the user is active in get boosted so their lessons rise.
         val m = KnowledgeTopic.entries.associateWith { 1.0 }.toMutableMap()
-        m[KnowledgeTopic.HABITS] = 1.0 + habitCount.coerceAtMost(8) * 1.5
-        m[KnowledgeTopic.GOALS] = 1.0 + goalCount.coerceAtMost(8) * 1.0
-        m[KnowledgeTopic.PLANNING] = 1.0 + goalCount.coerceAtMost(8) * 0.5
-        m[KnowledgeTopic.MOTIVATION] = 1.0 + if (goalCount > 0) 1.0 else 0.0
+        // What the habits are *about*, not just how many there are: a sleep habit should pull sleep
+        // lessons up, a meditation practice should pull the ones on attention and the mind.
+        for ((topic, weight) in HabitTopicMapper.affinityFor(habits)) {
+            m[topic] = (m[topic] ?: 1.0) + weight * HABIT_TOPIC_WEIGHT
+        }
+        m[KnowledgeTopic.GOALS] = (m[KnowledgeTopic.GOALS] ?: 1.0) + goalCount.coerceAtMost(8) * 1.0
+        m[KnowledgeTopic.PLANNING] = (m[KnowledgeTopic.PLANNING] ?: 1.0) + goalCount.coerceAtMost(8) * 0.5
         return m
     }
 
@@ -151,5 +155,10 @@ class LearnHubViewModel(
             continuePathTitle = continueCol?.collection?.title,
             continueIsFresh = inProgress == null,
         )
+    }
+
+    private companion object {
+        /** How loudly the habits the user is keeping speak, relative to the per-topic baseline of 1. */
+        const val HABIT_TOPIC_WEIGHT = 1.5
     }
 }

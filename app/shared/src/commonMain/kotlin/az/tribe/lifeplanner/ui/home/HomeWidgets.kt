@@ -49,6 +49,8 @@ import az.tribe.lifeplanner.domain.model.CoachPersona
 import az.tribe.lifeplanner.domain.model.Goal
 import az.tribe.lifeplanner.domain.model.MessageRole
 import az.tribe.lifeplanner.domain.model.Milestone
+import az.tribe.lifeplanner.domain.service.HabitTrackMode
+import az.tribe.lifeplanner.domain.service.trackMode
 import az.tribe.lifeplanner.ui.components.GlassCard
 import az.tribe.lifeplanner.ui.components.getIcon
 import az.tribe.lifeplanner.ui.habit.HabitWithStatus
@@ -242,7 +244,8 @@ fun CompactHomeHabitRow(
 ) {
     val habit = habitWithStatus.habit
     val categoryColor = habit.category.backgroundColor()
-    val isCountBased = habit.targetCount > 1
+    val trackMode = habit.trackMode
+    val isCountBased = trackMode == HabitTrackMode.COUNT
     val count = habitWithStatus.todayCount
     val completed = habitWithStatus.isCompletedToday
     val fraction = if (isCountBased && habit.targetCount > 0) count.toFloat() / habit.targetCount else if (completed) 1f else 0f
@@ -255,10 +258,9 @@ fun CompactHomeHabitRow(
             Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = habit.title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                if (isCountBased) {
-                    val unitLabel = habit.unit ?: "times"
+                if (trackMode == HabitTrackMode.DURATION) {
                     Text(
-                        text = "$count/${habit.targetCount} $unitLabel",
+                        text = "${habit.targetCount} min",
                         style = MaterialTheme.typography.labelSmall,
                         color = if (completed) categoryColor else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                         fontWeight = FontWeight.SemiBold
@@ -274,7 +276,7 @@ fun CompactHomeHabitRow(
                     color = categoryColor.copy(alpha = 0.12f)
                 ) {
                     Text(
-                        "+1",
+                        "$count/${habit.targetCount}",
                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,

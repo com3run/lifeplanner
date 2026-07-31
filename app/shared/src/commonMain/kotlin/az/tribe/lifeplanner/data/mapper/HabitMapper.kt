@@ -3,6 +3,7 @@ package az.tribe.lifeplanner.data.mapper
 import az.tribe.lifeplanner.database.HabitCheckInEntity
 import az.tribe.lifeplanner.database.HabitEntity
 import az.tribe.lifeplanner.domain.enum.GoalCategory
+import az.tribe.lifeplanner.domain.enum.HabitCompletionSource
 import az.tribe.lifeplanner.domain.enum.HabitFrequency
 import az.tribe.lifeplanner.domain.enum.HabitType
 import az.tribe.lifeplanner.domain.enum.HealthMetricType
@@ -36,7 +37,8 @@ fun HabitEntity.toDomain(): Habit {
         reminderTime = reminderTime,
         type = try { HabitType.valueOf(type) } catch (_: Exception) { HabitType.BUILD },
         healthMetricType = healthMetricType?.let { t -> try { HealthMetricType.valueOf(t) } catch (_: Exception) { null } },
-        healthTarget = healthTarget
+        healthTarget = healthTarget,
+        completionSource = HabitCompletionSource.fromNameOrDefault(completionSource)
     )
 }
 
@@ -64,7 +66,8 @@ fun Habit.toEntity(): HabitEntity {
         last_synced_at = null,
         type = type.name,
         healthMetricType = healthMetricType?.name,
-        healthTarget = healthTarget
+        healthTarget = healthTarget,
+        completionSource = completionSource.name
     )
 }
 
@@ -114,7 +117,8 @@ fun createNewHabit(
     reminderTime: String? = null,
     type: HabitType = HabitType.BUILD,
     healthMetricType: HealthMetricType? = null,
-    healthTarget: Double? = null
+    healthTarget: Double? = null,
+    completionSource: HabitCompletionSource = HabitCompletionSource.MANUAL
 ): Habit {
     return Habit(
         id = Uuid.random().toString(),
@@ -135,7 +139,8 @@ fun createNewHabit(
         reminderTime = reminderTime,
         type = type,
         healthMetricType = healthMetricType,
-        healthTarget = healthTarget
+        healthTarget = healthTarget,
+        completionSource = completionSource
     )
 }
 

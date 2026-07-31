@@ -273,6 +273,7 @@ class BackupRepositoryImpl(
                             unit = null,
                             healthMetricType = null,
                             healthTarget = null,
+                            completionSource = null,
                             sync_updated_at = Clock.System.now().toString(),
                             is_deleted = 0L,
                             sync_version = 0L,

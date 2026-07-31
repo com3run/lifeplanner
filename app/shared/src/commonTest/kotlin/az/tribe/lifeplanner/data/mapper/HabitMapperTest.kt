@@ -39,7 +39,8 @@ class HabitMapperTest {
             type = "BUILD",
             unit = null,
             healthMetricType = null,
-            healthTarget = null
+            healthTarget = null,
+            completionSource = null
         )
 
         val habit = entity.toDomain()
@@ -86,7 +87,8 @@ class HabitMapperTest {
             type = "BUILD",
             unit = null,
             healthMetricType = null,
-            healthTarget = null
+            healthTarget = null,
+            completionSource = null
         )
 
         assertFalse(entity.toDomain().isActive)
@@ -117,7 +119,8 @@ class HabitMapperTest {
             type = "BUILD",
             unit = null,
             healthMetricType = null,
-            healthTarget = null
+            healthTarget = null,
+            completionSource = null
         )
 
         assertNull(entity.toDomain().lastCompletedDate)
@@ -148,7 +151,8 @@ class HabitMapperTest {
             type = "BUILD",
             unit = null,
             healthMetricType = null,
-            healthTarget = null
+            healthTarget = null,
+            completionSource = null
         )
 
         assertNull(entity.toDomain().linkedGoalId)
@@ -179,7 +183,8 @@ class HabitMapperTest {
             type = "BUILD",
             unit = null,
             healthMetricType = null,
-            healthTarget = null
+            healthTarget = null,
+            completionSource = null
         )
 
         assertNull(entity.toDomain().reminderTime)
@@ -211,7 +216,8 @@ class HabitMapperTest {
                 type = "BUILD",
                 unit = null,
                 healthMetricType = null,
-                healthTarget = null
+                healthTarget = null,
+                completionSource = null
             )
             assertEquals(freq, entity.toDomain().frequency, "Failed for frequency $freq")
         }
@@ -242,7 +248,8 @@ class HabitMapperTest {
             type = "BUILD",
             unit = null,
             healthMetricType = null,
-            healthTarget = null
+            healthTarget = null,
+            completionSource = null
         )
 
         assertEquals(HabitFrequency.DAILY, entity.toDomain().frequency)
@@ -274,7 +281,8 @@ class HabitMapperTest {
                 type = "BUILD",
                 unit = null,
                 healthMetricType = null,
-                healthTarget = null
+                healthTarget = null,
+                completionSource = null
             )
             assertEquals(category, entity.toDomain().category, "Failed for category $category")
         }
@@ -305,7 +313,8 @@ class HabitMapperTest {
             type = "BUILD",
             unit = null,
             healthMetricType = null,
-            healthTarget = null
+            healthTarget = null,
+            completionSource = null
         )
 
         assertEquals(LocalDateTime(2026, 3, 6, 10, 0, 0), entity.toDomain().createdAt)
@@ -602,7 +611,8 @@ class HabitMapperTest {
                 type = "BUILD",
                 unit = null,
                 healthMetricType = null,
-                healthTarget = null
+                healthTarget = null,
+                completionSource = null
             ),
             HabitEntity(
                 id = "h2", title = "B", description = "", category = "BODY",
@@ -614,7 +624,8 @@ class HabitMapperTest {
                 type = "BUILD",
                 unit = null,
                 healthMetricType = null,
-                healthTarget = null
+                healthTarget = null,
+                completionSource = null
             )
         )
 

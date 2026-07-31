@@ -822,3 +822,8 @@ internal fun migrateToVersion37(db: SupportSQLiteDatabase) {
     addColumnSafe(db, "DecisionEntity", "source", "TEXT NOT NULL DEFAULT 'CHOICE_POINT'")
     addColumnSafe(db, "DecisionEntity", "status", "TEXT NOT NULL DEFAULT 'CONFIRMED'")
 }
+
+internal fun migrateToVersion38(db: SupportSQLiteDatabase) {
+    // Schema v38: which in-app session completes a habit, matches migration 38.sqm
+    addColumnSafe(db, "HabitEntity", "completionSource", "TEXT")
+}

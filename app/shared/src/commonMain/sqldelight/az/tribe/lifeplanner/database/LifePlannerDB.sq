@@ -381,6 +381,7 @@ CREATE TABLE IF NOT EXISTS HabitEntity (
     unit TEXT,
     healthMetricType TEXT,
     healthTarget REAL,
+    completionSource TEXT,
     FOREIGN KEY (linkedGoalId) REFERENCES GoalEntity(id) ON DELETE SET NULL
 );
 
@@ -400,8 +401,8 @@ CREATE TABLE IF NOT EXISTS HabitCheckInEntity (
 
 -- Habit queries
 insertHabit:
-INSERT OR REPLACE INTO HabitEntity(id, title, description, category, frequency, targetCount, currentStreak, longestStreak, totalCompletions, lastCompletedDate, linkedGoalId, correlationScore, isActive, createdAt, reminderTime, sync_updated_at, is_deleted, sync_version, last_synced_at, type, unit, healthMetricType, healthTarget)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT OR REPLACE INTO HabitEntity(id, title, description, category, frequency, targetCount, currentStreak, longestStreak, totalCompletions, lastCompletedDate, linkedGoalId, correlationScore, isActive, createdAt, reminderTime, sync_updated_at, is_deleted, sync_version, last_synced_at, type, unit, healthMetricType, healthTarget, completionSource)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 getAllHabits:
 SELECT * FROM HabitEntity WHERE isActive = 1 AND is_deleted = 0 ORDER BY createdAt DESC;
@@ -417,7 +418,7 @@ SELECT * FROM HabitEntity WHERE linkedGoalId = ? AND isActive = 1 AND is_deleted
 
 updateHabit:
 UPDATE HabitEntity
-SET title = ?, description = ?, category = ?, frequency = ?, targetCount = ?, linkedGoalId = ?, reminderTime = ?, type = ?, unit = ?, healthMetricType = ?, healthTarget = ?, sync_updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+SET title = ?, description = ?, category = ?, frequency = ?, targetCount = ?, linkedGoalId = ?, reminderTime = ?, type = ?, unit = ?, healthMetricType = ?, healthTarget = ?, completionSource = ?, sync_updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
 WHERE id = ?;
 
 updateHabitStreak:
@@ -1772,8 +1773,8 @@ INSERT OR REPLACE INTO UserEntity(id, firebaseUid, email, displayName, isGuest, 
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 upsertHabitFromSync:
-INSERT OR REPLACE INTO HabitEntity(id, title, description, category, frequency, targetCount, currentStreak, longestStreak, totalCompletions, lastCompletedDate, linkedGoalId, correlationScore, isActive, createdAt, reminderTime, sync_updated_at, is_deleted, sync_version, last_synced_at, type, unit, healthMetricType, healthTarget)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT OR REPLACE INTO HabitEntity(id, title, description, category, frequency, targetCount, currentStreak, longestStreak, totalCompletions, lastCompletedDate, linkedGoalId, correlationScore, isActive, createdAt, reminderTime, sync_updated_at, is_deleted, sync_version, last_synced_at, type, unit, healthMetricType, healthTarget, completionSource)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 upsertHabitCheckInFromSync:
 INSERT OR REPLACE INTO HabitCheckInEntity(id, habitId, date, completed, notes, count, sync_updated_at, is_deleted, sync_version, last_synced_at)

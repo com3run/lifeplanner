@@ -6,13 +6,19 @@ import az.tribe.lifeplanner.domain.enum.FocusTheme
 import az.tribe.lifeplanner.domain.enum.GoalStatus
 import az.tribe.lifeplanner.domain.enum.Mood
 import az.tribe.lifeplanner.domain.model.XpRewards
+import az.tribe.lifeplanner.testutil.FakeAbilityRepository
 import az.tribe.lifeplanner.testutil.FakeFocusRepository
+import az.tribe.lifeplanner.testutil.FakeHabitRepository
 import az.tribe.lifeplanner.testutil.FakeGamificationRepository
 import az.tribe.lifeplanner.testutil.FakeGoalRepository
 import az.tribe.lifeplanner.testutil.testFocusSession
 import az.tribe.lifeplanner.testutil.testGoal
 import az.tribe.lifeplanner.testutil.testMilestone
 import az.tribe.lifeplanner.usecases.GetGoalByIdUseCase
+import az.tribe.lifeplanner.usecases.ability.AwardAbilityXpUseCase
+import az.tribe.lifeplanner.usecases.habit.AwardHabitCompletionUseCase
+import az.tribe.lifeplanner.usecases.habit.CreditHabitsFromSessionUseCase
+import com.russhwolf.settings.MapSettings
 import az.tribe.lifeplanner.usecases.ToggleMilestoneCompletionUseCase
 import az.tribe.lifeplanner.usecases.UpdateGoalProgressUseCase
 import az.tribe.lifeplanner.usecases.UpdateGoalStatusUseCase
@@ -28,6 +34,7 @@ class FocusViewModelTest {
     private lateinit var fakeFocusRepository: FakeFocusRepository
     private lateinit var fakeGoalRepository: FakeGoalRepository
     private lateinit var fakeGamificationRepository: FakeGamificationRepository
+    private lateinit var fakeHabitRepository: FakeHabitRepository
     private val testDispatcher = StandardTestDispatcher()
 
     @BeforeTest
@@ -36,6 +43,7 @@ class FocusViewModelTest {
         fakeFocusRepository = FakeFocusRepository()
         fakeGoalRepository = FakeGoalRepository()
         fakeGamificationRepository = FakeGamificationRepository()
+        fakeHabitRepository = FakeHabitRepository()
     }
 
     @AfterTest
@@ -51,7 +59,16 @@ class FocusViewModelTest {
             toggleMilestoneCompletionUseCase = ToggleMilestoneCompletionUseCase(fakeGoalRepository),
             getGoalByIdUseCase = GetGoalByIdUseCase(fakeGoalRepository),
             updateGoalProgressUseCase = UpdateGoalProgressUseCase(fakeGoalRepository),
-            updateGoalStatusUseCase = UpdateGoalStatusUseCase(fakeGoalRepository)
+            updateGoalStatusUseCase = UpdateGoalStatusUseCase(fakeGoalRepository),
+            creditHabitsFromSession = CreditHabitsFromSessionUseCase(
+                habitRepository = fakeHabitRepository,
+                awardHabitCompletion = AwardHabitCompletionUseCase(
+                    habitRepository = fakeHabitRepository,
+                    gamificationRepository = fakeGamificationRepository,
+                    awardAbilityXpUseCase = AwardAbilityXpUseCase(FakeAbilityRepository()),
+                    settings = MapSettings(),
+                ),
+            ),
         )
     }
 

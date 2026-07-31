@@ -90,7 +90,8 @@ class HabitRepositoryImpl(
             type = habit.type.name,
             unit = habit.unit,
             healthMetricType = habit.healthMetricType?.name,
-            healthTarget = habit.healthTarget
+            healthTarget = habit.healthTarget,
+            completionSource = habit.completionSource.name
         )
         notifyWidgets()
         syncManager.requestSync()
@@ -108,10 +109,13 @@ class HabitRepositoryImpl(
         syncManager.requestSync()
     }
 
-    override suspend fun incrementCount(habitId: String, date: LocalDate): HabitCheckIn {
+    override suspend fun incrementCount(habitId: String, date: LocalDate): HabitCheckIn =
+        addCount(habitId, date, delta = 1)
+
+    override suspend fun addCount(habitId: String, date: LocalDate, delta: Int): HabitCheckIn {
         val habit = getHabitById(habitId)
         val existing = getCheckInByHabitAndDate(habitId, date)
-        val newCount = (existing?.count ?: 0) + 1
+        val newCount = ((existing?.count ?: 0) + delta).coerceAtLeast(0)
         val completed = habit != null && newCount >= habit.targetCount
 
         if (existing == null) {

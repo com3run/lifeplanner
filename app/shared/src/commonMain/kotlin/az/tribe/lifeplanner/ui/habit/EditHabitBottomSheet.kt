@@ -15,6 +15,7 @@ import az.tribe.lifeplanner.domain.enum.GoalCategory
 import az.tribe.lifeplanner.domain.enum.HabitFrequency
 import az.tribe.lifeplanner.domain.enum.HealthMetricType
 import az.tribe.lifeplanner.domain.model.Habit
+import az.tribe.lifeplanner.domain.service.HabitTrackMode
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.Clock
@@ -43,8 +44,8 @@ internal fun EditHabitBottomSheet(
     var trackMode by remember {
         mutableStateOf(
             when {
-                habit.targetCount <= 1 -> HabitTrackMode.CHECK
-                habit.unit == "min" -> HabitTrackMode.MINUTES
+                habit.targetCount <= 1 -> HabitTrackMode.SINGLE
+                habit.unit == "min" -> HabitTrackMode.DURATION
                 else -> HabitTrackMode.COUNT
             }
         )
@@ -55,6 +56,7 @@ internal fun EditHabitBottomSheet(
     var countUnitText by remember {
         mutableStateOf(habit.unit?.takeIf { it != "min" } ?: "")
     }
+    var completionSource by remember { mutableStateOf(habit.completionSource) }
     val timePickerState = rememberTimePickerState(
         initialHour = habit.reminderTime?.split(":")?.firstOrNull()?.toIntOrNull() ?: 8,
         initialMinute = habit.reminderTime?.split(":")?.getOrNull(1)?.toIntOrNull() ?: 0,
@@ -315,7 +317,7 @@ internal fun EditHabitBottomSheet(
                             shape = RoundedCornerShape(12.dp)
                         )
                     }
-                } else if (trackMode == HabitTrackMode.MINUTES) {
+                } else if (trackMode == HabitTrackMode.DURATION) {
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = countTargetText,
@@ -327,6 +329,15 @@ internal fun EditHabitBottomSheet(
                         shape = RoundedCornerShape(12.dp)
                     )
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                CompletionSourcePicker(
+                    selected = completionSource,
+                    trackMode = trackMode,
+                    targetCount = countTargetText.toIntOrNull() ?: 1,
+                    onSelect = { completionSource = it }
+                )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -402,17 +413,18 @@ internal fun EditHabitBottomSheet(
                                     category = selectedCategory,
                                     frequency = selectedFrequency,
                                     targetCount = when (trackMode) {
-                                        HabitTrackMode.CHECK -> 1
+                                        HabitTrackMode.SINGLE -> 1
                                         else -> target ?: 1
                                     },
                                     unit = when (trackMode) {
-                                        HabitTrackMode.CHECK -> null
+                                        HabitTrackMode.SINGLE -> null
                                         HabitTrackMode.COUNT -> countUnitText.trim().ifBlank { "times" }
-                                        HabitTrackMode.MINUTES -> "min"
+                                        HabitTrackMode.DURATION -> "min"
                                     },
                                     reminderTime = reminderTime,
                                     healthMetricType = healthMetric,
-                                    healthTarget = healthTargetText.toDoubleOrNull()
+                                    healthTarget = healthTargetText.toDoubleOrNull(),
+                                    completionSource = completionSource
                                 )
                             )
                         }

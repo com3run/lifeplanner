@@ -19,6 +19,7 @@ internal fun NavGraphBuilder.appNavHabitDetailRedesign(navController: NavControl
         HabitDetailScreen(
             habitId = habitId,
             onBackClick = { navController.popBackStack() },
+            onOpenLesson = { id -> navController.navigate("knowledge_detail/$id") { launchSingleTop = true } },
         )
     }
 }

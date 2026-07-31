@@ -201,6 +201,7 @@ data class HabitSyncDto(
     @SerialName("unit") val unit: String? = null,
     @SerialName("health_metric_type") val healthMetricType: String? = null,
     @SerialName("health_target") val healthTarget: Double? = null,
+    @SerialName("completion_source") val completionSource: String? = null,
     @SerialName("updated_at") val updatedAt: String? = null,
     @SerialName("is_deleted") val isDeleted: Boolean = false,
     @SerialName("sync_version") val syncVersion: Long = 0

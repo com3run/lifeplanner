@@ -114,7 +114,10 @@ import az.tribe.lifeplanner.usecases.ability.AwardAbilityXpUseCase
 import az.tribe.lifeplanner.usecases.health.AutoCompleteHealthHabitsUseCase
 import az.tribe.lifeplanner.usecases.health.SyncHealthDataUseCase
 import az.tribe.lifeplanner.usecases.habit.BackfillHabitTargetsUseCase
+import az.tribe.lifeplanner.usecases.habit.AwardHabitCompletionUseCase
 import az.tribe.lifeplanner.usecases.habit.CheckInHabitUseCase
+import az.tribe.lifeplanner.usecases.habit.CreditHabitsFromSessionUseCase
+import az.tribe.lifeplanner.usecases.habit.RecommendLessonsForHabitUseCase
 import az.tribe.lifeplanner.usecases.habit.CreateHabitUseCase
 import az.tribe.lifeplanner.usecases.habit.DeleteHabitUseCase
 import az.tribe.lifeplanner.usecases.habit.GetAllHabitsUseCase
@@ -376,6 +379,9 @@ val appModule = module {
     factory { UpdateHabitUseCase(get()) }
     factory { DeleteHabitUseCase(get()) }
     factory { CheckInHabitUseCase(get()) }
+    factory { AwardHabitCompletionUseCase(get(), get(), get(), get()) }
+    factory { CreditHabitsFromSessionUseCase(get(), get()) }
+    factory { RecommendLessonsForHabitUseCase(get(), get()) }
     factory { UncheckHabitUseCase(get()) }
     factory { GetHabitsWithTodayStatusUseCase(get()) }
     factory { GetHabitsByGoalUseCase(get()) }
@@ -427,7 +433,7 @@ val appModule = module {
     viewModel { params -> az.tribe.lifeplanner.ui.possibility.PossibilityModeViewModel(params.get(), get(), get(), get(), get()) }
     viewModel { az.tribe.lifeplanner.ui.goals.GoalsViewModel(get()) }
     viewModel { params -> az.tribe.lifeplanner.ui.goals.GoalDetailViewModel(params.get(), get(), get()) }
-    viewModel { params -> az.tribe.lifeplanner.ui.habit.HabitDetailViewModel(params.get(), get(), get(), get(), get(), get()) }
+    viewModel { params -> az.tribe.lifeplanner.ui.habit.HabitDetailViewModel(params.get(), get(), get(), get(), get(), get(), get()) }
     viewModelOf(::RetrospectiveViewModel)
     viewModelOf(::BeginnerObjectiveViewModel)
     viewModelOf(::AbilityViewModel)

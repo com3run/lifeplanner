@@ -38,6 +38,8 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import az.tribe.lifeplanner.domain.enum.GoalCategory
 import az.tribe.lifeplanner.domain.enum.HabitType
+import az.tribe.lifeplanner.domain.service.HabitTrackMode
+import az.tribe.lifeplanner.domain.service.trackMode
 import az.tribe.lifeplanner.ui.habit.HabitWithStatus
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
 import kotlin.math.absoluteValue
@@ -226,7 +228,8 @@ fun HabitCard(
 ) {
     val habit = habitWithStatus.habit
     val isCompletedToday = habitWithStatus.isCompletedToday
-    val isCountBased = habit.targetCount > 1
+    val trackMode = habit.trackMode
+    val isCountBased = trackMode == HabitTrackMode.COUNT
     val todayCount = habitWithStatus.todayCount
     val categoryColor = habit.category.backgroundColor()
 
@@ -296,12 +299,12 @@ fun HabitCard(
                         overflow = TextOverflow.Ellipsis
                     )
 
-                    // A single subtitle: progress for count habits, else the streak, else nothing.
+                    // A single subtitle. Count habits carry their progress on the pill now, so this
+                    // line is free for the streak; duration habits use it to state how long.
                     if (!isCompletedToday) {
-                        val unitLabel = habit.unit?.takeIf { it.isNotBlank() } ?: "times"
                         when {
-                            isCountBased -> Text(
-                                text = "$todayCount / ${habit.targetCount} $unitLabel",
+                            trackMode == HabitTrackMode.DURATION -> Text(
+                                text = "${habit.targetCount} min",
                                 style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
                                 color = categoryColor,
                             )
@@ -314,7 +317,8 @@ fun HabitCard(
                     }
                 }
 
-                // +1 increment button for count-based habits (the only secondary action kept).
+                // Progress pill for count habits: shows where you are, and tapping adds one.
+                // "2/8" tells you more than "+1" ever did, and it replaces the old subtitle line.
                 if (isCountBased && !isCompletedToday && onIncrement != null) {
                     Surface(
                         onClick = onIncrement,
@@ -322,7 +326,7 @@ fun HabitCard(
                         color = categoryColor.copy(alpha = 0.15f)
                     ) {
                         Text(
-                            text = "+1",
+                            text = "$todayCount/${habit.targetCount}",
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                             color = categoryColor,
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)

@@ -51,6 +51,7 @@ class HabitTableSyncer(
         unit = local.unit,
         healthMetricType = local.healthMetricType,
         healthTarget = local.healthTarget,
+        completionSource = local.completionSource,
         updatedAt = local.sync_updated_at ?: Clock.System.now().toString(),
         isDeleted = local.is_deleted != 0L,
         syncVersion = local.sync_version
@@ -77,6 +78,7 @@ class HabitTableSyncer(
             unit = remote.unit,
             healthMetricType = remote.healthMetricType,
             healthTarget = remote.healthTarget,
+            completionSource = remote.completionSource,
             sync_updated_at = remote.updatedAt,
             is_deleted = if (remote.isDeleted) 1L else 0L,
             sync_version = remote.syncVersion,
@@ -105,6 +107,7 @@ class HabitTableSyncer(
             unit = entity.unit,
             healthMetricType = entity.healthMetricType,
             healthTarget = entity.healthTarget,
+            completionSource = entity.completionSource,
             sync_updated_at = entity.sync_updated_at,
             is_deleted = entity.is_deleted,
             sync_version = entity.sync_version,
