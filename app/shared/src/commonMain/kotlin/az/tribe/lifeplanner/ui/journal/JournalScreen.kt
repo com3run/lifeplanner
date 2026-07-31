@@ -6,7 +6,10 @@ import androidx.compose.foundation.layout.*
 import org.jetbrains.compose.resources.painterResource
 import leanlifeplanner.app.shared.generated.resources.Res
 import leanlifeplanner.app.shared.generated.resources.illus_learn_habits
-import leanlifeplanner.app.shared.generated.resources.illus_learn_empty
+import leanlifeplanner.app.shared.generated.resources.illus_empty_box
+import leanlifeplanner.app.shared.generated.resources.illus_empty_goals
+import leanlifeplanner.app.shared.generated.resources.illus_empty_journal
+import org.jetbrains.compose.resources.DrawableResource
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -337,6 +340,7 @@ fun JournalScreen(
                     // is a prompt, not a state — the writer collects the mood as its first step.
                     item(key = "day_empty") {
                         WarmEmptyState(
+                            illustration = Res.drawable.illus_empty_journal,
                             title = if (selectedDate == today) "Nothing journaled today"
                             else "Nothing journaled this day",
                             subtitle = if (selectedDate == today) "Tap Write to start today's entry"
@@ -428,11 +432,11 @@ fun JournalScreen(
 
                 if (sortedGoals.isEmpty()) {
                     item(key = "goals_empty") {
-                        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 48.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("No goals yet", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
-                            Spacer(Modifier.height(6.dp))
-                            Text("Tap Add Goal to set your first target", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
-                        }
+                        WarmEmptyState(
+                            illustration = Res.drawable.illus_empty_goals,
+                            title = "No goals yet",
+                            subtitle = "Tap Add Goal to set your first target",
+                        )
                     }
                 } else {
                     items(items = sortedGoals, key = { "goal_${it.id}" }) { goal ->
@@ -450,11 +454,11 @@ fun JournalScreen(
             else if (currentTab == 2) {
                 if (habitsWithStatus.isEmpty()) {
                     item(key = "habits_empty") {
-                        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 48.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("No habits yet", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
-                            Spacer(Modifier.height(6.dp))
-                            Text("Tap New Habit to start building consistency", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
-                        }
+                        WarmEmptyState(
+                            illustration = Res.drawable.illus_learn_habits,
+                            title = "No habits yet",
+                            subtitle = "Tap New Habit to start building consistency",
+                        )
                     }
                 } else if (selectedDate != today) {
                     // A day view: what you did that day, done first then skipped.
@@ -518,13 +522,11 @@ fun JournalScreen(
             else if (currentTab == 3 && FeatureFlags.ABILITIES_ENABLED) {
                 if (abilities.isEmpty()) {
                     item(key = "abilities_empty") {
-                        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 48.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("⚡", style = MaterialTheme.typography.displaySmall)
-                            Spacer(Modifier.height(12.dp))
-                            Text("No abilities yet", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
-                            Spacer(Modifier.height(6.dp))
-                            Text("Tap Add Ability to start leveling up", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
-                        }
+                        WarmEmptyState(
+                            illustration = Res.drawable.illus_empty_box,
+                            title = "No abilities yet",
+                            subtitle = "Tap Add Ability to start leveling up",
+                        )
                     }
                 } else {
                     items(items = abilities, key = { "ability_${it.id}" }) { ability ->
@@ -671,14 +673,18 @@ private fun tuneUpEmoji(kind: GoalOptimizer.Kind): String = when (kind) {
 
 /** A gentle empty state: a warm illustration over a soft title + hint, instead of bare grey text. */
 @Composable
-private fun WarmEmptyState(title: String, subtitle: String) {
+private fun WarmEmptyState(
+    illustration: DrawableResource,
+    title: String,
+    subtitle: String,
+) {
     Column(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Image(
-            painter = painterResource(Res.drawable.illus_learn_empty),
+            painter = painterResource(illustration),
             contentDescription = null,
             modifier = Modifier.height(130.dp),
         )
