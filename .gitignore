@@ -30,7 +30,6 @@ iosApp/iosApp/GoogleService-Info.plist
 .claude/*
 !.claude/skills/
 .postman/
-CLAUDE.md
 *.aab
 *.ipa
 *.xcarchive
