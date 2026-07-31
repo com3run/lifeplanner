@@ -12,8 +12,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -21,7 +23,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -41,12 +42,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import az.tribe.lifeplanner.domain.model.XpRewards
 import az.tribe.lifeplanner.domain.enum.HabitCompletionSource
 import az.tribe.lifeplanner.domain.repository.GamificationRepository
 import az.tribe.lifeplanner.usecases.habit.CreditHabitsFromSessionUseCase
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
+import az.tribe.lifeplanner.ui.theme.bouncyClickable
 import az.tribe.lifeplanner.ui.theme.modernColors
 import com.russhwolf.settings.Settings
 import kotlinx.coroutines.delay
@@ -144,76 +150,78 @@ fun BreathingCard() {
 
     val technique = techniqueForSessions(sessionsTotal)
 
-    AnimatedVisibility(visible = count < BREATH_GOAL || active) {
+    AnimatedVisibility(visible = count < BREATH_GOAL) {
         Surface(Modifier.fillMaxWidth(), color = c.cardBackground, shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large)) {
-            if (active) {
-                BreathingSession(
-                    technique = technique,
-                    onDone = {
-                        val next = (count + 1).coerceAtMost(BREATH_GOAL)
-                        count = next
-                        settings.putInt(dateKey, next)
-                        val newTotal = sessionsTotal + 1
-                        // Crossing into a higher level reveals a fresh rhythm (still unnamed).
-                        if (techniqueForSessions(newTotal) != techniqueForSessions(sessionsTotal)) justUnlocked = true
-                        settings.putInt(KEY_SESSIONS_TOTAL, newTotal)
-                        sessionsTotal = newTotal
-                        scope.launch {
-                            runCatching { gamification.awardXp(technique.xp.toLong()) }
-                            // A finished breath also counts toward any habit linked to breathing,
-                            // so "three breaths a day" is tracked by doing it, not by ticking it.
-                            runCatching { creditHabits(HabitCompletionSource.BREATHING) }
-                        }
-                        haptic.success()
-                        active = false
-                    },
-                    onCancel = { active = false },
-                )
-            } else {
-                Column(
-                    Modifier.fillMaxWidth().padding(LifePlannerDesign.Padding.cardContent),
-                    verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
+            Column(
+                Modifier.fillMaxWidth().padding(LifePlannerDesign.Padding.cardContent),
+                verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
+            ) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(technique.symbol, style = MaterialTheme.typography.headlineSmall)
-                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                            Text("Take a breath", style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = c.textPrimary)
-                            Text(
-                                if (count == 0) "A moment to reset before you dive in." else "$count of $BREATH_GOAL today. One more?",
-                                style = MaterialTheme.typography.bodySmall, color = c.textSecondary,
-                            )
-                        }
-                        AppButton(text = "Breathe", onClick = { active = true }, variant = AppButtonVariant.SECONDARY)
+                    Text(technique.symbol, style = MaterialTheme.typography.headlineSmall)
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text("Take a breath", style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = c.textPrimary)
+                        Text(
+                            if (count == 0) "A moment to reset before you dive in." else "$count of $BREATH_GOAL today. One more?",
+                            style = MaterialTheme.typography.bodySmall, color = c.textSecondary,
+                        )
                     }
+                    AppButton(text = "Breathe", onClick = { active = true }, variant = AppButtonVariant.SECONDARY)
+                }
 
-                    // A quiet sense of progression: a fresh rhythm on level-up, or how far to the next.
-                    val remaining = nextUnlockAt(sessionsTotal)?.minus(sessionsTotal)
-                    when {
-                        justUnlocked -> Text(
-                            "🎉 A new breath unlocked — a fresh rhythm to try.",
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                            color = c.primary,
-                        )
-                        remaining != null -> Text(
-                            if (remaining == 1) "1 more breath to your next rhythm" else "$remaining more breaths to your next rhythm",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = c.textTertiary,
-                        )
-                    }
+                // A quiet sense of progression: a fresh rhythm on level-up, or how far to the next.
+                val remaining = nextUnlockAt(sessionsTotal)?.minus(sessionsTotal)
+                when {
+                    justUnlocked -> Text(
+                        "🎉 A new breath unlocked — a fresh rhythm to try.",
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                        color = c.primary,
+                    )
+                    remaining != null -> Text(
+                        if (remaining == 1) "1 more breath to your next rhythm" else "$remaining more breaths to your next rhythm",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = c.textTertiary,
+                    )
                 }
             }
         }
+    }
+
+    // The breath itself never shares the screen: it takes the whole of it (see [ImmersiveBreath]).
+    if (active) {
+        ImmersiveBreath(
+            technique = technique,
+            onDone = {
+                val next = (count + 1).coerceAtMost(BREATH_GOAL)
+                count = next
+                settings.putInt(dateKey, next)
+                val newTotal = sessionsTotal + 1
+                // Crossing into a higher level reveals a fresh rhythm (still unnamed).
+                if (techniqueForSessions(newTotal) != techniqueForSessions(sessionsTotal)) justUnlocked = true
+                settings.putInt(KEY_SESSIONS_TOTAL, newTotal)
+                sessionsTotal = newTotal
+                scope.launch {
+                    runCatching { gamification.awardXp(technique.xp.toLong()) }
+                    // A finished breath also counts toward any habit linked to breathing,
+                    // so "three breaths a day" is tracked by doing it, not by ticking it.
+                    runCatching { creditHabits(HabitCompletionSource.BREATHING) }
+                }
+                haptic.success()
+                active = false
+            },
+            onCancel = { active = false },
+        )
     }
 }
 
 /**
  * A self-contained guided breath for use outside the feed card (e.g. the "take a breath" nudge).
  * Auto-selects the level-appropriate technique, awards XP and advances the practice on completion,
- * then calls [onClose]. Cancelling just closes without counting.
+ * then calls [onClose]. Cancelling just closes without counting. Like every breath in the app it
+ * takes over the whole screen (see [ImmersiveBreath]), so callers need no scrim of their own.
  */
 @Composable
 fun GuidedBreathSession(onClose: () -> Unit) {
@@ -222,34 +230,97 @@ fun GuidedBreathSession(onClose: () -> Unit) {
     val creditHabits: CreditHabitsFromSessionUseCase = koinInject()
     val haptic = rememberHapticManager()
     val scope = rememberCoroutineScope()
-    val c = MaterialTheme.modernColors
 
     val sessionsTotal = remember { settings.getInt(KEY_SESSIONS_TOTAL, 0) }
     val technique = techniqueForSessions(sessionsTotal)
 
-    Surface(Modifier.fillMaxWidth(), color = c.cardBackground, shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large)) {
-        BreathingSession(
-            technique = technique,
-            onDone = {
-                settings.putInt(KEY_SESSIONS_TOTAL, sessionsTotal + 1)
-                val dateKey = todayBreathKey()
-                settings.putInt(dateKey, settings.getInt(dateKey, 0) + 1)
-                scope.launch {
-                    runCatching { gamification.awardXp(technique.xp.toLong()) }
-                    runCatching { creditHabits(HabitCompletionSource.BREATHING) }
-                }
-                haptic.success()
-                onClose()
-            },
-            onCancel = onClose,
-        )
+    ImmersiveBreath(
+        technique = technique,
+        onDone = {
+            settings.putInt(KEY_SESSIONS_TOTAL, sessionsTotal + 1)
+            val dateKey = todayBreathKey()
+            settings.putInt(dateKey, settings.getInt(dateKey, 0) + 1)
+            scope.launch {
+                runCatching { gamification.awardXp(technique.xp.toLong()) }
+                runCatching { creditHabits(HabitCompletionSource.BREATHING) }
+            }
+            haptic.success()
+            onClose()
+        },
+        onCancel = onClose,
+    )
+}
+
+// ── The immersive session ────────────────────────────────────────────────────
+
+/** The night the breath happens in: fixed in both themes, so the screen always reads as "off". */
+private val BREATH_NIGHT = listOf(Color(0xFF070B18), Color(0xFF121A33), Color(0xFF070B18))
+private val BREATH_GLOW = Color(0xFF7DA2FF)
+private val BREATH_TEXT = Color(0xFFEAF0FF)
+
+/**
+ * The breath, alone on the screen. Everything else in the app goes away (a full-screen dialog over
+ * a fixed night backdrop), the orb sits dead centre, and the only words are the phase you're in.
+ * The screen is kept awake for the duration, and each phase change lands as a soft haptic so the
+ * rhythm can be followed with your eyes shut.
+ *
+ * Leaving is deliberate but never trapped: a quiet "End" at the bottom, or the system back gesture.
+ */
+@Composable
+private fun ImmersiveBreath(technique: BreathTechnique, onDone: () -> Unit, onCancel: () -> Unit) {
+    Dialog(
+        onDismissRequest = onCancel,
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            dismissOnBackPress = true,
+            dismissOnClickOutside = false,
+        ),
+    ) {
+        KeepScreenOn(enabled = true)
+        // The whole thing fades up rather than cutting in, so entering the breath is itself calming.
+        val enter = remember { Animatable(0f) }
+        LaunchedEffect(Unit) { enter.animateTo(1f, tween(500, easing = FastOutSlowInEasing)) }
+
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(Brush.verticalGradient(BREATH_NIGHT))
+                .graphicsLayer { alpha = enter.value },
+            contentAlignment = Alignment.Center,
+        ) {
+            if (technique.boxStyle) BoxBreathVisual(technique, onDone, onCancel)
+            else PacedBreathVisual(technique, onDone, onCancel)
+        }
     }
 }
 
+/** The one way out of a session, kept quiet at the bottom of the screen. */
 @Composable
-private fun BreathingSession(technique: BreathTechnique, onDone: () -> Unit, onCancel: () -> Unit) {
-    if (technique.boxStyle) BoxBreathVisual(technique, onDone, onCancel)
-    else PacedBreathVisual(technique, onDone, onCancel)
+private fun EndBreathLink(onCancel: () -> Unit) {
+    Text(
+        "End",
+        style = MaterialTheme.typography.labelLarge,
+        color = BREATH_TEXT.copy(alpha = 0.35f),
+        textAlign = TextAlign.Center,
+        modifier = Modifier
+            .bouncyClickable(onClick = onCancel)
+            .padding(horizontal = 24.dp, vertical = 12.dp),
+    )
+}
+
+/** Round progress as dots rather than a counter: information without arithmetic. */
+@Composable
+private fun BreathRounds(current: Int, total: Int) {
+    Row(horizontalArrangement = Arrangement.spacedBy(7.dp), verticalAlignment = Alignment.CenterVertically) {
+        repeat(total) { i ->
+            Box(
+                Modifier
+                    .size(if (i == current) 8.dp else 6.dp)
+                    .clip(CircleShape)
+                    .background(BREATH_GLOW.copy(alpha = if (i <= current) 0.9f else 0.22f)),
+            )
+        }
+    }
 }
 
 /**
@@ -259,7 +330,7 @@ private fun BreathingSession(technique: BreathTechnique, onDone: () -> Unit, onC
  */
 @Composable
 private fun PacedBreathVisual(technique: BreathTechnique, onDone: () -> Unit, onCancel: () -> Unit) {
-    val c = MaterialTheme.modernColors
+    val haptic = rememberHapticManager()
     val phases = technique.phases
     val rounds = technique.rounds
     var round by remember { mutableStateOf(0) }
@@ -275,28 +346,50 @@ private fun PacedBreathVisual(technique: BreathTechnique, onDone: () -> Unit, on
             round = r
             for (i in phases.indices) {
                 phaseIdx = i
+                // A soft tick at each turn of the breath, so the rhythm carries with eyes closed.
+                haptic.click()
                 delay(phases[i].durationMs.toLong())
             }
         }
         onDone()
     }
     Column(
-        Modifier.fillMaxWidth().padding(LifePlannerDesign.Padding.cardContent),
+        Modifier.fillMaxSize().padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
+        verticalArrangement = Arrangement.Center,
     ) {
-        Box(Modifier.size(150.dp), contentAlignment = Alignment.Center) {
+        Spacer(Modifier.weight(1f))
+        Box(Modifier.size(300.dp), contentAlignment = Alignment.Center) {
+            // A wide, soft halo that breathes with the orb, so the light in the room changes too.
             Box(
-                Modifier.size(150.dp)
+                Modifier.size(300.dp)
+                    .graphicsLayer { scaleX = scale * 1.25f; scaleY = scale * 1.25f }
+                    .clip(CircleShape)
+                    .background(Brush.radialGradient(listOf(BREATH_GLOW.copy(alpha = 0.18f), Color.Transparent))),
+            )
+            Box(
+                Modifier.size(220.dp)
                     .graphicsLayer { scaleX = scale; scaleY = scale }
                     .clip(CircleShape)
-                    .background(Brush.radialGradient(listOf(c.primary.copy(alpha = 0.55f), c.primary.copy(alpha = 0.12f)))),
+                    .background(Brush.radialGradient(listOf(BREATH_GLOW.copy(alpha = 0.62f), BREATH_GLOW.copy(alpha = 0.10f)))),
             )
-            Text(current.short, style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold), color = c.textPrimary)
+            Text(
+                current.short,
+                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Light, letterSpacing = 2.sp),
+                color = BREATH_TEXT,
+            )
         }
-        Text("${current.label}…", style = MaterialTheme.typography.titleMedium, color = c.textPrimary)
-        Text("Breath ${(round + 1).coerceAtMost(rounds)} of $rounds", style = MaterialTheme.typography.bodySmall, color = c.textSecondary)
-        TextButton(onClick = onCancel) { Text("Done for now") }
+        Spacer(Modifier.height(40.dp))
+        Text(
+            current.label,
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Light, letterSpacing = 1.sp),
+            color = BREATH_TEXT.copy(alpha = 0.8f),
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(20.dp))
+        BreathRounds(current = round, total = rounds)
+        Spacer(Modifier.weight(1f))
+        EndBreathLink(onCancel)
     }
 }
 
@@ -307,7 +400,7 @@ private fun PacedBreathVisual(technique: BreathTechnique, onDone: () -> Unit, on
  */
 @Composable
 private fun BoxBreathVisual(technique: BreathTechnique, onDone: () -> Unit, onCancel: () -> Unit) {
-    val c = MaterialTheme.modernColors
+    val haptic = rememberHapticManager()
     val rounds = technique.rounds
     val phases = technique.phases
     var currentSide by remember { mutableStateOf(0) }
@@ -319,6 +412,7 @@ private fun BoxBreathVisual(technique: BreathTechnique, onDone: () -> Unit, onCa
             round = r
             for (side in 0..3) {
                 currentSide = side
+                haptic.click()
                 sideProgress.snapTo(0f)
                 sideProgress.animateTo(1f, animationSpec = tween(phases[side].durationMs, easing = LinearEasing))
             }
@@ -337,11 +431,12 @@ private fun BoxBreathVisual(technique: BreathTechnique, onDone: () -> Unit, onCa
     }
 
     Column(
-        Modifier.fillMaxWidth().padding(LifePlannerDesign.Padding.cardContent),
+        Modifier.fillMaxSize().padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
+        verticalArrangement = Arrangement.Center,
     ) {
-        Box(Modifier.size(180.dp), contentAlignment = Alignment.Center) {
+        Spacer(Modifier.weight(1f))
+        Box(Modifier.size(280.dp), contentAlignment = Alignment.Center) {
             Canvas(Modifier.fillMaxSize()) {
                 val strokePx = 10.dp.toPx()
                 val s = size.minDimension - strokePx
@@ -354,8 +449,8 @@ private fun BoxBreathVisual(technique: BreathTechnique, onDone: () -> Unit, onCa
                     Offset(o, o + s),
                     Offset(o, o),
                 )
-                val faint = c.primary.copy(alpha = 0.15f)
-                val bright = c.primary
+                val faint = BREATH_GLOW.copy(alpha = 0.18f)
+                val bright = BREATH_GLOW
 
                 // Faint full frame.
                 for (i in 0..3) drawLine(faint, corners[i], corners[i + 1], strokePx, cap = StrokeCap.Round)
@@ -364,7 +459,7 @@ private fun BoxBreathVisual(technique: BreathTechnique, onDone: () -> Unit, onCa
                 val inner = s * innerScale
                 val center = Offset(size.width / 2f, size.height / 2f)
                 drawRoundRect(
-                    color = c.primary.copy(alpha = 0.10f),
+                    color = BREATH_GLOW.copy(alpha = 0.12f),
                     topLeft = Offset(center.x - inner / 2f, center.y - inner / 2f),
                     size = Size(inner, inner),
                     cornerRadius = CornerRadius(14.dp.toPx()),
@@ -384,11 +479,14 @@ private fun BoxBreathVisual(technique: BreathTechnique, onDone: () -> Unit, onCa
             }
             Text(
                 phaseLabel,
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = c.textPrimary,
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Light, letterSpacing = 1.sp),
+                color = BREATH_TEXT,
+                textAlign = TextAlign.Center,
             )
         }
-        Text("Round ${round + 1} of $rounds", style = MaterialTheme.typography.bodySmall, color = c.textSecondary)
-        TextButton(onClick = onCancel) { Text("Done for now") }
+        Spacer(Modifier.height(40.dp))
+        BreathRounds(current = round, total = rounds)
+        Spacer(Modifier.weight(1f))
+        EndBreathLink(onCancel)
     }
 }

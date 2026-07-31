@@ -5,9 +5,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -27,7 +24,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
@@ -46,7 +42,7 @@ private const val TICK_MS = 5_000L
  * A gentle, awareness-only "take a breath" nudge for long, heads-down sessions. Drop it into any
  * screen as the last child of a fill-size container (so it overlays content); it tracks wall-clock
  * time on the screen and, at each of [thresholdsMinutes], floats a soft pill at the bottom. Tapping
- * it runs one level-appropriate guided breath over a dim scrim; ignoring it lets the pill fade away.
+ * it hands the whole screen to one level-appropriate guided breath; ignoring it lets the pill fade.
  *
  * It never blocks, never nags (each threshold fires once, then it goes quiet), and awards the same
  * mindfulness XP a feed-card breath would. Reused across screens; piloted in the coach chat.
@@ -87,18 +83,8 @@ fun BreatheAwarenessNudge(
 
     Box(modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
         if (breathing) {
-            // A calm scrim that swallows taps behind the guided breath.
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.55f))
-                    .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {},
-                contentAlignment = Alignment.Center,
-            ) {
-                Box(Modifier.padding(horizontal = LifePlannerDesign.Padding.screenHorizontal)) {
-                    GuidedBreathSession(onClose = { breathing = false })
-                }
-            }
+            // The session takes the whole screen on its own, no scrim or sizing needed here.
+            GuidedBreathSession(onClose = { breathing = false })
         } else {
             AnimatedVisibility(
                 visible = showNudge,
