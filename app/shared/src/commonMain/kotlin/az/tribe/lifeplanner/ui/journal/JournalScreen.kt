@@ -48,7 +48,6 @@ import az.tribe.lifeplanner.ui.components.DayEntriesBottomSheet
 import az.tribe.lifeplanner.ui.components.GlassCard
 import az.tribe.lifeplanner.ui.components.InlineEmptyState
 import az.tribe.lifeplanner.ui.components.WeekStrip
-import az.tribe.lifeplanner.ui.components.WeeklyEngagementCard
 import az.tribe.lifeplanner.ui.components.WeeklyEngagementViewModel
 import az.tribe.lifeplanner.ui.theme.bouncyClickable
 import com.russhwolf.settings.Settings
@@ -114,12 +113,10 @@ fun JournalScreen(
     // (Compose Navigation disposes the composition; plain remember would reset us to the first tab).
     var currentTab by rememberSaveable { mutableStateOf(selectedTab) }
 
-    // The hub is long-lived, so the view model's own init-time load would go stale. Recount on every
-    // return to the Journal tab, where the card lives.
+    // The hub is long-lived, so the view model's own init-time load would go stale. The week's output
+    // now rides in the day-lens banner above every sub-tab, so recount on each tab change.
     val weeklyEngagement by weeklyEngagementViewModel.engagement.collectAsState()
-    LaunchedEffect(currentTab) {
-        if (currentTab == 0) weeklyEngagementViewModel.load()
-    }
+    LaunchedEffect(currentTab) { weeklyEngagementViewModel.load() }
 
     // Shared "day lens": the selected date persists across the hub's sub-tabs (rememberSaveable via
     // epoch-day). The WeekStrip and the Journal tab both read/write it.
@@ -269,6 +266,9 @@ fun JournalScreen(
                     entries = entries,
                     onSelect = { selectedEpochDay = it.toEpochDays() },
                     flaggedDates = plannedByDay.keys,
+                    // The week's output belongs to the week lens, not to a card of its own further
+                    // down the Journal tab: expanding the strip opens the full counts in place.
+                    engagement = weeklyEngagement,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                 )
             }
@@ -327,14 +327,6 @@ fun JournalScreen(
             // ── Tab 0: Journal ──────────────────────────────────────────────
             // The mood calendar plus the selected day's reflections. Write via the contextual FAB.
             if (currentTab == 0) {
-                // The week's output across every artifact type, sitting with the artifacts rather
-                // than on the profile, where it read as identity instead of activity.
-                item(key = "this_week") {
-                    weeklyEngagement?.let {
-                        WeeklyEngagementCard(it, modifier = Modifier.padding(horizontal = 16.dp))
-                    }
-                }
-
                 if (dayEntries.isEmpty()) {
                     // An empty day reads as an empty day, today included. The mood picker used to
                     // stand in here, but asking how you feel before there is anything on the page
@@ -488,15 +480,21 @@ fun JournalScreen(
                             PastDayHabitRow(hs.habit.title, done = false, onClick = { requestPastToggle(hs.habit.id) }, modifier = Modifier.padding(horizontal = 16.dp))
                         }
                     } else if (doneOnDay.isNotEmpty()) {
-                        item(key = "all_done") { AllDoneCelebration() }
+                        item(key = "all_done") {
+                            InlineEmptyState(
+                                illustration = Res.drawable.illus_empty_schedule,
+                                title = "Every habit done",
+                                subtitle = "A perfect day. Nice one.",
+                            )
+                        }
                     }
                 } else if (allHabitsCaughtUp) {
                     item(key = "habits_caught_up") {
-                        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 48.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("All done for today", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
-                            Spacer(Modifier.height(6.dp))
-                            Text("You completed every habit. Enjoy the space.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
-                        }
+                        InlineEmptyState(
+                            illustration = Res.drawable.illus_empty_schedule,
+                            title = "All done for today",
+                            subtitle = "You completed every habit. Enjoy the space.",
+                        )
                     }
                 } else {
                     habitGroups.forEach { (slot, habitsInSlot) ->
@@ -672,22 +670,6 @@ private fun tuneUpEmoji(kind: GoalOptimizer.Kind): String = when (kind) {
     GoalOptimizer.Kind.REFOCUS_STALE -> "🤔"
 }
 
-@Composable
-private fun AllDoneCelebration() {
-    Column(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Image(
-            painter = painterResource(Res.drawable.illus_empty_schedule),
-            contentDescription = null,
-            modifier = Modifier.height(120.dp),
-        )
-        Text("Every habit done", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-        Text("A perfect day. Nice one.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
-}
 
 @Composable
 private fun PastDayHabitRow(title: String, done: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {

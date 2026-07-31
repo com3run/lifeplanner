@@ -6,12 +6,15 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -52,6 +55,10 @@ import kotlin.time.Clock
  * or expand to a full month grid with month nav. Each day shows its journal mood emoji (or a birthday
  * cake), a flag dot when a goal/milestone is due, today ringed, and the selected day filled.
  *
+ * [engagement] folds the week's output into this same banner instead of a separate "This Week" card
+ * below it: collapsed it is one quiet line under the strip, expanded it opens into the full set of
+ * counts beside the month. Same numbers, one object on the screen instead of two.
+ *
  * [birthdayMonthDay] is (month 1-12, day). [flaggedDates] get a small marker.
  */
 @Composable
@@ -62,6 +69,7 @@ fun WeekStrip(
     modifier: Modifier = Modifier,
     birthdayMonthDay: Pair<Int, Int>? = null,
     flaggedDates: Set<LocalDate> = emptySet(),
+    engagement: WeeklyEngagement? = null,
 ) {
     val c = MaterialTheme.modernColors
     val today = remember { Clock.System.todayIn(TimeZone.currentSystemDefault()) }
@@ -82,8 +90,14 @@ fun WeekStrip(
 
     Column(modifier.fillMaxWidth()) {
         // Expand / collapse control, top-right, using the fullscreen-style icon (out = expand to
-        // month, in = collapse back to the week).
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+        // month, in = collapse back to the week). The week's headline sits on the same line, so the
+        // control reads as "there is more of this", not as a stray button.
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                if (expanded) "This month" else "This week",
+                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                color = c.textPrimary,
+            )
             Surface(
                 onClick = { expanded = !expanded },
                 shape = CircleShape,
@@ -136,8 +150,79 @@ fun WeekStrip(
                 onNext = { viewMonthEpochDay = firstOfMonth(viewMonth.plus(DatePeriod(months = 1))).toEpochDays() },
             )
         }
+
+        if (engagement != null) {
+            Spacer(Modifier.height(8.dp))
+            // Collapsed: one line you can read without stopping. Expanded: the same week as counts
+            // you can actually compare.
+            if (expanded) WeekOutputGrid(engagement) else WeekOutputLine(engagement)
+        }
     }
 }
+
+/** The week's output as a single quiet sentence, sized for the collapsed banner. */
+@Composable
+private fun WeekOutputLine(e: WeeklyEngagement) {
+    val c = MaterialTheme.modernColors
+    val parts = buildList {
+        if (e.habitCheckIns > 0) add("${e.habitCheckIns} check-in${plural(e.habitCheckIns)}")
+        if (e.journalEntries > 0) add("${e.journalEntries} journal")
+        if (e.focusSessionsCompleted > 0) add("${e.focusSessionsCompleted} focus")
+        if (e.goalsCreated > 0) add("${e.goalsCreated} goal${plural(e.goalsCreated)}")
+        if (e.aiCoachMessages > 0) add("${e.aiCoachMessages} coach")
+    }
+    Text(
+        if (parts.isEmpty()) "Nothing logged yet this week. Anything you do lands here."
+        else parts.joinToString(" · ") + " this week",
+        style = MaterialTheme.typography.bodySmall,
+        color = c.textSecondary,
+    )
+}
+
+/** The expanded read of the same week: every kind of output the app tracks, as counts. */
+@Composable
+private fun WeekOutputGrid(e: WeeklyEngagement) {
+    val c = MaterialTheme.modernColors
+    val stats = listOf(
+        Triple("Check-ins", e.habitCheckIns, WEEK_HABITS),
+        Triple("Journal", e.journalEntries, WEEK_JOURNAL),
+        Triple("Focus", e.focusSessionsCompleted, WEEK_FOCUS),
+        Triple("Goals", e.goalsCreated, WEEK_GOALS),
+        Triple("Coach", e.aiCoachMessages, WEEK_COACH),
+    )
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        stats.chunked(3).forEach { row ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                row.forEach { (label, value, color) ->
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(color.copy(alpha = 0.08f))
+                            .padding(vertical = 10.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text(
+                            value.toString(),
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold),
+                            color = color,
+                        )
+                        Text(label, style = MaterialTheme.typography.labelSmall, color = c.textSecondary)
+                    }
+                }
+                repeat(3 - row.size) { Box(Modifier.weight(1f)) }
+            }
+        }
+    }
+}
+
+private fun plural(n: Int) = if (n == 1) "" else "s"
+
+private val WEEK_HABITS = Color(0xFF4CAF50)
+private val WEEK_GOALS = Color(0xFF6366F1)
+private val WEEK_JOURNAL = Color(0xFFFF9800)
+private val WEEK_FOCUS = Color(0xFF6C63FF)
+private val WEEK_COACH = Color(0xFF26A69A)
 
 @Composable
 private fun MonthView(
