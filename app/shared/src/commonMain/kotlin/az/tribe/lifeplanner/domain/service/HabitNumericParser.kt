@@ -6,6 +6,7 @@ package az.tribe.lifeplanner.domain.service
  *
  * Examples:
  *   "Drink 2L of water"    → (2, "L")
+ *   "Plank for 30 seconds" → (30, "sec")
  *   "Do pushups 8 times"   → (8, "times")
  *   "Meditate 10min"       → (10, "min")
  *   "Run for 30 minutes"   → (30, "min")
@@ -18,6 +19,10 @@ object HabitNumericParser {
     private val patterns = listOf(
         // "2L" or "2.5L"
         Regex("""(\d+(?:\.\d+)?)\s*[Ll](?:\s|$)""") to { m: MatchResult -> parse(m, "L") },
+        // "30 sec" / "30s" / "30 seconds". Ahead of the minutes rule: "min" cannot match these,
+        // but keeping the time units adjacent makes the ordering intent obvious.
+        Regex("""(\d+)\s*sec(?:onds?|s)?(?:\s|$)""", RegexOption.IGNORE_CASE) to { m: MatchResult -> parse(m, "sec") },
+        Regex("""(\d+)\s*s(?:\s|$)""") to { m: MatchResult -> parse(m, "sec") },
         // "10min" or "10 min" or "30 minutes"
         Regex("""(\d+)\s*min(?:utes?)?""", RegexOption.IGNORE_CASE) to { m: MatchResult -> parse(m, "min") },
         // "2 hours" or "1h"

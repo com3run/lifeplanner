@@ -63,6 +63,28 @@ class HabitTrackModeTest {
     }
 
     @Test
+    fun `seconds are a duration unit, not a count`() {
+        // A 30-second plank is one held exercise, not 30 things to tick off.
+        assertEquals(HabitTrackMode.DURATION, habit(targetCount = 30, unit = "sec").trackMode)
+        assertEquals(HabitTrackMode.DURATION, habit(targetCount = 45, unit = "seconds").trackMode)
+    }
+
+    @Test
+    fun `targetSeconds normalises every time unit`() {
+        assertEquals(30, habit(targetCount = 30, unit = "sec").targetSeconds)
+        assertEquals(600, habit(targetCount = 10, unit = "min").targetSeconds)
+        assertEquals(7200, habit(targetCount = 2, unit = "hrs").targetSeconds)
+        assertNull(habit(targetCount = 8, unit = "glasses").targetSeconds)
+    }
+
+    @Test
+    fun `targetMinutes rounds sub-minute targets up rather than to zero`() {
+        // Callers that still think in whole minutes must never see a 30-second habit as 0.
+        assertEquals(1, habit(targetCount = 30, unit = "sec").targetMinutes)
+        assertEquals(2, habit(targetCount = 90, unit = "sec").targetMinutes)
+    }
+
+    @Test
     fun `isTimeUnit rejects countable units and null`() {
         assertEquals(false, isTimeUnit(null))
         assertEquals(false, isTimeUnit("glasses"))
