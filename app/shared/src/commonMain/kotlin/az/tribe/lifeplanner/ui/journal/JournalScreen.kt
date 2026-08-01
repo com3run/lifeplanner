@@ -49,6 +49,15 @@ import az.tribe.lifeplanner.ui.components.GlassCard
 import az.tribe.lifeplanner.ui.components.InlineEmptyState
 import az.tribe.lifeplanner.ui.components.WeekStrip
 import az.tribe.lifeplanner.ui.components.WeeklyEngagementViewModel
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
 import az.tribe.lifeplanner.ui.theme.bouncyClickable
 import com.russhwolf.settings.Settings
 import org.koin.compose.koinInject
@@ -249,6 +258,9 @@ fun JournalScreen(
         }
     ) { padding ->
         // Clearance for the app's floating bottom nav pill, which draws over this screen.
+        // The app's floating nav pill is NavBarHeight tall and draws over this screen. Sit the
+        // switcher one small gap above it rather than floating in the middle distance.
+        val switcherBottomInset = padding.calculateBottomPadding() + 64.dp + LifePlannerDesign.Spacing.xs
         val navBarInset = padding.calculateBottomPadding() + 84.dp
 
         Box(Modifier.fillMaxSize()) {
@@ -538,26 +550,19 @@ fun JournalScreen(
         }
 
         // Sub-tab switcher, pinned just above the app's bottom nav instead of scrolling away at
-        // the top. Kept compact so it reads as a switcher for the nav bar, not a second toolbar.
-        Surface(
+        // the top. It draws its own track, so it sits directly on the screen rather than in a
+        // second container.
+        HubTabRow(
+            selectedTab = currentTab,
+            onTabSelected = { tab ->
+                currentTab = tab
+                onTabSelected(tab)
+            },
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .padding(bottom = navBarInset),
-            shape = RoundedCornerShape(50),
-            color = MaterialTheme.colorScheme.surface,
-            shadowElevation = 6.dp,
-        ) {
-            HubTabRow(
-                selectedTab = currentTab,
-                onTabSelected = { tab ->
-                    currentTab = tab
-                    onTabSelected(tab)
-                },
-                modifier = Modifier.padding(4.dp),
-            )
-        }
+                .padding(horizontal = LifePlannerDesign.Padding.screenHorizontal)
+                .padding(bottom = switcherBottomInset),
+        )
         }
 
         // Journal entry sheet, accessible from any tab via FAB
@@ -716,29 +721,68 @@ private fun HubTabRow(selectedTab: Int, onTabSelected: (Int) -> Unit, modifier: 
         listOf("Journal", "Goals", "Habits", "Abilities")
     else
         listOf("Journal", "Goals", "Habits")
-    // Compact: this now sits docked above the bottom nav, where a full-height segmented control
-    // would crowd the nav pill.
-    Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        tabs.forEachIndexed { index, label ->
-            val isSelected = selectedTab == index
-            Surface(
-                onClick = { onTabSelected(index) },
-                shape = RoundedCornerShape(50),
-                color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
+    // A single segmented track with one thumb that slides between segments, rather than N separate
+    // pills sitting inside an outer pill. The track is opaque because the list scrolls behind it.
+    val trackShape = RoundedCornerShape(LifePlannerDesign.CornerRadius.full)
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .shadow(SwitcherElevation, trackShape)
+            .clip(trackShape)
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f), trackShape)
+            .padding(SwitcherTrackPadding),
+    ) {
+        BoxWithConstraints {
+            val segmentWidth = maxWidth / tabs.size
+            val thumbOffset by animateDpAsState(
+                targetValue = segmentWidth * selectedTab,
+                animationSpec = spring(dampingRatio = 0.82f, stiffness = Spring.StiffnessMediumLow),
+                label = "hubSwitcherThumb",
+            )
+            Box(
+                Modifier
+                    .offset(x = thumbOffset)
+                    .width(segmentWidth)
+                    .height(SwitcherSegmentHeight)
+                    .clip(trackShape)
+                    .background(MaterialTheme.colorScheme.primary),
+            )
+            Row(Modifier.fillMaxWidth()) {
+                tabs.forEachIndexed { index, label ->
+                    val isSelected = selectedTab == index
+                    val labelColor by animateColorAsState(
+                        targetValue = if (isSelected) MaterialTheme.colorScheme.onPrimary
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                        label = "hubSwitcherLabel",
+                    )
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(SwitcherSegmentHeight)
+                            .clip(trackShape)
+                            .clickable(enabled = !isSelected) { onTabSelected(index) },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                            color = labelColor,
+                            textAlign = TextAlign.Center,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
             }
         }
     }
 }
+
+private val SwitcherSegmentHeight = 34.dp
+private val SwitcherTrackPadding = 4.dp
+private val SwitcherElevation = 8.dp
 
 // ─── Habit time-of-day grouping ─────────────────────────────────────────────
 
