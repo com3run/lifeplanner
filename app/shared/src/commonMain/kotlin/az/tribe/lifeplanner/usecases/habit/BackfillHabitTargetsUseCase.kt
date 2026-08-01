@@ -12,6 +12,11 @@ import com.russhwolf.settings.Settings
  * shows real progress (0 of 8 glasses) instead of one tap. Runs once, guarded by a
  * Settings flag; the flag is only set after a full successful pass so a crash retries
  * next launch (updates are idempotent).
+ *
+ * The flag is **versioned**. Teaching [HabitNumericParser] a new unit only helps habits created
+ * afterwards, because everything older was already marked backfilled and would never be looked at
+ * again — "Plank for 30 seconds" stayed a one-tap habit on every existing account. Bump the version
+ * whenever the parser learns something new, and the pass runs once more over the old rows.
  */
 class BackfillHabitTargetsUseCase(
     private val habitRepository: HabitRepository,
@@ -47,7 +52,8 @@ class BackfillHabitTargetsUseCase(
     }
 
     companion object {
-        private const val KEY_DONE = "habit_target_backfill_done"
+        // v2: the parser learned seconds, so habits like "Plank for 30 seconds" need a second look.
+        private const val KEY_DONE = "habit_target_backfill_done_v2"
         private const val MAX_SANE_TARGET = 180
         private const val TAG = "BackfillHabitTargets"
     }
