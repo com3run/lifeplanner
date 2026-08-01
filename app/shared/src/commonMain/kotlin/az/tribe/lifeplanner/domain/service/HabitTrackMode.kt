@@ -58,3 +58,18 @@ val Habit.targetSeconds: Int?
 /** A duration habit's target in whole minutes, rounded up. Null for sub-minute habits' callers. */
 val Habit.targetMinutes: Int?
     get() = targetSeconds?.let { (it + 59) / 60 }
+
+/**
+ * A duration habit's target stated in the unit it was written in: "30 sec", "3 min", "2 hrs".
+ * Shared so every surface says the same thing — a hardcoded "min" here renders a 30-second plank
+ * as half an hour.
+ */
+val Habit.durationLabel: String
+    get() {
+        val seconds = targetSeconds ?: return ""
+        return when {
+            seconds < 60 -> "$seconds sec"
+            seconds % 3600 == 0 -> "${seconds / 3600} hr${if (seconds > 3600) "s" else ""}"
+            else -> "${seconds / 60} min"
+        }
+    }

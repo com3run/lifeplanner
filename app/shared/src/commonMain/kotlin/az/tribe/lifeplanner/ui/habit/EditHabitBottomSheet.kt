@@ -17,6 +17,8 @@ import az.tribe.lifeplanner.domain.enum.GoalCategory
 import az.tribe.lifeplanner.domain.enum.HabitFrequency
 import az.tribe.lifeplanner.domain.enum.HealthMetricType
 import az.tribe.lifeplanner.domain.model.Habit
+import az.tribe.lifeplanner.domain.service.isTimeUnit
+import az.tribe.lifeplanner.domain.service.trackMode
 import az.tribe.lifeplanner.domain.service.HabitTrackMode
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
@@ -43,20 +45,14 @@ internal fun EditHabitBottomSheet(
             if (it == it.toLong().toDouble()) it.toLong().toString() else it.toString()
         } ?: "")
     }
-    var trackMode by remember {
-        mutableStateOf(
-            when {
-                habit.targetCount <= 1 -> HabitTrackMode.SINGLE
-                habit.unit == "min" -> HabitTrackMode.DURATION
-                else -> HabitTrackMode.COUNT
-            }
-        )
-    }
+    // Use the shared rule rather than re-deriving it. The local copy tested `unit == "min"`, so
+    // seconds and hours habits opened as COUNT and a 30-sec plank looked like 30 reps.
+    var trackMode by remember { mutableStateOf(habit.trackMode) }
     var countTargetText by remember {
         mutableStateOf(if (habit.targetCount > 1) habit.targetCount.toString() else "")
     }
     var countUnitText by remember {
-        mutableStateOf(habit.unit?.takeIf { it != "min" } ?: "")
+        mutableStateOf(habit.unit?.takeIf { !isTimeUnit(it) } ?: "")
     }
     var completionSource by remember { mutableStateOf(habit.completionSource) }
     val timePickerState = rememberTimePickerState(
@@ -424,7 +420,10 @@ internal fun EditHabitBottomSheet(
                                     unit = when (trackMode) {
                                         HabitTrackMode.SINGLE -> null
                                         HabitTrackMode.COUNT -> countUnitText.trim().ifBlank { "times" }
-                                        HabitTrackMode.DURATION -> "min"
+                                        // Keep the unit it already had. Hardcoding "min" turned a
+                                        // 30-second habit into a 30-minute one on any edit.
+                                        HabitTrackMode.DURATION ->
+                                            habit.unit?.takeIf { isTimeUnit(it) } ?: "min"
                                     },
                                     reminderTime = reminderTime,
                                     healthMetricType = healthMetric,

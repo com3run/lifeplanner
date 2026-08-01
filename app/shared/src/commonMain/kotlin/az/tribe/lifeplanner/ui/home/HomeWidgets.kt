@@ -50,6 +50,7 @@ import az.tribe.lifeplanner.domain.model.Goal
 import az.tribe.lifeplanner.domain.model.MessageRole
 import az.tribe.lifeplanner.domain.model.Milestone
 import az.tribe.lifeplanner.domain.service.HabitTrackMode
+import az.tribe.lifeplanner.domain.service.durationLabel
 import az.tribe.lifeplanner.domain.service.trackMode
 import az.tribe.lifeplanner.ui.components.GlassCard
 import az.tribe.lifeplanner.ui.components.getIcon
@@ -260,7 +261,7 @@ fun CompactHomeHabitRow(
                 Text(text = habit.title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 if (trackMode == HabitTrackMode.DURATION) {
                     Text(
-                        text = "${habit.targetCount} min",
+                        text = habit.durationLabel,
                         style = MaterialTheme.typography.labelSmall,
                         color = if (completed) categoryColor else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                         fontWeight = FontWeight.SemiBold

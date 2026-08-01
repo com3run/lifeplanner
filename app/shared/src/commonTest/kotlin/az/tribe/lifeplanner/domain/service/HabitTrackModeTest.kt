@@ -78,6 +78,16 @@ class HabitTrackModeTest {
     }
 
     @Test
+    fun `durationLabel states the unit it was written in`() {
+        // A hardcoded "min" here is what rendered a 30-second plank as half an hour.
+        assertEquals("30 sec", habit(targetCount = 30, unit = "sec").durationLabel)
+        assertEquals("3 min", habit(targetCount = 3, unit = "min").durationLabel)
+        assertEquals("2 hrs", habit(targetCount = 2, unit = "hrs").durationLabel)
+        assertEquals("1 hr", habit(targetCount = 1, unit = "hr").durationLabel)
+        assertEquals("", habit(targetCount = 8, unit = "glasses").durationLabel)
+    }
+
+    @Test
     fun `targetMinutes rounds sub-minute targets up rather than to zero`() {
         // Callers that still think in whole minutes must never see a 30-second habit as 0.
         assertEquals(1, habit(targetCount = 30, unit = "sec").targetMinutes)

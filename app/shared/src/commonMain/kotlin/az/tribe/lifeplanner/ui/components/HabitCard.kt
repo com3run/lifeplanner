@@ -40,7 +40,7 @@ import az.tribe.lifeplanner.domain.enum.GoalCategory
 import az.tribe.lifeplanner.domain.enum.HabitType
 import az.tribe.lifeplanner.domain.service.HabitTrackMode
 import com.adamglin.phosphoricons.regular.Play
-import az.tribe.lifeplanner.domain.service.targetSeconds
+import az.tribe.lifeplanner.domain.service.durationLabel
 import az.tribe.lifeplanner.domain.service.trackMode
 import az.tribe.lifeplanner.ui.habit.HabitWithStatus
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
@@ -309,7 +309,7 @@ fun HabitCard(
                     if (!isCompletedToday) {
                         when {
                             trackMode == HabitTrackMode.DURATION -> Text(
-                                text = durationLabel(habit),
+                                text = habit.durationLabel,
                                 style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
                                 color = categoryColor,
                             )
@@ -385,12 +385,3 @@ fun GoalCategory.getIcon(): ImageVector {
     }
 }
 
-/** "30 sec" / "3 min" / "2 hrs" — a duration habit stated in the unit the user wrote it in. */
-private fun durationLabel(habit: az.tribe.lifeplanner.domain.model.Habit): String {
-    val seconds = habit.targetSeconds ?: return ""
-    return when {
-        seconds < 60 -> "$seconds sec"
-        seconds % 3600 == 0 -> "${seconds / 3600} hr${if (seconds > 3600) "s" else ""}"
-        else -> "${seconds / 60} min"
-    }
-}
