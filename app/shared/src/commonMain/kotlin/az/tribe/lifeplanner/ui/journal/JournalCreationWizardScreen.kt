@@ -28,6 +28,8 @@ fun JournalCreationWizardScreen(
     onNavigateBack: () -> Unit,
     preSelectedGoalId: String? = null,
     initialMood: Mood? = null,
+    /** Day this entry belongs to; null means today. */
+    initialDate: kotlinx.datetime.LocalDate? = null,
     viewModel: JournalViewModel = koinViewModel(),
     goalViewModel: GoalViewModel = koinInject(),
     habitViewModel: az.tribe.lifeplanner.ui.habit.HabitViewModel = koinViewModel(),
@@ -197,6 +199,7 @@ fun JournalCreationWizardScreen(
                                     tags = generatedTags,
                                     promptUsed = selectedPrompt,
                                     detectedDecision = detectedDecision,
+                                    date = initialDate,
                                 )
                                 onNavigateBack()
                             }

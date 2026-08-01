@@ -20,7 +20,7 @@ sealed class Screen(val route: String) {
     object HabitDetailRedesign : Screen("habit_detail_redesign/{habitId}")
     object AddHabit : Screen("add_habit")
     object Journal : Screen("journal")
-    object JournalWizard : Screen("journal_wizard?goalId={goalId}&mood={mood}")
+    object JournalWizard : Screen("journal_wizard?goalId={goalId}&mood={mood}&date={date}")
     object JournalEntryDetail : Screen("journal_entry_detail/{entryId}")
     object Achievements : Screen("achievements")
     object DependencyGraph : Screen("dependency_graph")

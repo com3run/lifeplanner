@@ -87,6 +87,11 @@ class JournalViewModel(
         tags: List<String> = emptyList(),
         promptUsed: String? = null,
         detectedDecision: DetectedDecision? = null,
+        /**
+         * The day the entry belongs to. The hub keeps a day lens, so writing while looking at
+         * Tuesday has to file the entry under Tuesday. Null means today.
+         */
+        date: LocalDate? = null,
     ) {
         viewModelScope.launch {
             try {
@@ -97,7 +102,8 @@ class JournalViewModel(
                     linkedGoalId = linkedGoalId,
                     linkedHabitId = linkedHabitId,
                     promptUsed = promptUsed,
-                    tags = tags
+                    tags = tags,
+                    date = date ?: Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date,
                 )
                 createEntryUseCase(entry)
                 gamificationRepository.awardXp(XpRewards.JOURNAL_ENTRY.toLong())

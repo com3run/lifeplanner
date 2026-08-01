@@ -462,6 +462,9 @@ fun App(
 
         // Track which tab is selected inside the Hub screen (Journal screen)
         var hubSelectedTab by remember { mutableStateOf(0) }
+        // The hub's day lens, mirrored up here so the Write FAB (which lives outside the hub) can
+        // file the new entry under the day the user is actually looking at.
+        var hubSelectedDate by remember { mutableStateOf<kotlinx.datetime.LocalDate?>(null) }
 
         // Handle marketing deep link (e.g. lifeplanner://promo/chat)
         LaunchedEffect(promoRoute, authState) {
@@ -539,7 +542,8 @@ fun App(
                     icon = PhosphorIcons.Regular.PencilSimple,
                     contentDescription = "Write"
                 ) {
-                    navController.navigate("journal_wizard") { launchSingleTop = true }
+                    val route = hubSelectedDate?.let { "journal_wizard?date=$it" } ?: "journal_wizard"
+                    navController.navigate(route) { launchSingleTop = true }
                 }
             }
             Screen.Profile.route -> NavContextAction(
@@ -632,7 +636,8 @@ fun App(
                             tabIndex = tabIndex,
                             slideOffset = slideOffset,
                             hubSelectedTab = hubSelectedTab,
-                            onTabSelected = { hubSelectedTab = it }
+                            onTabSelected = { hubSelectedTab = it },
+                            onSelectedDateChanged = { hubSelectedDate = it }
                         )
                         appNavProfile(
                             navController = navController,

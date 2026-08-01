@@ -22,7 +22,8 @@ internal fun NavGraphBuilder.appNavJournal(
     tabIndex: Map<String, Int>,
     slideOffset: (Int) -> Int,
     hubSelectedTab: Int,
-    onTabSelected: (Int) -> Unit
+    onTabSelected: (Int) -> Unit,
+    onSelectedDateChanged: (kotlinx.datetime.LocalDate) -> Unit = {}
 ) {
     composable(
         Screen.Journal.route,
@@ -82,6 +83,7 @@ internal fun NavGraphBuilder.appNavJournal(
             isFromBottomNav = isBottomNavEntry,
             selectedTab = hubSelectedTab,
             onTabSelected = onTabSelected,
+            onSelectedDateChanged = onSelectedDateChanged,
             onGoalClick = { goal ->
                 navController.navigate("goal_detail/${goal.id}") {
                     launchSingleTop = true
@@ -139,15 +141,24 @@ internal fun NavGraphBuilder.appNavJournal(
                 nullable = true
                 defaultValue = null
             },
+            navArgument("date") {
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
+            },
         )
     ) { backStackEntry ->
         val goalId = backStackEntry.arguments?.read { getStringOrNull("goalId") }
         val mood = backStackEntry.arguments?.read { getStringOrNull("mood") }
             ?.let { runCatching { Mood.valueOf(it) }.getOrNull() }
+        // The hub's day lens rides along, so writing while looking at Tuesday files under Tuesday.
+        val date = backStackEntry.arguments?.read { getStringOrNull("date") }
+            ?.let { runCatching { kotlinx.datetime.LocalDate.parse(it) }.getOrNull() }
         JournalCreationWizardScreen(
             onNavigateBack = { navController.popBackStack() },
             preSelectedGoalId = goalId,
             initialMood = mood,
+            initialDate = date,
         )
     }
 

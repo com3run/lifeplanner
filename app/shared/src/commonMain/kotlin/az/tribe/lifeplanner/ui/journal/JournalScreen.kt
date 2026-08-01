@@ -90,6 +90,8 @@ fun JournalScreen(
     isFromBottomNav: Boolean = false,
     selectedTab: Int = 0,
     onTabSelected: (Int) -> Unit = {},
+    /** Reports the hub's day lens so the Write FAB, which lives outside this screen, can file to it. */
+    onSelectedDateChanged: (LocalDate) -> Unit = {},
     onGoalClick: (Goal) -> Unit = {},
     onAddGoalClick: () -> Unit = {},
     onAddHabitClick: () -> Unit = {},
@@ -132,6 +134,7 @@ fun JournalScreen(
     val today = remember { Clock.System.todayIn(TimeZone.currentSystemDefault()) }
     var selectedEpochDay by rememberSaveable { mutableStateOf(today.toEpochDays()) }
     val selectedDate = remember(selectedEpochDay) { LocalDate.fromEpochDays(selectedEpochDay) }
+    LaunchedEffect(selectedDate) { onSelectedDateChanged(selectedDate) }
 
     var habitToEdit by remember { mutableStateOf<Habit?>(null) }
     val listState = rememberLazyListState()
@@ -570,7 +573,8 @@ fun JournalScreen(
             NewJournalEntryBottomSheet(
                 onDismiss = { viewModel.hideNewEntryDialog() },
                 onConfirm = { title, content, mood, tags, linkedGoalId, linkedHabitId, promptUsed ->
-                    viewModel.createEntry(title = title, content = content, mood = mood, linkedGoalId = linkedGoalId, linkedHabitId = linkedHabitId, tags = tags, promptUsed = promptUsed)
+                    // File it under the day the hub is showing, not whatever day it is now.
+                    viewModel.createEntry(title = title, content = content, mood = mood, linkedGoalId = linkedGoalId, linkedHabitId = linkedHabitId, tags = tags, promptUsed = promptUsed, date = selectedDate)
                 },
                 goals = goals,
                 habits = habits,
@@ -584,7 +588,14 @@ fun JournalScreen(
                 entries = viewModel.getEntriesForDay(date),
                 onDismiss = { viewModel.clearSelectedDay() },
                 onEntryClick = { entryId -> viewModel.clearSelectedDay(); onEntryClick(entryId) },
-                onAddEntry = { viewModel.clearSelectedDay(); viewModel.showNewEntryDialog() }
+                // Adding from a day's sheet means adding *to that day*, so move the day lens with
+                // it before the writer opens, otherwise the entry lands on whatever the week strip
+                // happened to be showing.
+                onAddEntry = {
+                    selectedEpochDay = date.toEpochDays()
+                    viewModel.clearSelectedDay()
+                    viewModel.showNewEntryDialog()
+                }
             )
         }
 
