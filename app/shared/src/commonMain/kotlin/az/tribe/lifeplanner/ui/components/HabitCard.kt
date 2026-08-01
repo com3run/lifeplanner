@@ -39,6 +39,8 @@ import androidx.compose.ui.unit.dp
 import az.tribe.lifeplanner.domain.enum.GoalCategory
 import az.tribe.lifeplanner.domain.enum.HabitType
 import az.tribe.lifeplanner.domain.service.HabitTrackMode
+import com.adamglin.phosphoricons.regular.Play
+import az.tribe.lifeplanner.domain.service.targetSeconds
 import az.tribe.lifeplanner.domain.service.trackMode
 import az.tribe.lifeplanner.ui.habit.HabitWithStatus
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
@@ -72,6 +74,7 @@ fun SwipeableHabitCard(
     onFocusClick: (() -> Unit)? = null,
     onIncrement: (() -> Unit)? = null,
     onCardClick: (() -> Unit)? = null,
+    onPractice: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -176,7 +179,8 @@ fun SwipeableHabitCard(
                 onCheckIn = onCheckIn,
                 onFocusClick = onFocusClick,
                 onIncrement = onIncrement,
-                onCardClick = onCardClick
+                onCardClick = onCardClick,
+                onPractice = onPractice
             )
         }
     }
@@ -224,6 +228,7 @@ fun HabitCard(
     onFocusClick: (() -> Unit)? = null,
     onIncrement: (() -> Unit)? = null,
     onCardClick: (() -> Unit)? = null,
+    onPractice: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val habit = habitWithStatus.habit
@@ -304,7 +309,7 @@ fun HabitCard(
                     if (!isCompletedToday) {
                         when {
                             trackMode == HabitTrackMode.DURATION -> Text(
-                                text = "${habit.targetCount} min",
+                                text = durationLabel(habit),
                                 style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
                                 color = categoryColor,
                             )
@@ -330,6 +335,20 @@ fun HabitCard(
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                             color = categoryColor,
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                        )
+                    }
+                }
+
+                // One icon, not a button: the card stays "see it, tick it", but a habit you have
+                // to actually perform gets a way in. Hidden once done, and for habits with
+                // nothing to run.
+                if (onPractice != null && !isCompletedToday && trackMode != HabitTrackMode.SINGLE) {
+                    IconButton(onClick = onPractice, modifier = Modifier.size(32.dp)) {
+                        Icon(
+                            imageVector = PhosphorIcons.Regular.Play,
+                            contentDescription = "Practice",
+                            tint = categoryColor,
+                            modifier = Modifier.size(18.dp),
                         )
                     }
                 }
@@ -363,5 +382,15 @@ fun GoalCategory.getIcon(): ImageVector {
         GoalCategory.WELLBEING -> PhosphorIcons.Regular.Heart
         GoalCategory.PURPOSE -> PhosphorIcons.Regular.Flower
         GoalCategory.FAMILY -> PhosphorIcons.Regular.House
+    }
+}
+
+/** "30 sec" / "3 min" / "2 hrs" — a duration habit stated in the unit the user wrote it in. */
+private fun durationLabel(habit: az.tribe.lifeplanner.domain.model.Habit): String {
+    val seconds = habit.targetSeconds ?: return ""
+    return when {
+        seconds < 60 -> "$seconds sec"
+        seconds % 3600 == 0 -> "${seconds / 3600} hr${if (seconds > 3600) "s" else ""}"
+        else -> "${seconds / 60} min"
     }
 }

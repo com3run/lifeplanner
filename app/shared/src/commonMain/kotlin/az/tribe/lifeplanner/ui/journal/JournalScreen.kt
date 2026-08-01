@@ -96,6 +96,7 @@ fun JournalScreen(
     onAddGoalClick: () -> Unit = {},
     onAddHabitClick: () -> Unit = {},
     onHabitClick: (String) -> Unit = {},
+    onPracticeHabit: (String) -> Unit = {},
     onNavigateToFocus: () -> Unit = {},
     onAbilityClick: (String) -> Unit = {},
     onCreateAbility: () -> Unit = {},
@@ -525,6 +526,7 @@ fun JournalScreen(
                                 onIncrement = if (habitWithStatus.habit.trackMode == HabitTrackMode.COUNT) {
                                     { habitViewModel.incrementCheckIn(habitWithStatus.habit.id) }
                                 } else null,
+                                onPractice = { onPracticeHabit(habitWithStatus.habit.id) },
                                 modifier = Modifier.padding(horizontal = 16.dp).animateItem()
                             )
                         }

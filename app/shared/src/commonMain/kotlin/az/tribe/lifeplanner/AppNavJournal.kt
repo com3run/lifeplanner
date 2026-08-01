@@ -84,6 +84,9 @@ internal fun NavGraphBuilder.appNavJournal(
             selectedTab = hubSelectedTab,
             onTabSelected = onTabSelected,
             onSelectedDateChanged = onSelectedDateChanged,
+            onPracticeHabit = { id ->
+                navController.navigate("habit_practice/$id") { launchSingleTop = true }
+            },
             onGoalClick = { goal ->
                 navController.navigate("goal_detail/${goal.id}") {
                     launchSingleTop = true
