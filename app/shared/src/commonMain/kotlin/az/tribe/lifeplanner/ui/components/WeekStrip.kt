@@ -43,6 +43,7 @@ import com.adamglin.phosphoricons.regular.ArrowsOutSimple
 import com.adamglin.phosphoricons.regular.CaretLeft
 import com.adamglin.phosphoricons.regular.CaretRight
 import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.daysUntil
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
@@ -88,13 +89,39 @@ fun WeekStrip(
     }
     val viewMonth = LocalDate.fromEpochDays(viewMonthEpochDay)
 
-    Column(modifier.fillMaxWidth()) {
+    // BoxWithConstraints wraps the whole strip, not just the pager, so the headline can name the
+    // week that is actually on screen rather than assuming it is this one.
+    BoxWithConstraints(modifier.fillMaxWidth()) {
+        val weeksPerPage = if (maxWidth >= 600.dp) 2 else 1
+        val pageCount = 105
+        val center = pageCount / 2
+        val pagerState = rememberPagerState(initialPage = center) { pageCount }
+        val daysPerPage = 7 * weeksPerPage
+
+        val visibleStart = baseWeekStart.plus(DatePeriod(days = (pagerState.currentPage - center) * daysPerPage))
+        val visibleEnd = visibleStart.plus(DatePeriod(days = daysPerPage - 1))
+        val showsToday = today >= visibleStart && today <= visibleEnd
+
+        // Selecting a day off-screen (most often "Jump to today") has to bring its week with it,
+        // otherwise the strip keeps showing a week the selection is no longer in.
+        LaunchedEffect(selectedDate, daysPerPage) {
+            val offset = floorDivDays(baseWeekStart.daysUntil(selectedDate), daysPerPage)
+            val target = (center + offset).coerceIn(0, pageCount - 1)
+            if (pagerState.currentPage != target) pagerState.animateScrollToPage(target)
+        }
+
+    Column(Modifier.fillMaxWidth()) {
         // Expand / collapse control, top-right, using the fullscreen-style icon (out = expand to
         // month, in = collapse back to the week). The week's headline sits on the same line, so the
         // control reads as "there is more of this", not as a stray button.
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Text(
-                if (expanded) "This month" else "This week",
+                when {
+                    expanded && viewMonth.month == today.month && viewMonth.year == today.year -> "This month"
+                    expanded -> "${monthName(viewMonth)} ${viewMonth.year}"
+                    showsToday -> "This week"
+                    else -> dateRangeLabel(visibleStart, visibleEnd)
+                },
                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                 color = c.textPrimary,
             )
@@ -112,28 +139,22 @@ fun WeekStrip(
             }
         }
         if (!expanded) {
-            BoxWithConstraints(Modifier.fillMaxWidth()) {
-                val weeksPerPage = if (maxWidth >= 600.dp) 2 else 1
-                val pageCount = 105
-                val center = pageCount / 2
-                val pagerState = rememberPagerState(initialPage = center) { pageCount }
-                HorizontalPager(state = pagerState) { page ->
-                    val weekStart = baseWeekStart.plus(DatePeriod(days = (page - center) * 7 * weeksPerPage))
-                    val days = (0 until 7 * weeksPerPage).map { weekStart.plus(DatePeriod(days = it)) }
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                        days.forEach { day ->
-                            DayCell(
-                                day = day,
-                                showLetter = true,
-                                isSelected = day == selectedDate,
-                                isToday = day == today,
-                                isFuture = day > today,
-                                mood = moodByDay[day],
-                                isBirthday = birthdayMonthDay.matches(day),
-                                isFlagged = day in flaggedDates,
-                                onClick = { onSelect(day) },
-                            )
-                        }
+            HorizontalPager(state = pagerState) { page ->
+                val weekStart = baseWeekStart.plus(DatePeriod(days = (page - center) * daysPerPage))
+                val days = (0 until daysPerPage).map { weekStart.plus(DatePeriod(days = it)) }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                    days.forEach { day ->
+                        DayCell(
+                            day = day,
+                            showLetter = true,
+                            isSelected = day == selectedDate,
+                            isToday = day == today,
+                            isFuture = day > today,
+                            mood = moodByDay[day],
+                            isBirthday = birthdayMonthDay.matches(day),
+                            isFlagged = day in flaggedDates,
+                            onClick = { onSelect(day) },
+                        )
                     }
                 }
             }
@@ -158,6 +179,24 @@ fun WeekStrip(
             if (expanded) WeekOutputGrid(engagement) else WeekOutputLine(engagement)
         }
     }
+    }
+}
+
+/** Floor division, so weeks before the base page index backwards instead of toward zero. */
+private fun floorDivDays(days: Int, per: Int): Int =
+    if (days >= 0) days / per else -(((-days) + per - 1) / per)
+
+/** "June" — matches how the rest of this file spells a month out. */
+private fun monthName(date: LocalDate): String =
+    date.month.name.lowercase().replaceFirstChar { it.uppercase() }
+
+/**
+ * "7 Jun - 15 Jun" within a month, "28 Jun - 1 Jul" across one. Both sides always carry their
+ * month so the range never has to be inferred from the other end.
+ */
+private fun dateRangeLabel(start: LocalDate, end: LocalDate): String {
+    fun short(d: LocalDate) = "${d.dayOfMonth} ${monthName(d).take(3)}"
+    return "${short(start)} - ${short(end)}"
 }
 
 /** The week's output as a single quiet sentence, sized for the collapsed banner. */
