@@ -40,6 +40,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import az.tribe.lifeplanner.domain.enum.HabitType
 import az.tribe.lifeplanner.domain.service.KnowledgeBit
+import com.adamglin.phosphoricons.regular.Play
+import az.tribe.lifeplanner.domain.service.HabitTrackMode
+import az.tribe.lifeplanner.domain.service.trackMode
 import az.tribe.lifeplanner.ui.components.AppButton
 import az.tribe.lifeplanner.ui.components.AppButtonVariant
 import az.tribe.lifeplanner.ui.components.GradientHero
@@ -84,6 +87,7 @@ fun HabitDetailScreen(
     habitId: String,
     onBackClick: () -> Unit,
     onOpenLesson: (String) -> Unit = {},
+    onPractice: (String) -> Unit = {},
     viewModel: HabitDetailViewModel = koinViewModel { parametersOf(habitId) },
 ) {
     val habit by viewModel.habit.collectAsState()
@@ -227,6 +231,19 @@ fun HabitDetailScreen(
                     Surface(Modifier.fillMaxWidth(), color = c.cardBackground, shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large)) {
                         Text(h.description, style = MaterialTheme.typography.bodyMedium, color = c.textSecondary, modifier = Modifier.padding(LifePlannerDesign.Padding.cardContent))
                     }
+                }
+            }
+
+            // A timed or counted habit is something you *do*, so offer somewhere to do it.
+            // A plain check-off habit has nothing to run, so it gets no practice button.
+            item {
+                habit?.takeIf { it.trackMode != HabitTrackMode.SINGLE }?.let { h ->
+                    AppButton(
+                        text = if (h.trackMode == HabitTrackMode.DURATION) "Start practice" else "Count reps",
+                        onClick = { onPractice(h.id) },
+                        leadingIcon = PhosphorIcons.Regular.Play,
+                        modifier = Modifier.fillMaxWidth().padding(top = LifePlannerDesign.Spacing.xs),
+                    )
                 }
             }
 

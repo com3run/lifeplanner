@@ -372,6 +372,7 @@ val appModule = module {
 
     // Health Use Cases
     factory { AutoCompleteHealthHabitsUseCase(get(), get(), get()) }
+    factory { az.tribe.lifeplanner.usecases.health.GetHealthHabitProgressUseCase(get(), get()) }
     factory { SyncHealthDataUseCase(get(), get()) }
 
     // Habit Use Cases
@@ -426,7 +427,7 @@ val appModule = module {
     viewModel { az.tribe.lifeplanner.ui.today.TodayViewModel(get(), get(), get(), get()) }
     single { az.tribe.lifeplanner.ui.foryou.HomeFeedBuilder(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single<az.tribe.lifeplanner.ui.intro.IntroSeenStore> { az.tribe.lifeplanner.ui.intro.SettingsIntroSeenStore() }
-    viewModel { az.tribe.lifeplanner.ui.foryou.ForYouViewModel(get(), get(), get(), get(), get()) }
+    viewModel { az.tribe.lifeplanner.ui.foryou.ForYouViewModel(get(), get(), get(), get(), get(), get()) }
     viewModel { az.tribe.lifeplanner.ui.today.TodayWeatherViewModel(get()) }
     viewModel { az.tribe.lifeplanner.ui.trajectory.TrajectoryViewModel(get(), get()) }
     viewModel { az.tribe.lifeplanner.ui.foryou.LearnHubViewModel(get(), get(), get(), get()) }
@@ -440,6 +441,7 @@ val appModule = module {
     viewModelOf(::BeginnerObjectiveViewModel)
     viewModelOf(::AbilityViewModel)
     viewModel { params -> AbilityDetailViewModel(params.get(), get(), get(), get(), get()) }
+    viewModel { params -> az.tribe.lifeplanner.ui.habit.HabitPracticeViewModel(params.get(), get(), get()) }
     viewModelOf(::HealthViewModel)
     viewModelOf(::CalendarViewModel)
     viewModelOf(::HomeViewModel)
