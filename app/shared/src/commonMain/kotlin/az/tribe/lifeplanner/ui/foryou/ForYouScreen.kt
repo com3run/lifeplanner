@@ -92,6 +92,9 @@ import az.tribe.lifeplanner.ui.today.PlanItem
 import az.tribe.lifeplanner.ui.today.TodayWeatherViewModel
 import az.tribe.lifeplanner.ui.intro.rememberFeatureIntroGate
 import androidx.compose.runtime.LaunchedEffect
+import az.tribe.lifeplanner.usecases.health.GetHealthHabitProgressUseCase
+import az.tribe.lifeplanner.domain.enum.HealthMetricType
+import com.adamglin.phosphoricons.regular.Heartbeat
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
 import az.tribe.lifeplanner.ui.theme.bouncyClickable
 import az.tribe.lifeplanner.ui.theme.gradientColors
@@ -137,6 +140,7 @@ fun ForYouScreen(
     val progress by viewModel.progress.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val plan by viewModel.todayPlan.collectAsState()
+    val healthHabits by viewModel.healthHabits.collectAsState()
     val checkinPulse by viewModel.checkinPulse.collectAsState()
     val c = MaterialTheme.modernColors
 
@@ -211,13 +215,18 @@ fun ForYouScreen(
             // Only rendered when the day actually has something in it. A header over a "you're all
             // caught up" line is just chrome on an empty day, and it pushes the feed down.
             val hasCalendarToday = calendarConnected && todayEvents.isNotEmpty()
-            if (plan.isNotEmpty() || hasCalendarToday) {
+            if (plan.isNotEmpty() || hasCalendarToday || healthHabits.isNotEmpty()) {
                 item(key = "plan_header") { SectionHeader(label = "Today's plan", onSeeAll = null) }
                 // Calendar events lead the plan: they are time-anchored, so they read top-of-day.
                 if (hasCalendarToday) {
                     items(todayEvents, key = { "cal_${it.id}" }) { event ->
                         CalendarPlanRow(event = event, tz = tz)
                     }
+                }
+                // Health-linked habits next. They can't be ticked by hand — health data completes
+                // them — so the row carries the live number instead of a checkbox that does nothing.
+                items(healthHabits, key = { "health_${it.habitId}" }) { habit ->
+                    HealthHabitRow(progress = habit)
                 }
                 items(plan, key = { "plan_${it.milestoneId}" }) { p ->
                     PlanRow(
@@ -766,6 +775,92 @@ private fun CalendarPlanRow(event: CalendarEvent, tz: TimeZone) {
                 )
             }
         }
+    }
+}
+
+/**
+ * A habit that health data completes: shows today's reading against the target, with a progress
+ * track, instead of a check circle the user has no way to tick.
+ */
+@Composable
+private fun HealthHabitRow(progress: GetHealthHabitProgressUseCase.Progress) {
+    val c = MaterialTheme.modernColors
+    val done = progress.done
+    val accent = if (done) Color(0xFF28C76F) else c.primary
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = c.cardBackground,
+        shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large),
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(LifePlannerDesign.Padding.cardContent),
+            horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = if (done) PhosphorIcons.Fill.CheckCircle else PhosphorIcons.Regular.Heartbeat,
+                contentDescription = null,
+                tint = accent,
+                modifier = Modifier.padding(4.dp).size(LifePlannerDesign.IconSize.large),
+            )
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                    progress.title,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                    color = c.textPrimary,
+                    maxLines = 1,
+                )
+                val fraction = progress.fraction
+                if (fraction != null) {
+                    val animated by animateFloatAsState(targetValue = fraction, label = "healthHabitProgress")
+                    Box(
+                        Modifier.fillMaxWidth().height(6.dp)
+                            .clip(RoundedCornerShape(3.dp))
+                            .background(c.primary.copy(alpha = 0.12f)),
+                    ) {
+                        Box(
+                            Modifier.fillMaxWidth(animated).height(6.dp)
+                                .clip(RoundedCornerShape(3.dp))
+                                .background(accent),
+                        )
+                    }
+                }
+                Text(
+                    healthProgressLabel(progress),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = c.textSecondary,
+                    maxLines = 1,
+                )
+            }
+        }
+    }
+}
+
+/** "6,240 / 8,000 steps", or just the reading for habits that only need one. */
+private fun healthProgressLabel(p: GetHealthHabitProgressUseCase.Progress): String {
+    val unit = when (p.metricType) {
+        HealthMetricType.STEPS -> "steps"
+        HealthMetricType.SLEEP -> "h"
+        HealthMetricType.WEIGHT -> "kg"
+        HealthMetricType.HEART_RATE -> "bpm"
+    }
+    val current = formatHealthValue(p.current, p.metricType)
+    val target = p.target?.let { formatHealthValue(it, p.metricType) }
+    return when {
+        target != null && p.metricType == HealthMetricType.SLEEP -> "$current$unit of $target$unit"
+        target != null -> "$current / $target $unit"
+        p.current <= 0.0 -> "No reading yet today"
+        else -> "$current $unit today"
+    }
+}
+
+private fun formatHealthValue(value: Double, type: HealthMetricType): String = when (type) {
+    // Steps read as whole numbers with a thousands separator; the rest keep one decimal.
+    HealthMetricType.STEPS -> value.toLong().toString()
+        .reversed().chunked(3).joinToString(",").reversed()
+    else -> {
+        val rounded = (value * 10).toLong() / 10.0
+        if (rounded == rounded.toLong().toDouble()) rounded.toLong().toString() else rounded.toString()
     }
 }
 

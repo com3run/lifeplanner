@@ -73,8 +73,10 @@ class AutoCompleteHealthHabitsUseCase(
 
     companion object {
         const val AUTO_NOTE = "Auto-completed from health data"
-        private const val DEFAULT_STEPS_TARGET = 10_000.0
-        private const val DEFAULT_SLEEP_HOURS = 7.0
+        // Shared with GetHealthHabitProgressUseCase so the progress a user sees can never disagree
+        // with the threshold that actually ticks the habit off.
+        const val DEFAULT_STEPS_TARGET = 10_000.0
+        const val DEFAULT_SLEEP_HOURS = 7.0
         private const val TAG = "AutoCompleteHealthHabits"
     }
 }

@@ -11,6 +11,7 @@ import az.tribe.lifeplanner.domain.repository.GoalRepository
 import az.tribe.lifeplanner.domain.repository.HabitRepository
 import az.tribe.lifeplanner.ui.today.PlanItem
 import az.tribe.lifeplanner.usecases.habit.CheckInHabitUseCase
+import az.tribe.lifeplanner.usecases.health.GetHealthHabitProgressUseCase
 import co.touchlab.kermit.Logger
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -39,6 +40,7 @@ class ForYouViewModel(
     private val gamificationRepository: GamificationRepository,
     private val goalRepository: GoalRepository,
     private val habitRepository: HabitRepository,
+    private val getHealthHabitProgress: GetHealthHabitProgressUseCase,
 ) : ViewModel() {
 
     private val _feed = MutableStateFlow<List<FeedItem>>(emptyList())
@@ -76,6 +78,14 @@ class ForYouViewModel(
             }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    /**
+     * Habits wired to a health metric, with today's reading against their target. These sit in
+     * Today's plan next to the milestones: they are things due today that the user cannot tick by
+     * hand, so showing the number is the only way the row means anything.
+     */
+    private val _healthHabits = MutableStateFlow<List<GetHealthHabitProgressUseCase.Progress>>(emptyList())
+    val healthHabits: StateFlow<List<GetHealthHabitProgressUseCase.Progress>> = _healthHabits.asStateFlow()
+
     private val _progress = MutableStateFlow<UserProgress?>(null)
     val progress: StateFlow<UserProgress?> = _progress.asStateFlow()
 
@@ -95,6 +105,10 @@ class ForYouViewModel(
             runCatching {
                 _progress.value = gamificationRepository.getUserProgress().first()
             }.onFailure { Logger.w("ForYouViewModel") { "Progress load failed: ${it.message}" } }
+
+            runCatching { getHealthHabitProgress() }
+                .onSuccess { _healthHabits.value = it }
+                .onFailure { Logger.w("ForYouViewModel") { "Health habit progress failed: ${it.message}" } }
 
             runCatching { feedBuilder.build() }
                 .onSuccess { _feed.value = it }
