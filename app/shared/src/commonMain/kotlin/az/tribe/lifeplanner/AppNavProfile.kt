@@ -88,7 +88,7 @@ internal fun NavGraphBuilder.appNavProfile(
                 }
             },
             onNavigateToLifeBalance = {
-                navController.navigate(Screen.LifeBalance.route) {
+                navController.navigate(Screen.ForYou.route) {
                     launchSingleTop = true
                 }
             },

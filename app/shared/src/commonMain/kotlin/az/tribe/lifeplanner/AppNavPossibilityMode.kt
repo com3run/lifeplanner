@@ -33,7 +33,7 @@ internal fun NavGraphBuilder.appNavPossibilityMode(navController: NavController)
             },
             onTalkToCoach = { coachId, message ->
                 // Seed the opener so chat auto-sends it and the matched coach reacts to this situation.
-                az.tribe.lifeplanner.ui.balance.InsightMessageHolder.pendingMessage = message
+                az.tribe.lifeplanner.ui.chat.InsightMessageHolder.pendingMessage = message
                 navController.navigate("ai_chat/$coachId") {
                     popUpTo(Screen.PossibilityMode.route) { inclusive = true }
                     launchSingleTop = true

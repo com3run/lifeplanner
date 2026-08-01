@@ -66,7 +66,7 @@ internal fun NavGraphBuilder.appNavJournal(
     ) {
         // Show back button when navigated from within the app (not bottom nav tab switch)
         val previousRoute = navController.previousBackStackEntry?.destination?.route
-        val isBottomNavEntry = previousRoute == null || previousRoute == Screen.Home.route
+        val isBottomNavEntry = previousRoute == null || previousRoute == Screen.ForYou.route
         JournalScreen(
             onNavigateBack = { navController.popBackStack() },
             onEntryClick = { entryId ->

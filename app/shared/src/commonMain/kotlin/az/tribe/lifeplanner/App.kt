@@ -363,12 +363,8 @@ fun App(
             currentRoute?.let { Analytics.screenViewed(it) }
         }
 
-        // v3 rollout: Home tab destination. Default (flags false) = For You feed,
-        // i.e. today's behavior. Flip USE_LEGACY_HOME_TAB for the Phase 1 interim
-        // (restyled legacy Home) until the For You feed engines are proven.
-        val homeRoute =
-            if (FeatureFlags.USE_LEGACY_HOME_TAB) Screen.Home.route
-            else Screen.ForYou.route
+        // The legacy Home tab is gone; For You is the home.
+        val homeRoute = Screen.ForYou.route
 
         // D11: first run is a chain, intro (promise + values) then the coach flow. The intro seeds
         // LifeValues; the coach flow captures the name, picks the coach, and seeds the first goals
@@ -621,16 +617,6 @@ fun App(
                             } else fadeOut(tween(300))
                         }
                     ) {
-                        appNavHome(
-                            navController = navController,
-                            viewModel = viewModel,
-                            tabIndex = tabIndex,
-                            slideOffset = slideOffset,
-                            softUpdateDismissed = softUpdateDismissed,
-                            updateState = updateState,
-                            onHubTabSelected = { hubSelectedTab = it },
-                            onSoftUpdateDismissed = { softUpdateDismissed = false }
-                        )
                         appNavJournal(
                             navController = navController,
                             tabIndex = tabIndex,

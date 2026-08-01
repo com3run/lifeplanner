@@ -121,7 +121,7 @@ class YouViewModel(
                             title = "${weakest.area.displayName} is slipping",
                             body = "It's your lowest area at ${weakest.score}/100. Worth a look before it drifts further.",
                             actionLabel = "Open balance",
-                            route = Screen.LifeBalance.route,
+                            route = Screen.ForYou.route,
                             score = 76,
                         )
                     )

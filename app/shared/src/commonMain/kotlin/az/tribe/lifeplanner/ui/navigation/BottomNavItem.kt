@@ -30,7 +30,7 @@ sealed class BottomNavItem(
     val unselectedIcon: ImageVector
 ) {
     data object Home : BottomNavItem(
-        route = if (FeatureFlags.USE_LEGACY_HOME_TAB) Screen.Home.route else Screen.ForYou.route,
+        route = Screen.ForYou.route,
         title = "Today",
         selectedIcon = PhosphorIcons.Fill.House,
         unselectedIcon = PhosphorIcons.Regular.House

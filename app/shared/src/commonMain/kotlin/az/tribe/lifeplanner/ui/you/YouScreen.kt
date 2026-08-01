@@ -112,7 +112,7 @@ fun YouScreen(
             item { SectionLabel("Insights") }
             item {
                 SectionCard {
-                    YouRow(PhosphorIcons.Regular.Scales, c.success, "Life Balance", "How your areas of life are tracking") { onNavigate(Screen.LifeBalance.route) }
+                    YouRow(PhosphorIcons.Regular.Scales, c.success, "Life Balance", "How your areas of life are tracking") { onNavigate(Screen.ForYou.route) }
                     YouRow(PhosphorIcons.Regular.ChartBar, c.primary, "Analytics", "Your goal & habit statistics") { onNavigate(Screen.Analytics.route) }
                     YouRow(PhosphorIcons.Regular.Sliders, c.secondary, "My Patterns", "How you use the app + tips") { onNavigate(Screen.ScreenTimeInsight.route) }
                     YouRow(PhosphorIcons.Regular.Lightning, c.warning, "Causal Insights", "What actually drives your progress") { onNavigate(Screen.CausalInsights.route) }

@@ -9,6 +9,8 @@ import az.tribe.lifeplanner.domain.model.XpRewards
 import az.tribe.lifeplanner.domain.repository.GamificationRepository
 import az.tribe.lifeplanner.domain.repository.GoalRepository
 import az.tribe.lifeplanner.domain.repository.HabitRepository
+import az.tribe.lifeplanner.domain.repository.LifeBalanceRepository
+import az.tribe.lifeplanner.domain.model.LifeBalanceReport
 import az.tribe.lifeplanner.ui.today.PlanItem
 import az.tribe.lifeplanner.usecases.habit.CheckInHabitUseCase
 import az.tribe.lifeplanner.usecases.health.GetHealthHabitProgressUseCase
@@ -41,6 +43,7 @@ class ForYouViewModel(
     private val goalRepository: GoalRepository,
     private val habitRepository: HabitRepository,
     private val getHealthHabitProgress: GetHealthHabitProgressUseCase,
+    private val lifeBalanceRepository: LifeBalanceRepository,
 ) : ViewModel() {
 
     private val _feed = MutableStateFlow<List<FeedItem>>(emptyList())
@@ -86,6 +89,14 @@ class ForYouViewModel(
     private val _healthHabits = MutableStateFlow<List<GetHealthHabitProgressUseCase.Progress>>(emptyList())
     val healthHabits: StateFlow<List<GetHealthHabitProgressUseCase.Progress>> = _healthHabits.asStateFlow()
 
+    /**
+     * Life balance, for the strip on the feed. Reads the last saved report rather than
+     * recalculating: the feed should not pay for a full recompute on every open, and the score
+     * only moves as goals and habits do.
+     */
+    private val _balance = MutableStateFlow<LifeBalanceReport?>(null)
+    val balance: StateFlow<LifeBalanceReport?> = _balance.asStateFlow()
+
     private val _progress = MutableStateFlow<UserProgress?>(null)
     val progress: StateFlow<UserProgress?> = _progress.asStateFlow()
 
@@ -105,6 +116,10 @@ class ForYouViewModel(
             runCatching {
                 _progress.value = gamificationRepository.getUserProgress().first()
             }.onFailure { Logger.w("ForYouViewModel") { "Progress load failed: ${it.message}" } }
+
+            runCatching { lifeBalanceRepository.getLatestReport() ?: lifeBalanceRepository.calculateCurrentBalance() }
+                .onSuccess { _balance.value = it }
+                .onFailure { Logger.w("ForYouViewModel") { "Balance load failed: ${it.message}" } }
 
             runCatching { getHealthHabitProgress() }
                 .onSuccess { _healthHabits.value = it }

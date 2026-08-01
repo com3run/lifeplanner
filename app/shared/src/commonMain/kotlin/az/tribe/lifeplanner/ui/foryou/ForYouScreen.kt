@@ -141,6 +141,7 @@ fun ForYouScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val plan by viewModel.todayPlan.collectAsState()
     val healthHabits by viewModel.healthHabits.collectAsState()
+    val balance by viewModel.balance.collectAsState()
     val checkinPulse by viewModel.checkinPulse.collectAsState()
     val c = MaterialTheme.modernColors
 
@@ -210,6 +211,9 @@ fun ForYouScreen(
 
             // A calming beat: a breath or two, right in the flow, that "grows" as you complete it.
             item(key = "breath") { BreathingCard() }
+
+            // Life balance now lives here rather than behind its own tab.
+            item(key = "balance") { BalanceStripCard(balance) }
 
             // Today's plan, planner-style: tick items off right here instead of jumping to Goals.
             // Only rendered when the day actually has something in it. A header over a "you're all

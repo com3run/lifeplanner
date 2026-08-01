@@ -17,7 +17,6 @@ object FeatureFlags {
      * the data-coupled For You feed. Default false = current behavior (For You home).
      * Flip to true for the Phase 1 release; back to false once Phase 2 lands For You.
      */
-    const val USE_LEGACY_HOME_TAB = false
 
     /** Phase 2: For You feed as Home (needs PossibilityEngine + feed tables). */
     const val REDESIGN_HOME_FORYOU = false
@@ -27,7 +26,7 @@ object FeatureFlags {
     // route unreachable by a stale deep link.
     //
     // 2026-07-21: product owner reverted to a v2 feature set. All pillars OFF. The For You feed
-    // stays home (USE_LEGACY_HOME_TAB = false above) but shows only its v2-safe cards, since every
+    // stays home but shows only its v2-safe cards, since every
     // pillar feed card is gated on these flags. Flip one back to `true` to restore that pillar.
 
     /** Your Wiring (DecisionProfile / TuningInferenceEngine). */

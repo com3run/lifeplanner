@@ -93,7 +93,6 @@ import az.tribe.lifeplanner.ui.journal.JournalViewModel
 import az.tribe.lifeplanner.ui.backup.BackupViewModel
 import az.tribe.lifeplanner.ui.focus.FocusViewModel
 import az.tribe.lifeplanner.ui.retrospective.RetrospectiveViewModel
-import az.tribe.lifeplanner.ui.balance.LifeBalanceViewModel
 import az.tribe.lifeplanner.ui.coach.CoachViewModel
 import az.tribe.lifeplanner.ui.onboarding.CoachOnboardingViewModel
 import az.tribe.lifeplanner.ui.reminder.ReminderViewModel
@@ -416,7 +415,6 @@ val appModule = module {
     viewModelOf(::ChatViewModel)
     viewModelOf(::CoachViewModel)
     viewModelOf(::ReminderViewModel)
-    viewModelOf(::LifeBalanceViewModel)
     viewModel { az.tribe.lifeplanner.ui.decision.DecisionViewModel(get(), get(), get(), get(), get()) }
     viewModel { az.tribe.lifeplanner.ui.causal.CausalInsightsViewModel(get(), get(), get()) }
     viewModel { az.tribe.lifeplanner.ui.becoming.BecomingViewModel(get(), get(), get()) }
@@ -427,7 +425,7 @@ val appModule = module {
     viewModel { az.tribe.lifeplanner.ui.today.TodayViewModel(get(), get(), get(), get()) }
     single { az.tribe.lifeplanner.ui.foryou.HomeFeedBuilder(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single<az.tribe.lifeplanner.ui.intro.IntroSeenStore> { az.tribe.lifeplanner.ui.intro.SettingsIntroSeenStore() }
-    viewModel { az.tribe.lifeplanner.ui.foryou.ForYouViewModel(get(), get(), get(), get(), get(), get()) }
+    viewModel { az.tribe.lifeplanner.ui.foryou.ForYouViewModel(get(), get(), get(), get(), get(), get(), get()) }
     viewModel { az.tribe.lifeplanner.ui.today.TodayWeatherViewModel(get()) }
     viewModel { az.tribe.lifeplanner.ui.trajectory.TrajectoryViewModel(get(), get()) }
     viewModel { az.tribe.lifeplanner.ui.foryou.LearnHubViewModel(get(), get(), get(), get()) }

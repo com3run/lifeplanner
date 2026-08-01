@@ -1,4 +1,4 @@
-package az.tribe.lifeplanner.ui.balance
+package az.tribe.lifeplanner.ui.chat
 
 /**
  * Simple singleton to pass auto-message between LifeBalance screen and AIChatScreen.

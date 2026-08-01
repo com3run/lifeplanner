@@ -3,7 +3,6 @@ package az.tribe.lifeplanner.ui.navigation
 sealed class Screen(val route: String) {
     object Welcome : Screen("welcome")
     object Onboarding : Screen("onboarding")
-    object Home : Screen("home")
     object Today : Screen("today")
     object ForYou : Screen("for_you")
     object GoalsRedesign : Screen("goals_redesign")
@@ -36,7 +35,6 @@ sealed class Screen(val route: String) {
     object AddGoalFromTemplate : Screen("add_goal_from_template/{templateId}")
     object Settings : Screen("settings")
     object Reminders : Screen("reminders")
-    object LifeBalance : Screen("life_balance")
     object Trajectory : Screen("trajectory")
     object BackupSettings : Screen("backup_settings")
     object FocusSetup : Screen("focus_setup?goalId={goalId}&milestoneId={milestoneId}")
