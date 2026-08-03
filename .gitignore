@@ -47,3 +47,7 @@ assets
 ds-bundle/
 .design-sync/.cache/
 .design-sync/node_modules
+
+# Kotlin scratch/practice scripts (not app code)
+*.main.kts
+practice/
