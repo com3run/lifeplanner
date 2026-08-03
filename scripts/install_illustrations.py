@@ -15,6 +15,13 @@ The source art is a greyscale ramp (near-black linework down to light greys on
 white). That reads correctly on a light background but disappears on a dark one,
 so a luminance-inverted copy goes into drawable-dark/ and Compose Resources picks
 the right one per theme automatically.
+
+NOTE: NAMES below is the full pack. Only the subset the app actually references is
+checked in; 16 of these were removed in 2026-08 because nothing referenced them.
+That was repo hygiene, not a size win -- R8's resource shrinking was already
+keeping them out of the release AAB, which moved by 5 KB. Re-running this restores
+all of them, so delete the ones you did not come here for, or the unused set
+quietly comes back.
 """
 import re
 import shutil
