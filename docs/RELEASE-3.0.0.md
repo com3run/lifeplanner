@@ -20,7 +20,8 @@ seconds as a first-class habit duration.
 
 ## ✅ Verified 2026-08-03 (code + backend ready)
 - **Release AAB builds clean** — `:app:androidApp:bundleRelease` succeeds (R8 + resource shrink + lint-vital). ~50 MB. Unsigned locally (see signing below).
-- **Unit tests green** — 971 host tests pass.
+- **Unit tests green** — 976 host tests pass.
+- **The 21→39 migration chain is covered** — `DatabaseMigrationsTest` runs the real chain against a hand-written v21-era database (the shape 2.3 shipped) and asserts on the resulting schema, since `addColumnSafe` swallows exceptions and a failed step is otherwise silent until a user hits `no such column`. Covers the columns current queries read, the create-before-alter ordering for `DecisionEntity`, the Learn hub tables, idempotency (the chain runs on *every* open), and row preservation. Still a JVM schema test, not a 2.3-install-upgraded-on-device run.
 - **DB schema v39** (was v36 when this doc was written; the Learn hub content cache, journal-detected decisions, and habit `completionSource` landed since). Runtime Android migrations `migrateToVersion37/38/39` exist in `DatabaseMigrations.kt` and are wired into `DatabaseDriverFactory.onOpen()`; `.sqm` files 37–39 present for iOS + compile-time verification. 2.3 shipped at schema v21, so upgraders run 21→39 with every step present.
 - **Learn content degrades safely** — `KnowledgeFetcher` publishes bundled lessons first, then the local cache, then Supabase, and refuses to publish an empty remote result. The Learn hub is never blank, even if `knowledge_lessons` is unseeded.
 - **iOS `GoogleService-Info.plist` is present** in the checkout (was a blocker; resolved).
