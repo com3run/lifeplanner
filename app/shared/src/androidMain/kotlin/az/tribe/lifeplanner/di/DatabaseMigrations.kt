@@ -38,6 +38,26 @@ internal fun addColumnSafe(db: SupportSQLiteDatabase, table: String, column: Str
  * Kept out of [DatabaseDriverFactory] so `DatabaseMigrationsTest` can exercise the real
  * sequence rather than a copy of it that drifts.
  */
+internal fun migrateToVersion40(db: SupportSQLiteDatabase) {
+    // Schema v40: Wheel of Life user-set scores, matches migration 40.sqm. Only the user's own
+    // numbers live here; predictions are recomputed on read, so there is nothing to migrate for
+    // them.
+    db.execSQL(
+        """
+        CREATE TABLE IF NOT EXISTS WheelScoreEntity (
+            id TEXT NOT NULL PRIMARY KEY,
+            score REAL NOT NULL,
+            assessedAt TEXT NOT NULL,
+            note TEXT,
+            sync_updated_at TEXT,
+            is_deleted INTEGER NOT NULL DEFAULT 0,
+            sync_version INTEGER NOT NULL DEFAULT 0,
+            last_synced_at TEXT
+        )
+        """.trimIndent()
+    )
+}
+
 internal fun runAndroidMigrations(db: SupportSQLiteDatabase) {
     migrateToVersion5(db)
     migrateToVersion6(db)
@@ -73,6 +93,7 @@ internal fun runAndroidMigrations(db: SupportSQLiteDatabase) {
     migrateToVersion37(db)
     migrateToVersion38(db)
     migrateToVersion39(db)
+    migrateToVersion40(db)
 }
 
 internal fun migrateToVersion5(db: SupportSQLiteDatabase) {

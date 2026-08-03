@@ -27,6 +27,9 @@ import az.tribe.lifeplanner.data.repository.FocusRepositoryImpl
 import az.tribe.lifeplanner.data.repository.RetrospectiveRepositoryImpl
 import az.tribe.lifeplanner.data.repository.GoalRepositoryImpl
 import az.tribe.lifeplanner.data.repository.KnowledgeRepositoryImpl
+import az.tribe.lifeplanner.data.repository.WheelRepositoryImpl
+import az.tribe.lifeplanner.ui.wheel.WheelViewModel
+import kotlinx.coroutines.flow.first
 import az.tribe.lifeplanner.data.repository.LifeValueRepositoryImpl
 import az.tribe.lifeplanner.data.repository.DecisionRepositoryImpl
 import az.tribe.lifeplanner.data.repository.DecisionProfileRepositoryImpl
@@ -61,6 +64,7 @@ import az.tribe.lifeplanner.domain.repository.FocusRepository
 import az.tribe.lifeplanner.domain.repository.RetrospectiveRepository
 import az.tribe.lifeplanner.domain.repository.GoalRepository
 import az.tribe.lifeplanner.domain.repository.KnowledgeRepository
+import az.tribe.lifeplanner.domain.repository.WheelRepository
 import az.tribe.lifeplanner.domain.repository.LifeValueRepository
 import az.tribe.lifeplanner.domain.repository.DecisionRepository
 import az.tribe.lifeplanner.domain.repository.DecisionProfileRepository
@@ -284,6 +288,20 @@ val appModule = module {
     single<GoalRepository> { GoalRepositoryImpl(get(), get(), get()) }
     single<LifeValueRepository> { LifeValueRepositoryImpl(get(), get()) }
     single<KnowledgeRepository> { KnowledgeRepositoryImpl(get(), get()) }
+    single<WheelRepository> {
+        WheelRepositoryImpl(
+            db = get(),
+            goalRepository = get(),
+            habitRepository = get(),
+            journalRepository = get(),
+            healthRepository = get(),
+            abilityRepository = get(),
+            // Read count comes through the repository's flow rather than a new query, so the
+            // Learn hub stays the only thing that knows how reads are stored.
+            knowledgeReadCount = { get<KnowledgeRepository>().readIds().first().size },
+            syncManager = get(),
+        )
+    }
     single<DecisionRepository> { DecisionRepositoryImpl(get(), get()) }
     single<IdentityStatementRepository> { IdentityStatementRepositoryImpl(get(), get()) }
     single<DecisionProfileRepository> { DecisionProfileRepositoryImpl(get(), get()) }
@@ -406,6 +424,7 @@ val appModule = module {
     single<StoryRepository> { StoryRepositoryImpl(get()) }
 
     // ViewModels
+    viewModelOf(::WheelViewModel)
     viewModelOf(::GoalViewModel)
     viewModelOf(::GamificationViewModel)
     viewModelOf(::AuthViewModel)
@@ -425,7 +444,7 @@ val appModule = module {
     viewModel { az.tribe.lifeplanner.ui.today.TodayViewModel(get(), get(), get(), get()) }
     single { az.tribe.lifeplanner.ui.foryou.HomeFeedBuilder(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single<az.tribe.lifeplanner.ui.intro.IntroSeenStore> { az.tribe.lifeplanner.ui.intro.SettingsIntroSeenStore() }
-    viewModel { az.tribe.lifeplanner.ui.foryou.ForYouViewModel(get(), get(), get(), get(), get(), get(), get()) }
+    viewModel { az.tribe.lifeplanner.ui.foryou.ForYouViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel { az.tribe.lifeplanner.ui.today.TodayWeatherViewModel(get()) }
     viewModel { az.tribe.lifeplanner.ui.trajectory.TrajectoryViewModel(get(), get()) }
     viewModel { az.tribe.lifeplanner.ui.foryou.LearnHubViewModel(get(), get(), get(), get()) }

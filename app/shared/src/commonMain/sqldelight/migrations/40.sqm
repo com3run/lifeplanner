@@ -1,0 +1,11 @@
+-- 40: WheelScoreEntity (Wheel of Life, user-set scores only; predictions are recomputed on read)
+CREATE TABLE IF NOT EXISTS WheelScoreEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    score REAL NOT NULL,
+    assessedAt TEXT NOT NULL,
+    note TEXT,
+    sync_updated_at TEXT,
+    is_deleted INTEGER NOT NULL DEFAULT 0,
+    sync_version INTEGER NOT NULL DEFAULT 0,
+    last_synced_at TEXT
+);

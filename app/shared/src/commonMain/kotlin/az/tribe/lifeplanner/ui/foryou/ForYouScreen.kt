@@ -88,6 +88,7 @@ import az.tribe.lifeplanner.ui.intro.FeatureIntroHost
 import az.tribe.lifeplanner.location.LocationPermissionState
 import az.tribe.lifeplanner.location.rememberLocationPermission
 import az.tribe.lifeplanner.ui.navigation.Screen
+import az.tribe.lifeplanner.ui.wheel.WheelStripCard
 import az.tribe.lifeplanner.ui.today.PlanItem
 import az.tribe.lifeplanner.ui.today.TodayWeatherViewModel
 import az.tribe.lifeplanner.ui.intro.rememberFeatureIntroGate
@@ -141,7 +142,7 @@ fun ForYouScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val plan by viewModel.todayPlan.collectAsState()
     val healthHabits by viewModel.healthHabits.collectAsState()
-    val balance by viewModel.balance.collectAsState()
+    val wheel by viewModel.wheel.collectAsState()
     val checkinPulse by viewModel.checkinPulse.collectAsState()
     val c = MaterialTheme.modernColors
 
@@ -213,7 +214,9 @@ fun ForYouScreen(
             item(key = "breath") { BreathingCard() }
 
             // Life balance now lives here rather than behind its own tab.
-            item(key = "balance") { BalanceStripCard(balance) }
+            item(key = "balance") {
+                WheelStripCard(wheel, onOpen = { onOpenRoute(Screen.WheelOfLife.route) })
+            }
 
             // Today's plan, planner-style: tick items off right here instead of jumping to Goals.
             // Only rendered when the day actually has something in it. A header over a "you're all

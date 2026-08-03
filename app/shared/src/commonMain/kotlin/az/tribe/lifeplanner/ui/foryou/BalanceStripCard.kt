@@ -2,6 +2,7 @@ package az.tribe.lifeplanner.ui.foryou
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,13 +39,19 @@ import az.tribe.lifeplanner.ui.theme.modernColors
  * user already reads. Renders nothing until there is a report to show.
  */
 @Composable
-fun BalanceStripCard(report: LifeBalanceReport?, modifier: Modifier = Modifier) {
+fun BalanceStripCard(
+    report: LifeBalanceReport?,
+    modifier: Modifier = Modifier,
+    onOpen: (() -> Unit)? = null,
+) {
     if (report == null || report.areaScores.isEmpty()) return
     val c = MaterialTheme.modernColors
     val weakest = report.areaScores.minByOrNull { it.score }
 
     Surface(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().then(
+            if (onOpen != null) Modifier.clickable(onClick = onOpen) else Modifier
+        ),
         color = c.cardBackground,
         shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large),
     ) {

@@ -954,7 +954,7 @@ BEGIN
             'reminders', 'custom_coaches', 'coach_groups', 'coach_group_members',
             'focus_sessions', 'coach_persona_overrides', 'user_situations',
             'life_values', 'decisions', 'identity_statements', 'decision_profiles',
-            'knowledge_reads'
+            'knowledge_reads', 'wheel_scores'
         ])
     LOOP
         EXECUTE format(
@@ -1003,4 +1003,38 @@ CREATE POLICY knowledge_reads_delete ON knowledge_reads FOR DELETE TO authentica
 
 CREATE TRIGGER trg_knowledge_reads_sync
     BEFORE UPDATE ON knowledge_reads
+    FOR EACH ROW EXECUTE FUNCTION update_sync_metadata();
+
+-- ────────────────────────────────────────────────────────────
+-- wheel_scores  (Wheel of Life — the scores a user set themselves)
+-- Composite PK (user_id, id): `id` is the WheelArea enum name (e.g. 'ROMANCE'),
+-- shared across users, so the primary key is scoped per user.
+-- Only user-set scores live here. Predictions are recomputed on the client from
+-- live signals, so there is nothing to store and nothing to go stale.
+-- ────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS wheel_scores (
+    id           TEXT        NOT NULL,
+    user_id      UUID        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    score        DOUBLE PRECISION NOT NULL CHECK (score >= 0 AND score <= 10),
+    assessed_at  TEXT        NOT NULL,
+    note         TEXT,
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    -- sync metadata
+    updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    is_deleted   BOOLEAN     NOT NULL DEFAULT FALSE,
+    sync_version BIGINT      NOT NULL DEFAULT 0,
+    PRIMARY KEY (user_id, id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_wheel_scores_user_id ON wheel_scores(user_id);
+
+ALTER TABLE wheel_scores ENABLE ROW LEVEL SECURITY;
+CREATE POLICY wheel_scores_select ON wheel_scores FOR SELECT TO authenticated USING ((select auth.uid()) = user_id);
+CREATE POLICY wheel_scores_insert ON wheel_scores FOR INSERT TO authenticated WITH CHECK ((select auth.uid()) = user_id);
+CREATE POLICY wheel_scores_update ON wheel_scores FOR UPDATE TO authenticated USING ((select auth.uid()) = user_id) WITH CHECK ((select auth.uid()) = user_id);
+CREATE POLICY wheel_scores_delete ON wheel_scores FOR DELETE TO authenticated USING ((select auth.uid()) = user_id);
+
+CREATE TRIGGER trg_wheel_scores_sync
+    BEFORE UPDATE ON wheel_scores
     FOR EACH ROW EXECUTE FUNCTION update_sync_metadata();

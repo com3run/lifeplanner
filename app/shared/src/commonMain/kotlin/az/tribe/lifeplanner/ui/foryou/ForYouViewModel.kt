@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -44,7 +45,17 @@ class ForYouViewModel(
     private val habitRepository: HabitRepository,
     private val getHealthHabitProgress: GetHealthHabitProgressUseCase,
     private val lifeBalanceRepository: LifeBalanceRepository,
+    private val wheelRepository: az.tribe.lifeplanner.domain.repository.WheelRepository,
 ) : ViewModel() {
+
+    /**
+     * The Wheel of Life for the strip on the feed. Recomputed from live signals on collection, so
+     * the feed and the wheel screen can never disagree.
+     */
+    val wheel: StateFlow<az.tribe.lifeplanner.domain.model.WheelReport?> =
+        wheelRepository.observeWheel()
+            .catch { e -> co.touchlab.kermit.Logger.w("ForYouViewModel") { "wheel unavailable: ${e.message}" } }
+            .stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5_000), null)
 
     private val _feed = MutableStateFlow<List<FeedItem>>(emptyList())
     val feed: StateFlow<List<FeedItem>> = _feed.asStateFlow()

@@ -17,6 +17,7 @@ fun createAllSyncers(
         UserSituationTableSyncer(supabase, db),
         LifeValueTableSyncer(supabase, db),
         KnowledgeReadTableSyncer(supabase, db),      // knowledge_reads (Learn hub read-state, no FK deps)
+        WheelScoreTableSyncer(supabase, db),         // wheel_scores (one row per WheelArea, no FK deps)
         IdentityStatementTableSyncer(supabase, db),  // identity_statements.value_id → life_values (soft ref)
         DecisionProfileTableSyncer(supabase, db),    // decision_profiles (one row per user)
         GoalTableSyncer(supabase, db),

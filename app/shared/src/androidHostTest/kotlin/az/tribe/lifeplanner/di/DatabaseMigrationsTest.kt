@@ -66,6 +66,18 @@ class DatabaseMigrationsTest {
     }
 
     @Test
+    fun `the Wheel of Life table arrives for upgraders`() {
+        val db = legacyDatabase()
+
+        runAndroidMigrations(db)
+
+        assertTrue(tableExists(db, "WheelScoreEntity"), "WheelScoreEntity was never created")
+        listOf("id", "score", "assessedAt", "note", "sync_updated_at", "is_deleted").forEach {
+            assertTrue(columnExists(db, "WheelScoreEntity", it), "WheelScoreEntity is missing $it")
+        }
+    }
+
+    @Test
     fun `running the chain twice changes nothing`() {
         val db = legacyDatabase()
 

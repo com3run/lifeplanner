@@ -2570,3 +2570,52 @@ DELETE FROM DecisionProfileEntity WHERE is_deleted = 1 AND last_synced_at IS NOT
 upsertDecisionProfileFromSync:
 INSERT OR REPLACE INTO DecisionProfileEntity(id, confidenceThresholdValue, confidenceThresholdConfidence, confidenceThresholdSamples, noveltySalienceValue, noveltySalienceConfidence, noveltySalienceSamples, delayDiscountingValue, delayDiscountingConfidence, delayDiscountingSamples, punishmentSensitivityValue, punishmentSensitivityConfidence, punishmentSensitivitySamples, rewardSensitivityValue, rewardSensitivityConfidence, rewardSensitivitySamples, riskAversionValue, riskAversionConfidence, riskAversionSamples, sync_updated_at, is_deleted, sync_version, last_synced_at)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+-- ============== Wheel of Life ==============
+-- Only the scores the user set themselves. Predictions are recomputed from live signals on every
+-- read (see WheelScorePredictor), so persisting them would just create a staleness problem: a
+-- cached "Physical 7" would outlive the week of steps that produced it. One row per area, keyed by
+-- the WheelArea enum name.
+CREATE TABLE WheelScoreEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    score REAL NOT NULL,
+    assessedAt TEXT NOT NULL,
+    note TEXT,
+    sync_updated_at TEXT,
+    is_deleted INTEGER NOT NULL DEFAULT 0,
+    sync_version INTEGER NOT NULL DEFAULT 0,
+    last_synced_at TEXT
+);
+
+selectAllWheelScores:
+SELECT * FROM WheelScoreEntity WHERE is_deleted = 0;
+
+selectWheelScoreById:
+SELECT * FROM WheelScoreEntity WHERE id = ?;
+
+setWheelScore:
+INSERT OR REPLACE INTO WheelScoreEntity(id, score, assessedAt, note, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), 0, 0, NULL);
+
+clearWheelScore:
+UPDATE WheelScoreEntity SET is_deleted = 1, sync_updated_at = ? WHERE id = ?;
+
+deleteAllWheelScores:
+DELETE FROM WheelScoreEntity;
+
+-- WheelScore sync queries
+getUnsyncedWheelScores:
+SELECT * FROM WheelScoreEntity WHERE (last_synced_at IS NULL OR sync_updated_at > last_synced_at) AND is_deleted = 0;
+
+getDeletedWheelScores:
+SELECT * FROM WheelScoreEntity WHERE is_deleted = 1;
+
+markWheelScoreSynced:
+UPDATE WheelScoreEntity SET last_synced_at = ? WHERE id = ?;
+
+purgeDeletedWheelScores:
+DELETE FROM WheelScoreEntity WHERE is_deleted = 1 AND last_synced_at IS NOT NULL;
+
+upsertWheelScoreFromSync:
+INSERT OR REPLACE INTO WheelScoreEntity(id, score, assessedAt, note, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);

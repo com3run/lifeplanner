@@ -50,6 +50,19 @@ data class KnowledgeReadSyncDto(
     @SerialName("sync_version") val syncVersion: Long = 0
 )
 
+/** Wheel of Life. `id` is the WheelArea enum name, so one row per area per user. */
+@Serializable
+data class WheelScoreSyncDto(
+    val id: String,
+    @SerialName("user_id") val userId: String,
+    val score: Double,
+    @SerialName("assessed_at") val assessedAt: String,
+    val note: String? = null,
+    @SerialName("updated_at") val updatedAt: String? = null,
+    @SerialName("is_deleted") val isDeleted: Boolean = false,
+    @SerialName("sync_version") val syncVersion: Long = 0
+)
+
 @Serializable
 data class DecisionSyncDto(
     val id: String,
