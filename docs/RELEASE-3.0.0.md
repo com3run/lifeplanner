@@ -1,55 +1,123 @@
 # LifePlanner v3.0.0 — Release Runbook
 
 App id `az.tribe.lifeplanner` · versionName **3.0.0** · Android versionCode **11** · iOS build **8**
-Supabase project `rkdggdfabwgukspylybu`. Prepared 2026-07-25.
+Supabase project `rkdggdfabwgukspylybu`. Prepared 2026-07-25, **re-verified 2026-08-03**.
+
+Version numbers now live in one place: `gradle/libs.versions.toml` (`app-versionName` /
+`app-versionCode`). Android's `versionName`/`versionCode` and `BuildKonfig.APP_VERSION` all read
+from there. iOS still carries its own `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` in
+`project.pbxproj` — bump those by hand to match.
 
 ## What's in v3 (since the 2.3 on the stores)
-Pillar 6 Possibility Mode (now with a coach hand-off + instant options), the For You home
-feed, the goal-as-journey redesign, habit track modes + health auto-complete, device
-calendar + steps on home, the new **Learn hub** (lesson paths, synced progress,
-recommendations), and Supabase-native monitoring.
+Pillar 6 Possibility Mode (coach hand-off + instant options), the For You home feed, the
+goal-as-journey redesign, habit track modes + health auto-complete, device calendar + steps on
+home, the **Learn hub** (lesson paths, synced progress, recommendations), Supabase-native
+monitoring, and — added after this runbook was first written — Life Balance folded into the
+Today feed, a habit practice ground, journal entries following the hub's day lens, and
+seconds as a first-class habit duration.
 
 ---
 
-## ✅ Verified (code + backend ready)
+## ✅ Verified 2026-08-03 (code + backend ready)
 - **Release AAB builds clean** — `:app:androidApp:bundleRelease` succeeds (R8 + resource shrink + lint-vital). ~50 MB. Unsigned locally (see signing below).
-- **iOS shared framework compiles** — `:app:shared:compileKotlinIosSimulatorArm64` passes with all v3 code.
-- **Unit tests green** — 918 host tests pass.
-- **DB schema v36** — the Learn hub added `KnowledgeReadEntity`. Runtime Android migration (`migrateToVersion36`) is wired into `DatabaseDriverFactory.onOpen()` and idempotent; `.sqm` present; iOS defensive schema covers it. 2.3 shipped at schema v21, so upgraders migrate 21→36 with all steps present.
-- **Backend deployed & in sync** — all 7 edge functions ACTIVE; `ai-proxy` redeployed (chat provider-fallback fix); `knowledge_reads` table + RLS live; monitoring cron jobs (`lifeplanner-health` 5 min, `lifeplanner-store-watch` 30 min) active; secrets set.
+- **Unit tests green** — 971 host tests pass.
+- **DB schema v39** (was v36 when this doc was written; the Learn hub content cache, journal-detected decisions, and habit `completionSource` landed since). Runtime Android migrations `migrateToVersion37/38/39` exist in `DatabaseMigrations.kt` and are wired into `DatabaseDriverFactory.onOpen()`; `.sqm` files 37–39 present for iOS + compile-time verification. 2.3 shipped at schema v21, so upgraders run 21→39 with every step present.
+- **Learn content degrades safely** — `KnowledgeFetcher` publishes bundled lessons first, then the local cache, then Supabase, and refuses to publish an empty remote result. The Learn hub is never blank, even if `knowledge_lessons` is unseeded.
+- **iOS `GoogleService-Info.plist` is present** in the checkout (was a blocker; resolved).
+- **iOS entitlements / Info.plist** validated (`plutil -lint`). Unused HealthKit entitlements were removed earlier; the unused `NSHealthUpdateUsageDescription` was removed 2026-08-03 (the app requests HealthKit **read-only** — `writeTypes = emptyList()`).
+- **Backend deployed** — 7 edge functions ACTIVE, `knowledge_reads` table + RLS live, monitoring cron jobs (`lifeplanner-health` 5 min, `lifeplanner-store-watch` 30 min) active.
 
-## ⚠️ Blockers that need YOU (credentials / accounts — I can't do these)
+## ⚠️ Blockers that need YOU (credentials / accounts)
 
-1. **Android release signing.** The AAB builds **unsigned** until the keystore + `RELEASE_*` props are set. The keystore path is now configurable, so you do NOT need to copy the `.jks` into the repo. Add to `local.properties` (git-ignored):
+1. **Android release signing.** The AAB builds **unsigned** until the keystore properties are
+   set. The keystore is at `~/Documents/tribe/lifeplanner.jks` and does **not** need copying
+   into the repo. Either add to `local.properties` (git-ignored):
    ```
    RELEASE_STORE_FILE=~/Documents/tribe/lifeplanner.jks
    RELEASE_STORE_PASSWORD=…
    RELEASE_KEY_ALIAS=…
    RELEASE_KEY_PASSWORD=…
    ```
-   `RELEASE_STORE_FILE` accepts an absolute, `~`-relative, or repo-root-relative path; it defaults to `lifeplanner.jks` at the repo root if unset. Then `./gradlew :app:androidApp:bundleRelease` produces a signed AAB.
-   - **OR** ship via CI (`.github/workflows/android.yml`) which signs from its own secrets.
+   …or pass them per-build without persisting them, since `localProp()` falls back to Gradle
+   properties:
+   ```
+   ./gradlew :app:androidApp:bundleRelease \
+     -PRELEASE_STORE_FILE=~/Documents/tribe/lifeplanner.jks \
+     -PRELEASE_STORE_PASSWORD=… -PRELEASE_KEY_ALIAS=… -PRELEASE_KEY_PASSWORD=…
+   ```
+   Verify before uploading — an unsigned AAB still builds green:
+   ```
+   unzip -l app/androidApp/build/outputs/bundle/release/androidApp-release.aab | grep -E 'META-INF/.*\.(RSA|DSA|EC)'
+   ```
 
-2. **iOS `GoogleService-Info.plist`.** Missing from the checkout (git-ignored Firebase secret). Download from Firebase Console → the iOS app (`az.tribe.lifeplanner`) → save to `app/iosApp/iosApp/GoogleService-Info.plist`. Without it the Xcode app build fails.
+2. **GitHub Actions secrets** (only if you ship via CI — see the CI section). Needed:
+   `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `POSTHOG_API_KEY`, `PERSONA_API_SECRET`,
+   `GOOGLE_SERVICES_JSON`, `GOOGLE_SERVICE_INFO_PLIST`, `RELEASE_KEYSTORE_BASE64`
+   (`base64 -i ~/Documents/tribe/lifeplanner.jks | pbcopy`), `RELEASE_STORE_PASSWORD`,
+   `RELEASE_KEY_ALIAS`, `RELEASE_KEY_PASSWORD`.
 
-3. **iOS `Info.plist` / `iosApp.entitlements` — REVIEWED & RESOLVED.** The earlier uncommitted edits turned out to be a harmless Xcode alphabetical re-sort (no `Info.plist` keys or values changed; app group `group.az.tribe.lifeplanner` preserved — verified). The only real addition was an unused `com.apple.developer.healthkit.background-delivery` entitlement, now removed (commit `096b275`) to avoid a provisioning-mismatch signing failure. Both plists validated (`plutil -lint`).
-   - *Also removed (commit `6fb2bef`):* the unused `com.apple.developer.healthkit.access = [health-records]` Clinical Records entitlement — verified unused (app only reads Steps/Weight/HeartRate/Sleep; no clinical API; no clinical usage-description key). Regular HealthKit (`com.apple.developer.healthkit = true`) is kept, so nothing breaks; this just avoids App Store clinical-records scrutiny.
+3. **UI8 / Dotion license.** Confirm on your UI8 account that the Dotion illustration pack tier
+   permits use in a store-distributed app. (Only compiled VectorDrawables ship, not source SVGs.)
 
-4. **UI8 / Dotion license.** Confirm on your UI8 account that the Dotion illustration pack tier permits use in a store-distributed app. (Only compiled VectorDrawables ship, not source SVGs.)
+4. **The release lives on a feature branch.** `com3run/tri-20-possibility-mode` is ~155 commits
+   ahead of `main` and unmerged. Merge to `main` before tagging, so the shipped commit is
+   reachable.
 
-5. **Play Console alert — target API 36 (FIXED IN CODE).** Play requires apps to target Android 16 (API 36) by 31 Aug 2026. Bumped `android-targetSdk` 35 → 36 (`gradle/libs.versions.toml`; compileSdk already 37). Clears once a signed v3 build targeting 36 is published to production. Smoke-tested on the emulator.
-
-## Pre-submit checks (against the consoles — I can't see them)
+## Pre-submit checks (against the consoles)
 - Android **versionCode 11 > last published** code.
-- iOS **build 8 > last uploaded** build.
+- iOS **build 8 > last uploaded** build. v3 has changed a lot since build 8 was chosen; if
+  anything was already uploaded as 8, bump `CURRENT_PROJECT_VERSION`.
 - **Data safety (Play) / privacy (App Store)** declare health data + AI usage.
+- Play requires target API 36 by 31 Aug 2026 — already set (`android-targetSdk = 36`).
+
+## CI
+
+All three workflows are **manual** (`workflow_dispatch`); the old `develop` trigger was dead.
+
+Until 2026-08-03 none of them could produce a shippable artifact: `local.properties`,
+`google-services.json` and `GoogleService-Info.plist` are all git-ignored, so CI built the app
+with an **empty `SUPABASE_URL`** (no auth, sync, AI or Learn content) and an **unsigned** AAB,
+and the iOS job was pinned to a `Xcode_15.0.app` that no longer exists on the runner image.
+That is fixed:
+
+- `.github/actions/restore-android-secrets` recreates the three files from secrets, shared by
+  `android.yml` and `manual_deploy_to_firebase.yml`.
+- `android.yml` fails the job if the AAB comes out unsigned, and deletes the secrets afterwards.
+- `ios.yml` restores `local.properties` + the Firebase plist and tracks `latest-stable` Xcode.
+- Both now run Java 21 (matching local) on `checkout@v4` / `setup-java@v4` / `setup-gradle@v4`.
+
+CI still needs the secrets from blocker 2 before it will run.
+
+## Analytics / force-update
+
+`POSTHOG_API_KEY` was **missing** from `local.properties`, which silently disables PostHog —
+and with it `ForceUpdateChecker`, which reads the `force_update_min_version` flag. It is now set.
+
+`BuildKonfig.APP_VERSION` was hardcoded to `"2.5"` while the app shipped 3.0.0. That value is
+what `ForceUpdateChecker` compares against the flag, and what Settings displays. The
+`force_update_min_version` flag is live at 100% rollout with
+`{"min_version": "2.2", "mode": "soft"}` — harmless at 2.5, but raising it to `3.0.0` after
+launch would have shown **every v3 user** a blocking update wall pointing at a store listing
+they were already current on. `APP_VERSION` now derives from the version catalog.
+
+Post-launch, once v3 adoption looks healthy, bump the flag payload to
+`{"min_version": "3.0.0", "mode": "soft"}` to pull the remaining 2.3 users up.
+
+## Not in v3 (deliberately)
+- **Billing / paywall.** `DefaultPremiumGate.isPremium` is hardcoded `true`, so every feature
+  is open. The RevenueCat work sits unmerged on `com3run/tri-70-revenuecat-billing`
+  (`REVENUECAT_*` keys are already in `local.properties`). v3 ships free.
+- **Community journals.** Backend (`supabase/community_journals.sql`, `share-journal`,
+  `report-content`) is written but not applied or deployed, and there is no client UI or
+  feature flag. See `docs/SPEC-community-journals.md`.
 
 ## Store copy
-`../lifeplanner-assets/docs/store/whatsnew-3.0.0.md` (Play ≤500 chars + Apple release notes), updated for the Learn hub.
+`../lifeplanner-assets/docs/store/whatsnew-3.0.0.md` (Play ≤500 chars + Apple release notes).
 
 ## Ship
-- **Android:** signed AAB → Play Console (internal testing → production), or push to `develop` for CI → Firebase App Distribution.
-- **iOS:** Xcode archive scheme `iosApp` → TestFlight → App Store (needs items 2 & 3).
+- **Android:** signed AAB → Play Console (internal testing → production), or run the
+  `Android CI` workflow for Firebase App Distribution.
+- **iOS:** Xcode archive scheme `iosApp` → TestFlight → App Store.
 - **Backend:** already live. No action.
 
 ## Post-release
