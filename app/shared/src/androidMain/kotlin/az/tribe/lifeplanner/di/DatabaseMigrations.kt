@@ -27,6 +27,54 @@ internal fun addColumnSafe(db: SupportSQLiteDatabase, table: String, column: Str
     }
 }
 
+/**
+ * The whole Android migration chain, run on every database open.
+ *
+ * The `.sqm` files are not applied at runtime on Android (they drive iOS and SQLDelight's
+ * compile-time verification), so this chain is the only thing that brings an existing install
+ * up to the current schema. Every step is idempotent, which is what makes running the lot on
+ * each open safe.
+ *
+ * Kept out of [DatabaseDriverFactory] so `DatabaseMigrationsTest` can exercise the real
+ * sequence rather than a copy of it that drifts.
+ */
+internal fun runAndroidMigrations(db: SupportSQLiteDatabase) {
+    migrateToVersion5(db)
+    migrateToVersion6(db)
+    migrateToVersion7(db)
+    migrateToVersion8(db)
+    migrateToVersion9(db)
+    migrateToVersion10(db)
+    migrateToVersion11(db)
+    migrateToVersion12(db)
+    migrateToSyncColumns(db)
+    migrateToVersion13(db)
+    migrateToVersion14(db)
+    migrateToVersion15(db)
+    migrateToVersion16(db)
+    migrateToVersion17(db)
+    migrateToVersion18(db)
+    migrateToVersion19(db)
+    migrateToVersion20(db)
+    migrateToVersion21(db)
+    migrateToVersion22(db)
+    migrateToVersion23(db)
+    migrateToVersion24(db)
+    migrateToVersion25(db)
+    migrateToVersion26(db)
+    migrateToVersion29(db)
+    migrateToVersion30(db)
+    migrateToVersion31(db)
+    migrateToVersion32(db)
+    migrateToVersion33(db)
+    migrateToVersion34(db)
+    migrateToVersion35(db)
+    migrateToVersion36(db)
+    migrateToVersion37(db)
+    migrateToVersion38(db)
+    migrateToVersion39(db)
+}
+
 internal fun migrateToVersion5(db: SupportSQLiteDatabase) {
     // Create HabitEntity table if not exists
     db.execSQL(

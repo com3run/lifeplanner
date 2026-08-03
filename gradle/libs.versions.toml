@@ -55,6 +55,7 @@ coil3 = "3.0.4"
 cmpcharts = "2.0.6"
 
 # JVM screenshot previews (host tests, no emulator)
+androidx-sqlite = "2.4.0" # matches what sqldelight's android-driver already resolves
 junit = "4.13.2"
 robolectric = "4.16"
 roborazzi = "1.70.0"
@@ -156,6 +157,7 @@ ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
 multiplatform-settings-test = { module = "com.russhwolf:multiplatform-settings-test", version.ref = "settings" }
 sqldelight-test = { module = "app.cash.sqldelight:sqlite-driver", version.ref = "sqldelight" }
 ui-tooling = { module = "org.jetbrains.compose.ui:ui-tooling", version.ref = "uiTooling" }
+androidx-sqlite-framework = { module = "androidx.sqlite:sqlite-framework", version.ref = "androidx-sqlite" }
 junit = { module = "junit:junit", version.ref = "junit" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 roborazzi = { module = "io.github.takahirom.roborazzi:roborazzi", version.ref = "roborazzi" }

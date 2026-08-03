@@ -182,6 +182,9 @@ kotlin {
             // emulator (previews/PreviewScreenshots.kt). Robolectric native graphics + Roborazzi.
             implementation(libs.junit)
             implementation(libs.robolectric)
+            // Already on the test runtime classpath via sqldelight's android-driver, but not the
+            // compile one. DatabaseMigrationsTest needs it to open a real SupportSQLiteDatabase.
+            implementation(libs.androidx.sqlite.framework)
             implementation(libs.roborazzi)
             implementation(libs.roborazzi.compose)
             implementation(libs.androidx.compose.ui.test.junit4)
