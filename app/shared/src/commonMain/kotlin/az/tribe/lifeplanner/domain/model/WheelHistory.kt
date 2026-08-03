@@ -28,11 +28,16 @@ data class WheelDelta(
     val from: Double,
     val to: Double,
 ) {
-    val change: Double get() = (to - from).roundToHalf()
+    // Not roundToHalf(): that clamps to 0..10 because it rounds *scores*. Applied to a difference
+    // it turns every drop into "no change", so a falling area would silently never be reported.
+    val change: Double get() = roundHalfSigned(to - from)
 
     val rose: Boolean get() = change > 0.0
     val fell: Boolean get() = change < 0.0
 }
+
+/** Snaps to the same half-point grid the wheel draws, but keeps the sign. */
+internal fun roundHalfSigned(value: Double): Double = kotlin.math.round(value * 2) / 2
 
 /** Which past wheel to measure against. */
 enum class ComparisonPeriod(val displayName: String, val days: Int) {
@@ -65,7 +70,7 @@ data class WheelComparison(
     val overallChange: Double
         get() = deltas.filter { it.area.isWheelSegment }
             .takeIf { it.isNotEmpty() }
-            ?.let { list -> (list.sumOf { it.change } / list.size).roundToHalf() }
+            ?.let { list -> roundHalfSigned(list.sumOf { it.change } / list.size) }
             ?: 0.0
 
     /** The single movement worth leading with: the largest, in whichever direction. */

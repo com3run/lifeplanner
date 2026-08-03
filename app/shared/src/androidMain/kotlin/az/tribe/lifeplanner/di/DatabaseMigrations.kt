@@ -27,17 +27,6 @@ internal fun addColumnSafe(db: SupportSQLiteDatabase, table: String, column: Str
     }
 }
 
-/**
- * The whole Android migration chain, run on every database open.
- *
- * The `.sqm` files are not applied at runtime on Android (they drive iOS and SQLDelight's
- * compile-time verification), so this chain is the only thing that brings an existing install
- * up to the current schema. Every step is idempotent, which is what makes running the lot on
- * each open safe.
- *
- * Kept out of [DatabaseDriverFactory] so `DatabaseMigrationsTest` can exercise the real
- * sequence rather than a copy of it that drifts.
- */
 internal fun migrateToVersion40(db: SupportSQLiteDatabase) {
     // Schema v40: Wheel of Life user-set scores, matches migration 40.sqm. Only the user's own
     // numbers live here; predictions are recomputed on read, so there is nothing to migrate for
@@ -58,6 +47,35 @@ internal fun migrateToVersion40(db: SupportSQLiteDatabase) {
     )
 }
 
+internal fun migrateToVersion41(db: SupportSQLiteDatabase) {
+    // Schema v41: Wheel of Life history, matches migration 41.sqm. One row per day; `scores` holds
+    // the whole wheel as JSON, since a snapshot is always read and written whole.
+    db.execSQL(
+        """
+        CREATE TABLE IF NOT EXISTS WheelSnapshotEntity (
+            id TEXT NOT NULL PRIMARY KEY,
+            scores TEXT NOT NULL,
+            capturedAt TEXT NOT NULL,
+            sync_updated_at TEXT,
+            is_deleted INTEGER NOT NULL DEFAULT 0,
+            sync_version INTEGER NOT NULL DEFAULT 0,
+            last_synced_at TEXT
+        )
+        """.trimIndent()
+    )
+}
+
+/**
+ * The whole Android migration chain, run on every database open.
+ *
+ * The `.sqm` files are not applied at runtime on Android (they drive iOS and SQLDelight's
+ * compile-time verification), so this chain is the only thing that brings an existing install
+ * up to the current schema. Every step is idempotent, which is what makes running the lot on
+ * each open safe.
+ *
+ * Kept out of [DatabaseDriverFactory] so `DatabaseMigrationsTest` can exercise the real
+ * sequence rather than a copy of it that drifts.
+ */
 internal fun runAndroidMigrations(db: SupportSQLiteDatabase) {
     migrateToVersion5(db)
     migrateToVersion6(db)
@@ -94,6 +112,7 @@ internal fun runAndroidMigrations(db: SupportSQLiteDatabase) {
     migrateToVersion38(db)
     migrateToVersion39(db)
     migrateToVersion40(db)
+    migrateToVersion41(db)
 }
 
 internal fun migrateToVersion5(db: SupportSQLiteDatabase) {

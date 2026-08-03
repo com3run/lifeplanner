@@ -1,0 +1,10 @@
+-- 41: WheelSnapshotEntity (Wheel of Life history, one row per day, scores as JSON)
+CREATE TABLE IF NOT EXISTS WheelSnapshotEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    scores TEXT NOT NULL,
+    capturedAt TEXT NOT NULL,
+    sync_updated_at TEXT,
+    is_deleted INTEGER NOT NULL DEFAULT 0,
+    sync_version INTEGER NOT NULL DEFAULT 0,
+    last_synced_at TEXT
+);

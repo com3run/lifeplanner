@@ -76,6 +76,7 @@ class SharedDatabase(
             // last account's read lessons, and would have inherited their wheel scores.
             q.deleteAllKnowledgeReads()
             q.deleteAllWheelScores()
+            q.deleteAllWheelSnapshots()
             // KnowledgeLessonEntity / KnowledgeCollectionEntity are deliberately kept. They are
             // server-authored content, identical for every user, so there is nothing to leak and
             // keeping them means the Learn map is populated before the next fetch returns.

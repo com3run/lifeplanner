@@ -2619,3 +2619,55 @@ DELETE FROM WheelScoreEntity WHERE is_deleted = 1 AND last_synced_at IS NOT NULL
 upsertWheelScoreFromSync:
 INSERT OR REPLACE INTO WheelScoreEntity(id, score, assessedAt, note, sync_updated_at, is_deleted, sync_version, last_synced_at)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+
+-- ============== Wheel of Life snapshots ==============
+-- One row per day, keyed by date, holding the whole wheel as JSON.
+-- Snapshots exist because a past wheel cannot be recomputed: predictions read trailing windows (a
+-- week of steps, a month of mood), so the evidence behind an old score has aged out by the time you
+-- want to compare against it. Keyed by date so writing twice in a day updates that day rather than
+-- accumulating duplicates, which makes the capture-on-open path trivially idempotent.
+CREATE TABLE WheelSnapshotEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    scores TEXT NOT NULL,
+    capturedAt TEXT NOT NULL,
+    sync_updated_at TEXT,
+    is_deleted INTEGER NOT NULL DEFAULT 0,
+    sync_version INTEGER NOT NULL DEFAULT 0,
+    last_synced_at TEXT
+);
+
+selectAllWheelSnapshots:
+SELECT * FROM WheelSnapshotEntity WHERE is_deleted = 0 ORDER BY id DESC;
+
+selectWheelSnapshotById:
+SELECT * FROM WheelSnapshotEntity WHERE id = ?;
+
+-- The nearest snapshot at or before a date: someone who did not open the app on the exact day
+-- should still get a comparison rather than nothing.
+selectWheelSnapshotOnOrBefore:
+SELECT * FROM WheelSnapshotEntity WHERE is_deleted = 0 AND id <= ? ORDER BY id DESC LIMIT 1;
+
+putWheelSnapshot:
+INSERT OR REPLACE INTO WheelSnapshotEntity(id, scores, capturedAt, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), 0, 0, NULL);
+
+deleteAllWheelSnapshots:
+DELETE FROM WheelSnapshotEntity;
+
+-- WheelSnapshot sync queries
+getUnsyncedWheelSnapshots:
+SELECT * FROM WheelSnapshotEntity WHERE (last_synced_at IS NULL OR sync_updated_at > last_synced_at) AND is_deleted = 0;
+
+getDeletedWheelSnapshots:
+SELECT * FROM WheelSnapshotEntity WHERE is_deleted = 1;
+
+markWheelSnapshotSynced:
+UPDATE WheelSnapshotEntity SET last_synced_at = ? WHERE id = ?;
+
+purgeDeletedWheelSnapshots:
+DELETE FROM WheelSnapshotEntity WHERE is_deleted = 1 AND last_synced_at IS NOT NULL;
+
+upsertWheelSnapshotFromSync:
+INSERT OR REPLACE INTO WheelSnapshotEntity(id, scores, capturedAt, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, ?, ?, ?, ?, ?);

@@ -26,6 +26,10 @@ class WheelViewModel(
     val state: StateFlow<WheelUiState> = _state.asStateFlow()
 
     init {
+        // Capture on open. A past wheel cannot be recomputed, so a day the user opens the screen
+        // and we fail to record is a day of history gone for good.
+        viewModelScope.launch { repository.captureSnapshot() }
+
         viewModelScope.launch {
             repository.observeWheel()
                 .catch { e -> _state.value = _state.value.copy(isLoading = false, error = e.message) }

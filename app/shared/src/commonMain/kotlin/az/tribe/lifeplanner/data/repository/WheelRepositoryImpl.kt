@@ -4,8 +4,13 @@ import az.tribe.lifeplanner.data.sync.SyncManager
 import az.tribe.lifeplanner.domain.enum.GoalCategory
 import az.tribe.lifeplanner.domain.enum.GoalStatus
 import az.tribe.lifeplanner.domain.enum.HealthMetricType
+import az.tribe.lifeplanner.domain.model.ComparisonPeriod
+import az.tribe.lifeplanner.domain.model.ScoreSource
 import az.tribe.lifeplanner.domain.model.WheelArea
+import az.tribe.lifeplanner.domain.model.WheelComparison
 import az.tribe.lifeplanner.domain.model.WheelReport
+import az.tribe.lifeplanner.domain.model.WheelSnapshot
+import az.tribe.lifeplanner.domain.model.compareWheels
 import az.tribe.lifeplanner.domain.model.roundToHalf
 import az.tribe.lifeplanner.domain.repository.AbilityRepository
 import az.tribe.lifeplanner.domain.repository.GoalRepository
@@ -18,6 +23,9 @@ import az.tribe.lifeplanner.domain.service.GlobalSignals
 import az.tribe.lifeplanner.domain.service.WheelScorePredictor
 import az.tribe.lifeplanner.infrastructure.SharedDatabase
 import az.tribe.lifeplanner.infrastructure.clearWheelScoreLocal
+import az.tribe.lifeplanner.infrastructure.getAllWheelSnapshots
+import az.tribe.lifeplanner.infrastructure.getWheelSnapshotOnOrBefore
+import az.tribe.lifeplanner.infrastructure.putWheelSnapshotLocal
 import az.tribe.lifeplanner.infrastructure.observeWheelScores
 import az.tribe.lifeplanner.infrastructure.setWheelScoreLocal
 import co.touchlab.kermit.Logger
@@ -47,6 +55,7 @@ class WheelRepositoryImpl(
 ) : WheelRepository {
 
     private val log = Logger.withTag("WheelRepository")
+    private val json = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
 
     override fun observeWheel(): Flow<WheelReport> =
         db.observeWheelScores().map { entities ->
@@ -64,6 +73,77 @@ class WheelRepositoryImpl(
         db.clearWheelScoreLocal(area.name)
         syncManager.requestSync()
     }
+
+    override suspend fun captureSnapshot() {
+        try {
+            val wheel = getWheel()
+            val today = wheel.generatedAt.date
+            // Estimated areas are left out. Recording a placeholder 5 as though it were a reading
+            // would show up later as a "drop" the moment the user sets a real, lower score.
+            val measured = wheel.scores
+                .filter { it.source != ScoreSource.ESTIMATED }
+                .associate { it.area.name to it.score }
+            if (measured.isEmpty()) return
+
+            db.putWheelSnapshotLocal(today.toString(), json.encodeToString(measured))
+            syncManager.requestSync()
+        } catch (e: Exception) {
+            // History is a nice-to-have on top of the wheel. Failing to record a day should never
+            // stop the screen it was captured from.
+            log.w { "Failed to capture wheel snapshot: ${e.message}" }
+        }
+    }
+
+    override suspend fun compareTo(period: ComparisonPeriod): WheelComparison? {
+        val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+        return compareToDate(today.minusDaysSafe(period.days), period)
+    }
+
+    override suspend fun compareToDate(date: LocalDate): WheelComparison? =
+        compareToDate(date, ComparisonPeriod.entries.minByOrNull { period ->
+            val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+            kotlin.math.abs(today.toEpochDays() - date.toEpochDays() - period.days)
+        } ?: ComparisonPeriod.WEEK)
+
+    private suspend fun compareToDate(date: LocalDate, period: ComparisonPeriod): WheelComparison? {
+        val previous = runCatching { db.getWheelSnapshotOnOrBefore(date.toString()) }
+            .getOrNull() ?: return null
+
+        val previousScores = decodeScores(previous.scores)
+        if (previousScores.isEmpty()) return null
+
+        val current = getWheel()
+        val currentSnapshot = WheelSnapshot(
+            date = current.generatedAt.date,
+            scores = current.scores
+                .filter { it.source != ScoreSource.ESTIMATED }
+                .associate { it.area to it.score },
+        )
+        if (currentSnapshot.scores.isEmpty()) return null
+
+        return compareWheels(
+            period = period,
+            previous = WheelSnapshot(LocalDate.parse(previous.id), previousScores),
+            current = currentSnapshot,
+        )
+    }
+
+    override suspend fun snapshots(): List<WheelSnapshot> =
+        runCatching {
+            db.getAllWheelSnapshots().mapNotNull { row ->
+                val scores = decodeScores(row.scores)
+                if (scores.isEmpty()) null
+                else WheelSnapshot(LocalDate.parse(row.id), scores)
+            }
+        }.getOrDefault(emptyList())
+
+    /** An area we no longer recognise is dropped rather than failing the whole snapshot. */
+    private fun decodeScores(raw: String): Map<WheelArea, Double> =
+        runCatching {
+            json.decodeFromString<Map<String, Double>>(raw).mapNotNull { (name, score) ->
+                WheelArea.entries.firstOrNull { it.name == name }?.let { it to score }
+            }.toMap()
+        }.getOrDefault(emptyMap())
 
     private suspend fun build(userScores: Map<String, Double>): WheelReport {
         val scores = WheelScorePredictor.predict(

@@ -78,6 +78,18 @@ class DatabaseMigrationsTest {
     }
 
     @Test
+    fun `the wheel history table arrives for upgraders`() {
+        val db = legacyDatabase()
+
+        runAndroidMigrations(db)
+
+        assertTrue(tableExists(db, "WheelSnapshotEntity"), "WheelSnapshotEntity was never created")
+        listOf("id", "scores", "capturedAt").forEach {
+            assertTrue(columnExists(db, "WheelSnapshotEntity", it), "WheelSnapshotEntity is missing $it")
+        }
+    }
+
+    @Test
     fun `running the chain twice changes nothing`() {
         val db = legacyDatabase()
 
