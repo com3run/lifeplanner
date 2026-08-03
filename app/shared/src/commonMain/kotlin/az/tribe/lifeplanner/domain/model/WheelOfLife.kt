@@ -36,14 +36,14 @@ enum class WheelArea(
     FAMILY(
         order = 2,
         displayName = "Family",
-        rubric = "You see the people you are related to often enough, and leave those visits lighter than you arrived.",
+        rubric = "Nothing with your family is sitting unresolved, whether you are close to them or keep your distance.",
         emoji = "🏡",
         categories = listOf(GoalCategory.FAMILY),
     ),
     FRIENDS(
         order = 3,
         displayName = "Friends",
-        rubric = "There are people you could call at 2am, and you saw at least one of them this month.",
+        rubric = "Someone knows what you are actually dealing with right now, not the version of you from a year ago.",
         emoji = "👥",
         categories = listOf(GoalCategory.PEOPLE),
     ),
