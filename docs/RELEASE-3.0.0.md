@@ -1,7 +1,10 @@
 # LifePlanner v3.0.0 — Release Runbook
 
 App id `az.tribe.lifeplanner` · versionName **3.0.0** · Android versionCode **11** · iOS build **8**
-Supabase project `rkdggdfabwgukspylybu`. Prepared 2026-07-25, **re-verified 2026-08-03**.
+Supabase project `rkdggdfabwgukspylybu`. Prepared 2026-07-25, **re-verified 2026-08-04**.
+
+Two things stand between this and an upload, both yours: the **keystore passwords** (blocker 1)
+and the **merge to `main`** (blocker 3). Everything else below is done.
 
 Version numbers now live in one place: `gradle/libs.versions.toml` (`app-versionName` /
 `app-versionCode`). Android's `versionName`/`versionCode` and `BuildKonfig.APP_VERSION` all read
@@ -28,6 +31,8 @@ seconds as a first-class habit duration.
 - **Illustration licensing cleared** — Kamran confirmed on the UI8 account (2026-08-03) that the Dotion tier covers use in a store-distributed app. 24 of the 30 shipped illustrations come from that pack; the 5 `illus_learn_*` are hand-authored. Worth filing the licence PDF in `../lifeplanner-assets` so the next release does not have to re-establish this.
 - **iOS entitlements / Info.plist** validated (`plutil -lint`). Unused HealthKit entitlements were removed earlier; the unused `NSHealthUpdateUsageDescription` was removed 2026-08-03 (the app requests HealthKit **read-only** — `writeTypes = emptyList()`).
 - **Backend deployed** — 7 edge functions ACTIVE, `knowledge_reads` table + RLS live, monitoring cron jobs (`lifeplanner-health` 5 min, `lifeplanner-store-watch` 30 min) active.
+- **iOS location permission reaches the screen** (fixed 2026-08-04). Granting it left the weather card on "Enable" until you left and re-entered the screen: `CLLocationManager.delegate` is a weak reference, and the delegate was built inside `DisposableEffect`, so nothing held it and the authorization callback never fired. Verified on the simulator with the permission reset first. The other two `NSObject` delegates in `iosMain` (`LocationProvider`, `FilePicker`) were audited and already hold strong references.
+- **Unused illustrations removed** (2026-08-04) — 16 of the 24 Dotion illustrations were referenced by nothing; 32 files with their dark variants are gone. Repo hygiene rather than a size win: the AAB moved ~5 KB, because R8 resource shrinking was already excluding them. `scripts/install_illustrations.py` still lists the full pack, so re-running it restores all 24.
 
 ## ⚠️ Blockers that need YOU (credentials / accounts)
 
@@ -59,7 +64,7 @@ seconds as a first-class habit duration.
    `RELEASE_KEY_ALIAS`, `RELEASE_KEY_PASSWORD`.
 
 
-4. **The release lives on a feature branch.** `com3run/tri-20-possibility-mode` is ~155 commits
+3. **The release lives on a feature branch.** `com3run/tri-20-possibility-mode` is ~155 commits
    ahead of `main` and unmerged. Merge to `main` before tagging, so the shipped commit is
    reachable.
 
@@ -110,6 +115,12 @@ Post-launch, once v3 adoption looks healthy, bump the flag payload to
 - **Community journals.** Backend (`supabase/community_journals.sql`, `share-journal`,
   `report-content`) is written but not applied or deployed, and there is no client UI or
   feature flag. See `docs/SPEC-community-journals.md`.
+- **Wheel of Life.** A ten-area self-assessment replacing the Life Balance strip on Today, on
+  `com3run/wheel-of-life` and unmerged. Not in this build. Its Supabase tables (`wheel_scores`,
+  `wheel_snapshots`, both with RLS, both in `cleanup_tombstones`) **are already live** on
+  `rkdggdfabwgukspylybu`, applied 2026-08-04 — creating them early is harmless because nothing in
+  v3 reads or writes them, but do not be surprised to find them there. That branch also carries
+  schema v40 and v41, so the next release doc starts from v41, not v39.
 
 ## Store copy
 `../lifeplanner-assets/docs/store/whatsnew-3.0.0.md` (Play ≤500 chars + Apple release notes).
