@@ -52,6 +52,12 @@ fun WheelCanvas(
     onScoreDrag: ((WheelArea, Double) -> Unit)? = null,
     /** Fires once on release, with the value to keep. */
     onScoreCommit: ((WheelArea, Double) -> Unit)? = null,
+    /**
+     * Drops the labels and numbers. Below roughly 160dp there is no room for nine labels around a
+     * circle: they overlap each other and spill past the wheel into whatever sits beside it. The
+     * shape still reads at that size, which is the part worth keeping on a feed.
+     */
+    compact: Boolean = false,
 ) {
     val segments = remember(scores) { scores.filter { it.area.isWheelSegment }.sortedBy { it.area.order } }
     val measurer = rememberTextMeasurer()
@@ -99,7 +105,7 @@ fun WheelCanvas(
                 }
         ) {
             if (segments.isEmpty()) return@Canvas
-            drawWheel(segments, measurer, selected)
+            drawWheel(segments, measurer, selected, compact)
         }
     }
 }
@@ -139,6 +145,7 @@ private fun DrawScope.drawWheel(
     segments: List<WheelScore>,
     measurer: TextMeasurer,
     selected: WheelArea?,
+    compact: Boolean,
 ) {
     val cx = size.width / 2f
     val cy = size.height / 2f
@@ -192,7 +199,9 @@ private fun DrawScope.drawWheel(
             )
         }
 
-        drawSliceLabels(score, start + (sweep - SliceGap) / 2f, cx, cy, rim, sliceRadius, measurer)
+        if (!compact) {
+            drawSliceLabels(score, start + (sweep - SliceGap) / 2f, cx, cy, rim, sliceRadius, measurer)
+        }
     }
 }
 

@@ -48,11 +48,12 @@ fun WheelStripCard(
             modifier = Modifier.fillMaxWidth().padding(LifePlannerDesign.Padding.cardContentLarge),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(modifier = Modifier.size(96.dp), contentAlignment = Alignment.Center) {
+            Box(modifier = Modifier.size(88.dp), contentAlignment = Alignment.Center) {
                 WheelCanvas(
                     scores = report.scores,
                     onAreaTap = { onOpen() },
-                    modifier = Modifier.size(96.dp),
+                    compact = true,
+                    modifier = Modifier.size(88.dp),
                 )
             }
 
@@ -63,7 +64,7 @@ fun WheelStripCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     WheelFace(
                         score = report.overall,
-                        modifier = Modifier.size(34.dp),
+                        modifier = Modifier.size(44.dp),
                         tint = MaterialTheme.colorScheme.onSurface,
                     )
                     Text(
