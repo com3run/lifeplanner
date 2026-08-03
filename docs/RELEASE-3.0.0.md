@@ -25,6 +25,7 @@ seconds as a first-class habit duration.
 - **DB schema v39** (was v36 when this doc was written; the Learn hub content cache, journal-detected decisions, and habit `completionSource` landed since). Runtime Android migrations `migrateToVersion37/38/39` exist in `DatabaseMigrations.kt` and are wired into `DatabaseDriverFactory.onOpen()`; `.sqm` files 37–39 present for iOS + compile-time verification. 2.3 shipped at schema v21, so upgraders run 21→39 with every step present.
 - **Learn content degrades safely** — `KnowledgeFetcher` publishes bundled lessons first, then the local cache, then Supabase, and refuses to publish an empty remote result. The Learn hub is never blank, even if `knowledge_lessons` is unseeded.
 - **iOS `GoogleService-Info.plist` is present** in the checkout (was a blocker; resolved).
+- **Illustration licensing cleared** — Kamran confirmed on the UI8 account (2026-08-03) that the Dotion tier covers use in a store-distributed app. 24 of the 30 shipped illustrations come from that pack; the 5 `illus_learn_*` are hand-authored. Worth filing the licence PDF in `../lifeplanner-assets` so the next release does not have to re-establish this.
 - **iOS entitlements / Info.plist** validated (`plutil -lint`). Unused HealthKit entitlements were removed earlier; the unused `NSHealthUpdateUsageDescription` was removed 2026-08-03 (the app requests HealthKit **read-only** — `writeTypes = emptyList()`).
 - **Backend deployed** — 7 edge functions ACTIVE, `knowledge_reads` table + RLS live, monitoring cron jobs (`lifeplanner-health` 5 min, `lifeplanner-store-watch` 30 min) active.
 
@@ -57,8 +58,6 @@ seconds as a first-class habit duration.
    (`base64 -i ~/Documents/tribe/lifeplanner.jks | pbcopy`), `RELEASE_STORE_PASSWORD`,
    `RELEASE_KEY_ALIAS`, `RELEASE_KEY_PASSWORD`.
 
-3. **UI8 / Dotion license.** Confirm on your UI8 account that the Dotion illustration pack tier
-   permits use in a store-distributed app. (Only compiled VectorDrawables ship, not source SVGs.)
 
 4. **The release lives on a feature branch.** `com3run/tri-20-possibility-mode` is ~155 commits
    ahead of `main` and unmerged. Merge to `main` before tagging, so the shipped commit is
