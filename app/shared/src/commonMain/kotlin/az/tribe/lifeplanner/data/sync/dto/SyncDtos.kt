@@ -63,6 +63,18 @@ data class WheelScoreSyncDto(
     @SerialName("sync_version") val syncVersion: Long = 0
 )
 
+/** Wheel of Life history. `id` is the ISO date, so one row per day per user. */
+@Serializable
+data class WheelSnapshotSyncDto(
+    val id: String,
+    @SerialName("user_id") val userId: String,
+    val scores: String,
+    @SerialName("captured_at") val capturedAt: String,
+    @SerialName("updated_at") val updatedAt: String? = null,
+    @SerialName("is_deleted") val isDeleted: Boolean = false,
+    @SerialName("sync_version") val syncVersion: Long = 0
+)
+
 @Serializable
 data class DecisionSyncDto(
     val id: String,

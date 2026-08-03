@@ -954,7 +954,7 @@ BEGIN
             'reminders', 'custom_coaches', 'coach_groups', 'coach_group_members',
             'focus_sessions', 'coach_persona_overrides', 'user_situations',
             'life_values', 'decisions', 'identity_statements', 'decision_profiles',
-            'knowledge_reads', 'wheel_scores'
+            'knowledge_reads', 'wheel_scores', 'wheel_snapshots'
         ])
     LOOP
         EXECUTE format(
@@ -1037,4 +1037,37 @@ CREATE POLICY wheel_scores_delete ON wheel_scores FOR DELETE TO authenticated US
 
 CREATE TRIGGER trg_wheel_scores_sync
     BEFORE UPDATE ON wheel_scores
+    FOR EACH ROW EXECUTE FUNCTION update_sync_metadata();
+
+-- ────────────────────────────────────────────────────────────
+-- wheel_snapshots  (Wheel of Life history — the wheel as it stood each day)
+-- Composite PK (user_id, id): `id` is the ISO date, so re-recording a day updates
+-- it rather than accumulating rows, and the same day from two devices merges.
+-- `scores` is a JSON object of WheelArea name -> score. Areas the app could only
+-- estimate are omitted by the client rather than stored as a placeholder.
+-- ────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS wheel_snapshots (
+    id           TEXT        NOT NULL,
+    user_id      UUID        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    scores       JSONB       NOT NULL,
+    captured_at  TEXT        NOT NULL,
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    -- sync metadata
+    updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    is_deleted   BOOLEAN     NOT NULL DEFAULT FALSE,
+    sync_version BIGINT      NOT NULL DEFAULT 0,
+    PRIMARY KEY (user_id, id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_wheel_snapshots_user_id ON wheel_snapshots(user_id);
+
+ALTER TABLE wheel_snapshots ENABLE ROW LEVEL SECURITY;
+CREATE POLICY wheel_snapshots_select ON wheel_snapshots FOR SELECT TO authenticated USING ((select auth.uid()) = user_id);
+CREATE POLICY wheel_snapshots_insert ON wheel_snapshots FOR INSERT TO authenticated WITH CHECK ((select auth.uid()) = user_id);
+CREATE POLICY wheel_snapshots_update ON wheel_snapshots FOR UPDATE TO authenticated USING ((select auth.uid()) = user_id) WITH CHECK ((select auth.uid()) = user_id);
+CREATE POLICY wheel_snapshots_delete ON wheel_snapshots FOR DELETE TO authenticated USING ((select auth.uid()) = user_id);
+
+CREATE TRIGGER trg_wheel_snapshots_sync
+    BEFORE UPDATE ON wheel_snapshots
     FOR EACH ROW EXECUTE FUNCTION update_sync_metadata();
