@@ -14,13 +14,58 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
+      # Was pinned to /Applications/Xcode_15.0.app, which no longer exists on the runner
+      # image and failed the job before it built anything. The project is developed on
+      # Xcode 26, so track the newest stable the image ships.
       - name: Set up Xcode
-        run: sudo xcode-select -s /Applications/Xcode_15.0.app
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      # The Xcode build shells out to Gradle (embedAndSignAppleFrameworkForXcode), so the
+      # JDK has to be here and match what the project builds with locally.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
 
       - name: Install Fastlane
         run: sudo gem install fastlane -NV
+
+      # Same gitignored-secrets problem as the Android workflow: the Xcode build runs the
+      # Gradle embedAndSignAppleFrameworkForXcode script, so BuildKonfig needs
+      # local.properties, and the Firebase plist is required for the app to start.
+      - name: Restore build secrets
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
+          POSTHOG_HOST: ${{ secrets.POSTHOG_HOST }}
+          PERSONA_API_SECRET: ${{ secrets.PERSONA_API_SECRET }}
+          GOOGLE_SERVICE_INFO_PLIST: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}
+        run: |
+          set -euo pipefail
+          missing=""
+          for v in SUPABASE_URL SUPABASE_ANON_KEY GOOGLE_SERVICE_INFO_PLIST; do
+            [ -z "${!v}" ] && missing="$missing $v"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Missing repository secrets:$missing"
+            exit 1
+          fi
+
+          printf '%s\n' "$GOOGLE_SERVICE_INFO_PLIST" > app/iosApp/iosApp/GoogleService-Info.plist
+          plutil -lint app/iosApp/iosApp/GoogleService-Info.plist
+
+          {
+            printf 'SUPABASE_URL=%s\n' "$SUPABASE_URL"
+            printf 'SUPABASE_ANON_KEY=%s\n' "$SUPABASE_ANON_KEY"
+            printf 'POSTHOG_API_KEY=%s\n' "$POSTHOG_API_KEY"
+            printf 'POSTHOG_HOST=%s\n' "${POSTHOG_HOST:-https://us.i.posthog.com}"
+            printf 'PERSONA_API_SECRET=%s\n' "$PERSONA_API_SECRET"
+          } > local.properties
 
       - name: Create Export Options Plist
         run: |
@@ -47,6 +92,10 @@ jobs:
           key-id: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
           private-key: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
           app-path: build/iosApp.ipa
+
+      - name: Clean up secrets
+        if: always()
+        run: rm -f local.properties app/iosApp/iosApp/GoogleService-Info.plist
 
       - name: Notify Telegram
         if: always()
