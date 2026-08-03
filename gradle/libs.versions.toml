@@ -1,5 +1,11 @@
 [versions]
 agp = "9.2.1"
+# The shipped app version. Single source of truth: androidApp's versionName/versionCode and
+# BuildKonfig.APP_VERSION all read from here, so the value the ForceUpdateChecker compares
+# against can never drift from the version actually on the store. iOS keeps its own
+# MARKETING_VERSION/CURRENT_PROJECT_VERSION in project.pbxproj — bump those to match.
+app-versionCode = "11"
+app-versionName = "3.0.0"
 android-compileSdk = "37"
 android-minSdk = "26"
 android-targetSdk = "36"

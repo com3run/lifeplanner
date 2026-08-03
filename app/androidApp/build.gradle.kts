@@ -60,8 +60,8 @@ android {
         applicationId = "az.tribe.lifeplanner"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 11
-        versionName = "3.0.0"
+        versionCode = libs.versions.app.versionCode.get().toInt()
+        versionName = libs.versions.app.versionName.get()
     }
     packaging {
         resources {

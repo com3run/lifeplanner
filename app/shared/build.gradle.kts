@@ -243,7 +243,7 @@ buildkonfig {
         buildConfigField(
             FieldSpec.Type.STRING,
             "APP_VERSION",
-            "2.5",
+            libs.versions.app.versionName.get(),
         )
     }
 
