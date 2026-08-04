@@ -24,14 +24,17 @@ data class WheelSuggestion(
  * instantly, and reliably produce the bland advice this is trying to avoid. Written text is free,
  * offline, and can be argued about before anyone reads it.
  *
- * **Only Friends is written.** Every other area returns null and the UI stays quiet, which is the
- * correct behaviour rather than a gap to paper over: filler advice would teach people to ignore the
- * card before the real copy arrived. Add areas one at a time, and make each one specific enough
- * that it could only have been written for that area.
+ * **Only Friends and Money are written.** Every other area returns null and the UI stays quiet,
+ * which is the behaviour I want rather than a gap to paper over: filler advice would teach people
+ * to ignore the card before the real copy arrived. Add areas one at a time, and make each one
+ * specific enough that it could only have been written for that area.
  *
- * Each suggestion aims at the area's own rubric rather than at the idea of the area. The Friends
- * rubric is "someone knows what you are actually dealing with right now, not the version of you
- * from a year ago", so none of these say "make more friends". They are all about being known.
+ * Each set aims at that area's own rubric rather than at the idea of the area, which is what keeps
+ * them from collapsing into the same three tips with the nouns swapped. Friends is "someone knows
+ * what you are actually dealing with right now", so none of it says make more friends; it is all
+ * about being known. Money is "not a daily worry, an unexpected bill would be annoying rather than
+ * frightening", so none of it is about earning more; it is all about knowing numbers and absorbing
+ * shocks.
  */
 object WheelSuggestions {
 
@@ -98,6 +101,86 @@ object WheelSuggestions {
         ),
     )
 
+
+    /**
+     * Money is the easiest area to write badly. Two failure modes to stay out of.
+     *
+     * The first is assuming slack. "Cancel a subscription" or "save ten percent" is a sensible tip
+     * to someone with room and an insult to someone without, and the app cannot tell which it is
+     * talking to. So none of these assume there is spare money — the ones that mention putting
+     * something aside deliberately do not name an amount.
+     *
+     * The second is drifting into advice we have no business giving. Where to put money so it grows
+     * is regulated in most places and none of our business in the rest. Nothing here goes near it.
+     *
+     * The rubric is "money is not a daily worry, an unexpected bill would be annoying rather than
+     * frightening", so these aim at the worry and the shock absorption rather than at the balance.
+     * Knowing a number is the recurring theme, because the fog costs more than the figure usually
+     * turns out to.
+     */
+    private val money = mapOf(
+        NudgeUrgency.GENTLE to listOf(
+            WheelSuggestion(
+                area = WheelArea.MONEY,
+                urgency = NudgeUrgency.GENTLE,
+                action = "Work out what one ordinary month actually costs you.",
+                because = "Most people are guessing, and the guess is what the worry attaches to.",
+            ),
+            WheelSuggestion(
+                area = WheelArea.MONEY,
+                urgency = NudgeUrgency.GENTLE,
+                action = "Find one recurring charge you have stopped noticing.",
+                because = "The ones that stop being visible are the ones worth a second look.",
+            ),
+            WheelSuggestion(
+                area = WheelArea.MONEY,
+                urgency = NudgeUrgency.GENTLE,
+                action = "Move your buffer somewhere you do not see day to day.",
+                because = "A balance you check casually is one you spend casually.",
+            ),
+        ),
+        NudgeUrgency.MODERATE to listOf(
+            WheelSuggestion(
+                area = WheelArea.MONEY,
+                urgency = NudgeUrgency.MODERATE,
+                action = "Add up one month of essentials. Just the number, no plan yet.",
+                because = "You cannot aim at a target you have never named.",
+            ),
+            WheelSuggestion(
+                area = WheelArea.MONEY,
+                urgency = NudgeUrgency.MODERATE,
+                action = "Find the exact date of the bill that always seems to ambush you.",
+                because = "Half of what that one costs you is the surprise, and the date is free.",
+            ),
+            WheelSuggestion(
+                area = WheelArea.MONEY,
+                urgency = NudgeUrgency.MODERATE,
+                action = "Put something aside this week. The amount matters less than that it happened.",
+                because = "A buffer is a habit before it is a sum.",
+            ),
+        ),
+        NudgeUrgency.SERIOUS to listOf(
+            WheelSuggestion(
+                area = WheelArea.MONEY,
+                urgency = NudgeUrgency.SERIOUS,
+                action = "Write down everything you owe and to whom, in one place.",
+                because = "Scattered across your head it is unbounded. On one page it has a size.",
+            ),
+            WheelSuggestion(
+                area = WheelArea.MONEY,
+                urgency = NudgeUrgency.SERIOUS,
+                action = "Open the account and look at the real number.",
+                because = "Not looking has its own cost, and it compounds quietly.",
+            ),
+            WheelSuggestion(
+                area = WheelArea.MONEY,
+                urgency = NudgeUrgency.SERIOUS,
+                action = "Ask one company you owe what they can rearrange.",
+                because = "Almost all of them would rather move a date than chase you. Asking is routine to them.",
+            ),
+        ),
+    )
+
     /**
      * A suggestion for the area, or null when nothing is written for it yet.
      *
@@ -108,6 +191,7 @@ object WheelSuggestions {
     fun forArea(area: WheelArea, urgency: NudgeUrgency, rotation: Int = 0): WheelSuggestion? {
         val options = when (area) {
             WheelArea.FRIENDS -> friends[urgency]
+            WheelArea.MONEY -> money[urgency]
             else -> null
         } ?: return null
         if (options.isEmpty()) return null
@@ -117,5 +201,5 @@ object WheelSuggestions {
     }
 
     /** Areas with copy written. Everything else stays silent on purpose. */
-    val covered: Set<WheelArea> = setOf(WheelArea.FRIENDS)
+    val covered: Set<WheelArea> = setOf(WheelArea.FRIENDS, WheelArea.MONEY)
 }
