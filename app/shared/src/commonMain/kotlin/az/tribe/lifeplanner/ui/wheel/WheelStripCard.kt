@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -36,8 +37,20 @@ fun WheelStripCard(
     report: WheelReport?,
     onOpen: () -> Unit,
     modifier: Modifier = Modifier,
+    /**
+     * Draw it big, with its labels, as a thing to look at rather than a status line.
+     *
+     * The wheel is the one view in the app that shows a whole life at once, and at 88dp beside two
+     * lines of text it was reading as a progress chip. Given room it does the job it was built for.
+     */
+    prominent: Boolean = false,
 ) {
     if (report == null || report.segments.isEmpty()) return
+
+    if (prominent) {
+        WheelProminentCard(report = report, onOpen = onOpen, modifier = modifier)
+        return
+    }
 
     Surface(
         modifier = modifier.fillMaxWidth().clickable(onClick = onOpen),
@@ -105,6 +118,79 @@ fun WheelStripCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+            }
+        }
+    }
+}
+
+/**
+ * The wheel given the space to be the wheel: full size, labelled, with the face and the number
+ * under it rather than crammed alongside.
+ */
+@Composable
+private fun WheelProminentCard(
+    report: WheelReport,
+    onOpen: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth().clickable(onClick = onOpen),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(LifePlannerDesign.Padding.cardContentLarge),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
+        ) {
+            // Labels on, because at this size the point is being able to read which slice is which
+            // without opening anything.
+            WheelCanvas(
+                scores = report.scores,
+                onAreaTap = { onOpen() },
+                compact = false,
+                modifier = Modifier.fillMaxWidth().height(280.dp),
+            )
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                WheelFace(
+                    score = report.overall,
+                    modifier = Modifier.size(40.dp),
+                    tint = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = formatScore(report.overall),
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(start = LifePlannerDesign.Spacing.xs),
+                )
+                Text(
+                    text = " / 10",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            Text(
+                text = wheelMood(report.overall),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+
+            val unconfirmed = report.unconfirmed.size
+            val detail = when {
+                unconfirmed >= report.segments.size -> "Tap to tell us where you are."
+                unconfirmed > 0 -> "$unconfirmed still to set."
+                report.spread >= 3.0 ->
+                    report.lowest?.let { "${it.area.displayName} is furthest behind." }.orEmpty()
+                else -> "Fairly even across the board."
+            }
+            if (detail.isNotBlank()) {
+                Text(
+                    text = detail,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
     }

@@ -88,7 +88,16 @@ import az.tribe.lifeplanner.ui.intro.FeatureIntroHost
 import az.tribe.lifeplanner.location.LocationPermissionState
 import az.tribe.lifeplanner.location.rememberLocationPermission
 import az.tribe.lifeplanner.ui.navigation.Screen
+import az.tribe.lifeplanner.domain.service.BreathMoment
+import az.tribe.lifeplanner.domain.model.WheelArea
+import az.tribe.lifeplanner.domain.model.ScoreSource
+import az.tribe.lifeplanner.ui.components.todayBreathKey
 import az.tribe.lifeplanner.ui.wheel.WheelStripCard
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import az.tribe.lifeplanner.domain.service.StepDuration
+import com.adamglin.phosphoricons.fill.Play
 import az.tribe.lifeplanner.ui.today.PlanItem
 import az.tribe.lifeplanner.ui.today.TodayWeatherViewModel
 import az.tribe.lifeplanner.ui.intro.rememberFeatureIntroGate
@@ -152,6 +161,11 @@ fun ForYouScreen(
     val calendarPermission = rememberCalendarPermission()
     val todayEvents by calendarViewModel.dayEvents.collectAsState()
     val tz = remember { TimeZone.currentSystemDefault() }
+    val feedNowHour = remember { Clock.System.now().toLocalDateTime(tz).hour }
+    // Read once per open. The card hides itself the moment a breath is finished, so this only has
+    // to be right at the point we decide whether to bring it up at all.
+    val feedSettings: Settings = koinInject()
+    val breathsToday = remember { feedSettings.getInt(todayBreathKey(), 0) }
     LaunchedEffect(calendarPermission.state) {
         if (calendarPermission.state == CalendarPermissionState.GRANTED) {
             calendarViewModel.loadDay(Clock.System.todayIn(tz))
@@ -210,12 +224,14 @@ fun ForYouScreen(
                 item(key = "weather_prompt") { WeatherPromptCard(onEnable = locationPermission.request) }
             }
 
-            // A calming beat: a breath or two, right in the flow, that "grows" as you complete it.
-            item(key = "breath") { BreathingCard() }
-
-            // Life balance now lives here rather than behind its own tab.
+            // The wheel is the one view that shows a whole life at once, so it gets the space to
+            // be looked at rather than a status strip beside two lines of text.
             item(key = "balance") {
-                WheelStripCard(wheel, onOpen = { onOpenRoute(Screen.WheelOfLife.route) })
+                WheelStripCard(
+                    wheel,
+                    onOpen = { onOpenRoute(Screen.WheelOfLife.route) },
+                    prominent = true,
+                )
             }
 
             // Today's plan, planner-style: tick items off right here instead of jumping to Goals.
@@ -242,6 +258,21 @@ fun ForYouScreen(
                         onOpen = { onOpenRoute("goal_detail/${p.goalId}") },
                     )
                 }
+            }
+
+            // A breath, but only on a day that gives us a reason to mention it, and below the plan
+            // rather than above it: it is a reminder, not the first thing you came here for.
+            val breathMoment = BreathMoment.of(
+                hourOfDay = feedNowHour,
+                planItems = plan.size + healthHabits.size + todayEvents.size,
+                mentalScore = wheel?.scores
+                    ?.firstOrNull { it.area == WheelArea.MENTAL && it.source != ScoreSource.ESTIMATED }
+                    ?.score,
+                breathsToday = breathsToday,
+                overdueItems = plan.count { it.overdue },
+            )
+            if (breathMoment != null) {
+                item(key = "breath") { BreathingCard(reason = breathMoment.reason) }
             }
 
             item { FilterRow(selected = filter, onSelect = { filter = it }) }
@@ -886,9 +917,35 @@ private fun eventTimeLabel(event: CalendarEvent, tz: TimeZone): String {
 @Composable
 private fun PlanRow(item: PlanItem, onComplete: () -> Unit, onOpen: () -> Unit) {
     val c = MaterialTheme.modernColors
+    val haptic = rememberHapticManager()
     val overdueColor = Color(0xFFE53935)
-    // Completion is deliberate: only the check circle marks the step done. Tapping the row body
-    // opens the goal for context, so a stray tap can never silently complete a milestone.
+
+    // Steps that are written as a length of time ("Hold crow pose 30 seconds") are timers wearing a
+    // tick box: the user has to do the thing, watch a clock elsewhere, then come back and tick.
+    // When we can read the duration, the row runs it and ticks itself at zero.
+    val totalSeconds = remember(item.title) { StepDuration.secondsIn(item.title) }
+    var remaining by remember(item.milestoneId) { mutableStateOf<Int?>(null) }
+
+    LaunchedEffect(remaining != null) {
+        while (remaining != null) {
+            delay(1000)
+            val left = (remaining ?: return@LaunchedEffect) - 1
+            if (left <= 0) {
+                remaining = null
+                haptic.success()
+                onComplete()
+            } else {
+                remaining = left
+                // A tick each second makes it feel like something is happening in your hand rather
+                // than only on screen.
+                haptic.click()
+            }
+        }
+    }
+
+    // Completion is deliberate: only the check circle (or a countdown the user started and let run)
+    // marks the step done. Tapping the row body opens the goal for context, so a stray tap can
+    // never silently complete a milestone.
     Surface(
         modifier = Modifier.fillMaxWidth().bouncyClickable(onClick = onOpen),
         color = c.cardBackground,
@@ -899,21 +956,93 @@ private fun PlanRow(item: PlanItem, onComplete: () -> Unit, onOpen: () -> Unit) 
             horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(
-                imageVector = PhosphorIcons.Regular.Circle,
-                contentDescription = "Mark done",
-                tint = if (item.overdue) overdueColor else c.textTertiary,
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .bouncyClickable(onClick = onComplete)
-                    .padding(4.dp)
-                    .size(LifePlannerDesign.IconSize.large),
-            )
+            if (totalSeconds != null) {
+                StepTimerButton(
+                    totalSeconds = totalSeconds,
+                    remaining = remaining,
+                    accent = if (item.overdue) overdueColor else c.primary,
+                    onStart = { remaining = totalSeconds },
+                    onCancel = { remaining = null },
+                )
+            } else {
+                Icon(
+                    imageVector = PhosphorIcons.Regular.Circle,
+                    contentDescription = "Mark done",
+                    tint = if (item.overdue) overdueColor else c.textTertiary,
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .bouncyClickable(onClick = onComplete)
+                        .padding(4.dp)
+                        .size(LifePlannerDesign.IconSize.large),
+                )
+            }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(item.title, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = c.textPrimary, maxLines = 1)
-                Text(item.goalTitle, style = MaterialTheme.typography.bodySmall, color = c.textSecondary, maxLines = 1)
+                Text(
+                    if (remaining != null) "Keep going. Ticks itself at zero." else item.goalTitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (remaining != null) c.primary else c.textSecondary,
+                    maxLines = 1,
+                )
             }
-            DueChip(overdue = item.overdue)
+            if (remaining == null) DueChip(overdue = item.overdue)
+        }
+    }
+}
+
+/**
+ * Play, then a countdown ring in the same 40dp the tick box occupied.
+ *
+ * Tapping mid-run cancels rather than completing: someone who stops early did not do the thing, and
+ * an app that ticks it anyway is lying to them about their own week.
+ */
+@Composable
+private fun StepTimerButton(
+    totalSeconds: Int,
+    remaining: Int?,
+    accent: Color,
+    onStart: () -> Unit,
+    onCancel: () -> Unit,
+) {
+    val c = MaterialTheme.modernColors
+    val progress by animateFloatAsState(
+        targetValue = if (remaining == null) 0f else 1f - (remaining.toFloat() / totalSeconds),
+        animationSpec = tween(950),
+        label = "stepTimer",
+    )
+
+    Box(
+        modifier = Modifier
+            .size(40.dp)
+            .clip(CircleShape)
+            .background(accent.copy(alpha = 0.12f))
+            .bouncyClickable { if (remaining == null) onStart() else onCancel() },
+        contentAlignment = Alignment.Center,
+    ) {
+        if (remaining != null) {
+            Box(
+                Modifier.fillMaxSize().drawBehind {
+                    drawArc(
+                        color = accent,
+                        startAngle = -90f,
+                        sweepAngle = progress * 360f,
+                        useCenter = false,
+                        style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round),
+                    )
+                }
+            )
+            Text(
+                StepDuration.format(remaining),
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                color = accent,
+            )
+        } else {
+            Icon(
+                PhosphorIcons.Fill.Play,
+                contentDescription = "Start ${StepDuration.format(totalSeconds)} timer",
+                tint = accent,
+                modifier = Modifier.size(16.dp),
+            )
         }
     }
 }

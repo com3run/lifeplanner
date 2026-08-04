@@ -125,7 +125,7 @@ private fun techniqueForSessions(sessions: Int): BreathTechnique =
 private fun nextUnlockAt(sessions: Int): Int? =
     BREATH_LEVELS.firstOrNull { sessions < it.first }?.first
 
-private fun todayBreathKey(): String =
+internal fun todayBreathKey(): String =
     "breaths_" + Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
 
 /**
@@ -134,7 +134,13 @@ private fun todayBreathKey(): String =
  * a practice (see [BREATH_LEVELS]), no technique picker, no names, just a fresh rhythm now and then.
  */
 @Composable
-fun BreathingCard() {
+fun BreathingCard(
+    /**
+     * Why this is on screen today. The card no longer appears unprompted, so it owes the user an
+     * explanation for interrupting — see [az.tribe.lifeplanner.domain.service.BreathMoment].
+     */
+    reason: String? = null,
+) {
     val settings: Settings = koinInject()
     val gamification: GamificationRepository = koinInject()
     val creditHabits: CreditHabitsFromSessionUseCase = koinInject()
@@ -150,7 +156,9 @@ fun BreathingCard() {
 
     val technique = techniqueForSessions(sessionsTotal)
 
-    AnimatedVisibility(visible = count < BREATH_GOAL) {
+    // With a reason supplied the feed has already decided this is a moment worth mentioning, and
+    // hides the card again as soon as one breath is done.
+    AnimatedVisibility(visible = if (reason != null) count == 0 else count < BREATH_GOAL) {
         Surface(Modifier.fillMaxWidth(), color = c.cardBackground, shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large)) {
             Column(
                 Modifier.fillMaxWidth().padding(LifePlannerDesign.Padding.cardContent),
@@ -165,7 +173,9 @@ fun BreathingCard() {
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Text("Take a breath", style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = c.textPrimary)
                         Text(
-                            if (count == 0) "A moment to reset before you dive in." else "$count of $BREATH_GOAL today. One more?",
+                            reason
+                                ?: if (count == 0) "A moment to reset before you dive in."
+                                else "$count of $BREATH_GOAL today. One more?",
                             style = MaterialTheme.typography.bodySmall, color = c.textSecondary,
                         )
                     }
