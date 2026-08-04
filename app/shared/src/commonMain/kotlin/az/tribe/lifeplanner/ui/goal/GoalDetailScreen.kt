@@ -343,22 +343,35 @@ fun GoalDetailScreen(
                         goal.category, goal.title, goal.description,
                     )
                 val areaScore = wheelReport?.scores?.firstOrNull { it.area == area }?.score
-                val lowest = wheelReport?.segments?.minByOrNull { it.score }?.area
+                val segments = wheelReport?.segments.orEmpty()
+                val lowestScore = segments.minOfOrNull { it.score }
+                // Areas tie for last more often than not on a rounded 0..10 scale, and singling one
+                // out because it sorts first claims precision the scores do not have.
+                val lowestNote = when {
+                    areaScore == null || lowestScore == null || areaScore != lowestScore -> null
+                    segments.count { it.score == lowestScore } > 1 -> "among your lowest"
+                    else -> "your lowest"
+                }
 
                 WhyChainComponent(
                     valueTitle = "${area.emoji} ${area.displayName}",
                     goalTitle = goal.title,
                     milestoneCount = goal.milestones.size,
                     areaScore = areaScore,
-                    isLowestArea = area == lowest,
+                    lowestNote = lowestNote,
                     onValueClick = { showValueSheet = true }
                 )
             }
 
-            if (!goal.aiReasoning.isNullOrBlank()) {
-                item {
-                    AiReasoningCard(reasoning = goal.aiReasoning!!)
-                }
+            // The why and the coach saying it are one card, sitting high on the page where the
+            // question is still fresh. They used to be two: reasoning here, and a full coach
+            // profile far below that reintroduced the same coach on every goal.
+            item(key = "coach_why") {
+                CoachWhyCard(
+                    coach = coach,
+                    reasoning = goal.aiReasoning?.takeIf { it.isNotBlank() },
+                    onMeetCoach = { onCoachClick(coach.id) },
+                )
             }
 
 
@@ -428,14 +441,6 @@ fun GoalDetailScreen(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     )
                 }
-            }
-
-            item {
-                CoachInsightCard(
-                    coach = coach,
-                    onMeetCoach = { onCoachClick(coach.id) },
-                    valueTitle = lifeValues.find { it.id == goal.valueId }?.title
-                )
             }
 
             item {

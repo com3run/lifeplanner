@@ -344,6 +344,17 @@ class GoalViewModel(
     fun addMilestone(goalId: String, milestoneTitle: String, dueDate: LocalDate? = null) {
         viewModelScope.launch {
             try {
+                // Adding the same step twice is never what was meant, and it is easy to do: the
+                // coach's suggestion rows stay tappable while the write is still in flight, so a
+                // second tap lands before the list has refreshed and the suggestion has dropped
+                // out. That put "Complete 6 months fund" on a goal four times.
+                val existing = getGoalByIdUseCase(goalId)?.milestones.orEmpty()
+                val wanted = milestoneTitle.trim()
+                if (existing.any { it.title.trim().equals(wanted, ignoreCase = true) }) {
+                    _error.value = null
+                    return@launch
+                }
+
                 val newMilestone = createNewMilestone(milestoneTitle, dueDate)
                 val result = addMilestoneUseCase(goalId, newMilestone)
 

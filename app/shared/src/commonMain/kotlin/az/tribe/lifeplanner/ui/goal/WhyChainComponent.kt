@@ -44,7 +44,8 @@ fun WhyChainComponent(
      * goals actually matters this week. Null before the wheel has been filled in.
      */
     areaScore: Double? = null,
-    isLowestArea: Boolean = false,
+    /** "your lowest" / "among your lowest" when this area is at the bottom, else null. */
+    lowestNote: String? = null,
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -68,7 +69,7 @@ fun WhyChainComponent(
                     onClick = onValueClick,
                     trailing = areaScore?.let { score ->
                         val shown = if (score % 1.0 == 0.0) score.toInt().toString() else score.toString()
-                        if (isLowestArea) "$shown/10 · your lowest" else "$shown/10"
+                        if (lowestNote != null) "$shown/10 · $lowestNote" else "$shown/10"
                     },
                 )
             } else {

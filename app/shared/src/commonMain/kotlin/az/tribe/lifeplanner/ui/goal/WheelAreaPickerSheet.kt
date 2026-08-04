@@ -3,6 +3,7 @@ package az.tribe.lifeplanner.ui.goal
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -50,27 +51,37 @@ fun WheelAreaPickerSheet(
 ) {
     val c = MaterialTheme.modernColors
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val lowest = scores.filter { it.area.isWheelSegment }.minByOrNull { it.score }?.area
+    val segments = scores.filter { it.area.isWheelSegment }
+    val lowestScore = segments.minOfOrNull { it.score }
+    // Two areas can tie for last. Calling one of them "your lowest" because it happens to sort
+    // first claims a precision the numbers do not have.
+    val lowestIsShared = lowestScore != null && segments.count { it.score == lowestScore } > 1
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
-        Column(
-            Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 28.dp),
-            verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
+        // Everything scrolls together, header included. A LazyColumn nested under a Column inside
+        // the sheet took its height from what was left over, which clipped the last area off the
+        // bottom edge — visible, but with nothing left to tap. Money was unselectable.
+        LazyColumn(
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 40.dp),
+            verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.xs),
         ) {
-            Text(
-                "What is this goal for?",
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                color = c.textPrimary,
-            )
-            Text(
-                "Pick the part of your life it is meant to move. You can change it whenever.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = c.textSecondary,
-                modifier = Modifier.padding(bottom = LifePlannerDesign.Spacing.xs),
-            )
+            item {
+                Column(Modifier.padding(bottom = LifePlannerDesign.Spacing.sm)) {
+                    Text(
+                        "What is this goal for?",
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                        color = c.textPrimary,
+                    )
+                    Text(
+                        "Pick the part of your life it is meant to move. You can change it whenever.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = c.textSecondary,
+                    )
+                }
+            }
 
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.xs)) {
-                items(GoalWheelAreaInferrer.selectable.size) { index ->
+            items(GoalWheelAreaInferrer.selectable.size) { index ->
                     val area = GoalWheelAreaInferrer.selectable[index]
                     val score = scores.firstOrNull { it.area == area }?.score
                     val isSelected = area == selected
@@ -100,8 +111,11 @@ fun WheelAreaPickerSheet(
                                     Text(
                                         // Naming the weakest area here turns the picker into a
                                         // reason to choose rather than a list to get past.
-                                        if (area == lowest) "$shown/10 · your lowest right now"
-                                        else "$shown/10",
+                                        when {
+                                            score != lowestScore -> "$shown/10"
+                                            lowestIsShared -> "$shown/10 · among your lowest"
+                                            else -> "$shown/10 · your lowest right now"
+                                        },
                                         style = MaterialTheme.typography.bodySmall,
                                         color = if (isSelected) {
                                             c.onPrimaryContainer.copy(alpha = 0.8f)
@@ -121,7 +135,6 @@ fun WheelAreaPickerSheet(
                         }
                     }
                 }
-            }
         }
     }
 }
