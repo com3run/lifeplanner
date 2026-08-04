@@ -367,8 +367,31 @@ fun GoalDetailScreen(
             // question is still fresh. They used to be two: reasoning here, and a full coach
             // profile far below that reintroduced the same coach on every goal.
             item(key = "coach_why") {
+                val today = Clock.System.now()
+                    .toLocalDateTime(TimeZone.currentSystemDefault()).date
+                val area = goal.wheelArea
+                    ?: az.tribe.lifeplanner.domain.service.GoalWheelAreaInferrer.infer(
+                        goal.category, goal.title, goal.description,
+                    )
+                val segs = wheelReport?.segments.orEmpty()
+                val low = segs.minOfOrNull { it.score }
+                val snapshot = az.tribe.lifeplanner.domain.service.GoalSnapshot(
+                    status = goal.status,
+                    milestonesTotal = goal.milestones.size,
+                    milestonesDone = goal.milestones.count { it.isCompleted },
+                    nextStep = goal.milestones.firstOrNull { !it.isCompleted }?.title,
+                    daysUntilDue = (goal.dueDate.toEpochDays() - today.toEpochDays()).toInt(),
+                    ageDays = (today.toEpochDays() - goal.createdAt.date.toEpochDays()).toInt(),
+                    reflections = journalEntries.size,
+                    practiceDay = practice?.dayNumber,
+                    practiceStreak = practice?.currentStreak,
+                    areaName = area.displayName,
+                    areaIsLowest = low != null &&
+                        segs.firstOrNull { it.area == area }?.score == low,
+                )
                 CoachWhyCard(
                     coach = coach,
+                    read = az.tribe.lifeplanner.domain.service.CoachGoalRead.read(coach.name, snapshot),
                     reasoning = goal.aiReasoning?.takeIf { it.isNotBlank() },
                     onMeetCoach = { onCoachClick(coach.id) },
                 )

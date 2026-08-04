@@ -55,6 +55,9 @@ import com.adamglin.phosphoricons.regular.ChatCircle
 @Composable
 internal fun CoachWhyCard(
     coach: CoachPersona,
+    /** The coach's read on where the goal stands today. See [CoachGoalRead]. */
+    read: String,
+    /** Why the goal was set, from when it was created. Static, and second to the live read. */
     reasoning: String?,
     onMeetCoach: () -> Unit,
     modifier: Modifier = Modifier,
@@ -110,15 +113,15 @@ internal fun CoachWhyCard(
 
                 Column(Modifier.weight(1f)) {
                     Text(
-                        // The heading is the goal's question, not the coach's name. The coach is
-                        // who is answering it.
-                        if (reasoning != null) "Why this goal?" else coach.name,
+                        // The heading is where the goal stands, not the coach's name. The coach is
+                        // who is telling you.
+                        "Where this stands",
                         style = MaterialTheme.typography.titleMedium
                             .copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                     Text(
-                        if (reasoning != null) "${coach.name} · ${coach.title}" else coach.title,
+                        "${coach.name} · ${coach.title}",
                         style = MaterialTheme.typography.bodySmall,
                         color = bgColor,
                         fontWeight = FontWeight.Medium,
@@ -151,24 +154,30 @@ internal fun CoachWhyCard(
                 }
             }
 
+            // The live read leads, because it is the part that is different today.
+            Text(
+                read,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+
+            // The reasoning from when the goal was written is worth keeping, but it never changes,
+            // so it sits behind a tap rather than competing with what is true now.
             if (reasoning != null) {
                 Text(
-                    reasoning,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = if (expanded) Int.MAX_VALUE else 3,
-                    overflow = TextOverflow.Ellipsis,
+                    if (expanded) "Why you set it" else "Why you set it · tap",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = bgColor,
                 )
-            } else {
-                // Nothing was generated for this goal, so there is no why to show. The coach line
-                // stays reachable rather than the card vanishing and the coach with it.
-                Text(
-                    coach.profile.bio,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                if (expanded) {
+                    Text(
+                        reasoning,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
         }
     }
