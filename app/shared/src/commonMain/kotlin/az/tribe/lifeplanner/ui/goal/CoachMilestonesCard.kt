@@ -56,18 +56,53 @@ import com.adamglin.phosphoricons.regular.Plus
 import com.adamglin.phosphoricons.regular.Sparkle
 
 /**
- * The coach's suggested steps for a goal, always present rather than only on an empty goal.
+ * The coach's suggested steps for a goal, as a card of its own.
  *
  * A milestone list the user has to invent from a blank page is where most goals stall, so the
  * category coach opens with a draft (see [MilestoneCoach], local and instant) and the user fills it
  * in: tap a step to take it as-is, tap the pencil to reword it first, or write your own at the
  * bottom. Steps already on the goal never reappear, so the card empties itself as the plan fills up.
  *
+ * This standalone form is for a goal with no milestones yet, where there is no milestone list to sit
+ * under. Once the goal has steps, [CoachMilestonesContent] goes inside the milestones card instead —
+ * a taken step has to land somewhere the user can see, or the tap reads as doing nothing.
+ *
  * [onAdd] receives the final title (edited or not). [existingTitles] are the goal's current
  * milestones.
  */
 @Composable
 fun CoachMilestonesCard(
+    goalTitle: String,
+    category: GoalCategory,
+    description: String = "",
+    existingTitles: List<String> = emptyList(),
+    onAdd: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val c = MaterialTheme.modernColors
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        color = c.cardBackground,
+        shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large),
+    ) {
+        CoachMilestonesContent(
+            goalTitle = goalTitle,
+            category = category,
+            description = description,
+            existingTitles = existingTitles,
+            onAdd = onAdd,
+            modifier = Modifier.padding(LifePlannerDesign.Padding.cardContent),
+        )
+    }
+}
+
+/**
+ * The coach draft without a card around it, so it can be dropped inside the milestones card.
+ *
+ * Same behaviour as [CoachMilestonesCard]; only the surface differs.
+ */
+@Composable
+fun CoachMilestonesContent(
     goalTitle: String,
     category: GoalCategory,
     description: String = "",
@@ -95,102 +130,96 @@ fun CoachMilestonesCard(
 
     val visible = if (showAll) suggestions else suggestions.take(3)
 
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        color = c.cardBackground,
-        shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large),
+    Column(
+        modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
     ) {
-        Column(
-            Modifier.fillMaxWidth().padding(LifePlannerDesign.Padding.cardContent),
-            verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
-                verticalAlignment = Alignment.CenterVertically,
+            Box(
+                Modifier.size(36.dp).clip(CircleShape).background(c.secondary.copy(alpha = 0.14f)),
+                contentAlignment = Alignment.Center,
             ) {
-                Box(
-                    Modifier.size(36.dp).clip(CircleShape).background(c.secondary.copy(alpha = 0.14f)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(PhosphorIcons.Regular.Sparkle, contentDescription = null, tint = c.secondary, modifier = Modifier.size(18.dp))
-                }
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(
-                        if (existingTitles.isEmpty()) "${coach.name} drafted your first steps"
-                        else "${coach.name} would add",
-                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-                        color = c.textPrimary,
-                    )
-                    Text(
-                        MilestoneCoach.opener(coach.name, category),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = c.textSecondary,
-                    )
-                }
+                Icon(PhosphorIcons.Regular.Sparkle, contentDescription = null, tint = c.secondary, modifier = Modifier.size(18.dp))
             }
-
-            if (suggestions.isEmpty()) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
-                    "You've taken every step ${coach.name} had. Write your own below.",
+                    if (existingTitles.isEmpty()) "${coach.name} drafted your first steps"
+                    else "${coach.name} would add",
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                    color = c.textPrimary,
+                )
+                Text(
+                    MilestoneCoach.opener(coach.name, category),
                     style = MaterialTheme.typography.bodySmall,
-                    color = c.textTertiary,
+                    color = c.textSecondary,
                 )
             }
+        }
 
-            visible.forEachIndexed { index, suggestion ->
-                val isEditing = editingIndex == index
-                if (isEditing) {
-                    StepField(
-                        value = draft,
-                        onValueChange = { draft = it },
-                        placeholder = suggestion,
-                        onSubmit = {
-                            val text = draft.trim().ifBlank { suggestion }
-                            haptic.success()
-                            onAdd(text)
-                            editingIndex = null
-                            draft = ""
-                        },
-                    )
-                } else {
-                    SuggestionRow(
-                        text = suggestion,
-                        index = index,
-                        onTake = { haptic.success(); onAdd(suggestion) },
-                        onEdit = { editingIndex = index; draft = suggestion },
-                    )
-                }
-            }
-
-            if (suggestions.size > 3) {
-                Row(
-                    modifier = Modifier.bouncyClickable { showAll = !showAll },
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(if (showAll) PhosphorIcons.Regular.CaretUp else PhosphorIcons.Regular.CaretDown, contentDescription = null, tint = c.primary, modifier = Modifier.size(14.dp))
-                    Text(
-                        if (showAll) "Fewer ideas" else "More ideas from ${coach.name}",
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-                        color = c.primary,
-                    )
-                }
-            }
-
-            StepField(
-                value = ownStep,
-                onValueChange = { ownStep = it },
-                placeholder = "Write your own step…",
-                onSubmit = {
-                    val text = ownStep.trim()
-                    if (text.isNotEmpty()) {
-                        haptic.success()
-                        onAdd(text)
-                        ownStep = ""
-                    }
-                },
+        if (suggestions.isEmpty()) {
+            Text(
+                "You've taken every step ${coach.name} had. Write your own below.",
+                style = MaterialTheme.typography.bodySmall,
+                color = c.textTertiary,
             )
         }
+
+        visible.forEachIndexed { index, suggestion ->
+            val isEditing = editingIndex == index
+            if (isEditing) {
+                StepField(
+                    value = draft,
+                    onValueChange = { draft = it },
+                    placeholder = suggestion,
+                    onSubmit = {
+                        val text = draft.trim().ifBlank { suggestion }
+                        haptic.success()
+                        onAdd(text)
+                        editingIndex = null
+                        draft = ""
+                    },
+                )
+            } else {
+                SuggestionRow(
+                    text = suggestion,
+                    index = index,
+                    onTake = { haptic.success(); onAdd(suggestion) },
+                    onEdit = { editingIndex = index; draft = suggestion },
+                )
+            }
+        }
+
+        if (suggestions.size > 3) {
+            Row(
+                modifier = Modifier.bouncyClickable { showAll = !showAll },
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(if (showAll) PhosphorIcons.Regular.CaretUp else PhosphorIcons.Regular.CaretDown, contentDescription = null, tint = c.primary, modifier = Modifier.size(14.dp))
+                Text(
+                    if (showAll) "Fewer ideas" else "More ideas from ${coach.name}",
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                    color = c.primary,
+                )
+            }
+        }
+
+        StepField(
+            value = ownStep,
+            onValueChange = { ownStep = it },
+            placeholder = "Write your own step…",
+            onSubmit = {
+                val text = ownStep.trim()
+                if (text.isNotEmpty()) {
+                    haptic.success()
+                    onAdd(text)
+                    ownStep = ""
+                }
+            },
+        )
     }
 }
 
@@ -217,7 +246,19 @@ private fun SuggestionRow(text: String, index: Int, onTake: () -> Unit, onEdit: 
             horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(PhosphorIcons.Regular.Plus, contentDescription = "Add this step", tint = c.secondary, modifier = Modifier.size(18.dp))
+            // A bare glyph next to a line of text reads as a bullet, and the row was being taken
+            // for a list of examples rather than something you tap. Filled, it reads as a button.
+            Box(
+                Modifier.size(26.dp).clip(CircleShape).background(c.secondary.copy(alpha = 0.18f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    PhosphorIcons.Regular.Plus,
+                    contentDescription = "Add this step",
+                    tint = c.secondary,
+                    modifier = Modifier.size(16.dp),
+                )
+            }
             Text(text, style = MaterialTheme.typography.bodyMedium, color = c.textPrimary, modifier = Modifier.weight(1f))
             Icon(
                 PhosphorIcons.Regular.Pencil,

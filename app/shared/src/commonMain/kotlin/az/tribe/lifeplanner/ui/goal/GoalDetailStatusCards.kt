@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -332,7 +333,15 @@ internal fun ModernMilestonesCard(
     milestones: List<Milestone>,
     isReadOnly: Boolean = false,
     onMilestoneToggle: (String) -> Unit,
-    onAddMilestone: () -> Unit
+    onAddMilestone: () -> Unit,
+    /**
+     * The coach's draft of what to add next, rendered under the list inside this card.
+     *
+     * It used to be a card of its own further down the page, which made taking a step look like it
+     * did nothing: the step was added, but to a list the user could no longer see. Here the new
+     * milestone appears directly above the row that was tapped.
+     */
+    coachDraft: (@Composable () -> Unit)? = null,
 ) {
     GlassCard(
         modifier = Modifier
@@ -405,6 +414,14 @@ internal fun ModernMilestonesCard(
                     isReadOnly = isReadOnly,
                     onClick = { onMilestoneToggle(milestone.id) }
                 )
+            }
+
+            if (coachDraft != null) {
+                HorizontalDivider(
+                    modifier = Modifier.padding(top = 4.dp),
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                )
+                coachDraft()
             }
         }
     }

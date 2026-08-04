@@ -91,7 +91,15 @@ class GoalRepositoryImpl(
     override suspend fun updateGoal(goal: Goal) {
         localGoalStore.updateGoal(goal.toEntity())
 
-        // Update milestones (simplified approach - you might want to be more sophisticated)
+        // The passed list is the goal's milestones in full, not a patch. Upserting it without
+        // removing what is no longer in it meant the trash in Edit Goal took the row off the form
+        // and left the milestone in the database: the user deleted a step, saved, and found it
+        // still there.
+        val keptIds = goal.milestones.map { it.id }.toSet()
+        localGoalStore.getMilestonesByGoalId(goal.id)
+            .filter { it.id !in keptIds }
+            .forEach { localGoalStore.deleteMilestone(it.id) }
+
         goal.milestones.forEach { milestone ->
             localGoalStore.updateMilestone(milestone.toEntity(goal.id))
         }

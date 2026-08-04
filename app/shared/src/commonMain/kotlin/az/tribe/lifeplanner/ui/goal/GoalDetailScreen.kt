@@ -330,28 +330,40 @@ fun GoalDetailScreen(
             }
 
 
+            // Milestones and the coach's draft of what to add next are one section, not two.
+            // Editing a plan beats inventing one, so the draft is always available on a live goal —
+            // but it belongs under the list it feeds, otherwise taking a step adds a milestone the
+            // user cannot see and the tap looks like it did nothing.
             if (goal.milestones.isNotEmpty()) {
-                item {
+                item(key = "milestones") {
                     ModernMilestonesCard(
                         milestones = goal.milestones,
                         isReadOnly = isCompleted,
                         onMilestoneToggle = { milestoneId ->
                             viewModel.toggleMilestoneCompletion(goalId, milestoneId)
                         },
-                        onAddMilestone = { showAddMilestoneDialog = true }
+                        onAddMilestone = { showAddMilestoneDialog = true },
+                        coachDraft = if (isCompleted) null else {
+                            {
+                                CoachMilestonesContent(
+                                    goalTitle = goal.title,
+                                    category = goal.category,
+                                    description = goal.description,
+                                    existingTitles = goal.milestones.map { it.title },
+                                    onAdd = { title -> viewModel.addMilestone(goalId, title) },
+                                )
+                            }
+                        },
                     )
                 }
-            }
-
-            // The coach's draft of the next steps, always available on a live goal (not just an
-            // empty one): editing a plan beats inventing one, and one tap takes a step as-is.
-            if (!isCompleted) {
+            } else if (!isCompleted) {
+                // No list to sit under yet, so the draft is the section.
                 item(key = "coach_milestones") {
                     CoachMilestonesCard(
                         goalTitle = goal.title,
                         category = goal.category,
                         description = goal.description,
-                        existingTitles = goal.milestones.map { it.title },
+                        existingTitles = emptyList(),
                         onAdd = { title -> viewModel.addMilestone(goalId, title) },
                         modifier = Modifier.padding(horizontal = 16.dp),
                     )
