@@ -15,6 +15,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -144,8 +147,14 @@ private fun buildChatHistory(phase: OnboardingPhase, vm: CoachOnboardingViewMode
     if (OnboardingPhase.SPECIALIST_INTRO.isBefore(phase)) {
         val area = vm.topPriorities.firstOrNull()?.name?.lowercase()?.replaceFirstChar { it.uppercase() }
             ?: vm.topPriority?.name?.lowercase()?.replaceFirstChar { it.uppercase() }
-            ?: "your goals"
-        coachMsg("I'm bringing in $specialistName, our $area specialist.", "Luna", luna)
+        // No area means the wheel was skipped, and "our your goals specialist" is what the
+        // fallback produced when dropped into a sentence built for a real one.
+        coachMsg(
+            if (area != null) "I'm bringing in $specialistName, our $area specialist."
+            else "I'm bringing in $specialistName for a quick check-in.",
+            "Luna",
+            luna,
+        )
         userMsg("Let's meet them!")
     }
     // Specialists ask a variable number of questions (3 for kai/sam/river, 4 for alex/morgan), and
@@ -384,6 +393,12 @@ fun CoachOnboardingScreen(
                 ) { currentPhase ->
                     Column(
                         modifier = Modifier
+                            // Capped and scrollable: every step until now was short enough to fit
+                            // the panel, and the wheel's nine rows pushed Continue and Skip off the
+                            // bottom of the screen with no way to reach them. A step that cannot be
+                            // finished is worse than one that scrolls.
+                            .heightIn(max = 560.dp)
+                            .verticalScroll(rememberScrollState())
                             .padding(horizontal = 24.dp, vertical = 20.dp)
                             .imePadding()
                             .navigationBarsPadding()

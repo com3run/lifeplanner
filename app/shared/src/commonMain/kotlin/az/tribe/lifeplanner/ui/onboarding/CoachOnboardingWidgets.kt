@@ -198,8 +198,17 @@ internal fun phaseMessage(phase: OnboardingPhase, vm: CoachOnboardingViewModel):
             val specialistName = runCatching { CoachPersona.getById(vm.specialistCoachId).name }.getOrElse { "Your coach" }
             val area = vm.topPriorities.firstOrNull()?.name?.lowercase()?.replaceFirstChar { it.uppercase() }
                 ?: vm.topPriority?.name?.lowercase()?.replaceFirstChar { it.uppercase() }
-                ?: "your goals"
-            "Thanks for being honest. I'm bringing in $specialistName, our $area specialist, since that is where you rated yourself lowest. They'll do a quick check-in so your $area goals are actually built for you."
+            // Only claim the wheel picked them when the wheel was actually filled in. Someone who
+            // skipped it being told "that is where you rated yourself lowest" is being told
+            // something about themselves that never happened.
+            when {
+                area != null && vm.wheelRatings.isNotEmpty() ->
+                    "Thanks for being honest. You rated $area lowest, so I'm bringing in $specialistName, our $area specialist. They'll do a quick check-in so your $area goals are actually built for you."
+                area != null ->
+                    "I'm bringing in $specialistName, our $area specialist. They'll do a quick check-in so your $area goals are actually built for you."
+                else ->
+                    "I'm bringing in $specialistName to do a quick check-in, so the goals we set are actually built for you."
+            }
         }
         OnboardingPhase.SPECIALIST_Q1 -> specialistQ1Message(vm)
         OnboardingPhase.SPECIALIST_Q2 -> specialistQ2Message(vm)
