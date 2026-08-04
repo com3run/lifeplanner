@@ -23,15 +23,27 @@ class WheelSuggestionsTest {
 
     @Test
     fun `no two areas share a suggestion`() {
-        val all = WheelSuggestions.covered.flatMap { area ->
+        // Distinct per area first. Rotation wraps when an urgency has fewer options than the
+        // sample range, so counting raw hits would flag an area for repeating itself, which is
+        // rotation working rather than duplicated copy.
+        val byArea = WheelSuggestions.covered.associateWith { area ->
             NudgeUrgency.entries.flatMap { urgency ->
-                (0..2).mapNotNull { WheelSuggestions.forArea(area, urgency, it)?.action }
-            }
+                (0..4).mapNotNull { WheelSuggestions.forArea(area, urgency, it)?.action }
+            }.toSet()
         }
 
         // The failure mode for authored sets like this is the same three tips with the nouns
-        // swapped. Identical copy across areas is the first symptom.
-        assertEquals(all.size, all.toSet().size, "the same advice appears under more than one area")
+        // swapped, so what matters is a line turning up under two different areas.
+        val seen = mutableMapOf<String, WheelArea>()
+        byArea.forEach { (area, actions) ->
+            actions.forEach { action ->
+                val previous = seen.put(action, area)
+                assertTrue(
+                    previous == null,
+                    "\"$action\" appears under both $previous and $area",
+                )
+            }
+        }
     }
 
     @Test
@@ -95,6 +107,59 @@ class WheelSuggestionsTest {
             // Where to put money so it grows is regulated advice and none of our business.
             listOf("invest", "stocks", "shares", "crypto", "portfolio").forEach { word ->
                 assertTrue(!text.contains(word), "strays into investment advice: " + suggestion.action)
+            }
+        }
+    }
+
+    @Test
+    fun `Romance never assumes there is a partner`() {
+        val romance = NudgeUrgency.entries.flatMap { urgency ->
+            (0..2).mapNotNull { WheelSuggestions.forArea(WheelArea.ROMANCE, urgency, it) }
+        }
+
+        assertTrue(romance.isNotEmpty(), "no Romance copy found, so this asserts nothing")
+        romance.forEach { suggestion ->
+            val text = (suggestion.action + " " + suggestion.because).lowercase()
+            // The rubric explicitly blesses a contented single life. Copy that assumes a partner,
+            // or treats single as the problem to solve, tells that person the app is not listening.
+            listOf("your partner", "date night", "romantic", "relationship you", "find someone")
+                .forEach { phrase ->
+                    assertTrue(!text.contains(phrase), "assumes coupling: " + suggestion.action)
+                }
+        }
+    }
+
+    @Test
+    fun `Mental points outward when it is serious, and never sounds like treatment`() {
+        val serious = (0..2).mapNotNull {
+            WheelSuggestions.forArea(WheelArea.MENTAL, NudgeUrgency.SERIOUS, it)
+        }
+
+        assertTrue(serious.isNotEmpty(), "no serious Mental copy found, so this asserts nothing")
+
+        // At this end the true thing matters more than the encouraging one. Someone whose head has
+        // been a bad place for weeks is not fixed by a walk, and implying otherwise is how an app
+        // loses the person it most wanted to help.
+        val pointsOutward = serious.any { s ->
+            val t = (s.action + " " + s.because).lowercase()
+            listOf("doctor", "therapist", "professional").any { t.contains(it) }
+        }
+        assertTrue(pointsOutward, "serious Mental copy never suggests getting help")
+
+        // And it must not read as treatment itself. Diagnostic language invites people to
+        // substitute a tip card for the real thing.
+        WheelSuggestions.covered.forEach { area ->
+            NudgeUrgency.entries.forEach { urgency ->
+                (0..2).mapNotNull { WheelSuggestions.forArea(area, urgency, it) }.forEach { s ->
+                    val t = (s.action + " " + s.because).lowercase()
+                    // Deliberately narrow. An earlier version banned "cure" and fired on "not
+                    // cured by it" in a line about skimming, which is ordinary English: a guard
+                    // that cries wolf gets deleted by whoever hits it next.
+                    listOf("depression", "anxiety disorder", "diagnos", "symptoms of", "treat your")
+                        .forEach { word ->
+                            assertTrue(!t.contains(word), "sounds clinical: " + s.action)
+                        }
+                }
             }
         }
     }

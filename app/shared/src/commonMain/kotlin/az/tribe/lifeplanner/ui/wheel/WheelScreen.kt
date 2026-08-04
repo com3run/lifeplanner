@@ -84,6 +84,7 @@ fun WheelScreen(
                 onSetScore = viewModel::setScore,
                 onClearScore = viewModel::clearScore,
                 topPadding = padding.calculateTopPadding(),
+                suggestion = state.suggestion,
                 comparison = state.comparison,
                 period = state.period,
                 snapshotCount = state.snapshotCount,
@@ -102,6 +103,7 @@ private fun WheelContent(
     onSetScore: (WheelArea, Double) -> Unit,
     onClearScore: (WheelArea) -> Unit,
     topPadding: androidx.compose.ui.unit.Dp,
+    suggestion: az.tribe.lifeplanner.domain.service.WheelSuggestion?,
     comparison: az.tribe.lifeplanner.domain.model.WheelComparison?,
     period: az.tribe.lifeplanner.domain.model.ComparisonPeriod,
     snapshotCount: Int,
@@ -160,6 +162,8 @@ private fun WheelContent(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+
+        item { WheelSuggestionCard(suggestion) }
 
         report.joy?.let { joy ->
             item { JoyCard(joy) }

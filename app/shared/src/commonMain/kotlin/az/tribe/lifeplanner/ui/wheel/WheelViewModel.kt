@@ -27,6 +27,7 @@ data class WheelUiState(
      */
     val snapshotCount: Int = 0,
     val comparisonLoading: Boolean = false,
+    val suggestion: az.tribe.lifeplanner.domain.service.WheelSuggestion? = null,
 )
 
 class WheelViewModel(
@@ -49,7 +50,12 @@ class WheelViewModel(
             repository.observeWheel()
                 .catch { e -> _state.value = _state.value.copy(isLoading = false, error = e.message) }
                 .collect { report ->
-                    _state.value = _state.value.copy(report = report, isLoading = false, error = null)
+                    _state.value = _state.value.copy(
+                        report = report,
+                        isLoading = false,
+                        error = null,
+                        suggestion = suggestionFor(report),
+                    )
                 }
         }
     }
@@ -83,6 +89,20 @@ class WheelViewModel(
         if (period == _state.value.period) return
         _state.value = _state.value.copy(period = period)
         viewModelScope.launch { loadComparison(period) }
+    }
+
+    /**
+     * The suggestion for the weakest area, or null to stay quiet.
+     *
+     * Rotation is the day number, so the wording holds for a day and changes tomorrow. Rotating per
+     * recomposition would reshuffle the card while the user reads it.
+     */
+    private fun suggestionFor(report: az.tribe.lifeplanner.domain.model.WheelReport):
+        az.tribe.lifeplanner.domain.service.WheelSuggestion? {
+        val area = az.tribe.lifeplanner.domain.service.WheelNudgePicker.pick(report) ?: return null
+        val urgency = az.tribe.lifeplanner.domain.service.WheelNudgePicker.urgency(report, area)
+        val day = report.generatedAt.date.toEpochDays().toInt()
+        return az.tribe.lifeplanner.domain.service.WheelSuggestions.forArea(area, urgency, day)
     }
 
     private suspend fun loadComparison(period: ComparisonPeriod) {
