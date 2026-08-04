@@ -54,14 +54,15 @@ fun WheelFace(
         val eyeR = w * 0.055f
 
         // Happy eyes arc upward past a strong score; below that they stay simple dots, because
-        // drooping eyes on a middling score reads as pity rather than honesty.
+        // drooping eyes on a middling score reads as pity rather than honesty. Same Y convention as
+        // the mouth: the control point sits below the ends so the arc bows upward on screen.
         if (curve > 0.55f) {
             val lift = (curve - 0.55f) / 0.45f
             listOf(-eyeDx, eyeDx).forEach { dx ->
                 val path = Path().apply {
                     moveTo(w / 2 + dx - eyeR * 1.6f, eyeY + eyeR * 0.5f)
                     quadraticTo(
-                        w / 2 + dx, eyeY - eyeR * (0.6f + lift * 1.4f),
+                        w / 2 + dx, eyeY + eyeR * (0.6f + lift * 1.4f),
                         w / 2 + dx + eyeR * 1.6f, eyeY + eyeR * 0.5f,
                     )
                 }
@@ -73,10 +74,12 @@ fun WheelFace(
             }
         }
 
-        // The mouth. Control point above the ends for a smile, below for a frown, level for a 5.
+        // The mouth. Canvas Y grows downward, so a smile needs its control point *below* the line
+        // joining the corners, not above: an earlier version negated this and drew a frown at every
+        // good score. It went unnoticed because a fresh wheel sits at 5, where the mouth is flat.
         val mouthY = h * 0.63f
         val mouthHalf = w * 0.24f
-        val control = mouthY + (-curve * h * 0.26f)
+        val control = mouthY + (curve * h * 0.26f)
         val mouth = Path().apply {
             moveTo(w / 2 - mouthHalf, mouthY)
             quadraticTo(w / 2, control, w / 2 + mouthHalf, mouthY)
