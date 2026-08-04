@@ -64,8 +64,59 @@ class CoachOnboardingViewModelTest {
         aiProxyService = FakeAiProxyService(),
         habitRepository = az.tribe.lifeplanner.testutil.FakeHabitRepository(),
         settings = settings,
-        smartReminderManager = SmartReminderManager(az.tribe.lifeplanner.testutil.FakeReminderRepository())
+        smartReminderManager = SmartReminderManager(az.tribe.lifeplanner.testutil.FakeReminderRepository()),
+        wheelRepository = wheelRepository,
     )
+
+    private val wheelRepository = RecordingWheelRepository()
+
+    // ── wheel seeding ─────────────────────────────────────────────────────────
+
+    @Test
+    fun `rating an area derives the focus without asking a second question`() {
+        val vm = createViewModel()
+
+        vm.rateArea(az.tribe.lifeplanner.domain.model.WheelArea.MONEY, 2.0)
+        vm.rateArea(az.tribe.lifeplanner.domain.model.WheelArea.FAMILY, 9.0)
+
+        // The old flow asked "which areas matter most" from a blank list. Someone who rates Money 2
+        // and Family 9 has already answered it.
+        assertEquals(
+            az.tribe.lifeplanner.domain.enum.GoalCategory.MONEY,
+            vm.topPriorities.firstOrNull(),
+        )
+        assertEquals(az.tribe.lifeplanner.domain.enum.GoalCategory.MONEY, vm.topPriority)
+    }
+
+    @Test
+    fun `finishing onboarding writes the ratings to the wheel as the user's own scores`() = runTest {
+        val vm = createViewModel()
+        vm.rateArea(az.tribe.lifeplanner.domain.model.WheelArea.MONEY, 3.0)
+        vm.rateArea(az.tribe.lifeplanner.domain.model.WheelArea.PHYSICAL, 8.0)
+
+        vm.completeOnboarding {}
+        testScheduler.advanceUntilIdle()
+
+        // The payoff for asking in areas: the wheel is the user's from the first launch instead of
+        // nine invented fives they have to go and correct.
+        assertEquals(3.0, wheelRepository.written[az.tribe.lifeplanner.domain.model.WheelArea.MONEY])
+        assertEquals(8.0, wheelRepository.written[az.tribe.lifeplanner.domain.model.WheelArea.PHYSICAL])
+        // And a first day on record, or the first comparison has nothing to measure against.
+        assertTrue(wheelRepository.snapshots > 0)
+    }
+
+    @Test
+    fun `skipping the wheel writes nothing`() = runTest {
+        val vm = createViewModel()
+
+        vm.completeOnboarding {}
+        testScheduler.advanceUntilIdle()
+
+        // Inventing scores for someone who declined to give any is exactly the problem this
+        // replaced, one step earlier in the flow.
+        assertTrue(wheelRepository.written.isEmpty())
+        assertEquals(0, wheelRepository.snapshots)
+    }
 
     // ── isComplete ────────────────────────────────────────────────────────────
 
@@ -280,4 +331,31 @@ private class FakeAiProxyService : AiProxyService {
         systemPrompt: String?,
         provider: AiProvider?
     ): Flow<AiProxyService.StreamEvent> = kotlinx.coroutines.flow.emptyFlow()
+}
+
+/** Records what onboarding wrote to the wheel, so the seeding can be asserted on. */
+private class RecordingWheelRepository : az.tribe.lifeplanner.domain.repository.WheelRepository {
+    val written = mutableMapOf<az.tribe.lifeplanner.domain.model.WheelArea, Double>()
+    var snapshots = 0
+
+    override fun observeWheel() = kotlinx.coroutines.flow.flowOf(emptyReport())
+    override suspend fun getWheel() = emptyReport()
+    override suspend fun setScore(
+        area: az.tribe.lifeplanner.domain.model.WheelArea,
+        score: Double,
+        note: String?,
+    ) { written[area] = score }
+    override suspend fun clearScore(area: az.tribe.lifeplanner.domain.model.WheelArea) {
+        written.remove(area)
+    }
+    override suspend fun captureSnapshot() { snapshots++ }
+    override suspend fun snapshots() = emptyList<az.tribe.lifeplanner.domain.model.WheelSnapshot>()
+    override suspend fun compareTo(period: az.tribe.lifeplanner.domain.model.ComparisonPeriod) = null
+    override suspend fun compareToDate(date: kotlinx.datetime.LocalDate) = null
+
+    private fun emptyReport() = az.tribe.lifeplanner.domain.model.WheelReport(
+        id = "t",
+        scores = emptyList(),
+        generatedAt = kotlinx.datetime.LocalDateTime(2026, 8, 4, 9, 0),
+    )
 }

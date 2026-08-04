@@ -125,9 +125,17 @@ private fun buildChatHistory(phase: OnboardingPhase, vm: CoachOnboardingViewMode
         userMsg(if (nameAge.isNotBlank()) nameAge else "Skipped")
     }
     if (OnboardingPhase.LUNA_PRIORITY.isBefore(phase)) {
-        coachMsg("Which areas of life matter most to you right now? Select at least 3.", "Luna", luna)
-        val cats = vm.topPriorities.joinToString(" · ") { it.name.lowercase().replaceFirstChar { c -> c.uppercase() } }
-        userMsg(if (cats.isNotBlank()) cats else "Skipped")
+        coachMsg(
+            "Let's start with where things actually are. How is each part of your life going, out of ten? Rough is fine.",
+            "Luna",
+            luna,
+        )
+        // Echo back the wheel rather than the derived categories: the user answered in areas and
+        // scores, so replaying it as "Career · Financial" would look like we asked something else.
+        val rated = vm.wheelRatings.entries
+            .sortedBy { it.key.order }
+            .joinToString(" · ") { "${it.key.displayName} ${formatRating(it.value)}" }
+        userMsg(if (rated.isNotBlank()) rated else "Skipped")
     }
     if (OnboardingPhase.LUNA_WELLBEING.isBefore(phase)) {
         coachMsg("How are you feeling lately? Be honest, this helps me calibrate your goals.", "Luna", luna)
@@ -604,3 +612,7 @@ private fun AuthGate(
         }
     }
 }
+
+/** "7", not "7.0" — the extra digit makes a rough answer look like a measurement. */
+private fun formatRating(score: Double): String =
+    if (score % 1.0 == 0.0) score.toInt().toString() else score.toString()

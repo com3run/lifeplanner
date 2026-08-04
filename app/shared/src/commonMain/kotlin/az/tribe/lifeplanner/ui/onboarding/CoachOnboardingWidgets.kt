@@ -189,7 +189,9 @@ internal fun phaseMessage(phase: OnboardingPhase, vm: CoachOnboardingViewModel):
         OnboardingPhase.LUNA_NAME ->
             "Let's start with the basics. What's your name, and how old are you? (You can skip either if you prefer.)"
         OnboardingPhase.LUNA_PRIORITY ->
-            "$name Great! Which areas of life matter most to you right now? Select at least 3."
+            // Asking where things actually are, rather than which labels appeal. The answer seeds
+            // the user's own wheel, and what to focus on follows from it.
+            "$name Let's start with where things actually are. How is each part of your life going, out of ten? Rough is fine, and you can change any of it later."
         OnboardingPhase.LUNA_WELLBEING ->
             "Got it. How are you feeling lately? Be honest, this helps me calibrate your goals."
         OnboardingPhase.SPECIALIST_INTRO -> {
@@ -197,7 +199,7 @@ internal fun phaseMessage(phase: OnboardingPhase, vm: CoachOnboardingViewModel):
             val area = vm.topPriorities.firstOrNull()?.name?.lowercase()?.replaceFirstChar { it.uppercase() }
                 ?: vm.topPriority?.name?.lowercase()?.replaceFirstChar { it.uppercase() }
                 ?: "your goals"
-            "Great choices! I'm bringing in $specialistName, our $area specialist. They'll do a quick check-in so your $area goals are actually built for you."
+            "Thanks for being honest. I'm bringing in $specialistName, our $area specialist, since that is where you rated yourself lowest. They'll do a quick check-in so your $area goals are actually built for you."
         }
         OnboardingPhase.SPECIALIST_Q1 -> specialistQ1Message(vm)
         OnboardingPhase.SPECIALIST_Q2 -> specialistQ2Message(vm)

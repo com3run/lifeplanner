@@ -59,10 +59,14 @@ internal fun PhaseContent(
             onContinue = onAdvance
         )
 
-        OnboardingPhase.LUNA_PRIORITY -> PriorityStep(
-            selected = viewModel.topPriorities,
-            onToggle = { viewModel.togglePriority(it) },
-            onContinue = onAdvance
+        // Rating the wheel replaces "which areas matter most": easier to answer, and it seeds the
+        // user's own scores instead of leaving the app to invent nine fives. Focus is derived from
+        // the ratings rather than asked for separately.
+        OnboardingPhase.LUNA_PRIORITY -> WheelRatingStep(
+            ratings = viewModel.wheelRatings,
+            onRate = { area, score -> viewModel.rateArea(area, score) },
+            onContinue = onAdvance,
+            onSkip = onAdvance,
         )
 
         OnboardingPhase.LUNA_WELLBEING -> WellbeingStep(
