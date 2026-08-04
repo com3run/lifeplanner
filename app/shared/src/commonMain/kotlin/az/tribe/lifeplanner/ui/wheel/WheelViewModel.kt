@@ -3,6 +3,7 @@ package az.tribe.lifeplanner.ui.wheel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import az.tribe.lifeplanner.domain.model.ComparisonPeriod
+import az.tribe.lifeplanner.domain.model.ScoreSource
 import az.tribe.lifeplanner.domain.model.WheelArea
 import az.tribe.lifeplanner.domain.model.WheelComparison
 import az.tribe.lifeplanner.domain.model.WheelReport
@@ -28,11 +29,50 @@ data class WheelUiState(
     val snapshotCount: Int = 0,
     val comparisonLoading: Boolean = false,
     val suggestion: az.tribe.lifeplanner.domain.service.WheelSuggestion? = null,
+    /** Offer the user the chance to replace our predictions with their own nine numbers. */
+    val showSetupPrompt: Boolean = false,
 )
 
 class WheelViewModel(
     private val repository: WheelRepository,
+    private val settings: com.russhwolf.settings.Settings,
 ) : ViewModel() {
+
+    /**
+     * Whether to offer the "set your own nine" prompt.
+     *
+     * Anyone who signed up before the wheel moved into registration has a wheel made entirely of
+     * our predictions, and no reason to know that. This offers them the same nine questions once,
+     * so the numbers become theirs rather than ours.
+     *
+     * Shown only when nothing on the wheel is user-set, and never again once dismissed. A prompt
+     * that comes back is the furniture problem, and this one sits on top of the thing it is about.
+     */
+    private fun shouldPrompt(report: WheelReport): Boolean =
+        !settings.getBoolean(KEY_SETUP_PROMPT_DONE, false) &&
+            // An empty report is a wheel that has not been computed yet, not one full of guesses.
+            // Offering to correct nothing is the app talking to itself.
+            report.scores.isNotEmpty() &&
+            report.scores.none { it.source == ScoreSource.USER }
+
+    fun dismissSetupPrompt() {
+        settings.putBoolean(KEY_SETUP_PROMPT_DONE, true)
+        _state.value = _state.value.copy(showSetupPrompt = false)
+    }
+
+    /**
+     * Takes the whole set from the prompt at once, rather than one write per area, so the wheel
+     * does not animate through nine intermediate states on the way to the user's actual answer.
+     */
+    fun setScores(scores: Map<WheelArea, Double>) {
+        viewModelScope.launch {
+            scores.forEach { (area, score) -> repository.setScore(area, score, note = "Set from the wheel") }
+            settings.putBoolean(KEY_SETUP_PROMPT_DONE, true)
+            _state.value = _state.value.copy(showSetupPrompt = false)
+            repository.captureSnapshot()
+            loadComparison(_state.value.period)
+        }
+    }
 
     private val _state = MutableStateFlow(WheelUiState())
     val state: StateFlow<WheelUiState> = _state.asStateFlow()
@@ -55,6 +95,7 @@ class WheelViewModel(
                         isLoading = false,
                         error = null,
                         suggestion = suggestionFor(report),
+                        showSetupPrompt = shouldPrompt(report),
                     )
                 }
         }
@@ -114,5 +155,9 @@ class WheelViewModel(
             snapshotCount = count,
             comparisonLoading = false,
         )
+    }
+
+    private companion object {
+        const val KEY_SETUP_PROMPT_DONE = "wheel_setup_prompt_done"
     }
 }

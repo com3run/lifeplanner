@@ -90,6 +90,9 @@ fun WheelScreen(
                 snapshotCount = state.snapshotCount,
                 comparisonLoading = state.comparisonLoading,
                 onPeriodChange = viewModel::setPeriod,
+                showSetupPrompt = state.showSetupPrompt,
+                onSetupScores = viewModel::setScores,
+                onDismissSetupPrompt = viewModel::dismissSetupPrompt,
             )
         }
     }
@@ -109,7 +112,11 @@ private fun WheelContent(
     snapshotCount: Int,
     comparisonLoading: Boolean,
     onPeriodChange: (az.tribe.lifeplanner.domain.model.ComparisonPeriod) -> Unit,
+    showSetupPrompt: Boolean = false,
+    onSetupScores: (Map<WheelArea, Double>) -> Unit = {},
+    onDismissSetupPrompt: () -> Unit = {},
 ) {
+    var setupOpen by remember { mutableStateOf(false) }
     // Where the finger currently has a slice, before it is kept. The headline and the face read
     // from this so they move with the drag; nothing here reaches the database until release.
     var live by remember { mutableStateOf<Pair<WheelArea, Double>?>(null) }
@@ -131,6 +138,17 @@ private fun WheelContent(
         ),
         verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.md),
     ) {
+        // Above the wheel, because it is about the wheel: everything below it is our guess until
+        // the user says otherwise, and they cannot know that unless we say so.
+        if (showSetupPrompt) {
+            item(key = "setup_prompt") {
+                WheelSetupPromptCard(
+                    onStart = { setupOpen = true },
+                    onDismiss = onDismissSetupPrompt,
+                )
+            }
+        }
+
         item {
             WheelHeadline(shown)
         }
@@ -200,6 +218,16 @@ private fun WheelContent(
                 onClearScore = { onClearScore(score.area) },
             )
         }
+    }
+
+    if (setupOpen) {
+        WheelSetupSheet(
+            // Pre-filled with what we predicted, so the user is correcting a draft rather than
+            // starting from nine blanks.
+            initial = report.scores.filter { it.area.isWheelSegment }.associate { it.area to it.score },
+            onDone = { setupOpen = false; onSetupScores(it) },
+            onDismiss = { setupOpen = false },
+        )
     }
 }
 
