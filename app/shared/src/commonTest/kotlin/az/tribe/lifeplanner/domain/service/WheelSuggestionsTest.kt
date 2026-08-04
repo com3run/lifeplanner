@@ -165,6 +165,24 @@ class WheelSuggestionsTest {
     }
 
     @Test
+    fun `serious Mental always points at real help, whatever the day`() {
+        val everyRotation = (0..9).map {
+            WheelSuggestions.forArea(WheelArea.MENTAL, NudgeUrgency.SERIOUS, it)
+        }
+
+        // Every other set rotates so the wording stays readable over time. This one must not:
+        // whether someone in a bad stretch is told to get help should not depend on the date.
+        assertEquals(1, everyRotation.mapNotNull { it?.action }.toSet().size)
+        everyRotation.forEach {
+            val text = (it?.action.orEmpty() + " " + it?.because.orEmpty()).lowercase()
+            assertTrue(
+                listOf("doctor", "therapist").any { word -> text.contains(word) },
+                "serious Mental rotated onto something that does not point outward",
+            )
+        }
+    }
+
+    @Test
     fun `the serious copy does not ask for more than one small thing`() {
         val serious = WheelSuggestions.covered.flatMap { area ->
             (0..2).mapNotNull { WheelSuggestions.forArea(area, NudgeUrgency.SERIOUS, it) }

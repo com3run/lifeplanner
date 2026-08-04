@@ -546,13 +546,15 @@ object WheelSuggestions {
                 because = "Rest that is really deferred work does not do the job.",
             ),
         ),
+        // Deliberately a single entry, so rotation cannot move it. Everywhere else the wording
+        // changes day to day to stay readable, but this is the one line that points outside the
+        // app, and whether someone struggling sees it should not be a coin flip. A one-item list
+        // enforces that by construction rather than by a rule someone has to remember.
+        //
+        // It replaced "tell one person how bad it has actually been", which was good copy and is
+        // in the history if it is wanted back at a lower urgency. Two lines here would have meant
+        // this one showing half the time.
         NudgeUrgency.SERIOUS to listOf(
-            WheelSuggestion(
-                area = WheelArea.MENTAL,
-                urgency = NudgeUrgency.SERIOUS,
-                action = "Tell one person how bad it has actually been.",
-                because = "Not to fix it. So that one other person knows the real level.",
-            ),
             WheelSuggestion(
                 area = WheelArea.MENTAL,
                 urgency = NudgeUrgency.SERIOUS,
