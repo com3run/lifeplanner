@@ -24,7 +24,11 @@ object GoalJourneyNarrator {
         val isComplete: Boolean,
     )
 
-    fun narrate(goal: Goal): Journey {
+    /**
+     * @param isPractice the goal is kept through habits rather than finished through milestones.
+     *   A practice goal with no milestones is not missing a map, so it must not be told it is.
+     */
+    fun narrate(goal: Goal, isPractice: Boolean = false): Journey {
         val title = goal.title.trim().removeSuffix(".")
         val milestones = goal.milestones
         val total = milestones.size
@@ -46,11 +50,24 @@ object GoalJourneyNarrator {
                 isComplete = true,
             )
 
+            // A goal you keep. There is no map to draw because there is no destination to reach,
+            // and the old copy told these users to go sketch milestones they will never need.
+            total == 0 && isPractice -> Journey(
+                chapterLabel = "An ongoing chapter",
+                story = "\"$title\" is not a thing you finish. It is a thing you keep doing, and " +
+                    "the habits below are how it happens. There is nothing here to tick off, " +
+                    "which is exactly right.",
+                teaserLabel = null,
+                teaser = null,
+                isFinalStep = false,
+                isComplete = false,
+            )
+
             total == 0 -> Journey(
                 chapterLabel = "Chapter 1",
-                story = "You have named the destination: \"$title\". What this journey does not " +
-                    "have yet is a map. Sketch the first few milestones below and the story " +
-                    "will start telling itself.",
+                story = "You have named the destination: \"$title\". Where it goes next is open. " +
+                    "Add a few milestones when you know what they are, or leave it as an " +
+                    "intention and let it be one.",
                 teaserLabel = null,
                 teaser = null,
                 isFinalStep = false,

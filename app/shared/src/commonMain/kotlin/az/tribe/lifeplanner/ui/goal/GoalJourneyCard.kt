@@ -41,9 +41,11 @@ internal fun GoalJourneyCard(
     modifier: Modifier = Modifier,
     // Screens whose list already insets content pass 0.dp; the legacy screen relies on 16.dp.
     horizontalPadding: androidx.compose.ui.unit.Dp = 16.dp,
+    /** The goal is kept through habits, so it is not missing a milestone list. */
+    isPractice: Boolean = false,
 ) {
-    val journey = remember(goal.id, goal.status, goal.milestones) {
-        GoalJourneyNarrator.narrate(goal)
+    val journey = remember(goal.id, goal.status, goal.milestones, isPractice) {
+        GoalJourneyNarrator.narrate(goal, isPractice)
     }
     val accent = when {
         journey.isComplete -> MaterialTheme.colorScheme.tertiary

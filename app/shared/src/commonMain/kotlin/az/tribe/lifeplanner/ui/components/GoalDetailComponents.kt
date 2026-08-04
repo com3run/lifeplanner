@@ -24,6 +24,7 @@ import com.adamglin.phosphoricons.regular.CheckCircle
 import com.adamglin.phosphoricons.regular.Flag
 import com.adamglin.phosphoricons.regular.Hourglass
 import com.adamglin.phosphoricons.regular.Play
+import com.adamglin.phosphoricons.regular.Repeat
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -44,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import az.tribe.lifeplanner.domain.enum.GoalStatus
 import az.tribe.lifeplanner.domain.model.Goal
+import az.tribe.lifeplanner.domain.model.GoalPractice
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
 import az.tribe.lifeplanner.ui.theme.gradientColors
 import kotlin.time.Clock
@@ -58,6 +60,8 @@ import kotlinx.datetime.toLocalDateTime
 @Composable
 fun GoalDetailHeroHeader(
     goal: Goal,
+    /** Non-null when habits are linked, which makes this a practice rather than a checklist. */
+    practice: GoalPractice? = null,
     modifier: Modifier = Modifier
 ) {
     val gradientColors = goal.category.gradientColors()
@@ -183,11 +187,22 @@ fun GoalDetailHeroHeader(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                HeroStatItem(
-                    icon = PhosphorIcons.Regular.Flag,
-                    value = "${goal.milestones.count { it.isCompleted }}/${goal.milestones.size}",
-                    label = "Milestones"
-                )
+                // A goal is allowed to have no milestones. Showing "0/0 Milestones" under the title
+                // reports an absence as a shortfall, and a practice goal never has any by design.
+                if (practice != null) {
+                    HeroStatItem(
+                        icon = PhosphorIcons.Regular.Repeat,
+                        value = if (practice.isEstablished) "${practice.dayNumber}"
+                        else "${practice.dayNumber}/${practice.windowDays}",
+                        label = if (practice.isEstablished) "Days in" else "Day"
+                    )
+                } else if (goal.milestones.isNotEmpty()) {
+                    HeroStatItem(
+                        icon = PhosphorIcons.Regular.Flag,
+                        value = "${goal.milestones.count { it.isCompleted }}/${goal.milestones.size}",
+                        label = "Milestones"
+                    )
+                }
                 HeroStatItem(
                     icon = PhosphorIcons.Regular.CalendarBlank,
                     value = formatShortDate(goal.dueDate),

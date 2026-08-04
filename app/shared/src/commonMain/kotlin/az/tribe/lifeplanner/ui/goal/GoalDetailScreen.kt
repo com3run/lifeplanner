@@ -49,6 +49,8 @@ import az.tribe.lifeplanner.data.analytics.Analytics
 import az.tribe.lifeplanner.domain.enum.GoalStatus
 import az.tribe.lifeplanner.domain.model.Ability
 import az.tribe.lifeplanner.domain.model.CoachPersona
+import az.tribe.lifeplanner.domain.model.GoalPractice
+import az.tribe.lifeplanner.domain.model.PracticeWindow
 import az.tribe.lifeplanner.domain.model.JournalEntry
 import az.tribe.lifeplanner.domain.repository.AbilityRepository
 import az.tribe.lifeplanner.domain.repository.JournalRepository
@@ -73,7 +75,10 @@ import az.tribe.lifeplanner.ui.goal.GoalDescriptionCard
 import az.tribe.lifeplanner.ui.goal.PoweredByAbilitiesCard
 import az.tribe.lifeplanner.ui.goal.ReflectionsCard
 import az.tribe.lifeplanner.ui.theme.gradientColors
+import kotlin.time.Clock
 import kotlinx.coroutines.launch
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -84,6 +89,7 @@ fun GoalDetailScreen(
     dependencyViewModel: GoalDependencyViewModel = koinInject(),
     journalRepository: JournalRepository = koinInject(),
     abilityRepository: AbilityRepository = koinInject(),
+    habitRepository: az.tribe.lifeplanner.domain.repository.HabitRepository = koinInject(),
     onBackClick: () -> Unit,
     onEditClick: () -> Unit,
     onViewDependencyGraph: (String) -> Unit = {},
@@ -93,6 +99,7 @@ fun GoalDetailScreen(
     onCoachClick: (String) -> Unit = {},
     onAbilityClick: (String) -> Unit = {},
     onExplorePossibilities: (String) -> Unit = {},
+    onHabitClick: (String) -> Unit = {},
 ) {
     val goals by viewModel.goals.collectAsState()
     val goal = goals.find { it.id == goalId }
@@ -101,6 +108,9 @@ fun GoalDetailScreen(
 
     var journalEntries by remember { mutableStateOf<List<JournalEntry>>(emptyList()) }
     var poweredByAbilities by remember { mutableStateOf<List<Ability>>(emptyList()) }
+    // Habits linked to this goal make it a practice rather than a checklist. Null until loaded and
+    // whenever nothing is linked, which is the ordinary case.
+    var practice by remember(goalId) { mutableStateOf<GoalPractice?>(null) }
     val coroutineScope = rememberCoroutineScope()
 
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -136,6 +146,10 @@ fun GoalDetailScreen(
         coroutineScope.launch {
             val links = abilityRepository.getAbilityLinksForGoal(goalId)
             poweredByAbilities = links.mapNotNull { abilityRepository.getAbilityById(it.abilityId) }
+        }
+        coroutineScope.launch {
+            val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+            practice = PracticeWindow.of(habitRepository.getHabitsByGoalId(goalId), today)
         }
     }
 
@@ -267,7 +281,8 @@ fun GoalDetailScreen(
             item {
                 GoalDetailHeroHeader(
                     modifier = Modifier,
-                    goal = goal
+                    goal = goal,
+                    practice = practice,
                 )
             }
 
@@ -309,7 +324,7 @@ fun GoalDetailScreen(
 
             // Goal as a journal: local narrative of where the user is on this journey.
             item {
-                GoalJourneyCard(goal = goal)
+                GoalJourneyCard(goal = goal, isPractice = practice != null)
             }
 
             // Pillar 1: Why-Chain (value → goal → milestones) + orphan nudge
@@ -329,6 +344,18 @@ fun GoalDetailScreen(
                 }
             }
 
+
+            // A goal with habits linked to it is kept, not completed, so the practice leads and the
+            // milestone list (if there even is one) becomes a detail below it.
+            practice?.let { p ->
+                item(key = "practice") {
+                    GoalPracticeCard(
+                        practice = p,
+                        onHabitClick = onHabitClick,
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                    )
+                }
+            }
 
             // Milestones and the coach's draft of what to add next are one section, not two.
             // Editing a plan beats inventing one, so the draft is always available on a live goal —
@@ -356,8 +383,10 @@ fun GoalDetailScreen(
                         },
                     )
                 }
-            } else if (!isCompleted) {
-                // No list to sit under yet, so the draft is the section.
+            } else if (!isCompleted && practice == null) {
+                // No list to sit under yet, so the draft is the section — but only for a goal that
+                // is actually a checklist. A practice goal with no milestones is not missing
+                // anything, and offering to draft some is the app inventing a problem.
                 item(key = "coach_milestones") {
                     CoachMilestonesCard(
                         goalTitle = goal.title,

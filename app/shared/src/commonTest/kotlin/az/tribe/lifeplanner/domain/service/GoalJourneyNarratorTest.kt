@@ -16,12 +16,27 @@ class GoalJourneyNarratorTest {
     }
 
     @Test
-    fun noMilestonesAsksForAMap() {
+    fun noMilestonesInvitesWithoutDemanding() {
         val j = GoalJourneyNarrator.narrate(testGoal(milestones = emptyList()))
         assertEquals("Chapter 1", j.chapterLabel)
         assertNull(j.teaser)
         assertFalse(j.isComplete)
-        assertTrue("map" in j.story)
+        // A goal without milestones is allowed to stay that way. The copy offers them as an option
+        // ("when you know what they are") rather than describing the goal as missing a map.
+        assertTrue("milestones" in j.story)
+        assertFalse("does not" in j.story)
+    }
+
+    @Test
+    fun aPracticeGoalIsNeverToldItIsMissingSomething() {
+        val j = GoalJourneyNarrator.narrate(testGoal(milestones = emptyList()), isPractice = true)
+
+        assertNull(j.teaser)
+        assertFalse(j.isComplete)
+        // The habits are the goal. Telling this user to go add milestones invents a problem: there
+        // is nothing to tick off and that is the correct shape for the goal, not a gap in it.
+        assertFalse("milestone" in j.story.lowercase())
+        assertTrue("keep doing" in j.story)
     }
 
     @Test
