@@ -68,6 +68,9 @@ internal fun NavGraphBuilder.appNavGoals(
                     launchSingleTop = true
                 }
             },
+            onExplorePossibilities = { id ->
+                navController.navigate("possibility_mode/$id") { launchSingleTop = true }
+            },
             onNavigateToJournal = { entryId ->
                 navController.navigate("journal_entry_detail/$entryId") {
                     launchSingleTop = true

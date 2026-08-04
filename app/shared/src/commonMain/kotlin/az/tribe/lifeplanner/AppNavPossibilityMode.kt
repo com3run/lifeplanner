@@ -20,7 +20,7 @@ internal fun NavGraphBuilder.appNavPossibilityMode(navController: NavController)
             goalId = goalId,
             onBackClick = { navController.popBackStack() },
             onOpenGoal = { id ->
-                navController.navigate("goal_detail_redesign/$id") {
+                navController.navigate("goal_detail/$id") {
                     popUpTo(Screen.PossibilityMode.route) { inclusive = true }
                     launchSingleTop = true
                 }

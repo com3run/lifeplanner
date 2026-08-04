@@ -239,7 +239,7 @@ fun ForYouScreen(
                     PlanRow(
                         item = p,
                         onComplete = { viewModel.completePlanItem(p.milestoneId) },
-                        onOpen = { onOpenRoute("goal_detail_redesign/${p.goalId}") },
+                        onOpen = { onOpenRoute("goal_detail/${p.goalId}") },
                     )
                 }
             }

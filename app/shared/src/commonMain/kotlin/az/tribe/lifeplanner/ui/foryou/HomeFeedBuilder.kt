@@ -106,9 +106,9 @@ class HomeFeedBuilder(
                     actionHabitId = if (o.type == ActionOptionType.HABIT) o.refId else null,
                     route = when (o.type) {
                         ActionOptionType.HABIT -> "habit_detail_redesign/${o.refId}"
-                        ActionOptionType.GOAL -> "goal_detail_redesign/${o.refId}"
+                        ActionOptionType.GOAL -> "goal_detail/${o.refId}"
                         ActionOptionType.MILESTONE, ActionOptionType.FOCUS ->
-                            o.goalId?.let { "goal_detail_redesign/$it" }
+                            o.goalId?.let { "goal_detail/$it" }
                     },
                     score = 100.0 - i,
                 )
@@ -279,7 +279,7 @@ class HomeFeedBuilder(
                 eyebrow = "YOUR WHY",
                 title = "What is \"${orphan.title}\" really for?",
                 body = "Connect it to something you value. Goals with a why are the ones you finish.",
-                route = "goal_detail_redesign/${orphan.id}",
+                route = "goal_detail/${orphan.id}",
                 score = 86.0,
             )
         } else {
@@ -295,7 +295,7 @@ class HomeFeedBuilder(
                         title = "\"${linked.title}\" is for \"$valueTitle\"",
                         body = "That is the why behind this one. Your coach knows this ground, " +
                             "the goal page connects you.",
-                        route = "goal_detail_redesign/${linked.id}",
+                        route = "goal_detail/${linked.id}",
                         score = 74.0,
                     )
                 }

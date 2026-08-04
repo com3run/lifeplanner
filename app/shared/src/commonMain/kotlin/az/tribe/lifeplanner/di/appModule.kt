@@ -452,7 +452,6 @@ val appModule = module {
     single { az.tribe.lifeplanner.usecases.GeneratePossibilitiesUseCase(get(), az.tribe.lifeplanner.domain.service.LocalPossibilityFallback()) }
     viewModel { params -> az.tribe.lifeplanner.ui.possibility.PossibilityModeViewModel(params.get(), get(), get(), get(), get()) }
     viewModel { az.tribe.lifeplanner.ui.goals.GoalsViewModel(get()) }
-    viewModel { params -> az.tribe.lifeplanner.ui.goals.GoalDetailViewModel(params.get(), get(), get()) }
     viewModel { params -> az.tribe.lifeplanner.ui.habit.HabitDetailViewModel(params.get(), get(), get(), get(), get(), get(), get()) }
     viewModelOf(::RetrospectiveViewModel)
     viewModelOf(::BeginnerObjectiveViewModel)

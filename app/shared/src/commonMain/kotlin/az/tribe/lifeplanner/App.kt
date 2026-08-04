@@ -646,7 +646,6 @@ fun App(
                         appNavForYou(navController = navController, onOpenWeather = { weatherDetail = it })
                         if (FeatureFlags.PILLAR_POSSIBILITY) appNavPossibilityMode(navController = navController)
                         appNavGoalsRedesign(navController = navController)
-                        appNavGoalDetailRedesign(navController = navController)
                         appNavYouRedesign(navController = navController)
                         appNavOnboardingRedesign(navController = navController, homeRoute = homeRoute)
                         appNavCoach(navController = navController)

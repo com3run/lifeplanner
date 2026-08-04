@@ -7,7 +7,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.fillMaxWidth
+import com.adamglin.phosphoricons.regular.Sparkle
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.ArrowLeft
@@ -28,6 +33,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -36,8 +42,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.lerp
 import az.tribe.lifeplanner.data.analytics.Analytics
 import az.tribe.lifeplanner.domain.enum.GoalStatus
 import az.tribe.lifeplanner.domain.model.Ability
@@ -46,6 +53,9 @@ import az.tribe.lifeplanner.domain.model.JournalEntry
 import az.tribe.lifeplanner.domain.repository.AbilityRepository
 import az.tribe.lifeplanner.domain.repository.JournalRepository
 import az.tribe.lifeplanner.ui.components.AddDependencyBottomSheet
+import az.tribe.lifeplanner.core.FeatureFlags
+import az.tribe.lifeplanner.ui.components.AppButton
+import az.tribe.lifeplanner.ui.components.AppButtonVariant
 import az.tribe.lifeplanner.ui.components.CelebrationOverlay
 import az.tribe.lifeplanner.ui.components.CelebrationType
 import az.tribe.lifeplanner.ui.components.DependenciesCard
@@ -81,7 +91,8 @@ fun GoalDetailScreen(
     onNavigateToJournal: (String) -> Unit = {},
     onReflectOnGoal: (String) -> Unit = {},
     onCoachClick: (String) -> Unit = {},
-    onAbilityClick: (String) -> Unit = {}
+    onAbilityClick: (String) -> Unit = {},
+    onExplorePossibilities: (String) -> Unit = {},
 ) {
     val goals by viewModel.goals.collectAsState()
     val goal = goals.find { it.id == goalId }
@@ -102,8 +113,6 @@ fun GoalDetailScreen(
     var showAddDependencySheet by remember { mutableStateOf(false) }
     var showOverflowMenu by remember { mutableStateOf(false) }
     var showValueSheet by remember { mutableStateOf(false) }
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
-
     val promptCompleteGoalId by viewModel.promptCompleteGoal.collectAsState()
     LaunchedEffect(promptCompleteGoalId) {
         if (promptCompleteGoalId == goalId) {
@@ -140,10 +149,39 @@ fun GoalDetailScreen(
     val primaryColor = goal.category.backgroundColor()
     val gradientColors = goal.category.gradientColors()
 
+    val listState = rememberLazyListState()
+    // How far the bar has travelled off the hero and onto the page: 0 while it still sits on the
+    // gradient, 1 once the page is what is behind it.
+    //
+    // Driven by the list rather than a collapsing-bar behaviour on purpose. This is a small
+    // TopAppBar, and exitUntilCollapsed does not collapse one — it slides the whole bar away, which
+    // took Back and the overflow menu off screen with it and meant the colour never crossed
+    // anywhere the user could see. Pinned bar, colour on a scroll fraction.
+    val density = LocalDensity.current
+    val barHeightPx = with(density) { 64.dp.toPx() } +
+        WindowInsets.statusBars.getTop(density)
+    val fadeDistancePx = with(density) { 72.dp.toPx() }
+    val barFraction by remember(barHeightPx, fadeDistancePx) {
+        derivedStateOf {
+            // Measured against the hero's bottom edge rather than raw scroll distance. Fading on
+            // distance alone turned the bar dark while the gradient was still filling the screen
+            // behind it, which just moved the seam rather than removing it.
+            val hero = listState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == 0 }
+                // Hero scrolled out of the list entirely: nothing left to blend with.
+                ?: return@derivedStateOf 1f
+            val gradientUnderBar = (hero.offset + hero.size) - barHeightPx
+            1f - (gradientUnderBar / fadeDistancePx).coerceIn(0f, 1f)
+        }
+    }
+    // White reads on every category gradient and disappears against the page, so the icons have to
+    // cross with the bar behind them.
+    val barIconColor = lerp(Color.White, MaterialTheme.colorScheme.onSurface, barFraction)
+    val barContainerColor =
+        lerp(gradientColors.first(), MaterialTheme.colorScheme.background, barFraction)
+
     Scaffold(
         topBar = {
             TopAppBar(
-                scrollBehavior = scrollBehavior,
                 title = {
                     Box {}
                 },
@@ -151,7 +189,8 @@ fun GoalDetailScreen(
                     IconButton(onClick = onBackClick) {
                         Icon(
                             PhosphorIcons.Regular.ArrowLeft,
-                            contentDescription = "Back"
+                            contentDescription = "Back",
+                            tint = barIconColor,
                         )
                     }
                 },
@@ -160,7 +199,8 @@ fun GoalDetailScreen(
                         IconButton(onClick = { showOverflowMenu = true }) {
                             Icon(
                                 PhosphorIcons.Regular.DotsThreeVertical,
-                                contentDescription = "More options"
+                                contentDescription = "More options",
+                                tint = barIconColor,
                             )
                         }
                         DropdownMenu(
@@ -202,20 +242,24 @@ fun GoalDetailScreen(
                         }
                     }
                 },
+                // The bar starts as the hero's own colour and ends as the page's. Both were the
+                // gradient before, so scrolling left a slab of category red pinned above a dark
+                // screen with nothing below it to belong to. scrolledContainerColor is not used
+                // here because it only applies with a scroll behaviour attached, and this bar has
+                // none — barContainerColor is already the blended value.
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = gradientColors.first(),
-                    scrolledContainerColor = gradientColors.first(),
-                    navigationIconContentColor = Color.White,
-                    titleContentColor = Color.White,
-                    actionIconContentColor = Color.White
+                    containerColor = barContainerColor,
+                    navigationIconContentColor = barIconColor,
+                    titleContentColor = barIconColor,
+                    actionIconContentColor = barIconColor,
                 )
             )
         },
     ) { innerPadding ->
         LazyColumn(
+            state = listState,
             modifier = Modifier
                 .background(color = MaterialTheme.colorScheme.background)
-                .nestedScroll(scrollBehavior.nestedScrollConnection)
                 .fillMaxSize(),
             contentPadding = innerPadding,
             verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -310,6 +354,20 @@ fun GoalDetailScreen(
                         existingTitles = goal.milestones.map { it.title },
                         onAdd = { title -> viewModel.addMilestone(goalId, title) },
                         modifier = Modifier.padding(horizontal = 16.dp),
+                    )
+                }
+            }
+
+            // Pillar 6: the divergent way out when an in-progress goal stalls. Ported from the
+            // redesign screen when the two goal details were merged.
+            if (FeatureFlags.PILLAR_POSSIBILITY && !isCompleted) {
+                item {
+                    AppButton(
+                        text = "Feeling stuck? Explore possibilities",
+                        onClick = { onExplorePossibilities(goalId) },
+                        variant = AppButtonVariant.PRIMARY,
+                        leadingIcon = PhosphorIcons.Regular.Sparkle,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     )
                 }
             }
