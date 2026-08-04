@@ -146,7 +146,18 @@ private fun WheelContent(
                     onSetScore(area, value)
                     live = null
                 },
+                onScoreDragCancel = { live = null },
                 modifier = Modifier.padding(vertical = LifePlannerDesign.Spacing.xs),
+            )
+        }
+
+        item {
+            // A long press is not something anyone discovers by accident, and the wheel looks
+            // touchable, so the instruction has to be on screen rather than waiting to be found.
+            Text(
+                text = "Tap an area to score it, or press and hold a slice and drag.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 

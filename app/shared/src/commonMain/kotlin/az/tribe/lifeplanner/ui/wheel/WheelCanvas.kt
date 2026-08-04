@@ -1,7 +1,7 @@
 package az.tribe.lifeplanner.ui.wheel
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -53,6 +54,12 @@ fun WheelCanvas(
     /** Fires once on release, with the value to keep. */
     onScoreCommit: ((WheelArea, Double) -> Unit)? = null,
     /**
+     * Fires when a drag is abandoned rather than released: a system gesture taking over, the app
+     * backgrounding, the pointer being cancelled. Without it the live value stays on screen and the
+     * wheel shows a number the user never chose and cannot get rid of.
+     */
+    onScoreDragCancel: (() -> Unit)? = null,
+    /**
      * Drops the labels and numbers. Below roughly 160dp there is no room for nine labels around a
      * circle: they overlap each other and spill past the wheel into whatever sits beside it. The
      * shape still reads at that size, which is the part worth keeping on a feed.
@@ -75,6 +82,16 @@ fun WheelCanvas(
     var dragging by remember { mutableStateOf<WheelArea?>(null) }
     var dragScore by remember { mutableStateOf(0.0) }
 
+    // Held via rememberUpdatedState so the pointerInput below can key on something stable.
+    // Keying it on the callbacks themselves looked harmless and was not: they are fresh lambdas
+    // on every recomposition, onScoreDrag causes a recomposition on every frame of a drag, so the
+    // gesture detector was torn down and restarted continuously and onDragEnd never arrived. The
+    // wheel moved under the finger and then discarded the value.
+    val currentDrag by rememberUpdatedState(onScoreDrag)
+    val currentCommit by rememberUpdatedState(onScoreCommit)
+    val currentCancel by rememberUpdatedState(onScoreDragCancel)
+    val canAdjust = onScoreCommit != null
+
     Box(modifier = modifier.fillMaxWidth().aspectRatio(1f)) {
         Canvas(
             modifier = Modifier.fillMaxWidth().aspectRatio(1f)
@@ -84,9 +101,15 @@ fun WheelCanvas(
                             ?.let { onAreaTap(segments[it].area) }
                     }
                 }
-                .pointerInput(segments, onScoreCommit) {
-                    if (onScoreCommit == null) return@pointerInput
-                    detectDragGestures(
+                .pointerInput(segments, canAdjust) {
+                    if (!canAdjust) return@pointerInput
+                    // After a long press, not on plain drag. The wheel lives inside a LazyColumn,
+                    // and Compose gives a gesture to whoever claims the pointer first: the scroll
+                    // container wins on touch slop every time, so a plain drag detector here never
+                    // fired at all. The wheel looked adjustable and silently was not. Waiting for
+                    // the long press resolves the contest before the scroll can take it, and keeps
+                    // dragging past the wheel working as scrolling.
+                    detectDragGesturesAfterLongPress(
                         onDragStart = { start ->
                             // The slice is chosen once, at the start. Tracking the angle during the
                             // drag would hand the score to whichever slice the finger wandered over.
@@ -94,19 +117,22 @@ fun WheelCanvas(
                                 ?.let { segments[it].area }
                             dragging?.let {
                                 dragScore = scoreAt(start, size.width.toFloat(), size.height.toFloat())
-                                onScoreDrag?.invoke(it, dragScore)
+                                currentDrag?.invoke(it, dragScore)
                             }
                         },
                         onDragEnd = {
-                            dragging?.let { onScoreCommit(it, dragScore) }
+                            dragging?.let { currentCommit?.invoke(it, dragScore) }
                             dragging = null
                         },
-                        onDragCancel = { dragging = null },
+                        onDragCancel = {
+                            dragging = null
+                            currentCancel?.invoke()
+                        },
                     ) { change, _ ->
                         dragging?.let { area ->
                             change.consume()
                             dragScore = scoreAt(change.position, size.width.toFloat(), size.height.toFloat())
-                            onScoreDrag?.invoke(area, dragScore)
+                            currentDrag?.invoke(area, dragScore)
                         }
                     }
                 }
