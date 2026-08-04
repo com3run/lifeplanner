@@ -58,6 +58,15 @@ data class WheelComparison(
     val previousDate: LocalDate,
     val currentDate: LocalDate,
     val deltas: List<WheelDelta>,
+    /**
+     * Areas with a score now that had none then.
+     *
+     * Deliberately not deltas: a first-ever score is not a gain, and counting it as one would
+     * invent a trend out of the user answering a question. But they cannot be silent either.
+     * Score three areas for the first time and a comparison built only from deltas reports the
+     * wheel as unchanged, which reads as the feature being broken rather than as it being careful.
+     */
+    val newlyScored: List<WheelArea> = emptyList(),
 ) {
     /** Biggest gains first. */
     val risen: List<WheelDelta> get() = deltas.filter { it.rose }.sortedByDescending { it.change }
@@ -78,6 +87,13 @@ data class WheelComparison(
         get() = deltas.maxByOrNull { kotlin.math.abs(it.change) }?.takeIf { it.change != 0.0 }
 
     val hasMovement: Boolean get() = deltas.any { it.change != 0.0 }
+
+    /** True when there is anything at all to report, movement or a first score. */
+    val hasSomethingToSay: Boolean get() = hasMovement || newlyScored.isNotEmpty()
+
+    /** The previous wheel, for drawing over the current one. Only areas that actually moved. */
+    val movedFrom: Map<WheelArea, Double>
+        get() = deltas.filter { it.change != 0.0 }.associate { it.area to it.from }
 }
 
 /**
@@ -97,4 +113,5 @@ fun compareWheels(
         val to = current.scores[area] ?: return@mapNotNull null
         WheelDelta(area, from, to)
     },
+    newlyScored = WheelArea.sorted().filter { it in current.scores && it !in previous.scores },
 )

@@ -25,6 +25,7 @@ import az.tribe.lifeplanner.domain.model.ComparisonPeriod
 import az.tribe.lifeplanner.domain.model.WheelComparison
 import az.tribe.lifeplanner.domain.model.WheelDelta
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
+import kotlinx.datetime.LocalDate
 
 /**
  * What moved since a past wheel.
@@ -84,8 +85,8 @@ fun WheelHistoryCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 
-                !comparison.hasMovement -> Text(
-                    text = "Nothing moved ${option(period)}. Measured against ${comparison.previousDate}.",
+                !comparison.hasSomethingToSay -> Text(
+                    text = "Nothing moved ${option(period)}. Measured against ${humanDate(comparison.previousDate, comparison.currentDate)}.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -98,10 +99,11 @@ fun WheelHistoryCard(
                                 when {
                                     overall > 0 -> "Your wheel is up ${formatScore(overall)}"
                                     overall < 0 -> "Your wheel is down ${formatScore(-overall)}"
+                                    !comparison.hasMovement -> "Nothing scored before has moved"
                                     else -> "Your wheel is level overall"
                                 }
                             )
-                            append(", measured against ${comparison.previousDate}.")
+                            append(", measured against ${humanDate(comparison.previousDate, comparison.currentDate)}.")
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface,
@@ -109,6 +111,21 @@ fun WheelHistoryCard(
 
                     comparison.risen.forEach { DeltaRow(it) }
                     comparison.fallen.forEach { DeltaRow(it) }
+
+                    // Named rather than counted. A first score is not a gain, but staying silent
+                    // about it reports "nothing moved" at someone who just filled in three areas.
+                    if (comparison.newlyScored.isNotEmpty()) {
+                        Text(
+                            text = comparison.newlyScored.joinToString(", ") { it.displayName }
+                                .let { names ->
+                                    val n = comparison.newlyScored.size
+                                    "$n ${if (n == 1) "area" else "areas"} scored for the first " +
+                                        "time: $names. Not counted as a gain."
+                                },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
         }
@@ -146,6 +163,24 @@ private fun DeltaRow(delta: WheelDelta) {
 }
 
 private fun option(period: ComparisonPeriod) = period.displayName
+
+/**
+ * "yesterday" / "Mon, Aug 3", matching how the rest of the app writes dates (JournalScreen,
+ * CalendarUpcomingCard). An ISO string is precise and unreadable, and this is a sentence the user
+ * reads rather than a field they parse.
+ */
+private fun humanDate(date: LocalDate, today: LocalDate): String {
+    val daysAgo = today.toEpochDays() - date.toEpochDays()
+    return when (daysAgo) {
+        0L -> "today"
+        1L -> "yesterday"
+        else -> {
+            val dow = date.dayOfWeek.name.take(3).lowercase().replaceFirstChar { it.uppercase() }
+            val mon = date.month.name.take(3).lowercase().replaceFirstChar { it.uppercase() }
+            "$dow, $mon ${date.day}"
+        }
+    }
+}
 
 private fun dayWord(count: Int) = if (count == 1) "day" else "days"
 

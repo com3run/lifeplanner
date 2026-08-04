@@ -65,6 +65,45 @@ class WheelHistoryTest {
     }
 
     @Test
+    fun `an area scored for the first time is named, not counted as a gain`() {
+        val before = snapshot(weekBefore, WheelArea.PHYSICAL to 6.0)
+        val now = snapshot(
+            monday,
+            WheelArea.PHYSICAL to 6.0,
+            WheelArea.ROMANCE to 8.0,
+            WheelArea.MISSION to 7.0,
+        )
+
+        val comparison = compareWheels(ComparisonPeriod.WEEK, before, now)
+
+        // Not gains: scoring an area for the first time is not the same as improving it.
+        assertTrue(comparison.risen.isEmpty())
+        assertEquals(0.0, comparison.overallChange)
+        // But not silent either. Without this the card reports "nothing moved" at someone who
+        // just filled in two areas, and reads as broken rather than careful.
+        assertEquals(listOf(WheelArea.MISSION, WheelArea.ROMANCE), comparison.newlyScored)
+        assertTrue(comparison.hasSomethingToSay)
+        assertTrue(!comparison.hasMovement)
+    }
+
+    @Test
+    fun `only areas that actually moved are offered for drawing over the wheel`() {
+        val before = snapshot(weekBefore, WheelArea.PHYSICAL to 4.0, WheelArea.MONEY to 7.0)
+        val now = snapshot(
+            monday,
+            WheelArea.PHYSICAL to 7.0,
+            WheelArea.MONEY to 7.0,
+            WheelArea.ROMANCE to 8.0,
+        )
+
+        val moved = compareWheels(ComparisonPeriod.WEEK, before, now).movedFrom
+
+        // Money did not move, so a ghost of it would be noise sitting exactly under the fill.
+        // Romance has no previous value at all, so there is no ghost to draw.
+        assertEquals(mapOf(WheelArea.PHYSICAL to 4.0), moved)
+    }
+
+    @Test
     fun `an area missing from either side is skipped, not treated as a fall to zero`() {
         val before = snapshot(weekBefore, WheelArea.PHYSICAL to 6.0)
         val now = snapshot(monday, WheelArea.PHYSICAL to 7.0, WheelArea.ROMANCE to 8.0)

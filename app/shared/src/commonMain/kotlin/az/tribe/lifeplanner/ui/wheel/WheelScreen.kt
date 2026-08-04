@@ -138,6 +138,9 @@ private fun WheelContent(
                 scores = shown.scores,
                 onAreaTap = onSelect,
                 selected = selected,
+                // Dropped while dragging: a ghost of last week beside a slice following your
+                // finger reads as two live values fighting rather than as then-and-now.
+                ghost = if (live == null) comparison?.movedFrom.orEmpty() else emptyMap(),
                 onScoreDrag = { area, value -> live = area to value },
                 onScoreCommit = { area, value ->
                     onSetScore(area, value)

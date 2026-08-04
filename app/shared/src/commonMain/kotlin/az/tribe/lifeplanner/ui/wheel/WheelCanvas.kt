@@ -58,6 +58,13 @@ fun WheelCanvas(
      * shape still reads at that size, which is the part worth keeping on a feed.
      */
     compact: Boolean = false,
+    /**
+     * Where the moved areas stood at the comparison date, drawn as a dashed arc over the current
+     * fill. Change on a wheel is a change of shape, so showing the old edge says it in one look
+     * where a list of numbers needs reading. Only areas that actually moved belong here; a ghost
+     * sitting exactly under the fill is noise.
+     */
+    ghost: Map<WheelArea, Double> = emptyMap(),
 ) {
     val segments = remember(scores) { scores.filter { it.area.isWheelSegment }.sortedBy { it.area.order } }
     val measurer = rememberTextMeasurer()
@@ -105,7 +112,7 @@ fun WheelCanvas(
                 }
         ) {
             if (segments.isEmpty()) return@Canvas
-            drawWheel(segments, measurer, selected, compact)
+            drawWheel(segments, measurer, selected, compact, ghost)
         }
     }
 }
@@ -146,6 +153,7 @@ private fun DrawScope.drawWheel(
     measurer: TextMeasurer,
     selected: WheelArea?,
     compact: Boolean,
+    ghost: Map<WheelArea, Double>,
 ) {
     val cx = size.width / 2f
     val cy = size.height / 2f
@@ -185,6 +193,55 @@ private fun DrawScope.drawWheel(
                 topLeft = Offset(cx - sliceRadius, cy - sliceRadius),
                 size = Size(sliceRadius * 2, sliceRadius * 2),
             )
+        }
+
+        // Where the slice used to reach, always drawn as the muted region so "then" reads the
+        // same way in both directions.
+        //
+        // A rise and a drop need opposite treatments, which is not obvious until you see it fail.
+        // A drop leaves its old extent outside the fill, sitting on the dark background, so a
+        // translucent tint of the area colour reads fine. A rise leaves its old extent *inside*
+        // the fill, and a translucent tint of the same colour over that same colour is simply that
+        // colour: the first attempt drew it and it was perfectly invisible. So a rise darkens
+        // instead, and the old core shows through the brighter fill.
+        ghost[score.area]?.let { previous ->
+            val previousRadius = rim * (previous / 10.0).toFloat().coerceIn(0f, 1f)
+            val grew = previousRadius < sliceRadius
+            if (kotlin.math.abs(previousRadius - sliceRadius) > 1f) {
+                if (grew) {
+                    drawArc(
+                        color = Color.Black.copy(alpha = 0.32f),
+                        startAngle = start,
+                        sweepAngle = sweep - SliceGap,
+                        useCenter = true,
+                        topLeft = Offset(cx - previousRadius, cy - previousRadius),
+                        size = Size(previousRadius * 2, previousRadius * 2),
+                    )
+                } else {
+                    // An annulus sector: Canvas has no ring primitive, so stroking the mid-radius
+                    // with a width equal to the gap fills exactly the region between the two.
+                    val midRadius = (sliceRadius + previousRadius) / 2f
+                    drawArc(
+                        color = color.copy(alpha = 0.30f),
+                        startAngle = start,
+                        sweepAngle = sweep - SliceGap,
+                        useCenter = false,
+                        topLeft = Offset(cx - midRadius, cy - midRadius),
+                        size = Size(midRadius * 2, midRadius * 2),
+                        style = Stroke(width = previousRadius - sliceRadius),
+                    )
+                }
+                // The old edge itself, so where it stood stays legible when the gap is thin.
+                drawArc(
+                    color = color.copy(alpha = 0.85f),
+                    startAngle = start,
+                    sweepAngle = sweep - SliceGap,
+                    useCenter = false,
+                    topLeft = Offset(cx - previousRadius, cy - previousRadius),
+                    size = Size(previousRadius * 2, previousRadius * 2),
+                    style = Stroke(width = 1.5f),
+                )
+            }
         }
 
         if (score.area == selected) {
