@@ -2,7 +2,9 @@ package az.tribe.lifeplanner.ui.wheel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import az.tribe.lifeplanner.domain.model.ComparisonPeriod
 import az.tribe.lifeplanner.domain.model.WheelArea
+import az.tribe.lifeplanner.domain.model.WheelComparison
 import az.tribe.lifeplanner.domain.model.WheelReport
 import az.tribe.lifeplanner.domain.repository.WheelRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,6 +18,15 @@ data class WheelUiState(
     val selected: WheelArea? = null,
     val isLoading: Boolean = true,
     val error: String? = null,
+    val period: ComparisonPeriod = ComparisonPeriod.WEEK,
+    val comparison: WheelComparison? = null,
+    /**
+     * How many days we have on record. Distinguishes "nothing to compare against yet" from
+     * "compared, and nothing moved" — the same empty list on screen, but a very different thing
+     * to tell the user.
+     */
+    val snapshotCount: Int = 0,
+    val comparisonLoading: Boolean = false,
 )
 
 class WheelViewModel(
@@ -26,9 +37,13 @@ class WheelViewModel(
     val state: StateFlow<WheelUiState> = _state.asStateFlow()
 
     init {
-        // Capture on open. A past wheel cannot be recomputed, so a day the user opens the screen
-        // and we fail to record is a day of history gone for good.
-        viewModelScope.launch { repository.captureSnapshot() }
+        // Capture on open, and before the first comparison, so today is on record. A past wheel
+        // cannot be recomputed, so a day the user opens the screen and we fail to record is a day
+        // of history gone for good.
+        viewModelScope.launch {
+            repository.captureSnapshot()
+            loadComparison(_state.value.period)
+        }
 
         viewModelScope.launch {
             repository.observeWheel()
@@ -47,11 +62,37 @@ class WheelViewModel(
     }
 
     fun setScore(area: WheelArea, score: Double) {
-        viewModelScope.launch { repository.setScore(area, score) }
+        viewModelScope.launch {
+            repository.setScore(area, score)
+            // Today's snapshot is now out of date, and the comparison is measured against it.
+            repository.captureSnapshot()
+            loadComparison(_state.value.period)
+        }
     }
 
     /** Hands the area back to the predictor. */
     fun clearScore(area: WheelArea) {
-        viewModelScope.launch { repository.clearScore(area) }
+        viewModelScope.launch {
+            repository.clearScore(area)
+            repository.captureSnapshot()
+            loadComparison(_state.value.period)
+        }
+    }
+
+    fun setPeriod(period: ComparisonPeriod) {
+        if (period == _state.value.period) return
+        _state.value = _state.value.copy(period = period)
+        viewModelScope.launch { loadComparison(period) }
+    }
+
+    private suspend fun loadComparison(period: ComparisonPeriod) {
+        _state.value = _state.value.copy(comparisonLoading = true)
+        val comparison = runCatching { repository.compareTo(period) }.getOrNull()
+        val count = runCatching { repository.snapshots().size }.getOrDefault(0)
+        _state.value = _state.value.copy(
+            comparison = comparison,
+            snapshotCount = count,
+            comparisonLoading = false,
+        )
     }
 }

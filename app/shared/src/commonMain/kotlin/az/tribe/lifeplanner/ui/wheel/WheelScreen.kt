@@ -84,6 +84,11 @@ fun WheelScreen(
                 onSetScore = viewModel::setScore,
                 onClearScore = viewModel::clearScore,
                 topPadding = padding.calculateTopPadding(),
+                comparison = state.comparison,
+                period = state.period,
+                snapshotCount = state.snapshotCount,
+                comparisonLoading = state.comparisonLoading,
+                onPeriodChange = viewModel::setPeriod,
             )
         }
     }
@@ -97,6 +102,11 @@ private fun WheelContent(
     onSetScore: (WheelArea, Double) -> Unit,
     onClearScore: (WheelArea) -> Unit,
     topPadding: androidx.compose.ui.unit.Dp,
+    comparison: az.tribe.lifeplanner.domain.model.WheelComparison?,
+    period: az.tribe.lifeplanner.domain.model.ComparisonPeriod,
+    snapshotCount: Int,
+    comparisonLoading: Boolean,
+    onPeriodChange: (az.tribe.lifeplanner.domain.model.ComparisonPeriod) -> Unit,
 ) {
     // Where the finger currently has a slice, before it is kept. The headline and the face read
     // from this so they move with the drag; nothing here reaches the database until release.
@@ -139,6 +149,16 @@ private fun WheelContent(
 
         report.joy?.let { joy ->
             item { JoyCard(joy) }
+        }
+
+        item {
+            WheelHistoryCard(
+                comparison = comparison,
+                period = period,
+                snapshotCount = snapshotCount,
+                isLoading = comparisonLoading,
+                onPeriodChange = onPeriodChange,
+            )
         }
 
         val unconfirmed = report.unconfirmed
