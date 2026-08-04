@@ -232,6 +232,7 @@ class BackupRepositoryImpl(
                             isArchived = 0L,
                             aiReasoning = null,
                             valueId = null,
+                            wheelArea = null,
                             predictedDueDate = null,
                             sync_updated_at = Clock.System.now().toString(),
                             is_deleted = 0L,

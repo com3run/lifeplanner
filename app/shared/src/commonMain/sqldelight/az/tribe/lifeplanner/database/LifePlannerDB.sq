@@ -14,6 +14,9 @@ CREATE TABLE GoalEntity (
     isArchived INTEGER NOT NULL DEFAULT 0,
     aiReasoning TEXT,
     valueId TEXT,
+    -- Which Wheel of Life area this goal serves. The goal's "why", and the link that lets a goal
+    -- move a score the user actually gave us. See GoalWheelAreaInferrer.
+    wheelArea TEXT,
     predictedDueDate TEXT,
     sync_updated_at TEXT,
     is_deleted INTEGER NOT NULL DEFAULT 0,
@@ -29,8 +32,8 @@ SELECT * FROM GoalEntity WHERE id = ?;
 
 -- Updated insert query with conflict resolution
 insertGoal:
-INSERT OR REPLACE INTO GoalEntity(id, category, title, description, status, timeline, dueDate, progress, notes, createdAt, completionRate, isArchived, aiReasoning, valueId, predictedDueDate, sync_updated_at, is_deleted, sync_version, last_synced_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT OR REPLACE INTO GoalEntity(id, category, title, description, status, timeline, dueDate, progress, notes, createdAt, completionRate, isArchived, aiReasoning, valueId, wheelArea, predictedDueDate, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 selectGoalsByTimeline:
 SELECT * FROM GoalEntity
@@ -61,6 +64,7 @@ SET
   isArchived = ?,
   aiReasoning = ?,
   valueId = ?,
+  wheelArea = ?,
   predictedDueDate = ?,
   sync_updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
 WHERE id = ?;
@@ -1753,8 +1757,8 @@ DELETE FROM FocusSessionEntity WHERE is_deleted = 1 AND last_synced_at IS NOT NU
 -- ============== Upsert From Sync Queries ==============
 
 upsertGoalFromSync:
-INSERT OR REPLACE INTO GoalEntity(id, category, title, description, status, timeline, dueDate, progress, notes, createdAt, completionRate, isArchived, aiReasoning, valueId, predictedDueDate, sync_updated_at, is_deleted, sync_version, last_synced_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT OR REPLACE INTO GoalEntity(id, category, title, description, status, timeline, dueDate, progress, notes, createdAt, completionRate, isArchived, aiReasoning, valueId, wheelArea, predictedDueDate, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 upsertMilestoneFromSync:
 INSERT OR REPLACE INTO MilestoneEntity(id, goalId, title, isCompleted, dueDate, estimatedEffort, createdAt, sync_updated_at, is_deleted, sync_version, last_synced_at)

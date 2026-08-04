@@ -90,6 +90,7 @@ fun GoalDetailScreen(
     journalRepository: JournalRepository = koinInject(),
     abilityRepository: AbilityRepository = koinInject(),
     habitRepository: az.tribe.lifeplanner.domain.repository.HabitRepository = koinInject(),
+    wheelRepository: az.tribe.lifeplanner.domain.repository.WheelRepository = koinInject(),
     onBackClick: () -> Unit,
     onEditClick: () -> Unit,
     onViewDependencyGraph: (String) -> Unit = {},
@@ -111,6 +112,10 @@ fun GoalDetailScreen(
     // Habits linked to this goal make it a practice rather than a checklist. Null until loaded and
     // whenever nothing is linked, which is the ordinary case.
     var practice by remember(goalId) { mutableStateOf<GoalPractice?>(null) }
+    // The wheel, so the goal's why can carry the user's own score for that area rather than just
+    // naming it. Null until the wheel has been filled in at least once.
+    val wheelReport by wheelRepository.observeWheel()
+        .collectAsState(initial = null as az.tribe.lifeplanner.domain.model.WheelReport?)
     val coroutineScope = rememberCoroutineScope()
 
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -330,10 +335,22 @@ fun GoalDetailScreen(
             // Pillar 1: Why-Chain (value → goal → milestones) + orphan nudge
             item {
                 val linkedValue = lifeValues.find { it.id == goal.valueId }
+                // Goals saved before wheel areas existed have none stored. Inferring at display
+                // time means every goal shows a correct area straight away, without a migration
+                // rewriting rows the user never asked us to touch.
+                val area = goal.wheelArea
+                    ?: az.tribe.lifeplanner.domain.service.GoalWheelAreaInferrer.infer(
+                        goal.category, goal.title, goal.description,
+                    )
+                val areaScore = wheelReport?.scores?.firstOrNull { it.area == area }?.score
+                val lowest = wheelReport?.segments?.minByOrNull { it.score }?.area
+
                 WhyChainComponent(
-                    valueTitle = linkedValue?.title,
+                    valueTitle = "${area.emoji} ${area.displayName}",
                     goalTitle = goal.title,
                     milestoneCount = goal.milestones.size,
+                    areaScore = areaScore,
+                    isLowestArea = area == lowest,
                     onValueClick = { showValueSheet = true }
                 )
             }
@@ -510,10 +527,16 @@ fun GoalDetailScreen(
     )
 
     if (showValueSheet) {
-        WhyThisGoalBottomSheet(
-            values = lifeValues,
-            selectedValueId = goal.valueId,
-            onSelect = { viewModel.updateGoal(goal.copy(valueId = it)) },
+        WheelAreaPickerSheet(
+            selected = goal.wheelArea
+                ?: az.tribe.lifeplanner.domain.service.GoalWheelAreaInferrer.infer(
+                    goal.category, goal.title, goal.description,
+                ),
+            scores = wheelReport?.scores.orEmpty(),
+            onSelect = {
+                viewModel.updateGoal(goal.copy(wheelArea = it))
+                showValueSheet = false
+            },
             onDismiss = { showValueSheet = false }
         )
     }

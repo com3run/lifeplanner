@@ -36,6 +36,15 @@ fun WhyChainComponent(
     goalTitle: String,
     milestoneCount: Int = 0,
     onValueClick: () -> Unit,
+    /**
+     * The area's current score out of ten, when the user has one on record.
+     *
+     * This is the whole reason the why moved from a free-text value to a wheel area. "Serves Craft
+     * & Career" is decoration; "Friends, 4/10, your lowest area" tells the user which of their
+     * goals actually matters this week. Null before the wheel has been filled in.
+     */
+    areaScore: Double? = null,
+    isLowestArea: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -52,7 +61,16 @@ fun WhyChainComponent(
             Spacer(Modifier.height(10.dp))
 
             if (valueTitle != null) {
-                ChainNode(label = "Value", title = valueTitle, emphasized = true, onClick = onValueClick)
+                ChainNode(
+                    label = "Life area",
+                    title = valueTitle,
+                    emphasized = true,
+                    onClick = onValueClick,
+                    trailing = areaScore?.let { score ->
+                        val shown = if (score % 1.0 == 0.0) score.toInt().toString() else score.toString()
+                        if (isLowestArea) "$shown/10 · your lowest" else "$shown/10"
+                    },
+                )
             } else {
                 OrphanNudgeNode(onClick = onValueClick)
             }
@@ -78,7 +96,8 @@ private fun ChainNode(
     label: String,
     title: String,
     emphasized: Boolean,
-    onClick: (() -> Unit)?
+    onClick: (() -> Unit)?,
+    trailing: String? = null,
 ) {
     val bg = if (emphasized) MaterialTheme.modernColors.primaryContainer else MaterialTheme.modernColors.surfaceVariant
     val titleColor = if (emphasized) MaterialTheme.modernColors.onPrimaryContainer else MaterialTheme.modernColors.textPrimary
@@ -102,6 +121,13 @@ private fun ChainNode(
                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
                 color = titleColor
             )
+            if (trailing != null) {
+                Text(
+                    trailing,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = labelColor,
+                )
+            }
         }
         if (onClick != null) {
             Text(

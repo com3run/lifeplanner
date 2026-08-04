@@ -65,6 +65,14 @@ internal fun migrateToVersion41(db: SupportSQLiteDatabase) {
     )
 }
 
+internal fun migrateToVersion42(db: SupportSQLiteDatabase) {
+    // Schema v42: the goal's why, as a Wheel of Life area. Matches migration 42.sqm.
+    // Nullable and unbackfilled on purpose: GoalWheelAreaInferrer fills it in when a goal is next
+    // saved, and inferring for every existing row inside a migration would be a schema change
+    // silently rewriting user data.
+    addColumnSafe(db, "GoalEntity", "wheelArea", "TEXT")
+}
+
 /**
  * The whole Android migration chain, run on every database open.
  *
@@ -113,6 +121,7 @@ internal fun runAndroidMigrations(db: SupportSQLiteDatabase) {
     migrateToVersion39(db)
     migrateToVersion40(db)
     migrateToVersion41(db)
+    migrateToVersion42(db)
 }
 
 internal fun migrateToVersion5(db: SupportSQLiteDatabase) {

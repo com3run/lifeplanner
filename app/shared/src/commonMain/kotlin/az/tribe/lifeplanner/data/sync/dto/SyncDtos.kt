@@ -21,6 +21,7 @@ data class GoalSyncDto(
     @SerialName("is_archived") val isArchived: Boolean = false,
     @SerialName("ai_reasoning") val aiReasoning: String? = null,
     @SerialName("value_id") val valueId: String? = null,
+    @SerialName("wheel_area") val wheelArea: String? = null,
     @SerialName("predicted_due_date") val predictedDueDate: String? = null,
     @SerialName("updated_at") val updatedAt: String? = null,
     @SerialName("is_deleted") val isDeleted: Boolean = false,

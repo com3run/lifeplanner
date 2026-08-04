@@ -66,6 +66,8 @@ CREATE TABLE goals (
     completion_rate REAL        NOT NULL DEFAULT 0.0,
     is_archived     BOOLEAN     NOT NULL DEFAULT FALSE,
     value_id        TEXT,
+    -- Which Wheel of Life area this goal serves (MISSION, FRIENDS, MONEY, ...). The goal's "why".
+    wheel_area      TEXT,
     predicted_due_date TEXT,
     -- sync metadata
     updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),

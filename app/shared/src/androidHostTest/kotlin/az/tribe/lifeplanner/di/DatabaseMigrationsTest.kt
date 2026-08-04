@@ -90,6 +90,28 @@ class DatabaseMigrationsTest {
     }
 
     @Test
+    fun `an upgrading goal gains the wheel area column without losing its row`() {
+        val db = legacyDatabase()
+        db.execSQL(
+            "INSERT INTO GoalEntity (id, category, title, description, status, timeline, dueDate) " +
+                "VALUES ('g1', 'CAREER', 'Get promoted', 'd', 'NOT_STARTED', 'MEDIUM_TERM', '2026-12-01')"
+        )
+
+        runAndroidMigrations(db)
+
+        // The .sqm files do not run on Android, so without migrateToVersion42 in the chain every
+        // existing user would crash on "no such column: wheelArea" the moment they opened a goal.
+        assertTrue(columnExists(db, "GoalEntity", "wheelArea"), "GoalEntity is missing wheelArea")
+        db.query("SELECT title, wheelArea FROM GoalEntity WHERE id = 'g1'").use {
+            assertTrue(it.moveToFirst(), "the pre-existing goal did not survive the migration")
+            assertEquals("Get promoted", it.getString(0))
+            // Left null rather than backfilled: the inferrer fills it in on the next save, and a
+            // migration that rewrites every user's goals is not a migration.
+            assertTrue(it.isNull(1), "wheelArea should start null for old rows")
+        }
+    }
+
+    @Test
     fun `running the chain twice changes nothing`() {
         val db = legacyDatabase()
 

@@ -8,6 +8,7 @@ import co.touchlab.kermit.Logger
 import az.tribe.lifeplanner.database.GoalEntity
 import az.tribe.lifeplanner.database.MilestoneEntity
 import az.tribe.lifeplanner.domain.model.Goal
+import az.tribe.lifeplanner.domain.model.WheelArea
 import az.tribe.lifeplanner.domain.enum.GoalCategory
 import az.tribe.lifeplanner.domain.enum.GoalStatus
 import az.tribe.lifeplanner.domain.enum.GoalTimeline
@@ -176,6 +177,9 @@ fun GoalEntity.toDomain(milestones: List<Milestone> = emptyList()): Goal {
         isArchived = isArchived == 1L,
         aiReasoning = aiReasoning,
         valueId = valueId,
+        // An unknown area means the enum changed under stored data. Dropping it to null is right:
+        // the inferrer will pick a current one on the next save.
+        wheelArea = wheelArea?.let { runCatching { WheelArea.valueOf(it) }.getOrNull() },
         predictedDueDate = predictedDueDate?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
     )
 }
@@ -196,6 +200,7 @@ fun Goal.toEntity(): GoalEntity {
         isArchived = if (isArchived) 1L else 0L,
         aiReasoning = aiReasoning,
         valueId = valueId,
+        wheelArea = wheelArea?.name,
         predictedDueDate = predictedDueDate?.toString(),
         sync_updated_at = Clock.System.now().toString(),
         is_deleted = 0L,

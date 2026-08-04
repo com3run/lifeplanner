@@ -47,6 +47,7 @@ suspend fun SharedDatabase.insertGoal(goal: GoalEntity) {
             isArchived = goal.isArchived,
             aiReasoning = goal.aiReasoning,
             valueId = goal.valueId,
+            wheelArea = goal.wheelArea,
             predictedDueDate = goal.predictedDueDate,
             sync_updated_at = nowTimestamp(),
             is_deleted = 0L,
@@ -74,6 +75,7 @@ suspend fun SharedDatabase.insertGoals(goals: List<GoalEntity>) {
                 isArchived = goal.isArchived,
                 aiReasoning = goal.aiReasoning,
                 valueId = goal.valueId,
+            wheelArea = goal.wheelArea,
                 predictedDueDate = goal.predictedDueDate,
                 sync_updated_at = nowTimestamp(),
                 is_deleted = 0L,
@@ -120,6 +122,7 @@ suspend fun SharedDatabase.updateGoal(goal: GoalEntity) {
             isArchived = goal.isArchived,
             aiReasoning = goal.aiReasoning,
             valueId = goal.valueId,
+            wheelArea = goal.wheelArea,
             predictedDueDate = goal.predictedDueDate,
             id = goal.id,
             createdAt = goal.createdAt

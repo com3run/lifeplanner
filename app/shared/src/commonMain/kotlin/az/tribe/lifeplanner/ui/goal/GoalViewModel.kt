@@ -164,14 +164,23 @@ class GoalViewModel(
     fun createGoal(goal: Goal) {
         viewModelScope.launch {
             try {
-                // Auto-link the "why": if no value was chosen, infer the best-fitting one from the
-                // goal's category + text so the Why-Chain is populated without manual busywork.
-                val finalGoal = if (goal.valueId == null) {
-                    val values = runCatching { lifeValueRepository.getActiveLifeValues() }.getOrDefault(emptyList())
-                    goal.copy(valueId = az.tribe.lifeplanner.domain.service.GoalValueInferrer.infer(
-                        category = goal.category, title = goal.title, description = goal.description, values = values,
-                    ))
+                // The "why", set for free. The wheel area is the one that matters: it is always
+                // resolvable from the category the user picked, and it is what ties this goal to a
+                // score they gave us. The free-text value is kept for the identity statements that
+                // still use it, but it is no longer what the Why-Chain leads with.
+                val withArea = if (goal.wheelArea == null) {
+                    goal.copy(
+                        wheelArea = az.tribe.lifeplanner.domain.service.GoalWheelAreaInferrer.infer(
+                            category = goal.category, title = goal.title, description = goal.description,
+                        )
+                    )
                 } else goal
+                val finalGoal = if (withArea.valueId == null) {
+                    val values = runCatching { lifeValueRepository.getActiveLifeValues() }.getOrDefault(emptyList())
+                    withArea.copy(valueId = az.tribe.lifeplanner.domain.service.GoalValueInferrer.infer(
+                        category = withArea.category, title = withArea.title, description = withArea.description, values = values,
+                    ))
+                } else withArea
                 createGoalUseCase(finalGoal)
                 gamificationRepository.awardXp(XpRewards.GOAL_CREATED.toLong())
                 Analytics.goalCreated(finalGoal.category.name, "manual")

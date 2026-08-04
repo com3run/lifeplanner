@@ -10,6 +10,7 @@ import az.tribe.lifeplanner.domain.enum.GoalCategory
 import az.tribe.lifeplanner.domain.enum.GoalStatus
 import az.tribe.lifeplanner.domain.enum.GoalTimeline
 import az.tribe.lifeplanner.domain.model.Milestone
+import az.tribe.lifeplanner.domain.model.WheelArea
 import az.tribe.lifeplanner.testutil.testGoal
 import az.tribe.lifeplanner.testutil.testMilestone
 import kotlinx.datetime.LocalDate
@@ -37,6 +38,7 @@ class GoalMapperTest {
             isArchived = 0L,
             aiReasoning = null,
             valueId = null,
+            wheelArea = null,
             predictedDueDate = null,
             sync_updated_at = null,
             is_deleted = 0L,
@@ -77,6 +79,7 @@ class GoalMapperTest {
             isArchived = 1L,
             aiReasoning = null,
             valueId = null,
+            wheelArea = null,
             predictedDueDate = null,
             sync_updated_at = null,
             is_deleted = 0L,
@@ -104,6 +107,7 @@ class GoalMapperTest {
             isArchived = 0L,
             aiReasoning = null,
             valueId = null,
+            wheelArea = null,
             predictedDueDate = null,
             sync_updated_at = null,
             is_deleted = 0L,
@@ -131,6 +135,7 @@ class GoalMapperTest {
             isArchived = 0L,
             aiReasoning = null,
             valueId = null,
+            wheelArea = null,
             predictedDueDate = null,
             sync_updated_at = null,
             is_deleted = 0L,
@@ -163,6 +168,7 @@ class GoalMapperTest {
             isArchived = 0L,
             aiReasoning = null,
             valueId = null,
+            wheelArea = null,
             predictedDueDate = null,
             sync_updated_at = null,
             is_deleted = 0L,
@@ -190,6 +196,7 @@ class GoalMapperTest {
             isArchived = 0L,
             aiReasoning = null,
             valueId = null,
+            wheelArea = null,
             predictedDueDate = null,
             sync_updated_at = null,
             is_deleted = 0L,
@@ -218,6 +225,7 @@ class GoalMapperTest {
             isArchived = 0L,
             aiReasoning = null,
             valueId = null,
+            wheelArea = null,
             predictedDueDate = null,
             sync_updated_at = null,
             is_deleted = 0L,
@@ -247,6 +255,7 @@ class GoalMapperTest {
                 isArchived = 0L,
                 aiReasoning = null,
                 valueId = null,
+            wheelArea = null,
                 predictedDueDate = null,
                 sync_updated_at = null,
                 is_deleted = 0L,
@@ -275,6 +284,7 @@ class GoalMapperTest {
                 isArchived = 0L,
                 aiReasoning = null,
                 valueId = null,
+            wheelArea = null,
                 predictedDueDate = null,
                 sync_updated_at = null,
                 is_deleted = 0L,
@@ -303,6 +313,7 @@ class GoalMapperTest {
                 isArchived = 0L,
                 aiReasoning = null,
                 valueId = null,
+            wheelArea = null,
                 predictedDueDate = null,
                 sync_updated_at = null,
                 is_deleted = 0L,
@@ -796,6 +807,7 @@ class GoalMapperTest {
                 completionRate = 0.0, isArchived = 0L,
                 aiReasoning = null,
                 valueId = null,
+            wheelArea = null,
                 predictedDueDate = null,
                 sync_updated_at = null, is_deleted = 0L, sync_version = 0L, last_synced_at = null
             ),
@@ -806,6 +818,7 @@ class GoalMapperTest {
                 completionRate = 50.0, isArchived = 0L,
                 aiReasoning = null,
                 valueId = null,
+            wheelArea = null,
                 predictedDueDate = null,
                 sync_updated_at = null, is_deleted = 0L, sync_version = 0L, last_synced_at = null
             )
@@ -827,6 +840,7 @@ class GoalMapperTest {
                 completionRate = 0.0, isArchived = 0L,
                 aiReasoning = null,
                 valueId = null,
+            wheelArea = null,
                 predictedDueDate = null,
                 sync_updated_at = null, is_deleted = 0L, sync_version = 0L, last_synced_at = null
             )
@@ -1004,5 +1018,25 @@ class GoalMapperTest {
         assertEquals(1, goals[0].milestones.size)
         assertEquals("Step 1", goals[0].milestones[0].title)
         assertFalse(goals[0].milestones[0].isCompleted)
+    }
+
+    @Test
+    fun `the wheel area survives a round trip through the entity`() {
+        val goal = testGoal().copy(wheelArea = WheelArea.ROMANCE)
+
+        val back = goal.toEntity().toDomain()
+
+        // The tag is stored as a name and read back by valueOf, so a rename on either side would
+        // silently drop every goal's why rather than failing loudly.
+        assertEquals(WheelArea.ROMANCE, back.wheelArea)
+    }
+
+    @Test
+    fun `an unrecognised stored area becomes null rather than crashing`() {
+        val entity = testGoal().toEntity().copy(wheelArea = "CHARIOTEERING")
+
+        // Old rows written by a future or renamed enum must not take the goal down with them.
+        // Null is recoverable: the inferrer picks a current area on the next save.
+        assertEquals(null, entity.toDomain().wheelArea)
     }
 }
