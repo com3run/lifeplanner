@@ -80,7 +80,7 @@ internal fun TextInputStep(
     value: String,
     onChange: (String) -> Unit,
     onContinue: () -> Unit,
-    optional: Boolean = false
+    optional: Boolean = false,
 ) {
     OutlinedTextField(
         value = value,
@@ -92,7 +92,12 @@ internal fun TextInputStep(
     )
     Spacer(Modifier.height(16.dp))
     PrimaryButton("Continue", onClick = onContinue, enabled = optional || value.isNotBlank())
-    if (optional) TextButton(onClick = onContinue) { Text("Skip") }
+    // Always offered. Every other step in this flow has an unconditional skip, and the flow tells
+    // the user outright that any question is safe to skip — but this one hid it unless the step
+    // was marked optional, so a blank field left a greyed Continue and no way past it. The
+    // "Your main goal" fallback, which is what you get when no specialist area was chosen, was
+    // exactly that dead end.
+    TextButton(onClick = onContinue) { Text("Skip") }
 }
 
 @OptIn(ExperimentalLayoutApi::class)

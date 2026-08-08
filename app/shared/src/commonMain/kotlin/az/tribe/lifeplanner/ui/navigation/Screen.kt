@@ -51,6 +51,9 @@ sealed class Screen(val route: String) {
     object SmartHabitGenerator : Screen("smart_habit_generator")
     object HabitChat : Screen("habit_chat")
     object CoachOnboarding : Screen("coach_onboarding")
+
+    /** The one-screen replacement for the coach's thirteen-question conversation. */
+    object AboutYou : Screen("about_you")
     object CoachIntro : Screen("coach_intro/{coachId}")
     object ScreenTimeInsight : Screen("screen_time_insight")
     object DecisionJournal : Screen("decision_journal")

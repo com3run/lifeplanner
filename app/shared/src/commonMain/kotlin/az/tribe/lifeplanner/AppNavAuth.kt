@@ -5,6 +5,8 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import az.tribe.lifeplanner.ui.auth.SignInScreen
 import az.tribe.lifeplanner.ui.navigation.Screen
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import az.tribe.lifeplanner.ui.onboarding.CoachOnboardingScreen
 
 /**
@@ -29,6 +31,25 @@ internal fun NavGraphBuilder.appNavAuth(navController: NavController, homeRoute:
                 }
             },
             onBack = { navController.popBackStack() }
+        )
+    }
+
+    // The setup questions, as one screen you can see the end of rather than a conversation you
+    // have to get through. Reached from the Today card, never as a gate.
+    composable(Screen.AboutYou.route) {
+        val vm: az.tribe.lifeplanner.ui.onboarding.AboutYouViewModel = org.koin.compose.viewmodel.koinViewModel()
+        val state by vm.state.collectAsState()
+        az.tribe.lifeplanner.ui.onboarding.AboutYouScreen(
+            name = state.name,
+            age = state.age,
+            stress = state.stress,
+            sleep = state.sleep,
+            onName = vm::setName,
+            onAge = vm::setAge,
+            onStress = vm::setStress,
+            onSleep = vm::setSleep,
+            onDone = { vm.save { navController.popBackStack() } },
+            onSkip = { vm.decline(); navController.popBackStack() },
         )
     }
 

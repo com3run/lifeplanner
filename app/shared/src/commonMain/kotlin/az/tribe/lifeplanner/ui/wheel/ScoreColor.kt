@@ -33,3 +33,12 @@ private val Orange = Color(0xFFF76B15)
 private val Amber = Color(0xFFF5C518)
 private val Green = Color(0xFF46B860)
 private val Teal = Color(0xFF25B8C4)
+
+/**
+ * The same ramp read backwards, for scales where a high number is the bad end.
+ *
+ * Stress is the case that forces this: a 9 on the wheel is somebody thriving, a 9 on stress is
+ * somebody having a hard time. Colouring both green would tell one of them the opposite of the
+ * truth, which is worse than having no colour at all.
+ */
+internal fun scoreColorForStress(score: Double): Color = scoreColor(11.0 - score.coerceIn(1.0, 10.0))

@@ -171,8 +171,8 @@ fun ForYouScreen(
     // Hidden once answered or declined; an offer that keeps returning is not an offer.
     var coachSetupDone by remember {
         mutableStateOf(
-            CoachOnboardingViewModel.isComplete(feedSettings) ||
-                feedSettings.getBoolean(KEY_COACH_SETUP_DECLINED, false)
+            az.tribe.lifeplanner.ui.onboarding.AboutYouViewModel.isHandled(feedSettings) ||
+                CoachOnboardingViewModel.isComplete(feedSettings)
         )
     }
     LaunchedEffect(calendarPermission.state) {
@@ -236,9 +236,12 @@ fun ForYouScreen(
             if (!coachSetupDone) {
                 item(key = "coach_setup") {
                     CoachSetupCard(
-                        onStart = { onOpenRoute(Screen.CoachOnboarding.route) },
+                        onStart = { onOpenRoute(Screen.AboutYou.route) },
                         onDismiss = {
-                            feedSettings.putBoolean(KEY_COACH_SETUP_DECLINED, true)
+                            feedSettings.putBoolean(
+                                az.tribe.lifeplanner.ui.onboarding.AboutYouViewModel.KEY_HANDLED,
+                                true,
+                            )
                             coachSetupDone = true
                         },
                     )
@@ -1142,6 +1145,3 @@ private fun today(): String {
     val d = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
     return "${d.dayOfWeek.name.lowercase().replaceFirstChar { it.uppercase() }}, ${d.month.name.lowercase().replaceFirstChar { it.uppercase() }} ${d.dayOfMonth}"
 }
-
-/** Set when the user declines the coach's questions, so they are never offered again. */
-private const val KEY_COACH_SETUP_DECLINED = "coach_setup_declined"

@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.Color
 import az.tribe.lifeplanner.ui.wheel.scoreColor
 import az.tribe.lifeplanner.domain.model.WheelArea
 import az.tribe.lifeplanner.ui.components.AppButton
+import az.tribe.lifeplanner.ui.components.DotScale
 import az.tribe.lifeplanner.ui.components.AppButtonVariant
 import az.tribe.lifeplanner.ui.components.rememberHapticManager
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
@@ -124,41 +125,11 @@ private fun AreaRatingRow(area: WheelArea, score: Double?, onRate: (Double) -> U
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                (1..10).forEach { value ->
-                    val filled = score != null && value <= score
-                    // The whole filled run takes the colour of the score chosen, so the bar reads
-                    // as one answer rather than ten lit cells, and shifts as you move across it.
-                    val color by animateColorAsState(
-                        if (filled && score != null) scoreColor(score)
-                        else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.18f),
-                        label = "ratingCell",
-                    )
-                    Box(
-                        Modifier
-                            .weight(1f)
-                            .aspectRatio(1f)
-                            .clip(CircleShape)
-                            .background(color)
-                            .clickable { onRate(value.toDouble()) },
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        // Only the ends are labelled. Ten numbers in a row is a ruler, not a scale
-                        // anyone reads.
-                        if (value == 1 || value == 10) {
-                            Text(
-                                "$value",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = if (filled) Color.White
-                                else MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    }
-                }
-            }
+            DotScale(
+                score = score,
+                onRate = onRate,
+                color = { scoreColor(it) },
+            )
         }
     }
 }

@@ -98,6 +98,7 @@ import az.tribe.lifeplanner.ui.backup.BackupViewModel
 import az.tribe.lifeplanner.ui.focus.FocusViewModel
 import az.tribe.lifeplanner.ui.retrospective.RetrospectiveViewModel
 import az.tribe.lifeplanner.ui.coach.CoachViewModel
+import az.tribe.lifeplanner.ui.onboarding.AboutYouViewModel
 import az.tribe.lifeplanner.ui.onboarding.CoachOnboardingViewModel
 import az.tribe.lifeplanner.ui.reminder.ReminderViewModel
 import az.tribe.lifeplanner.ui.objectives.BeginnerObjectiveViewModel
@@ -468,5 +469,6 @@ val appModule = module {
     viewModelOf(::SmartHabitGeneratorViewModel)
     viewModelOf(::HabitChatViewModel)
     viewModelOf(::CoachOnboardingViewModel)
+    viewModelOf(::AboutYouViewModel)
     viewModelOf(::ScreenTimeInsightViewModel)
 }
