@@ -29,10 +29,9 @@ internal fun NavGraphBuilder.appNavOnboardingRedesign(
         OnboardingFlowScreen(
             onFinish = {
                 IntroFlow.markComplete(settings)
-                val next =
-                    if (CoachOnboardingViewModel.isComplete(settings)) homeRoute
-                    else Screen.CoachOnboarding.route
-                navController.navigate(next) {
+                // Straight into the app. The coach's questions are offered from Today now, so the
+                // user reaches something they can actually use first.
+                navController.navigate(homeRoute) {
                     // Clear the intro off the back stack: pressing back from the coach flow must
                     // not return to a completed intro.
                     popUpTo(0) { inclusive = true }

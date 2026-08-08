@@ -366,13 +366,16 @@ fun App(
         // The legacy Home tab is gone; For You is the home.
         val homeRoute = Screen.ForYou.route
 
-        // D11: first run is a chain, intro (promise + values) then the coach flow. The intro seeds
-        // LifeValues; the coach flow captures the name, picks the coach, and seeds the first goals
-        // and habits. Both must run, so the intro is prepended rather than swapped in.
-        // Existing users skip both (COACH_ONBOARDING_KEY already true), and anyone who finished the
-        // intro but dropped out mid-coach-flow resumes at the coach flow, not back at the intro.
+        // Registration is the whole gate. First run used to be a chain — the intro, then thirteen
+        // screens of coach questions — with the app on the far side of it. That contradicted the
+        // promise the intro itself makes ("no heavy setup"), and its final step could not be
+        // completed without typing a goal, so a user who did not want to answer was simply stuck.
+        //
+        // The coach's questions still exist and are still worth answering; they are now offered
+        // from inside the app, where the user can see what they are for, instead of standing
+        // between them and it.
         val firstRunRoute =
-            if (IntroFlow.isComplete(settings)) Screen.CoachOnboarding.route
+            if (IntroFlow.isComplete(settings)) homeRoute
             else Screen.OnboardingRedesign.route
 
         // Determine start destination based on auth state
@@ -383,8 +386,7 @@ fun App(
                 if (hasCompletedOnboarding == true && !CoachOnboardingViewModel.isComplete(settings)) {
                     settings.putBoolean(CoachOnboardingViewModel.COACH_ONBOARDING_KEY, true)
                 }
-                if (CoachOnboardingViewModel.isComplete(settings)) homeRoute
-                else firstRunRoute
+                firstRunRoute
             }
             else -> Screen.CoachOnboarding.route
         }
@@ -425,7 +427,10 @@ fun App(
                         // The intro route must be excluded here, or this fires while the user is
                         // partway through it (coach onboarding is legitimately incomplete then)
                         // and yanks them straight out of first run.
-                        !CoachOnboardingViewModel.isComplete(settings) && current != null
+                        // Only the intro is required now. This used to check the coach flow, which
+                        // meant anyone who had not finished thirteen screens of questions was
+                        // yanked back into them on every auth change.
+                        !IntroFlow.isComplete(settings) && current != null
                                 && current != Screen.CoachOnboarding.route
                                 && current != Screen.OnboardingRedesign.route -> {
                             navController.navigate(firstRunRoute) {

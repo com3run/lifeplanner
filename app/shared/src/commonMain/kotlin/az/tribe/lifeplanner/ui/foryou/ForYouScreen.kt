@@ -92,6 +92,7 @@ import az.tribe.lifeplanner.domain.service.BreathMoment
 import az.tribe.lifeplanner.domain.model.WheelArea
 import az.tribe.lifeplanner.domain.model.ScoreSource
 import az.tribe.lifeplanner.ui.components.todayBreathKey
+import az.tribe.lifeplanner.ui.onboarding.CoachOnboardingViewModel
 import az.tribe.lifeplanner.ui.wheel.WheelStripCard
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.StrokeCap
@@ -166,6 +167,14 @@ fun ForYouScreen(
     // to be right at the point we decide whether to bring it up at all.
     val feedSettings: Settings = koinInject()
     val breathsToday = remember { feedSettings.getInt(todayBreathKey(), 0) }
+    // The coach's questions are no longer a gate before the app, so they are offered here instead.
+    // Hidden once answered or declined; an offer that keeps returning is not an offer.
+    var coachSetupDone by remember {
+        mutableStateOf(
+            CoachOnboardingViewModel.isComplete(feedSettings) ||
+                feedSettings.getBoolean(KEY_COACH_SETUP_DECLINED, false)
+        )
+    }
     LaunchedEffect(calendarPermission.state) {
         if (calendarPermission.state == CalendarPermissionState.GRANTED) {
             calendarViewModel.loadDay(Clock.System.todayIn(tz))
@@ -222,6 +231,18 @@ fun ForYouScreen(
             // Hourly detail lives inside the tap-to-expand weather popup, not as a second feed card.
             if (weatherState is TodayWeatherViewModel.State.NeedsPermission) {
                 item(key = "weather_prompt") { WeatherPromptCard(onEnable = locationPermission.request) }
+            }
+
+            if (!coachSetupDone) {
+                item(key = "coach_setup") {
+                    CoachSetupCard(
+                        onStart = { onOpenRoute(Screen.CoachOnboarding.route) },
+                        onDismiss = {
+                            feedSettings.putBoolean(KEY_COACH_SETUP_DECLINED, true)
+                            coachSetupDone = true
+                        },
+                    )
+                }
             }
 
             // The wheel is the one view that shows a whole life at once, so it gets the space to
@@ -1121,3 +1142,6 @@ private fun today(): String {
     val d = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
     return "${d.dayOfWeek.name.lowercase().replaceFirstChar { it.uppercase() }}, ${d.month.name.lowercase().replaceFirstChar { it.uppercase() }} ${d.dayOfMonth}"
 }
+
+/** Set when the user declines the coach's questions, so they are never offered again. */
+private const val KEY_COACH_SETUP_DECLINED = "coach_setup_declined"
