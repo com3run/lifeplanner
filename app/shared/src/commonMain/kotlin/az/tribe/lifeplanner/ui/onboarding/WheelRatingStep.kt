@@ -22,6 +22,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.ui.graphics.Color
+import az.tribe.lifeplanner.ui.wheel.scoreColor
 import az.tribe.lifeplanner.domain.model.WheelArea
 import az.tribe.lifeplanner.ui.components.AppButton
 import az.tribe.lifeplanner.ui.components.AppButtonVariant
@@ -109,7 +112,7 @@ private fun AreaRatingRow(area: WheelArea, score: Double?, onRate: (Double) -> U
                         if (score % 1.0 == 0.0) "${score.toInt()}" else "$score",
                         style = MaterialTheme.typography.titleMedium
                             .copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.primary,
+                        color = scoreColor(score),
                     )
                 }
             }
@@ -127,16 +130,18 @@ private fun AreaRatingRow(area: WheelArea, score: Double?, onRate: (Double) -> U
             ) {
                 (1..10).forEach { value ->
                     val filled = score != null && value <= score
+                    // The whole filled run takes the colour of the score chosen, so the bar reads
+                    // as one answer rather than ten lit cells, and shifts as you move across it.
                     val color by animateColorAsState(
-                        if (filled) MaterialTheme.colorScheme.primary
+                        if (filled && score != null) scoreColor(score)
                         else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.18f),
                         label = "ratingCell",
                     )
                     Box(
                         Modifier
                             .weight(1f)
-                            .height(30.dp)
-                            .clip(if (value == 1 || value == 10) RoundedCornerShape(8.dp) else CircleShape)
+                            .aspectRatio(1f)
+                            .clip(CircleShape)
                             .background(color)
                             .clickable { onRate(value.toDouble()) },
                         contentAlignment = Alignment.Center,
@@ -147,11 +152,8 @@ private fun AreaRatingRow(area: WheelArea, score: Double?, onRate: (Double) -> U
                             Text(
                                 "$value",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = if (filled) {
-                                    MaterialTheme.colorScheme.onPrimary
-                                } else {
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                },
+                                color = if (filled) Color.White
+                                else MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
