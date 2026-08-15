@@ -247,6 +247,22 @@ class PreviewScreenshots {
         )
     }
 
+    /** Journal entry paper header: mood overline, wrapping title, date line. */
+    @Test
+    fun journalPaperHeader() = snap("JournalPaperHeader") {
+        az.tribe.lifeplanner.ui.journal.JournalEntryPaperHeader(
+            entry = az.tribe.lifeplanner.domain.model.JournalEntry(
+                id = "preview-entry",
+                title = "The run I nearly skipped turned into the best hour of the week",
+                content = "…",
+                mood = az.tribe.lifeplanner.domain.enum.Mood.HAPPY,
+                date = LocalDate(2026, 8, 14),
+                createdAt = LocalDateTime(2026, 8, 14, 21, 30),
+            ),
+            moodColor = androidx.compose.ui.graphics.Color(0xFF2AAF6E),
+        )
+    }
+
     /** The paper header: overline, wrapping title, thin progress line, one quiet meta line. */
     @Test
     fun goalPaperHeader() = snap("GoalPaperHeader") {

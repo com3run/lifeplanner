@@ -148,9 +148,8 @@ fun JournalEntryDetailScreen(
             contentPadding = PaddingValues(bottom = 100.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Hero Header with Mood
             item {
-                JournalEntryHeroHeader(
+                JournalEntryPaperHeader(
                     entry = entry,
                     moodColor = animatedMoodColor
                 )

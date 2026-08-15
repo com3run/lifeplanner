@@ -23,7 +23,6 @@ import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.ArrowLeft
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -41,6 +40,7 @@ import az.tribe.lifeplanner.domain.model.ScoreSource
 import az.tribe.lifeplanner.domain.model.WheelArea
 import az.tribe.lifeplanner.domain.model.WheelReport
 import az.tribe.lifeplanner.domain.model.WheelScore
+import az.tribe.lifeplanner.ui.components.DotScale
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
 
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
@@ -370,21 +370,14 @@ private fun AreaRow(
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(top = LifePlannerDesign.Spacing.xs),
                 )
-                // onValueChange fires every frame of a drag. Writing through to the repository
-                // from here meant one database write and one sync request per frame, and left a
-                // trail of half-chosen values. The drag lives in local state; only the released
-                // value is kept.
-                var dragged by remember(score.area) { mutableStateOf<Float?>(null) }
-                Slider(
-                    value = dragged ?: score.score.toFloat(),
-                    onValueChange = { dragged = it },
-                    onValueChangeFinished = {
-                        dragged?.let { onSetScore(it.toDouble()) }
-                        dragged = null
-                    },
-                    valueRange = 0f..10f,
-                    steps = 19,
-                    modifier = Modifier.fillMaxWidth(),
+                // The same dot scale the sign-up step and the setup sheet use. This row held the
+                // one stock Material slider left on the wheel, and two controls for the same
+                // number is one too many. Halves are still reachable by dragging the slice.
+                DotScale(
+                    score = score.score.takeUnless { score.needsConfirmation },
+                    onRate = onSetScore,
+                    color = { scoreColor(it) },
+                    modifier = Modifier.padding(top = LifePlannerDesign.Spacing.xs),
                 )
                 if (score.source == ScoreSource.USER) {
                     TextButton(onClick = onClearScore) { Text("Use the app's estimate instead") }
