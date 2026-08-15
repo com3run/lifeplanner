@@ -109,6 +109,6 @@ That completes the **three D2 canvases** (Today · Goals · You) as previews on 
 
 - **Promote** Today / Goals / You from preview routes into the bottom-tab shell (the D2 3-tab model)
   once validated / the pillar stack merges — replacing the old Home/Hub/Profile tabs.
-- **D8** decides the Today headline pulse; **D5** is the Figma visual-identity pass.
+- **D8** decides the Today headline pulse; **D5** (visual identity) shipped as `ui/theme/VisualIdentity.kt`.
 - Build remaining D4 primitives (`AppTextField`, `AppChip`, `AppBottomSheet`, …) as screens need them.
 - Apply the **paced-reveal** rules (D2 §5) once pillar features are present to reveal.

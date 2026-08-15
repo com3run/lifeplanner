@@ -21,6 +21,7 @@ data class GoalSyncDto(
     @SerialName("is_archived") val isArchived: Boolean = false,
     @SerialName("ai_reasoning") val aiReasoning: String? = null,
     @SerialName("value_id") val valueId: String? = null,
+    @SerialName("wheel_area") val wheelArea: String? = null,
     @SerialName("predicted_due_date") val predictedDueDate: String? = null,
     @SerialName("updated_at") val updatedAt: String? = null,
     @SerialName("is_deleted") val isDeleted: Boolean = false,
@@ -41,6 +42,41 @@ data class LifeValueSyncDto(
 )
 
 @Serializable
+data class KnowledgeReadSyncDto(
+    val id: String,
+    @SerialName("user_id") val userId: String,
+    @SerialName("read_at") val readAt: String,
+    @SerialName("updated_at") val updatedAt: String? = null,
+    @SerialName("is_deleted") val isDeleted: Boolean = false,
+    @SerialName("sync_version") val syncVersion: Long = 0
+)
+
+/** Wheel of Life. `id` is the WheelArea enum name, so one row per area per user. */
+@Serializable
+data class WheelScoreSyncDto(
+    val id: String,
+    @SerialName("user_id") val userId: String,
+    val score: Double,
+    @SerialName("assessed_at") val assessedAt: String,
+    val note: String? = null,
+    @SerialName("updated_at") val updatedAt: String? = null,
+    @SerialName("is_deleted") val isDeleted: Boolean = false,
+    @SerialName("sync_version") val syncVersion: Long = 0
+)
+
+/** Wheel of Life history. `id` is the ISO date, so one row per day per user. */
+@Serializable
+data class WheelSnapshotSyncDto(
+    val id: String,
+    @SerialName("user_id") val userId: String,
+    val scores: String,
+    @SerialName("captured_at") val capturedAt: String,
+    @SerialName("updated_at") val updatedAt: String? = null,
+    @SerialName("is_deleted") val isDeleted: Boolean = false,
+    @SerialName("sync_version") val syncVersion: Long = 0
+)
+
+@Serializable
 data class DecisionSyncDto(
     val id: String,
     @SerialName("user_id") val userId: String,
@@ -55,6 +91,8 @@ data class DecisionSyncDto(
     @SerialName("actual_outcome") val actualOutcome: String? = null,
     @SerialName("outcome_reviewed_at") val outcomeReviewedAt: String? = null,
     @SerialName("outcome_quality") val outcomeQuality: String? = null,
+    val source: String = "CHOICE_POINT",
+    val status: String = "CONFIRMED",
     @SerialName("updated_at") val updatedAt: String? = null,
     @SerialName("is_deleted") val isDeleted: Boolean = false,
     @SerialName("sync_version") val syncVersion: Long = 0
@@ -187,6 +225,9 @@ data class HabitSyncDto(
     @SerialName("reminder_time") val reminderTime: String? = null,
     @SerialName("type") val type: String = "BUILD",
     @SerialName("unit") val unit: String? = null,
+    @SerialName("health_metric_type") val healthMetricType: String? = null,
+    @SerialName("health_target") val healthTarget: Double? = null,
+    @SerialName("completion_source") val completionSource: String? = null,
     @SerialName("updated_at") val updatedAt: String? = null,
     @SerialName("is_deleted") val isDeleted: Boolean = false,
     @SerialName("sync_version") val syncVersion: Long = 0

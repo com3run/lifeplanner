@@ -1,8 +1,14 @@
 [versions]
 agp = "9.2.1"
+# The shipped app version. Single source of truth: androidApp's versionName/versionCode and
+# BuildKonfig.APP_VERSION all read from here, so the value the ForceUpdateChecker compares
+# against can never drift from the version actually on the store. iOS keeps its own
+# MARKETING_VERSION/CURRENT_PROJECT_VERSION in project.pbxproj — bump those to match.
+app-versionCode = "11"
+app-versionName = "3.0.0"
 android-compileSdk = "37"
 android-minSdk = "26"
-android-targetSdk = "35"
+android-targetSdk = "36"
 androidx-activityCompose = "1.10.1"
 # org.jetbrains.androidx.lifecycle — keep on a stable release only.
 # Upgrades: confirm latest stable via https://repo1.maven.org/maven2/org/jetbrains/androidx/lifecycle/lifecycle-viewmodel/maven-metadata.xml
@@ -23,7 +29,6 @@ koin = "4.2.0"
 coroutines = "1.10.1"
 navigationCompose = "2.9.1"
 core-splashscreen = "1.0.1"
-accompanistSystemuicontroller = "0.30.1"
 
 buildkonfig = "0.17.1"
 
@@ -49,6 +54,13 @@ phosphorIcons = "1.0.0"
 coil3 = "3.0.4"
 cmpcharts = "2.0.6"
 
+# JVM screenshot previews (host tests, no emulator)
+androidx-sqlite = "2.4.0" # matches what sqldelight's android-driver already resolves
+junit = "4.13.2"
+robolectric = "4.16"
+roborazzi = "1.70.0"
+androidxComposeTest = "1.10.6"
+
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activityCompose" }
 androidx-lifecycle-viewmodel = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-viewmodel", version.ref = "androidx-lifecycle" }
@@ -68,7 +80,6 @@ supabase-compose-auth = { module = "io.github.jan-tennert.supabase:compose-auth"
 
 navigation-compose = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
 core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "core-splashscreen" }
-accompanist-systemuicontroller = { module = "com.google.accompanist:accompanist-systemuicontroller", version.ref = "accompanistSystemuicontroller" }
 
 firebase-common-ktx = { module = "com.google.firebase:firebase-common-ktx", version.ref = "firebaseCommonKtx" }
 
@@ -146,6 +157,13 @@ ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
 multiplatform-settings-test = { module = "com.russhwolf:multiplatform-settings-test", version.ref = "settings" }
 sqldelight-test = { module = "app.cash.sqldelight:sqlite-driver", version.ref = "sqldelight" }
 ui-tooling = { module = "org.jetbrains.compose.ui:ui-tooling", version.ref = "uiTooling" }
+androidx-sqlite-framework = { module = "androidx.sqlite:sqlite-framework", version.ref = "androidx-sqlite" }
+junit = { module = "junit:junit", version.ref = "junit" }
+robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
+roborazzi = { module = "io.github.takahirom.roborazzi:roborazzi", version.ref = "roborazzi" }
+roborazzi-compose = { module = "io.github.takahirom.roborazzi:roborazzi-compose", version.ref = "roborazzi" }
+androidx-compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4", version.ref = "androidxComposeTest" }
+androidx-compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest", version.ref = "androidxComposeTest" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

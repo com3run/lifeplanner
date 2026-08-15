@@ -2,6 +2,8 @@ package az.tribe.lifeplanner.ui.journal
 
 import app.cash.turbine.test
 import az.tribe.lifeplanner.domain.enum.Mood
+import az.tribe.lifeplanner.domain.model.Decision
+import az.tribe.lifeplanner.domain.repository.DecisionRepository
 import az.tribe.lifeplanner.testutil.FakeAiProxyService
 import az.tribe.lifeplanner.testutil.FakeGamificationRepository
 import az.tribe.lifeplanner.testutil.FakeJournalRepository
@@ -9,6 +11,8 @@ import az.tribe.lifeplanner.testutil.testJournalEntry
 import az.tribe.lifeplanner.usecases.journal.CreateJournalEntryUseCase
 import az.tribe.lifeplanner.usecases.journal.DeleteJournalEntryUseCase
 import az.tribe.lifeplanner.usecases.journal.UpdateJournalEntryUseCase
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -36,12 +40,31 @@ class JournalViewModelTest {
 
     private lateinit var viewModel: JournalViewModel
     private lateinit var fakeRepository: FakeJournalRepository
+    private lateinit var fakeDecisionRepository: FakeDecisionRepository
     private val testDispatcher = StandardTestDispatcher()
+
+    /** Minimal in-memory [DecisionRepository] so the VM can log detected journal decisions. */
+    private class FakeDecisionRepository : DecisionRepository {
+        val inserted = mutableListOf<Decision>()
+        private val flow = MutableStateFlow<List<Decision>>(emptyList())
+        override fun observeAllDecisions(): Flow<List<Decision>> = flow
+        override suspend fun getAllDecisions(): List<Decision> = inserted
+        override suspend fun getDecisionById(id: String): Decision? = inserted.find { it.id == id }
+        override suspend fun getDecisionsForGoal(goalId: String): List<Decision> = inserted.filter { it.relatedGoalId == goalId }
+        override suspend fun insertDecision(decision: Decision) { inserted.add(decision); flow.value = inserted.toList() }
+        override suspend fun updateDecision(decision: Decision) {
+            val i = inserted.indexOfFirst { it.id == decision.id }
+            if (i >= 0) inserted[i] = decision
+            flow.value = inserted.toList()
+        }
+        override suspend fun deleteDecisionById(id: String) { inserted.removeAll { it.id == id }; flow.value = inserted.toList() }
+    }
 
     @BeforeTest
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         fakeRepository = FakeJournalRepository()
+        fakeDecisionRepository = FakeDecisionRepository()
     }
 
     @AfterTest
@@ -56,7 +79,8 @@ class JournalViewModelTest {
             updateEntryUseCase = UpdateJournalEntryUseCase(fakeRepository),
             deleteEntryUseCase = DeleteJournalEntryUseCase(fakeRepository),
             aiProxyService = FakeAiProxyService(),
-            gamificationRepository = FakeGamificationRepository()
+            gamificationRepository = FakeGamificationRepository(),
+            decisionRepository = fakeDecisionRepository
         )
     }
 
@@ -139,6 +163,45 @@ class JournalViewModelTest {
             assertEquals(1, items.size)
             cancelAndIgnoreRemainingEvents()
         }
+    }
+
+    @Test
+    fun `createEntry with a detected decision logs a pending journal decision`() = runTest(testDispatcher) {
+        viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.createEntry(
+            title = "Torn about the gym",
+            content = "Thinking about it",
+            mood = Mood.NEUTRAL,
+            linkedGoalId = "goal-9",
+            detectedDecision = DetectedDecision(
+                question = "Keep the 5am gym habit or move it later?",
+                optionsConsidered = listOf("Keep 5am", "Move to evening"),
+                leaning = "Move to evening",
+                reasoning = "Mornings are brutal"
+            )
+        )
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(1, fakeDecisionRepository.inserted.size)
+        val logged = fakeDecisionRepository.inserted.single()
+        assertEquals("Keep the 5am gym habit or move it later?", logged.question)
+        assertEquals("Move to evening", logged.chosenOption)
+        assertEquals("goal-9", logged.relatedGoalId)
+        assertEquals(az.tribe.lifeplanner.domain.model.DecisionSource.JOURNAL, logged.source)
+        assertEquals(az.tribe.lifeplanner.domain.model.DecisionStatus.PENDING, logged.status)
+    }
+
+    @Test
+    fun `createEntry without a detected decision logs nothing`() = runTest(testDispatcher) {
+        viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.createEntry(title = "Ordinary day", content = "Nothing special", mood = Mood.NEUTRAL)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(fakeDecisionRepository.inserted.isEmpty())
     }
 
     @Test

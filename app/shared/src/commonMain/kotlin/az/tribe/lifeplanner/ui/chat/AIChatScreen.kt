@@ -40,9 +40,9 @@ import androidx.compose.ui.unit.sp
 import az.tribe.lifeplanner.data.repository.BuiltinCoachStore
 import az.tribe.lifeplanner.domain.model.CoachPersona
 import az.tribe.lifeplanner.domain.model.ObjectiveType
-import az.tribe.lifeplanner.ui.balance.InsightMessageHolder
 import az.tribe.lifeplanner.ui.chat.ChatContent
 import az.tribe.lifeplanner.ui.chat.ChatViewModel
+import az.tribe.lifeplanner.ui.components.BreatheAwarenessNudge
 import az.tribe.lifeplanner.ui.components.CoachListContentExtended
 import az.tribe.lifeplanner.ui.objectives.BeginnerObjectiveViewModel
 import coil3.compose.AsyncImage
@@ -114,6 +114,7 @@ fun AIChatScreen(
             }
         }
     ) { padding ->
+        Box(Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -238,6 +239,11 @@ fun AIChatScreen(
                         onCreateGroup = onNavigateToCreateGroup
                     )
                 }
+            }
+        }
+            // Awareness-only "take a breath" nudge while the user is heads-down in an active chat.
+            if (!uiState.showSessionList) {
+                BreatheAwarenessNudge()
             }
         }
     }

@@ -62,7 +62,8 @@ internal fun DaySummaryCard(snapshot: DaySnapshot) {
             SummaryItem(
                 icon = PhosphorIcons.Regular.Heart,
                 iconTint = Color(0xFFE91E63),
-                label = snapshot.dominantMood?.displayName ?: "No mood"
+                label = snapshot.dominantMood?.displayName
+                    ?: if (snapshot.journalEntries.isEmpty()) "No mood" else "Mixed"
             )
             SummaryItem(
                 icon = PhosphorIcons.Regular.ListChecks,

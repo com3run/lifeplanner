@@ -16,6 +16,9 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -313,6 +316,121 @@ class GamificationViewModelTest {
 
             val event = awaitItem()
             assertTrue(event is GamificationEvent.ChallengeCompleted)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    // ─── Badge celebrations ──────────────────────────────────────────────────
+    // The user should never be handed their whole badge history as a stack of dialogs.
+
+    /** A badge earned right now, so it falls inside the celebration window. */
+    private fun freshBadge(id: String, type: BadgeType) = testBadge(
+        id = id,
+        type = type,
+        earnedAt = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+    )
+
+    @Test
+    fun `existing badges do not celebrate on first load`() = runTest(testDispatcher) {
+        // Even freshly stamped badges are only a baseline on the first load.
+        fakeRepository.setBadges(
+            listOf(freshBadge("b1", BadgeType.FIRST_STEP), freshBadge("b2", BadgeType.STREAK_7))
+        )
+        fakeRepository.streakResult = Pair(1, 0)
+        viewModel = createViewModel()
+
+        viewModel.gamificationEvents.test {
+            testDispatcher.scheduler.advanceUntilIdle()
+            expectNoEvents()
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `badge history arriving after sign-in does not celebrate`() = runTest(testDispatcher) {
+        fakeRepository.streakResult = Pair(1, 0)
+        viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.gamificationEvents.test {
+            // Sync pulls down a pile of previously earned badges (old timestamps).
+            fakeRepository.setBadges(
+                BadgeType.entries.take(12).mapIndexed { i, type -> testBadge(id = "old$i", type = type) }
+            )
+            viewModel.refresh()
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            expectNoEvents()
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `a batch of newly earned badges celebrates only the best one`() = runTest(testDispatcher) {
+        fakeRepository.streakResult = Pair(1, 0)
+        viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.gamificationEvents.test {
+            fakeRepository.setBadges(
+                listOf(
+                    freshBadge("b1", BadgeType.FIRST_STEP),      // significance 1
+                    freshBadge("b2", BadgeType.STREAK_100),      // significance 5, the headline
+                    freshBadge("b3", BadgeType.GOAL_5)           // significance 2
+                )
+            )
+            viewModel.refresh()
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val event = awaitItem()
+            assertTrue(event is GamificationEvent.BadgeEarned)
+            assertEquals(BadgeType.STREAK_100, (event as GamificationEvent.BadgeEarned).badge.type)
+            assertEquals(2, event.alsoEarnedCount)
+            expectNoEvents()
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `a single newly earned badge still celebrates`() = runTest(testDispatcher) {
+        fakeRepository.streakResult = Pair(1, 0)
+        viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.gamificationEvents.test {
+            fakeRepository.setBadges(listOf(freshBadge("b1", BadgeType.FOCUS_HOUR)))
+            viewModel.refresh()
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val event = awaitItem()
+            assertTrue(event is GamificationEvent.BadgeEarned)
+            assertEquals(BadgeType.FOCUS_HOUR, (event as GamificationEvent.BadgeEarned).badge.type)
+            assertEquals(0, event.alsoEarnedCount)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `resetState rebuilds the baseline so sign-in does not replay history`() = runTest(testDispatcher) {
+        fakeRepository.streakResult = Pair(1, 0)
+        viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.gamificationEvents.test {
+            viewModel.resetState()
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            // The signed-in account's earned badges land in one go, all with past timestamps.
+            fakeRepository.setBadges(
+                listOf(
+                    testBadge(id = "b1", type = BadgeType.GOAL_50),
+                    testBadge(id = "b2", type = BadgeType.STREAK_30)
+                )
+            )
+            viewModel.refresh()
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            expectNoEvents()
             cancelAndIgnoreRemainingEvents()
         }
     }

@@ -22,6 +22,11 @@ data class FeedItem(
     val actionHabitId: String? = null,
     /** When set, tapping the card body navigates to this route (deep link into the app). */
     val route: String? = null,
+    /**
+     * When set, the first tap explains the feature before opening it (see FeatureIntroCatalog).
+     * Cards for features the user already understands leave this null and open directly.
+     */
+    val introId: String? = null,
     /** Higher sorts earlier within its interleave slot. */
     val score: Double = 0.0,
 )

@@ -37,6 +37,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import az.tribe.lifeplanner.domain.enum.GoalCategory
+import az.tribe.lifeplanner.domain.enum.HabitType
+import az.tribe.lifeplanner.domain.service.HabitTrackMode
+import com.adamglin.phosphoricons.regular.Play
+import az.tribe.lifeplanner.domain.service.durationLabel
+import az.tribe.lifeplanner.domain.service.trackMode
 import az.tribe.lifeplanner.ui.habit.HabitWithStatus
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
 import kotlin.math.absoluteValue
@@ -69,6 +74,7 @@ fun SwipeableHabitCard(
     onFocusClick: (() -> Unit)? = null,
     onIncrement: (() -> Unit)? = null,
     onCardClick: (() -> Unit)? = null,
+    onPractice: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -173,7 +179,8 @@ fun SwipeableHabitCard(
                 onCheckIn = onCheckIn,
                 onFocusClick = onFocusClick,
                 onIncrement = onIncrement,
-                onCardClick = onCardClick
+                onCardClick = onCardClick,
+                onPractice = onPractice
             )
         }
     }
@@ -221,11 +228,13 @@ fun HabitCard(
     onFocusClick: (() -> Unit)? = null,
     onIncrement: (() -> Unit)? = null,
     onCardClick: (() -> Unit)? = null,
+    onPractice: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val habit = habitWithStatus.habit
     val isCompletedToday = habitWithStatus.isCompletedToday
-    val isCountBased = habit.targetCount > 1
+    val trackMode = habit.trackMode
+    val isCountBased = trackMode == HabitTrackMode.COUNT
     val todayCount = habitWithStatus.todayCount
     val categoryColor = habit.category.backgroundColor()
 
@@ -259,28 +268,21 @@ fun HabitCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .then(
-                    if (isCompletedToday) {
-                        Modifier.background(
-                            Brush.horizontalGradient(
-                                colors = listOf(
-                                    Color(0xFF4CAF50).copy(alpha = 0.08f),
-                                    Color(0xFF4CAF50).copy(alpha = 0.03f)
-                                )
-                            )
-                        )
-                    } else Modifier
-                )
+                // No green wash on completion. The strikethrough title + gray check are enough;
+                // the card should quietly recede, not light up.
+
                 .padding(LifePlannerDesign.Padding.standard)
         ) {
-            // Top row: icon + title + check circle
+            // One clean row: icon, title + one compact subtitle, (+1 for count), check.
+            // Minimised per Kamran: dropped the weekly dots, frequency chip, focus button,
+            // description and progress bar so the card is just "see it, tick it".
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 CategoryIconBadge(
-                    category = habit.category,
+                    icon = habitIcon(habit.title, habit.category),
                     isCompleted = isCompletedToday
                 )
 
@@ -302,44 +304,26 @@ fun HabitCard(
                         overflow = TextOverflow.Ellipsis
                     )
 
-                    if (isCountBased && !isCompletedToday) {
-                        val unitLabel = habit.unit?.takeIf { it.isNotBlank() } ?: "times"
-                        Text(
-                            text = "$todayCount / ${habit.targetCount} $unitLabel",
-                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
-                            color = categoryColor
-                        )
-                    } else if (habit.description.isNotBlank() && !isCompletedToday) {
-                        Text(
-                            text = habit.description,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
+                    // A single subtitle. Count habits carry their progress on the pill now, so this
+                    // line is free for the streak; duration habits use it to state how long.
+                    if (!isCompletedToday) {
+                        when {
+                            trackMode == HabitTrackMode.DURATION -> Text(
+                                text = habit.durationLabel,
+                                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                                color = categoryColor,
+                            )
+                            habit.currentStreak > 0 -> Text(
+                                text = "🔥 ${habit.currentStreak} day${if (habit.currentStreak > 1) "s" else ""}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     }
                 }
 
-                // Focus timer shortcut
-                if (onFocusClick != null) {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .size(32.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f))
-                            .clickable(onClick = onFocusClick)
-                    ) {
-                        Icon(
-                            imageVector = PhosphorIcons.Regular.Timer,
-                            contentDescription = "Focus",
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                }
-
-                // +1 increment button for count-based habits
+                // Progress pill for count habits: shows where you are, and tapping adds one.
+                // "2/8" tells you more than "+1" ever did, and it replaces the old subtitle line.
                 if (isCountBased && !isCompletedToday && onIncrement != null) {
                     Surface(
                         onClick = onIncrement,
@@ -347,7 +331,7 @@ fun HabitCard(
                         color = categoryColor.copy(alpha = 0.15f)
                     ) {
                         Text(
-                            text = "+1",
+                            text = "$todayCount/${habit.targetCount}",
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                             color = categoryColor,
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
@@ -355,57 +339,23 @@ fun HabitCard(
                     }
                 }
 
+                // One icon, not a button: the card stays "see it, tick it", but a habit you have
+                // to actually perform gets a way in. Hidden once done, and for habits with
+                // nothing to run.
+                if (onPractice != null && !isCompletedToday && trackMode != HabitTrackMode.SINGLE) {
+                    IconButton(onClick = onPractice, modifier = Modifier.size(32.dp)) {
+                        Icon(
+                            imageVector = PhosphorIcons.Regular.Play,
+                            contentDescription = "Practice",
+                            tint = categoryColor,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                }
+
                 CheckInCircle(
                     isCompleted = isCompletedToday,
                     onClick = onCheckIn
-                )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Bottom row: weekly dots + stats
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Weekly completion dots
-                if (habitWithStatus.weeklyCompletions.isNotEmpty()) {
-                    WeeklyDots(
-                        completions = habitWithStatus.weeklyCompletions,
-                        categoryColor = habit.category.backgroundColor()
-                    )
-                }
-
-                Spacer(modifier = Modifier.weight(1f))
-
-                // Stats: streak + completions
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    HabitTypePill(type = habit.type)
-
-                    if (habit.currentStreak > 0) {
-                        StreakBadge(streak = habit.currentStreak)
-                    }
-
-                    FrequencyChip(frequency = habit.frequency)
-                }
-            }
-
-            // Count progress bar for count-based habits
-            if (isCountBased && !isCompletedToday && habit.targetCount > 0) {
-                val progress = (todayCount.toFloat() / habit.targetCount).coerceIn(0f, 1f)
-                Spacer(modifier = Modifier.height(6.dp))
-                LinearProgressIndicator(
-                    progress = { progress },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(3.dp)
-                        .clip(RoundedCornerShape(2.dp)),
-                    color = categoryColor,
-                    trackColor = categoryColor.copy(alpha = 0.15f)
                 )
             }
         }
@@ -434,3 +384,4 @@ fun GoalCategory.getIcon(): ImageVector {
         GoalCategory.FAMILY -> PhosphorIcons.Regular.House
     }
 }
+

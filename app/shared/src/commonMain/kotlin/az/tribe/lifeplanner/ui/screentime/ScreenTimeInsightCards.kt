@@ -5,7 +5,9 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -46,6 +48,9 @@ import com.adamglin.phosphoricons.regular.Clock
 import com.adamglin.phosphoricons.regular.Lightning
 import com.adamglin.phosphoricons.regular.Sparkle
 import kotlinx.coroutines.delay
+import leanlifeplanner.app.shared.generated.resources.Res
+import leanlifeplanner.app.shared.generated.resources.illus_state_waiting
+import org.jetbrains.compose.resources.painterResource
 
 @Composable
 fun OverviewCard(pattern: AppUsagePattern) {
@@ -68,7 +73,7 @@ fun OverviewCard(pattern: AppUsagePattern) {
                     StatChip(
                         icon = { Icon(PhosphorIcons.Regular.Clock, null, modifier = Modifier.size(16.dp)) },
                         label = "Peak time",
-                        value = pattern.peakHourLabel(),
+                        value = pattern.peakHourLabel() ?: "n/a",
                         modifier = Modifier.weight(1f)
                     )
                     StatChip(
@@ -287,6 +292,9 @@ fun RecommendationCard(rec: BehaviorRecommendation, index: Int, onClick: (String
                             color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier
                                 .clip(RoundedCornerShape(6.dp))
+                                // The button was styled but never wired: onClick was passed in and
+                                // never called, so tapping "Open →" did nothing.
+                                .clickable { onClick(rec.actionRoute) }
                                 .background(MaterialTheme.colorScheme.primaryContainer.copy(0.5f))
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
                         )
@@ -309,9 +317,11 @@ fun EmptyPatternCard() {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Icon(PhosphorIcons.Regular.ChartBar, null,
-                modifier = Modifier.size(48.dp),
-                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
+            Image(
+                painter = painterResource(Res.drawable.illus_state_waiting),
+                contentDescription = null,
+                modifier = Modifier.size(120.dp)
+            )
             Text("Not enough data yet", fontWeight = FontWeight.Bold, fontSize = 17.sp)
             Text(
                 "Use the app for a few more days and your personalized patterns will appear here.",

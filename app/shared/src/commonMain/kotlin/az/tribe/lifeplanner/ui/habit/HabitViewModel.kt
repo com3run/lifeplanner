@@ -5,18 +5,19 @@ import androidx.lifecycle.viewModelScope
 import az.tribe.lifeplanner.data.analytics.Analytics
 import az.tribe.lifeplanner.data.mapper.createNewHabit
 import az.tribe.lifeplanner.domain.enum.GoalCategory
+import az.tribe.lifeplanner.domain.enum.HabitCompletionSource
 import az.tribe.lifeplanner.domain.enum.HabitFrequency
 import az.tribe.lifeplanner.domain.enum.HabitType
+import az.tribe.lifeplanner.domain.enum.HealthMetricType
 import az.tribe.lifeplanner.domain.model.Habit
 import az.tribe.lifeplanner.domain.repository.HabitRepository
 import az.tribe.lifeplanner.domain.service.SmartReminderManager
+import az.tribe.lifeplanner.domain.service.KnowledgeBit
+import az.tribe.lifeplanner.usecases.habit.AwardHabitCompletionUseCase
 import az.tribe.lifeplanner.usecases.habit.CheckInHabitUseCase
+import az.tribe.lifeplanner.usecases.habit.RecommendLessonsForHabitUseCase
 import az.tribe.lifeplanner.usecases.habit.CreateHabitUseCase
 import az.tribe.lifeplanner.usecases.habit.DeleteHabitUseCase
-import az.tribe.lifeplanner.core.FeatureFlags
-import az.tribe.lifeplanner.domain.model.XpRewards
-import az.tribe.lifeplanner.domain.repository.GamificationRepository
-import az.tribe.lifeplanner.usecases.ability.AwardAbilityXpUseCase
 import az.tribe.lifeplanner.usecases.habit.UncheckHabitUseCase
 import az.tribe.lifeplanner.usecases.habit.UpdateHabitUseCase
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -30,7 +31,8 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
-import com.russhwolf.settings.Settings
+import kotlinx.datetime.LocalDate
+import co.touchlab.kermit.Logger
 import kotlinx.coroutines.launch
 import kotlin.time.Clock
 import kotlinx.datetime.DateTimeUnit
@@ -52,7 +54,11 @@ data class HabitWithStatus(
  */
 data class RecentCheckIn(
     val habit: Habit,
-    val timestamp: Long = kotlinx.datetime.Clock.System.now().toEpochMilliseconds()
+    val timestamp: Long = kotlinx.datetime.Clock.System.now().toEpochMilliseconds(),
+    /** XP this check-in earned, so the reflection sheet can show what the tap was worth. */
+    val xpAwarded: Int = 0,
+    /** A lesson about this habit, offered in the moment the user just did it. */
+    val lesson: KnowledgeBit? = null
 )
 
 class HabitViewModel(
@@ -63,15 +69,19 @@ class HabitViewModel(
     private val checkInHabitUseCase: CheckInHabitUseCase,
     private val uncheckHabitUseCase: UncheckHabitUseCase,
     private val smartReminderManager: SmartReminderManager,
-    private val awardAbilityXpUseCase: AwardAbilityXpUseCase,
-    private val gamificationRepository: GamificationRepository,
-    private val settings: Settings
+    private val awardHabitCompletionUseCase: AwardHabitCompletionUseCase,
+    private val recommendLessonsForHabit: RecommendLessonsForHabitUseCase,
 ) : ViewModel() {
 
 
     // Smart reminder events (one-shot, collected by UI for snackbar)
     private val _reminderEvent = MutableSharedFlow<String>()
     val reminderEvent: SharedFlow<String> = _reminderEvent.asSharedFlow()
+
+    // XP earned by the check-in that just happened (one-shot, collected by UI for a snackbar).
+    // Check-ins used to award XP silently, so the reward was invisible unless you went looking.
+    private val _xpEvent = MutableSharedFlow<Int>()
+    val xpEvent: SharedFlow<Int> = _xpEvent.asSharedFlow()
 
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -130,6 +140,39 @@ class HabitViewModel(
     private val _recentCheckIn = MutableStateFlow<RecentCheckIn?>(null)
     val recentCheckIn: StateFlow<RecentCheckIn?> = _recentCheckIn.asStateFlow()
 
+    // Day lens: when the hub selects a non-today day, this holds the habit ids completed that day so
+    // the Habits tab can show (and edit) that day's activity. Null (or today) => empty.
+    private val _lensDate = MutableStateFlow<LocalDate?>(null)
+    private val _lensCompletions = MutableStateFlow<Set<String>>(emptySet())
+    val lensCompletions: StateFlow<Set<String>> = _lensCompletions.asStateFlow()
+
+    fun setLensDate(date: LocalDate?) {
+        _lensDate.value = date
+        refreshLens()
+    }
+
+    private fun refreshLens() {
+        val date = _lensDate.value
+        viewModelScope.launch {
+            _lensCompletions.value = if (date == null) emptySet()
+            else runCatching {
+                habitRepository.getAllCheckInsInRange(date, date).filter { it.completed }.map { it.habitId }.toSet()
+            }.getOrDefault(emptySet())
+        }
+    }
+
+    /** Toggle a habit's completion for a specific (past) day, then refresh the lens. */
+    fun toggleCheckInForDate(habitId: String, date: LocalDate) {
+        viewModelScope.launch {
+            runCatching {
+                val existing = habitRepository.getCheckInByHabitAndDate(habitId, date)
+                if (existing != null && existing.completed) habitRepository.deleteCheckIn(existing.id)
+                else habitRepository.checkIn(habitId, date)
+            }.onFailure { Logger.w("HabitViewModel") { "past toggle failed: ${it.message}" } }
+            refreshLens()
+        }
+    }
+
     private var isCreatingHabit = false
 
     fun createHabit(
@@ -138,9 +181,13 @@ class HabitViewModel(
         category: GoalCategory,
         frequency: HabitFrequency,
         targetCount: Int = 1,
+        unit: String? = null,
         linkedGoalId: String? = null,
         reminderTime: String? = null,
-        type: HabitType = HabitType.BUILD
+        type: HabitType = HabitType.BUILD,
+        healthMetricType: HealthMetricType? = null,
+        healthTarget: Double? = null,
+        completionSource: HabitCompletionSource = HabitCompletionSource.MANUAL
     ) {
         if (isCreatingHabit) return
 
@@ -156,9 +203,13 @@ class HabitViewModel(
                     category = category,
                     frequency = frequency,
                     targetCount = targetCount,
+                    unit = unit,
                     linkedGoalId = linkedGoalId,
                     reminderTime = reminderTime,
-                    type = type
+                    type = type,
+                    healthMetricType = healthMetricType,
+                    healthTarget = healthTarget,
+                    completionSource = completionSource
                 )
                 createHabitUseCase(habit)
                 Analytics.habitCreated(frequency.name, linkedGoalId != null)
@@ -180,23 +231,7 @@ class HabitViewModel(
             try {
                 val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
                 checkInHabitUseCase(habitId, today, notes)
-                gamificationRepository.awardXp(XpRewards.HABIT_CHECK_IN.toLong())
-                if (FeatureFlags.ABILITIES_ENABLED) {
-                    awardAbilityXpUseCase(habitId)
-                }
-
-                // Perfect day bonus: all habits completed after this check-in (once per day)
-                val allCheckIns = habitRepository.getAllCheckInsInRange(today, today)
-                val completedTodayIds = allCheckIns.filter { it.completed }.map { it.habitId }.toSet()
-                val allHabitIds = habits.value.map { it.habit.id }.toSet()
-                val todayStr = today.toString()
-                if (allHabitIds.isNotEmpty() &&
-                    allHabitIds == completedTodayIds &&
-                    settings.getStringOrNull(PREF_PERFECT_DAY_DATE) != todayStr
-                ) {
-                    gamificationRepository.awardXp(XpRewards.PERFECT_DAY_BONUS.toLong())
-                    settings.putString(PREF_PERFECT_DAY_DATE, todayStr)
-                }
+                val xp = awardHabitCompletionUseCase(habitId, today)
 
                 // Track check-in
                 val streak = habitRepository.getHabitById(habitId)?.currentStreak ?: 0
@@ -207,8 +242,9 @@ class HabitViewModel(
 
                 // Emit recent check-in for reflection prompt
                 updatedHabit?.let {
-                    _recentCheckIn.value = RecentCheckIn(it)
+                    _recentCheckIn.value = RecentCheckIn(it, xpAwarded = xp, lesson = lessonFor(it))
                 }
+                _xpEvent.emit(xp)
             } catch (e: Exception) {
                 _error.value = "Failed to check in: ${e.message}"
             }
@@ -221,28 +257,21 @@ class HabitViewModel(
                 val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
                 val checkIn = habitRepository.incrementCount(habitId, today)
                 if (checkIn.completed) {
-                    gamificationRepository.awardXp(XpRewards.HABIT_CHECK_IN.toLong())
-                    if (FeatureFlags.ABILITIES_ENABLED) {
-                        awardAbilityXpUseCase(habitId)
+                    val xp = awardHabitCompletionUseCase(habitId, today)
+                    habitRepository.getHabitById(habitId)?.let {
+                        _recentCheckIn.value = RecentCheckIn(it, xpAwarded = xp, lesson = lessonFor(it))
                     }
-                    val allCheckIns = habitRepository.getAllCheckInsInRange(today, today)
-                    val completedTodayIds = allCheckIns.filter { it.completed }.map { it.habitId }.toSet()
-                    val allHabitIds = habits.value.map { it.habit.id }.toSet()
-                    val todayStr = today.toString()
-                    if (allHabitIds.isNotEmpty() &&
-                        allHabitIds == completedTodayIds &&
-                        settings.getStringOrNull(PREF_PERFECT_DAY_DATE) != todayStr
-                    ) {
-                        gamificationRepository.awardXp(XpRewards.PERFECT_DAY_BONUS.toLong())
-                        settings.putString(PREF_PERFECT_DAY_DATE, todayStr)
-                    }
-                    habitRepository.getHabitById(habitId)?.let { _recentCheckIn.value = RecentCheckIn(it) }
+                    _xpEvent.emit(xp)
                 }
             } catch (e: Exception) {
                 _error.value = "Failed to increment: ${e.message}"
             }
         }
     }
+
+    /** The lesson to offer right after a check-in, or null if nothing unread fits. */
+    private suspend fun lessonFor(habit: Habit): KnowledgeBit? =
+        runCatching { recommendLessonsForHabit.bestUnread(habit) }.getOrNull()
 
     fun clearRecentCheckIn() {
         _recentCheckIn.value = null
@@ -316,9 +345,6 @@ class HabitViewModel(
         return habits.value.maxByOrNull { it.habit.currentStreak }?.habit
     }
 
-    companion object {
-        private const val PREF_PERFECT_DAY_DATE = "gamification_perfect_day_date"
-    }
 }
 
 /**

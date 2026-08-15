@@ -1,6 +1,7 @@
 package az.tribe.lifeplanner.usecases
 
 import az.tribe.lifeplanner.domain.model.PermutationKind
+import az.tribe.lifeplanner.domain.service.LocalPossibilityFallback
 import az.tribe.lifeplanner.testutil.FakeAiProxyService
 import az.tribe.lifeplanner.testutil.testGoal
 import kotlinx.coroutines.test.runTest
@@ -10,12 +11,13 @@ import kotlin.test.assertTrue
 
 /**
  * Pillar 6 (TRI-44): verifies the divergence step parses the AI's response robustly. The AI call
- * itself is faked; these lock down the JSON handling so a stray model response never crashes the UI.
+ * itself is faked; these lock down the JSON handling so a stray model response never crashes the UI,
+ * and a proxy outage degrades to the on-device fallback instead of an empty screen.
  */
 class GeneratePossibilitiesUseCaseTest {
 
     private val ai = FakeAiProxyService()
-    private val useCase = GeneratePossibilitiesUseCase(ai)
+    private val useCase = GeneratePossibilitiesUseCase(ai, LocalPossibilityFallback())
     private val goal = testGoal(id = "g1", title = "Run a marathon")
 
     @Test
@@ -49,9 +51,25 @@ class GeneratePossibilitiesUseCaseTest {
     }
 
     @Test
-    fun `a non-JSON response yields an empty list rather than crashing`() = runTest {
+    fun `a non-JSON response falls back to local options rather than an empty screen`() = runTest {
         ai.responseToReturn = "Sorry, I can't help with that right now."
-        assertTrue(useCase(goal).isEmpty())
+        val result = useCase(goal)
+        assertEquals(PermutationKind.entries.size, result.size)
+        assertTrue(result.all { it.isLocal })
+    }
+
+    @Test
+    fun `an AI failure falls back to local options`() = runTest {
+        ai.errorToThrow = RuntimeException("proxy down")
+        val result = useCase(goal)
+        assertEquals(PermutationKind.entries.size, result.size)
+        assertTrue(result.all { it.isLocal })
+    }
+
+    @Test
+    fun `AI-parsed options are not marked local`() = runTest {
+        ai.responseToReturn = """[{"text":"A real option","permutation":"INVERT","rationale":"y"}]"""
+        assertTrue(useCase(goal).none { it.isLocal })
     }
 
     @Test

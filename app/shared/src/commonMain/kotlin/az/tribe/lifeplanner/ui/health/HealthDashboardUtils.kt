@@ -52,6 +52,15 @@ internal fun formatCompact(value: Double): String {
     }
 }
 
+/** 12345 -> "12,345" (multiplatform; String.format is JVM-only). */
+internal fun formatThousands(value: Long): String {
+    val digits = value.toString()
+    val sign = if (digits.startsWith("-")) "-" else ""
+    val body = digits.removePrefix("-")
+    val grouped = body.reversed().chunked(3).joinToString(",").reversed()
+    return sign + grouped
+}
+
 internal fun formatSleepDuration(hours: Double): String {
     val h = hours.toInt()
     val m = ((hours - h) * 60).roundToInt()

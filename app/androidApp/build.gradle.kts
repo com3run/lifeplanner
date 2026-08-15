@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.io.File
 import java.util.Properties
 
 plugins {
@@ -24,10 +25,24 @@ val localProperties: Properties = Properties().apply {
 fun localProp(key: String): String? =
     localProperties[key]?.toString() ?: project.findProperty(key) as? String
 
+// Resolve the release keystore. Set RELEASE_STORE_FILE in local.properties to point at it, given as
+// an absolute path, a ~-relative path, or a path relative to the repo root. Defaults to
+// lifeplanner.jks at the repo root. This lets the keystore live outside the repo (e.g.
+// ~/Documents/tribe/lifeplanner.jks) without copying it in.
+fun resolveKeystoreFile(): File {
+    val configured = localProp("RELEASE_STORE_FILE")?.trim()?.takeIf { it.isNotEmpty() }
+        ?: return rootProject.file("lifeplanner.jks")
+    val expanded = if (configured.startsWith("~/")) {
+        System.getProperty("user.home") + configured.substring(1)
+    } else configured
+    val f = File(expanded)
+    return if (f.isAbsolute) f else rootProject.file(expanded)
+}
+
 android {
 
     signingConfigs {
-        val keystoreFile = file("${rootDir}/lifeplanner.jks")
+        val keystoreFile = resolveKeystoreFile()
         if (keystoreFile.exists()) {
             create("release") {
                 storeFile = keystoreFile
@@ -45,8 +60,8 @@ android {
         applicationId = "az.tribe.lifeplanner"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 10
-        versionName = "2.5"
+        versionCode = libs.versions.app.versionCode.get().toInt()
+        versionName = libs.versions.app.versionName.get()
     }
     packaging {
         resources {
@@ -61,7 +76,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            val keystoreFile = file("${rootDir}/lifeplanner.jks")
+            val keystoreFile = resolveKeystoreFile()
             if (keystoreFile.exists() && signingConfigs.findByName("release") != null) {
                 signingConfig = signingConfigs.getByName("release")
             }

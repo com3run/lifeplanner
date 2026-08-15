@@ -67,83 +67,45 @@ import az.tribe.lifeplanner.ui.utils.formatHumanDetailed
 import co.touchlab.kermit.Logger
 import kotlinx.coroutines.launch
 
+/**
+ * The entry written like a page rather than announced like a poster, matching goal and habit
+ * detail. The old header was a full-bleed mood gradient with an 80dp emoji medallion and a
+ * centered bold title, and it was the one edge-to-edge block on a page of inset cards. Paper
+ * rules instead: the mood is a quiet overline, the title wraps as long as it needs to, and the
+ * date is one meta line.
+ */
 @Composable
-internal fun JournalEntryHeroHeader(
+internal fun JournalEntryPaperHeader(
     entry: JournalEntry,
     moodColor: Color
 ) {
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        moodColor.copy(alpha = 0.2f),
-                        Color.Transparent
-                    )
-                )
-            )
-            .padding(24.dp)
+            .padding(horizontal = 20.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            // Large Mood Emoji
-            Box(
-                modifier = Modifier
-                    .size(80.dp)
-                    .clip(CircleShape)
-                    .background(moodColor.copy(alpha = 0.2f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = entry.mood.emoji,
-                    fontSize = 48.sp
-                )
-            }
+        Text(
+            text = "${entry.mood.emoji}  ${entry.mood.displayName.uppercase()}",
+            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.5.sp),
+            fontWeight = FontWeight.SemiBold,
+            color = moodColor
+        )
 
-            // Title
+        if (entry.title.isNotBlank()) {
             Text(
                 text = entry.title,
                 style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface
             )
-
-            // Date
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                Icon(
-                    imageVector = PhosphorIcons.Regular.CalendarBlank,
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = entry.date.formatHumanDetailed(),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            // Mood Label
-            Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = moodColor.copy(alpha = 0.15f)
-            ) {
-                Text(
-                    text = entry.mood.displayName,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = moodColor,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                )
-            }
         }
+
+        Text(
+            text = entry.date.formatHumanDetailed(),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 

@@ -1,5 +1,28 @@
 package az.tribe.lifeplanner.ui.foryou
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.spring
+import androidx.compose.ui.graphics.graphicsLayer
+import az.tribe.lifeplanner.ui.components.BreathingCard
+import az.tribe.lifeplanner.domain.model.CalendarEvent
+import az.tribe.lifeplanner.ui.calendar.CalendarPermissionState
+import az.tribe.lifeplanner.ui.calendar.CalendarViewModel
+import az.tribe.lifeplanner.ui.calendar.rememberCalendarPermission
+import az.tribe.lifeplanner.ui.components.rememberHapticManager
+import androidx.compose.foundation.background
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,52 +31,108 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.rememberCoroutineScope
+import org.koin.compose.koinInject
+import com.russhwolf.settings.Settings
+import az.tribe.lifeplanner.domain.repository.GamificationRepository
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import az.tribe.lifeplanner.domain.model.FeedItem
 import az.tribe.lifeplanner.domain.model.FeedKind
+import az.tribe.lifeplanner.domain.model.HourlyBrief
+import az.tribe.lifeplanner.domain.model.TodayWeather
+import az.tribe.lifeplanner.domain.model.WeatherCondition
 import az.tribe.lifeplanner.domain.model.UserProgress
 import az.tribe.lifeplanner.ui.components.AppButton
 import az.tribe.lifeplanner.ui.components.AppButtonVariant
 import az.tribe.lifeplanner.ui.components.GradientHero
 import az.tribe.lifeplanner.ui.components.IconChip
 import az.tribe.lifeplanner.ui.components.ProgressRing
+import az.tribe.lifeplanner.ui.intro.FeatureIntroHost
+import az.tribe.lifeplanner.location.LocationPermissionState
+import az.tribe.lifeplanner.location.rememberLocationPermission
+import az.tribe.lifeplanner.ui.navigation.Screen
+import az.tribe.lifeplanner.domain.service.BreathMoment
+import az.tribe.lifeplanner.domain.model.WheelArea
+import az.tribe.lifeplanner.domain.model.ScoreSource
+import az.tribe.lifeplanner.ui.components.todayBreathKey
+import az.tribe.lifeplanner.ui.onboarding.CoachOnboardingViewModel
+import az.tribe.lifeplanner.ui.wheel.WheelStripCard
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import az.tribe.lifeplanner.domain.service.StepDuration
+import com.adamglin.phosphoricons.fill.Play
+import az.tribe.lifeplanner.ui.today.PlanItem
+import az.tribe.lifeplanner.ui.today.TodayWeatherViewModel
+import az.tribe.lifeplanner.ui.intro.rememberFeatureIntroGate
+import androidx.compose.runtime.LaunchedEffect
+import az.tribe.lifeplanner.usecases.health.GetHealthHabitProgressUseCase
+import az.tribe.lifeplanner.domain.enum.HealthMetricType
+import com.adamglin.phosphoricons.regular.Heartbeat
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
 import az.tribe.lifeplanner.ui.theme.bouncyClickable
 import az.tribe.lifeplanner.ui.theme.gradientColors
 import az.tribe.lifeplanner.ui.theme.modernColors
 import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Fill
+import com.adamglin.phosphoricons.fill.CheckCircle
 import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.ArrowsOutSimple
 import com.adamglin.phosphoricons.regular.Brain
+import com.adamglin.phosphoricons.regular.CalendarBlank
+import com.adamglin.phosphoricons.regular.CaretDown
 import com.adamglin.phosphoricons.regular.CaretRight
+import com.adamglin.phosphoricons.regular.Circle
 import com.adamglin.phosphoricons.regular.ClockCounterClockwise
 import com.adamglin.phosphoricons.regular.Fire
+import com.adamglin.phosphoricons.regular.Flag
 import com.adamglin.phosphoricons.regular.Lightning
 import com.adamglin.phosphoricons.regular.Sparkle
+import com.adamglin.phosphoricons.regular.X
 import org.koin.compose.viewmodel.koinViewModel
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.todayIn
 import kotlin.time.Clock
 
 /**
@@ -66,22 +145,78 @@ import kotlin.time.Clock
 @Composable
 fun ForYouScreen(
     onOpenRoute: (String) -> Unit,
+    onOpenWeather: (TodayWeather) -> Unit,
     viewModel: ForYouViewModel = koinViewModel(),
 ) {
     val feed by viewModel.feed.collectAsState()
     val progress by viewModel.progress.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val plan by viewModel.todayPlan.collectAsState()
+    val healthHabits by viewModel.healthHabits.collectAsState()
+    val wheel by viewModel.wheel.collectAsState()
+    val checkinPulse by viewModel.checkinPulse.collectAsState()
     val c = MaterialTheme.modernColors
 
+    // Today's device-calendar events, folded into "Today's plan" so the plan reflects real
+    // appointments, not just goal milestones. Read-only; empty (and silent) without permission.
+    val calendarViewModel: CalendarViewModel = koinViewModel()
+    val calendarPermission = rememberCalendarPermission()
+    val todayEvents by calendarViewModel.dayEvents.collectAsState()
+    val tz = remember { TimeZone.currentSystemDefault() }
+    val feedNowHour = remember { Clock.System.now().toLocalDateTime(tz).hour }
+    // Read once per open. The card hides itself the moment a breath is finished, so this only has
+    // to be right at the point we decide whether to bring it up at all.
+    val feedSettings: Settings = koinInject()
+    val breathsToday = remember { feedSettings.getInt(todayBreathKey(), 0) }
+    // The coach's questions are no longer a gate before the app, so they are offered here instead.
+    // Hidden once answered or declined; an offer that keeps returning is not an offer.
+    var coachSetupDone by remember {
+        mutableStateOf(
+            az.tribe.lifeplanner.ui.onboarding.AboutYouViewModel.isHandled(feedSettings) ||
+                CoachOnboardingViewModel.isComplete(feedSettings)
+        )
+    }
+    LaunchedEffect(calendarPermission.state) {
+        if (calendarPermission.state == CalendarPermissionState.GRANTED) {
+            calendarViewModel.loadDay(Clock.System.todayIn(tz))
+        }
+    }
+    val calendarConnected = calendarPermission.state == CalendarPermissionState.GRANTED
+
+    // Today's weather (Open-Meteo). The permission lives in Compose; feed its state to the VM.
+    val weatherViewModel: TodayWeatherViewModel = koinViewModel()
+    val weatherState by weatherViewModel.state.collectAsState()
+    val locationPermission = rememberLocationPermission()
+    LaunchedEffect(locationPermission.state) {
+        weatherViewModel.onPermissionState(locationPermission.state == LocationPermissionState.GRANTED)
+    }
     var filter by remember { mutableStateOf<FeedSection?>(null) }
+    val introGate = rememberFeatureIntroGate()
     val visible = remember(feed, filter) {
         val f = filter
         if (f == null) feed else feed.filter { it.kind.section() == f }
     }
     val grouped = remember(visible) { visible.groupBy { it.kind.section() } }
+    // Only sections that actually have cards earn a chip. A week-one feed is DO_NEXT and
+    // KNOWLEDGE only, and tapping "Reflect on today" used to render a feed of nothing at all
+    // (same rule as the wheel history's offered periods).
+    val offeredSections = remember(feed) {
+        FeedSection.entries.filter { sec -> feed.any { it.kind.section() == sec } }
+    }
+    LaunchedEffect(offeredSections) {
+        // A selected section can empty out from under the filter (last card acted on).
+        if (filter != null && filter !in offeredSections) filter = null
+    }
+
+    // Confirm what an action was worth. Ticking a plan item or a habit used to award XP silently.
+    val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(Unit) {
+        viewModel.xpEvent.collect { xp -> if (xp > 0) snackbarHostState.showSnackbar("+$xp XP") }
+    }
 
     Scaffold(
         containerColor = c.background,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("For You", fontWeight = FontWeight.Bold) },
@@ -99,8 +234,87 @@ fun ForYouScreen(
             ),
             verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.md),
         ) {
-            item { Header(progress) }
-            item { FilterRow(selected = filter, onSelect = { filter = it }) }
+            // The header is now weather-forward when we have it: one understandable widget instead of
+            // a big greeting. Falls back to the greeting hero when weather isn't available yet.
+            val loadedWeather = (weatherState as? TodayWeatherViewModel.State.Loaded)?.weather
+            item { TodayHero(progress = progress, weather = loadedWeather, onExpand = { loadedWeather?.let(onOpenWeather) }) }
+
+            // Hourly detail lives inside the tap-to-expand weather popup, not as a second feed card.
+            if (weatherState is TodayWeatherViewModel.State.NeedsPermission) {
+                item(key = "weather_prompt") { WeatherPromptCard(onEnable = locationPermission.request) }
+            }
+
+            if (!coachSetupDone) {
+                item(key = "coach_setup") {
+                    CoachSetupCard(
+                        onStart = { onOpenRoute(Screen.AboutYou.route) },
+                        onDismiss = {
+                            feedSettings.putBoolean(
+                                az.tribe.lifeplanner.ui.onboarding.AboutYouViewModel.KEY_HANDLED,
+                                true,
+                            )
+                            coachSetupDone = true
+                        },
+                    )
+                }
+            }
+
+            // The wheel is the one view that shows a whole life at once, so it gets the space to
+            // be looked at rather than a status strip beside two lines of text.
+            item(key = "balance") {
+                WheelStripCard(
+                    wheel,
+                    onOpen = { onOpenRoute(Screen.WheelOfLife.route) },
+                    prominent = true,
+                )
+            }
+
+            // Today's plan, planner-style: tick items off right here instead of jumping to Goals.
+            // Only rendered when the day actually has something in it. A header over a "you're all
+            // caught up" line is just chrome on an empty day, and it pushes the feed down.
+            val hasCalendarToday = calendarConnected && todayEvents.isNotEmpty()
+            if (plan.isNotEmpty() || hasCalendarToday || healthHabits.isNotEmpty()) {
+                item(key = "plan_header") { SectionHeader(label = "Today's plan", onSeeAll = null) }
+                // Calendar events lead the plan: they are time-anchored, so they read top-of-day.
+                if (hasCalendarToday) {
+                    items(todayEvents, key = { "cal_${it.id}" }) { event ->
+                        CalendarPlanRow(event = event, tz = tz)
+                    }
+                }
+                // Health-linked habits next. They can't be ticked by hand — health data completes
+                // them — so the row carries the live number instead of a checkbox that does nothing.
+                items(healthHabits, key = { "health_${it.habitId}" }) { habit ->
+                    HealthHabitRow(progress = habit)
+                }
+                items(plan, key = { "plan_${it.milestoneId}" }) { p ->
+                    PlanRow(
+                        item = p,
+                        onComplete = { viewModel.completePlanItem(p.milestoneId) },
+                        onOpen = { onOpenRoute("goal_detail/${p.goalId}") },
+                    )
+                }
+            }
+
+            // A breath, but only on a day that gives us a reason to mention it, and below the plan
+            // rather than above it: it is a reminder, not the first thing you came here for.
+            val breathMoment = BreathMoment.of(
+                hourOfDay = feedNowHour,
+                planItems = plan.size + healthHabits.size + todayEvents.size,
+                mentalScore = wheel?.scores
+                    ?.firstOrNull { it.area == WheelArea.MENTAL && it.source != ScoreSource.ESTIMATED }
+                    ?.score,
+                breathsToday = breathsToday,
+                overdueItems = plan.count { it.overdue },
+            )
+            if (breathMoment != null) {
+                item(key = "breath") { BreathingCard(reason = breathMoment.reason) }
+            }
+
+            // With one section there is nothing to filter between, so the row would be All plus
+            // one chip showing the identical list.
+            if (offeredSections.size >= 2) {
+                item { FilterRow(selected = filter, offered = offeredSections, onSelect = { filter = it }) }
+            }
 
             if (feed.isEmpty()) {
                 item {
@@ -113,12 +327,27 @@ fun ForYouScreen(
                 FeedSection.entries.forEach { sec ->
                     val cards = grouped[sec].orEmpty()
                     if (cards.isNotEmpty()) {
-                        item(key = "h_${sec.name}") { SectionLabel(sec.label) }
+                        item(key = "h_${sec.name}") {
+                            SectionHeader(
+                                label = sec.label,
+                                onSeeAll = if (sec == FeedSection.LEARN) {
+                                    { onOpenRoute(Screen.LearnHub.route) }
+                                } else null,
+                            )
+                        }
                         items(cards, key = { it.id }) { fi ->
+                            val accent = accentFor(fi)
+                            // Opening the card's destination (a feature the user hasn't met explains
+                            // itself first via the intro gate). Shared by the card body and the button.
+                            val open: () -> Unit = { fi.route?.let { route -> introGate.open(fi.introId, accent) { onOpenRoute(route) } } }
                             FeedCard(
                                 item = fi,
-                                onAction = { fi.actionHabitId?.let(viewModel::checkInHabit) },
-                                onOpen = { fi.route?.let(onOpenRoute) },
+                                accent = accent,
+                                pulse = fi.actionHabitId?.let { checkinPulse[it] },
+                                // Habit cards check in inline; every other action button opens the
+                                // place to act, so the labeled button always does what it says.
+                                onAction = { fi.actionHabitId?.let(viewModel::checkInHabit) ?: open() },
+                                onOpen = open,
                             )
                         }
                     }
@@ -126,37 +355,48 @@ fun ForYouScreen(
             }
         }
     }
+
+    FeatureIntroHost(introGate)
+}
+
+@Composable
+private fun accentFor(item: FeedItem): Color {
+    val c = MaterialTheme.modernColors
+    return when (item.kind) {
+        FeedKind.DO_NEXT -> item.category?.gradientColors()?.firstOrNull() ?: c.primary
+        FeedKind.INSIGHT -> c.secondary
+        FeedKind.BECOMING -> c.success
+        FeedKind.PATTERN -> c.accent
+        FeedKind.MOMENTUM -> c.warning
+        FeedKind.KNOWLEDGE -> c.primary
+        FeedKind.POSSIBILITY -> c.secondary
+    }
 }
 
 @Composable
 private fun Header(progress: UserProgress?) {
     val p = progress
+    // Level/streak live on the You tab; keep the greeting hero calm when weather isn't available.
     GradientHero(
         eyebrow = today(),
         title = greeting(),
         subtitle = when {
             p == null -> "Here is your day, your way."
-            p.currentStreak > 0 -> "${p.currentStreak} day streak, level ${p.currentLevel} ${p.title}."
-            else -> "Level ${p.currentLevel} ${p.title}. Let's build today."
-        },
-        trailing = if (p == null) null else {
-            {
-                ProgressRing(
-                    progress = p.levelProgress.coerceIn(0f, 1f), diameter = 64.dp, strokeWidth = 7.dp,
-                    color = Color.White, trackColor = Color.White.copy(alpha = 0.3f),
-                ) {
-                    Text("Lv ${p.currentLevel}", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold), color = Color.White)
-                }
-            }
+            p.currentStreak > 0 -> "${p.currentStreak} day streak. Let's build on it."
+            else -> "Let's build today."
         },
     )
 }
 
 @Composable
-private fun FilterRow(selected: FeedSection?, onSelect: (FeedSection?) -> Unit) {
+private fun FilterRow(
+    selected: FeedSection?,
+    offered: List<FeedSection>,
+    onSelect: (FeedSection?) -> Unit,
+) {
     Row(horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.xs)) {
         FilterChip("All", selected == null) { onSelect(null) }
-        FeedSection.entries.forEach { sec ->
+        offered.forEach { sec ->
             FilterChip(sec.label, selected == sec) { onSelect(sec) }
         }
     }
@@ -180,17 +420,14 @@ private fun FilterChip(label: String, active: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-private fun FeedCard(item: FeedItem, onAction: () -> Unit, onOpen: () -> Unit) {
+private fun FeedCard(
+    item: FeedItem,
+    accent: Color,
+    pulse: ForYouViewModel.CheckinPulse? = null,
+    onAction: () -> Unit,
+    onOpen: () -> Unit,
+) {
     val c = MaterialTheme.modernColors
-    val accent = when (item.kind) {
-        FeedKind.DO_NEXT -> item.category?.gradientColors()?.firstOrNull() ?: c.primary
-        FeedKind.INSIGHT -> c.secondary
-        FeedKind.BECOMING -> c.success
-        FeedKind.PATTERN -> c.accent
-        FeedKind.MOMENTUM -> c.warning
-        FeedKind.KNOWLEDGE -> c.primary
-        FeedKind.POSSIBILITY -> c.secondary
-    }
     Surface(
         modifier = Modifier.fillMaxWidth().bouncyClickable(enabled = item.route != null, onClick = onOpen),
         color = c.cardBackground,
@@ -212,13 +449,76 @@ private fun FeedCard(item: FeedItem, onAction: () -> Unit, onOpen: () -> Unit) {
                 }
             }
             if (item.actionLabel != null) {
-                AppButton(
-                    text = item.actionLabel,
-                    onClick = onAction,
-                    variant = AppButtonVariant.PRIMARY,
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                val haptic = rememberHapticManager()
+                AnimatedContent(
+                    targetState = when {
+                        pulse?.done == true -> 2
+                        pulse != null -> 1
+                        else -> 0
+                    },
+                    transitionSpec = {
+                        (scaleIn(initialScale = 0.9f) + fadeIn()) togetherWith fadeOut()
+                    },
+                    label = "checkin_cta",
+                ) { state ->
+                    when (state) {
+                        // Fully done: a bold green confirmation with a check that springs in, held a beat.
+                        2 -> DoneConfirm(target = pulse?.target ?: 1)
+                        // Counting up: progress on the button; each tap adds one more with a tactile tick.
+                        1 -> AppButton(
+                            text = "Add one more · ${pulse?.count ?: 0}/${pulse?.target ?: 1}",
+                            onClick = { haptic.success(); onAction() },
+                            variant = AppButtonVariant.PRIMARY,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        else -> {
+                            // Habit check-in is the primary act (filled + success buzz); navigation
+                            // actions (Open goal / step / focus) are secondary with a lighter tap.
+                            val isCheckIn = item.actionHabitId != null
+                            AppButton(
+                                text = item.actionLabel,
+                                onClick = { if (isCheckIn) haptic.success() else haptic.click(); onAction() },
+                                variant = if (isCheckIn) AppButtonVariant.PRIMARY else AppButtonVariant.SECONDARY,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
+                    }
+                }
             }
+        }
+    }
+}
+
+/** The satisfying "you did it" state: a filled green bar with a check that springs in. */
+@Composable
+private fun DoneConfirm(target: Int) {
+    val c = MaterialTheme.modernColors
+    val scale = remember { Animatable(0.5f) }
+    LaunchedEffect(Unit) {
+        scale.animateTo(1f, animationSpec = spring(dampingRatio = 0.42f, stiffness = 520f))
+    }
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = c.success,
+        shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.medium),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 14.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                PhosphorIcons.Fill.CheckCircle,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(22.dp).graphicsLayer { scaleX = scale.value; scaleY = scale.value },
+            )
+            Spacer(Modifier.size(8.dp))
+            Text(
+                if (target > 1) "All $target done!" else "Checked in!",
+                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                color = Color.White,
+            )
         }
     }
 }
@@ -248,14 +548,599 @@ private fun LeadingVisual(item: FeedItem, accent: Color) {
     }
 }
 
+/**
+ * The Today header. When weather is available it becomes one compact widget, place + conditions as
+ * the headline (no oversized greeting), the alert or high/low + streak as the subtitle, and the
+ * level ring kept on the right. Falls back to the plain greeting hero otherwise.
+ */
 @Composable
-private fun SectionLabel(text: String) {
-    Text(
-        text,
-        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-        color = MaterialTheme.modernColors.textPrimary,
-        modifier = Modifier.padding(top = LifePlannerDesign.Spacing.xs),
-    )
+private fun TodayHero(progress: UserProgress?, weather: TodayWeather?, onExpand: () -> Unit) {
+    if (weather == null) {
+        Header(progress)
+        return
+    }
+    val subtitle = weather.alert ?: buildString {
+        append("H ${weather.highC}°  L ${weather.lowC}°")
+        if (progress != null && progress.currentStreak > 0) append(" · ${progress.currentStreak} day streak")
+    }
+    val place = weather.placeName
+    val hour = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).hour
+    // Level lives on the You tab; the Today hero is a clean weather widget whose background reflects
+    // the day's mood (condition + time), and taps open the full details.
+    Box(Modifier.clickable(onClick = onExpand)) {
+        GradientHero(
+            eyebrow = if (place != null) "${today()} · $place" else today(),
+            title = "${weather.condition.emoji}  ${weather.temperatureC}°  ${weather.condition.label}",
+            subtitle = subtitle,
+            gradient = heroMoodGradient(weather.condition, hour),
+            trailing = {
+                Icon(PhosphorIcons.Regular.ArrowsOutSimple, contentDescription = "Expand weather", tint = Color.White.copy(alpha = 0.85f))
+            },
+        )
+    }
+}
+
+/**
+ * A deterministic "day mood" gradient for the hero, dynamic through the day but predictable: the same
+ * condition + time band always yields the same look. Night and rain read cool and calm; clear days
+ * read bright; sunset reads warm.
+ */
+private fun heroMoodGradient(condition: WeatherCondition, hour: Int): Brush {
+    val night = hour < 6 || hour >= 20
+    val evening = hour in 17..19
+    val rainy = condition == WeatherCondition.RAIN || condition == WeatherCondition.HEAVY_RAIN ||
+        condition == WeatherCondition.SHOWERS || condition == WeatherCondition.DRIZZLE
+    val cloudy = condition == WeatherCondition.CLOUDY || condition == WeatherCondition.PARTLY_CLOUDY || condition == WeatherCondition.FOG
+    val colors = when {
+        night -> listOf(Color(0xFF1E1B4B), Color(0xFF312E81))            // deep indigo night
+        condition == WeatherCondition.THUNDERSTORM -> listOf(Color(0xFF2E3B4E), Color(0xFF465A73))
+        rainy -> listOf(Color(0xFF41556B), Color(0xFF5B7089))            // calm slate
+        evening -> listOf(Color(0xFFF6836B), Color(0xFF9B5DE5))          // sunset coral → violet
+        cloudy -> listOf(Color(0xFF5E6E86), Color(0xFF8090A8))           // muted grey-blue
+        else -> listOf(Color(0xFF3B82F6), Color(0xFF6366F1))             // bright clear day
+    }
+    return Brush.linearGradient(colors)
+}
+
+/**
+ * Fullscreen weather detail. Opens over the whole screen showing the mood gradient with a big
+ * current-conditions headline; as the user scrolls, the backdrop washes to the theme surface
+ * ("turns white") and the top toolbar gains a solid background so the close (X) stays legible.
+ */
+@Composable
+fun WeatherDetailFullScreen(weather: TodayWeather, onDismiss: () -> Unit) {
+    val c = MaterialTheme.modernColors
+    val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+    val nowHour = now.hour
+    val nowLabel = timeLabel(now.hour, now.minute)
+    val gradient = heroMoodGradient(weather.condition, nowHour)
+
+    val listState = rememberLazyListState()
+    // 0f at the very top (hero gradient in full) → 1f once the headline scrolls away.
+    val collapse by remember {
+        derivedStateOf {
+            if (listState.firstVisibleItemIndex > 0) 1f
+            else (listState.firstVisibleItemScrollOffset / 420f).coerceIn(0f, 1f)
+        }
+    }
+    val toolbarTint = lerp(Color.White, c.textPrimary, collapse)
+
+    Box(Modifier.fillMaxSize().background(gradient)) {
+        // The theme surface wash that fades in over the gradient as you scroll.
+        Box(Modifier.fillMaxSize().background(c.background.copy(alpha = collapse)))
+
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
+                top = 104.dp,
+                bottom = 40.dp,
+                start = LifePlannerDesign.Padding.screenHorizontal,
+                end = LifePlannerDesign.Padding.screenHorizontal,
+            ),
+            verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.md),
+        ) {
+            // Big current-conditions headline, over the gradient (white text throughout).
+            item(key = "wx_head") {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        weather.placeName ?: today(),
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                        color = Color.White.copy(alpha = 0.9f),
+                    )
+                    Text(weather.condition.emoji, style = MaterialTheme.typography.displayMedium)
+                    Text(
+                        "${weather.temperatureC}°",
+                        style = MaterialTheme.typography.displayLarge.copy(fontWeight = FontWeight.Bold),
+                        color = Color.White,
+                    )
+                    Text(
+                        weather.condition.label,
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Medium),
+                        color = Color.White.copy(alpha = 0.95f),
+                    )
+                    Text(
+                        "H ${weather.highC}°    L ${weather.lowC}°",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color.White.copy(alpha = 0.85f),
+                    )
+                }
+            }
+
+            weather.alert?.let { alert ->
+                item(key = "wx_alert") {
+                    Surface(color = Color.White.copy(alpha = 0.2f), shape = RoundedCornerShape(12.dp)) {
+                        Text(
+                            alert,
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                            color = Color.White,
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = LifePlannerDesign.Spacing.sm, vertical = LifePlannerDesign.Spacing.xs),
+                        )
+                    }
+                }
+            }
+
+            if (weather.hourly.isNotEmpty()) {
+                item(key = "wx_hourly") {
+                    Surface(color = c.cardBackground, shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large)) {
+                        Column(
+                            Modifier.padding(LifePlannerDesign.Padding.cardContent),
+                            verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
+                        ) {
+                            Text("Weather by the hour", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold), color = c.textPrimary)
+                            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm)) {
+                                weather.hourly.forEach { h -> HourCell(h, isNow = h.hour == nowHour) }
+                            }
+                        }
+                    }
+                }
+            }
+
+            val d = weather.details
+            val metrics = buildList {
+                d?.feelsLikeC?.let { add("Feels like" to "$it°") }
+                d?.humidityPct?.let { add("Humidity" to "$it%") }
+                d?.windSpeedKmh?.let { add("Wind" to "$it km/h") }
+                d?.rainChanceMaxPct?.let { add("Rain chance" to "$it%") }
+                d?.uvIndexMax?.let { add("UV index" to "$it") }
+                d?.sunrise?.let { add("Sunrise" to it) }
+                d?.sunset?.let { add("Sunset" to it) }
+            }
+            metrics.chunked(2).forEach { row ->
+                item(key = "wx_m_${row.first().first}") {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm)) {
+                        row.forEach { (label, value) -> MetricTile(label, value, Modifier.weight(1f)) }
+                        if (row.size == 1) Spacer(Modifier.weight(1f))
+                    }
+                }
+            }
+
+            item(key = "wx_src") {
+                Text("As of $nowLabel · Source: ${weather.source}", style = MaterialTheme.typography.labelSmall, color = c.textTertiary)
+            }
+        }
+
+        // Toolbar: close (X) on the left. Transparent over the gradient, solid once it turns white.
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(c.background.copy(alpha = collapse))
+                .statusBarsPadding()
+                .padding(horizontal = LifePlannerDesign.Spacing.xs, vertical = LifePlannerDesign.Spacing.xs),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(onClick = onDismiss) {
+                Icon(PhosphorIcons.Regular.X, contentDescription = "Close", tint = toolbarTint)
+            }
+            if (collapse > 0.5f) {
+                Text(
+                    "${weather.temperatureC}°  ${weather.condition.label}",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = toolbarTint,
+                    modifier = Modifier.padding(start = LifePlannerDesign.Spacing.xs),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun MetricTile(label: String, value: String, modifier: Modifier = Modifier) {
+    val c = MaterialTheme.modernColors
+    Surface(modifier = modifier, color = c.cardBackground, shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.medium)) {
+        Column(Modifier.padding(LifePlannerDesign.Padding.cardContent), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(label, style = MaterialTheme.typography.labelSmall, color = c.textTertiary)
+            Text(value, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = c.textPrimary)
+        }
+    }
+}
+
+@Composable
+private fun HourCell(h: HourlyBrief, isNow: Boolean = false) {
+    val c = MaterialTheme.modernColors
+    val wet = h.precipitationProbability in 1..100
+    val heavyNow = isNow && wet && h.precipitationProbability >= 50
+    // The current hour is highlighted so "what's happening now" is easy to catch at a glance.
+    val bg = when {
+        heavyNow -> Color(0xFFE53935).copy(alpha = 0.18f) // rain right now: warm alert tint
+        isNow -> c.primary.copy(alpha = 0.16f)
+        else -> Color.Transparent
+    }
+    Column(
+        modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(bg).padding(horizontal = 8.dp, vertical = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(3.dp),
+    ) {
+        Text(
+            if (isNow) "Now" else clockShort(h.hour),
+            style = MaterialTheme.typography.labelSmall.copy(fontWeight = if (isNow) FontWeight.Bold else FontWeight.Normal),
+            color = if (isNow) c.primary else c.textSecondary,
+        )
+        Text(h.condition.emoji, style = MaterialTheme.typography.titleMedium)
+        Text("${h.temperatureC}°", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium), color = if (isNow) c.primary else c.textPrimary)
+        Text(
+            if (wet) "${h.precipitationProbability}%" else " ",
+            style = MaterialTheme.typography.labelSmall,
+            color = if (wet && h.precipitationProbability >= 50) c.primary else c.textTertiary,
+        )
+    }
+}
+
+private fun clockShort(hour24: Int): String {
+    val h = ((hour24 % 24) + 24) % 24
+    val period = if (h < 12) "AM" else "PM"
+    val h12 = when (h % 12) { 0 -> 12; else -> h % 12 }
+    return "$h12$period"
+}
+
+/** Device-local time like "1:57 PM". */
+private fun timeLabel(hour24: Int, minute: Int): String {
+    val h = ((hour24 % 24) + 24) % 24
+    val period = if (h < 12) "AM" else "PM"
+    val h12 = when (h % 12) { 0 -> 12; else -> h % 12 }
+    val mm = minute.toString().padStart(2, '0')
+    return "$h12:$mm $period"
+}
+
+@Composable
+private fun WeatherPromptCard(onEnable: () -> Unit) {
+    val c = MaterialTheme.modernColors
+    Surface(Modifier.fillMaxWidth(), color = c.cardBackground, shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large)) {
+        Row(
+            Modifier.fillMaxWidth().padding(LifePlannerDesign.Padding.cardContent),
+            horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("🌤️", style = MaterialTheme.typography.headlineSmall)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text("See today's weather here", style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = c.textPrimary)
+                Text("Turn on location to plan around conditions like incoming rain.", style = MaterialTheme.typography.bodySmall, color = c.textSecondary)
+            }
+            AppButton(text = "Enable", onClick = onEnable, variant = AppButtonVariant.SECONDARY)
+        }
+    }
+}
+
+/** Planner-style row: a tappable check circle ticks the milestone done in place (no navigation). */
+@Composable
+private fun CalendarPlanRow(event: CalendarEvent, tz: TimeZone) {
+    val c = MaterialTheme.modernColors
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = c.cardBackground,
+        shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large),
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(LifePlannerDesign.Padding.cardContent),
+            horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = PhosphorIcons.Regular.CalendarBlank,
+                contentDescription = null,
+                tint = c.primary,
+                modifier = Modifier.padding(4.dp).size(LifePlannerDesign.IconSize.large),
+            )
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(event.title, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = c.textPrimary, maxLines = 1)
+                event.location?.let {
+                    Text(it, style = MaterialTheme.typography.bodySmall, color = c.textSecondary, maxLines = 1)
+                }
+            }
+            Surface(color = c.primary.copy(alpha = 0.12f), shape = RoundedCornerShape(8.dp)) {
+                Text(
+                    eventTimeLabel(event, tz),
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                    color = c.primary,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                )
+            }
+        }
+    }
+}
+
+/**
+ * A habit that health data completes: shows today's reading against the target, with a progress
+ * track, instead of a check circle the user has no way to tick.
+ */
+@Composable
+private fun HealthHabitRow(progress: GetHealthHabitProgressUseCase.Progress) {
+    val c = MaterialTheme.modernColors
+    val done = progress.done
+    val accent = if (done) Color(0xFF28C76F) else c.primary
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = c.cardBackground,
+        shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large),
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(LifePlannerDesign.Padding.cardContent),
+            horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = if (done) PhosphorIcons.Fill.CheckCircle else PhosphorIcons.Regular.Heartbeat,
+                contentDescription = null,
+                tint = accent,
+                modifier = Modifier.padding(4.dp).size(LifePlannerDesign.IconSize.large),
+            )
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                    progress.title,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                    color = c.textPrimary,
+                    maxLines = 1,
+                )
+                val fraction = progress.fraction
+                if (fraction != null) {
+                    val animated by animateFloatAsState(targetValue = fraction, label = "healthHabitProgress")
+                    Box(
+                        Modifier.fillMaxWidth().height(6.dp)
+                            .clip(RoundedCornerShape(3.dp))
+                            .background(c.primary.copy(alpha = 0.12f)),
+                    ) {
+                        Box(
+                            Modifier.fillMaxWidth(animated).height(6.dp)
+                                .clip(RoundedCornerShape(3.dp))
+                                .background(accent),
+                        )
+                    }
+                }
+                Text(
+                    healthProgressLabel(progress),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = c.textSecondary,
+                    maxLines = 1,
+                )
+            }
+        }
+    }
+}
+
+/** "6,240 / 8,000 steps", or just the reading for habits that only need one. */
+private fun healthProgressLabel(p: GetHealthHabitProgressUseCase.Progress): String {
+    val unit = when (p.metricType) {
+        HealthMetricType.STEPS -> "steps"
+        HealthMetricType.SLEEP -> "h"
+        HealthMetricType.WEIGHT -> "kg"
+        HealthMetricType.HEART_RATE -> "bpm"
+    }
+    val current = formatHealthValue(p.current, p.metricType)
+    val target = p.target?.let { formatHealthValue(it, p.metricType) }
+    return when {
+        target != null && p.metricType == HealthMetricType.SLEEP -> "$current$unit of $target$unit"
+        target != null -> "$current / $target $unit"
+        p.current <= 0.0 -> "No reading yet today"
+        else -> "$current $unit today"
+    }
+}
+
+private fun formatHealthValue(value: Double, type: HealthMetricType): String = when (type) {
+    // Steps read as whole numbers with a thousands separator; the rest keep one decimal.
+    HealthMetricType.STEPS -> value.toLong().toString()
+        .reversed().chunked(3).joinToString(",").reversed()
+    else -> {
+        val rounded = (value * 10).toLong() / 10.0
+        if (rounded == rounded.toLong().toDouble()) rounded.toLong().toString() else rounded.toString()
+    }
+}
+
+private fun eventTimeLabel(event: CalendarEvent, tz: TimeZone): String {
+    if (event.allDay) return "All day"
+    val dt = Instant.fromEpochMilliseconds(event.startEpochMillis).toLocalDateTime(tz)
+    val hour12 = when (val h = dt.hour % 12) {
+        0 -> 12
+        else -> h
+    }
+    val minute = dt.minute.toString().padStart(2, '0')
+    val meridiem = if (dt.hour < 12) "AM" else "PM"
+    return "$hour12:$minute $meridiem"
+}
+
+@Composable
+private fun PlanRow(item: PlanItem, onComplete: () -> Unit, onOpen: () -> Unit) {
+    val c = MaterialTheme.modernColors
+    val haptic = rememberHapticManager()
+    val overdueColor = Color(0xFFE53935)
+
+    // Steps that are written as a length of time ("Hold crow pose 30 seconds") are timers wearing a
+    // tick box: the user has to do the thing, watch a clock elsewhere, then come back and tick.
+    // When we can read the duration, the row runs it and ticks itself at zero.
+    val totalSeconds = remember(item.title) { StepDuration.secondsIn(item.title) }
+    var remaining by remember(item.milestoneId) { mutableStateOf<Int?>(null) }
+
+    LaunchedEffect(remaining != null) {
+        while (remaining != null) {
+            delay(1000)
+            val left = (remaining ?: return@LaunchedEffect) - 1
+            if (left <= 0) {
+                remaining = null
+                haptic.success()
+                onComplete()
+            } else {
+                remaining = left
+                // A tick each second makes it feel like something is happening in your hand rather
+                // than only on screen.
+                haptic.click()
+            }
+        }
+    }
+
+    // Completion is deliberate: only the check circle (or a countdown the user started and let run)
+    // marks the step done. Tapping the row body opens the goal for context, so a stray tap can
+    // never silently complete a milestone.
+    Surface(
+        modifier = Modifier.fillMaxWidth().bouncyClickable(onClick = onOpen),
+        color = c.cardBackground,
+        shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large),
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(LifePlannerDesign.Padding.cardContent),
+            horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (totalSeconds != null) {
+                StepTimerButton(
+                    totalSeconds = totalSeconds,
+                    remaining = remaining,
+                    accent = if (item.overdue) overdueColor else c.primary,
+                    onStart = { remaining = totalSeconds },
+                    onCancel = { remaining = null },
+                )
+            } else {
+                Icon(
+                    imageVector = PhosphorIcons.Regular.Circle,
+                    contentDescription = "Mark done",
+                    tint = if (item.overdue) overdueColor else c.textTertiary,
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .bouncyClickable(onClick = onComplete)
+                        .padding(4.dp)
+                        .size(LifePlannerDesign.IconSize.large),
+                )
+            }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(item.title, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = c.textPrimary, maxLines = 1)
+                Text(
+                    if (remaining != null) "Keep going. Ticks itself at zero." else item.goalTitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (remaining != null) c.primary else c.textSecondary,
+                    maxLines = 1,
+                )
+            }
+            if (remaining == null) DueChip(overdue = item.overdue)
+        }
+    }
+}
+
+/**
+ * Play, then a countdown ring in the same 40dp the tick box occupied.
+ *
+ * Tapping mid-run cancels rather than completing: someone who stops early did not do the thing, and
+ * an app that ticks it anyway is lying to them about their own week.
+ */
+@Composable
+private fun StepTimerButton(
+    totalSeconds: Int,
+    remaining: Int?,
+    accent: Color,
+    onStart: () -> Unit,
+    onCancel: () -> Unit,
+) {
+    val c = MaterialTheme.modernColors
+    // One continuous sweep over the whole duration, not a new 950ms tween per tick. Chasing the
+    // per-second state made the arc advance in visible steps; time does not pass in steps.
+    val progress = remember { Animatable(0f) }
+    LaunchedEffect(remaining != null) {
+        if (remaining == null) {
+            progress.snapTo(0f)
+        } else {
+            progress.snapTo(1f - (remaining.toFloat() / totalSeconds))
+            progress.animateTo(
+                1f,
+                tween(durationMillis = remaining * 1000, easing = LinearEasing),
+            )
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .size(40.dp)
+            .clip(CircleShape)
+            .background(accent.copy(alpha = 0.12f))
+            .bouncyClickable { if (remaining == null) onStart() else onCancel() },
+        contentAlignment = Alignment.Center,
+    ) {
+        if (remaining != null) {
+            Box(
+                Modifier.fillMaxSize().drawBehind {
+                    drawArc(
+                        color = accent,
+                        startAngle = -90f,
+                        sweepAngle = progress.value * 360f,
+                        useCenter = false,
+                        style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round),
+                    )
+                }
+            )
+            Text(
+                StepDuration.format(remaining),
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                color = accent,
+            )
+        } else {
+            Icon(
+                PhosphorIcons.Fill.Play,
+                contentDescription = "Start ${StepDuration.format(totalSeconds)} timer",
+                tint = accent,
+                modifier = Modifier.size(16.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun DueChip(overdue: Boolean) {
+    val c = MaterialTheme.modernColors
+    val accent = if (overdue) Color(0xFFE53935) else c.primary
+    Surface(color = accent.copy(alpha = 0.12f), shape = RoundedCornerShape(8.dp)) {
+        Text(
+            if (overdue) "Overdue" else "Today",
+            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+            color = accent,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+        )
+    }
+}
+
+@Composable
+private fun SectionHeader(label: String, onSeeAll: (() -> Unit)?) {
+    val c = MaterialTheme.modernColors
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(top = LifePlannerDesign.Spacing.xs),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            label,
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+            color = c.textPrimary,
+        )
+        if (onSeeAll != null) {
+            Row(
+                modifier = Modifier.bouncyClickable(onClick = onSeeAll),
+                horizontalArrangement = Arrangement.spacedBy(2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    "See all",
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                    color = c.primary,
+                )
+                Icon(PhosphorIcons.Regular.CaretRight, contentDescription = null, tint = c.primary, modifier = Modifier.size(LifePlannerDesign.IconSize.small))
+            }
+        }
+    }
 }
 
 @Composable

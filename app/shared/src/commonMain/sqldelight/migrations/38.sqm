@@ -1,0 +1,2 @@
+-- 38: HabitEntity.completionSource (internal sessions auto-complete linked habits)
+ALTER TABLE HabitEntity ADD COLUMN completionSource TEXT;

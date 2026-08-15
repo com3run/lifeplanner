@@ -3,14 +3,18 @@ package az.tribe.lifeplanner.ui.habit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import az.tribe.lifeplanner.domain.model.Habit
-import az.tribe.lifeplanner.domain.model.XpRewards
-import az.tribe.lifeplanner.domain.repository.GamificationRepository
 import az.tribe.lifeplanner.domain.repository.GoalRepository
 import az.tribe.lifeplanner.domain.repository.HabitRepository
+import az.tribe.lifeplanner.domain.service.KnowledgeBit
+import az.tribe.lifeplanner.usecases.habit.AwardHabitCompletionUseCase
 import az.tribe.lifeplanner.usecases.habit.CheckInHabitUseCase
+import az.tribe.lifeplanner.usecases.habit.RecommendLessonsForHabitUseCase
 import az.tribe.lifeplanner.usecases.habit.UncheckHabitUseCase
 import co.touchlab.kermit.Logger
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -38,11 +42,24 @@ class HabitDetailViewModel(
     private val goalRepository: GoalRepository,
     private val checkInHabitUseCase: CheckInHabitUseCase,
     private val uncheckHabitUseCase: UncheckHabitUseCase,
-    private val gamificationRepository: GamificationRepository,
+    private val awardHabitCompletionUseCase: AwardHabitCompletionUseCase,
+    private val recommendLessonsForHabit: RecommendLessonsForHabitUseCase,
 ) : ViewModel() {
 
     private fun today(): LocalDate =
         Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+
+    /**
+     * Lessons about *this* habit, ranked against what it is about rather than the whole library.
+     * A sleep habit surfaces the sleep science; a meditation practice surfaces attention and mind.
+     * Read lessons sink but are not hidden, so the section keeps something useful to show.
+     */
+    private val _relatedLessons = MutableStateFlow<List<KnowledgeBit>>(emptyList())
+    val relatedLessons: StateFlow<List<KnowledgeBit>> = _relatedLessons.asStateFlow()
+
+    /** XP the check-in just earned, one-shot, so the screen can confirm the reward. */
+    private val _xpEvent = MutableSharedFlow<Int>()
+    val xpEvent: SharedFlow<Int> = _xpEvent.asSharedFlow()
 
     /** The number of weeks shown in the consistency grid. */
     private val weeks = 5
@@ -76,6 +93,17 @@ class HabitDetailViewModel(
     fun gridStart(today: LocalDate = today()): LocalDate =
         today.minus(today.dayOfWeek.ordinal, DateTimeUnit.DAY).minus((weeks - 1) * 7, DateTimeUnit.DAY)
 
+    init {
+        viewModelScope.launch {
+            habit.collect { h -> if (h != null) loadRelatedLessons(h) }
+        }
+    }
+
+    private suspend fun loadRelatedLessons(h: Habit) {
+        _relatedLessons.value = runCatching { recommendLessonsForHabit(h, RELATED_LESSON_COUNT) }
+            .getOrDefault(emptyList())
+    }
+
     private fun loadHistory() {
         viewModelScope.launch {
             runCatching {
@@ -94,8 +122,9 @@ class HabitDetailViewModel(
                 if (doneToday.value) {
                     uncheckHabitUseCase(habitId)
                 } else {
-                    checkInHabitUseCase(habitId)
-                    gamificationRepository.awardXp(XpRewards.HABIT_CHECK_IN.toLong())
+                    val today = today()
+                    checkInHabitUseCase(habitId, today)
+                    _xpEvent.emit(awardHabitCompletionUseCase(habitId, today))
                 }
                 loadHistory()
             }.onFailure { Logger.w("HabitDetailViewModel") { "Toggle check-in failed: ${it.message}" } }
@@ -107,5 +136,10 @@ class HabitDetailViewModel(
             runCatching { habitRepository.updateHabit(updated) }
                 .onFailure { Logger.w("HabitDetailViewModel") { "Update habit failed: ${it.message}" } }
         }
+    }
+
+    private companion object {
+        /** Enough to feel like a shelf, few enough to stay a sidebar rather than a screen. */
+        const val RELATED_LESSON_COUNT = 3
     }
 }

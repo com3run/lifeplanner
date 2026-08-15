@@ -102,6 +102,21 @@ private const val STREAMING_INSTRUCTIONS_DEFAULT = """INSTRUCTIONS:
   Moods: HAPPY, SAD, ANXIOUS, CALM, EXCITED, GRATEFUL, ANGRY, NEUTRAL
 - GOAL CLARIFICATION ANSWERS: When the user sends a message starting with "Goal clarification answers for", they have answered personalisation questions about their goal. Use those answers to IMMEDIATELY suggest a highly specific and personalised goal using [SUGGEST_GOAL:...]. Make the title and description concrete and tailored to their answers. Do not ask any more questions."""
 
+// Always appended LAST in the streaming prompt (highest recency) so the model reliably emits the
+// [SUGGEST_*] tag. gemini-2.5-flash tends to ignore the mid-prompt "hidden tag" instruction and
+// reply in prose only, which produces "Parsed 0 inline suggestions" and no Add button. A forceful,
+// example-led rule at the very end restores the create-from-chat flow. Independent of
+// SystemPromptStore so it holds even when streaming_instructions is overridden from the backend.
+private const val TAG_ENFORCEMENT = """
+CRITICAL OUTPUT RULE (do not skip):
+If the user wants to create, add, start, or set up a goal or a habit, or confirms one you just offered (for example replies "yes", "sure", "do it", "provide it"), you MUST end your reply with exactly ONE tag on its own final line. This tag is what makes the app show the "Add" button; without it the user cannot create anything. Write the tag literally, with no backticks and no code block, and do not explain it.
+  Goal:  [SUGGEST_GOAL:title|description|CATEGORY|TIMELINE]
+  Habit: [SUGGEST_HABIT:title|description|CATEGORY|FREQUENCY]
+  Categories: CAREER, MONEY, BODY, PEOPLE, WELLBEING, PURPOSE. Timelines: SHORT_TERM, MID_TERM, LONG_TERM. Frequencies: DAILY, WEEKLY.
+Example reply (the tag is the final line):
+Love it, let's make it official.
+[SUGGEST_GOAL:Run a 5K|Build up to running 5 km without stopping|BODY|SHORT_TERM]"""
+
 // ============================================================================
 // PROMPT BUILDER FUNCTIONS
 // ============================================================================
@@ -344,5 +359,6 @@ ${if (situationBlock.isNotEmpty()) "$situationBlock\n" else ""}User Context:
 ${if (goalsBlock.isNotEmpty()) "$goalsBlock\n" else ""}${if (historyText.isNotEmpty()) "CONVERSATION HISTORY:\n$historyText\n" else ""}
 ${getStreamingInstructions(coachName)}
 ${if (situationBlock.isNotEmpty()) SITUATION_UPDATE_INSTRUCTION else ""}
+$TAG_ENFORCEMENT
 """.trimIndent()
 }

@@ -219,12 +219,45 @@ fun GoalQuestionnaireCard(
                     Icon(PhosphorIcons.Regular.Sparkle, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
                 }
                 Column {
-                    Text("Let me personalise your goal", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
-                    Text("Answer a few quick questions", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        if (questionnaire.submitted) "Answers sent" else "Let me personalise your goal",
+                        style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        if (questionnaire.submitted) "Your coach is on it" else "Answer a few quick questions",
+                        style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
 
-            if (questionnaire.isLoading) {
+            if (questionnaire.submitted) {
+                // Completed: a read-only recap of the questions and the answers the user picked.
+                // The formatted message itself went to the coach in the background, so there is no
+                // raw user bubble; this card is the record of what was asked and answered.
+                questionnaire.questions.forEachIndexed { idx, q ->
+                    if (idx > 0) Spacer(modifier = Modifier.height(10.dp))
+                    val selected = questionnaire.answers.getOrElse(idx) { emptyList() }
+                    Text(
+                        text = "${idx + 1}. ${q.text}",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(bottom = 5.dp)
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            PhosphorIcons.Regular.CheckCircle,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.tertiary,
+                            modifier = Modifier.size(15.dp)
+                        )
+                        Text(
+                            text = if (selected.isEmpty()) "—" else selected.joinToString(", "),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            } else if (questionnaire.isLoading) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp),

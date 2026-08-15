@@ -70,7 +70,6 @@ kotlin {
             implementation(libs.ktor.client.cio)
             implementation(libs.koin.android)
 
-            implementation(libs.accompanist.systemuicontroller)
 
             implementation(libs.firebase.common.ktx)
 
@@ -179,6 +178,17 @@ kotlin {
 
         getByName("androidHostTest").dependencies {
             implementation(libs.sqldelight.test)
+            // JVM screenshot previews: render commonMain composables to PNG without an
+            // emulator (previews/PreviewScreenshots.kt). Robolectric native graphics + Roborazzi.
+            implementation(libs.junit)
+            implementation(libs.robolectric)
+            // Already on the test runtime classpath via sqldelight's android-driver, but not the
+            // compile one. DatabaseMigrationsTest needs it to open a real SupportSQLiteDatabase.
+            implementation(libs.androidx.sqlite.framework)
+            implementation(libs.roborazzi)
+            implementation(libs.roborazzi.compose)
+            implementation(libs.androidx.compose.ui.test.junit4)
+            implementation(libs.androidx.compose.ui.test.manifest)
         }
     }
 }
@@ -188,7 +198,7 @@ sqldelight {
         create("LifePlannerDB") {
             packageName.set("az.tribe.lifeplanner.database")
             schemaOutputDirectory = file("src/commonMain/sqldelight/databases")
-            version = 34 // 22: HabitEntity.unit, 23: CachedPersonaEntity, 24: HabitCheckInEntity.count, 26: CachedPersonaEntity.slug+avatar_url, 27: UserSituationEntity, 28: ScreenTimeEventEntity + UserActivityPattern behavioral columns, 29: LifeValueEntity table, 30: GoalEntity.valueId, 31: DecisionEntity table, 32: Goal.predictedDueDate + Milestone.estimatedEffort, 33: IdentityStatementEntity table, 34: DecisionProfileEntity table
+            version = 42 // 22: HabitEntity.unit, 23: CachedPersonaEntity, 24: HabitCheckInEntity.count, 26: CachedPersonaEntity.slug+avatar_url, 27: UserSituationEntity, 28: ScreenTimeEventEntity + UserActivityPattern behavioral columns, 29: LifeValueEntity table, 30: GoalEntity.valueId, 31: DecisionEntity table, 32: Goal.predictedDueDate + Milestone.estimatedEffort, 33: IdentityStatementEntity table, 34: DecisionProfileEntity table, 35: HabitEntity.healthMetricType+healthTarget, 36: KnowledgeReadEntity table (Learn hub read-state), 37: DecisionEntity.source+status (journal-detected decisions await confirmation), 38: HabitEntity.completionSource (internal sessions auto-complete linked habits), 39: KnowledgeLesson/KnowledgeCollection content cache (Learn lessons authored in Supabase), 40: WheelScoreEntity (Wheel of Life, user-set scores only), 41: WheelSnapshotEntity (wheel history, one row per day), 42: GoalEntity.wheelArea (goal's why as a wheel area)
             generateAsync.set(true)
         }
     }
@@ -236,7 +246,7 @@ buildkonfig {
         buildConfigField(
             FieldSpec.Type.STRING,
             "APP_VERSION",
-            "2.5",
+            libs.versions.app.versionName.get(),
         )
     }
 
@@ -269,4 +279,7 @@ tasks.withType<Test>().configureEach {
     // Recycle the test JVM each class so leaked coroutine scopes / Dispatchers.IO listeners
     // (e.g. SyncManager's uncancelled scope) can't accumulate and stall the full-suite run.
     forkEvery = 1
+    // Roborazzi always records: captureRoboImage writes PNGs to build/previews/ so UI
+    // changes can be reviewed without building for a device. No-op for non-preview tests.
+    systemProperty("roborazzi.test.record", "true")
 }

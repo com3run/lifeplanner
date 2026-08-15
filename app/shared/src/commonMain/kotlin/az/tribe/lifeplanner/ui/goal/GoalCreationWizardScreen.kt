@@ -27,6 +27,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import az.tribe.lifeplanner.data.network.AiProxyService
+import az.tribe.lifeplanner.data.network.toUserFacingAiMessage
 import az.tribe.lifeplanner.data.repository.CoachOrchestrator
 import az.tribe.lifeplanner.domain.enum.GoalCategory
 import az.tribe.lifeplanner.domain.enum.GoalStatus
@@ -142,10 +143,22 @@ fun GoalCreationWizardScreen(
     var goalCategory by remember { mutableStateOf(GoalCategory.CAREER) }
     var aiReasoning by remember { mutableStateOf<String?>(null) }
 
-    // Pillar 1: optional life-value link, set on the DETAILS step
+    // Pillar 1: the life-value link. No longer a manual chore, it is auto-inferred from the goal's
+    // category + text and pre-filled here; the user only taps if they want to change it.
     val lifeValues by viewModel.lifeValues.collectAsState()
     var selectedValueId by remember { mutableStateOf<String?>(null) }
+    var valueTouched by remember { mutableStateOf(false) }
     var showValueSheet by remember { mutableStateOf(false) }
+
+    // Prefill the inferred "why" once we have a title + category + the user's values, unless the
+    // user has already made a choice. Keeps the DETAILS step populated instead of blank.
+    androidx.compose.runtime.LaunchedEffect(goalTitle, goalCategory, goalDescription, lifeValues) {
+        if (!valueTouched && selectedValueId == null && goalTitle.isNotBlank()) {
+            selectedValueId = az.tribe.lifeplanner.domain.service.GoalValueInferrer.infer(
+                category = goalCategory, title = goalTitle, description = goalDescription, values = lifeValues,
+            )
+        }
+    }
 
     var goalTimeline by remember { mutableStateOf(GoalTimeline.SHORT_TERM) }
     var goalDueDate by remember {
@@ -261,8 +274,8 @@ fun GoalCreationWizardScreen(
                     isGeneratingQuestions = false
                     return@launch
                 }
-            } catch (_: Exception) {
-                generationError = "Couldn't generate questions. Check your connection and try again."
+            } catch (e: Exception) {
+                generationError = e.toUserFacingAiMessage("generate questions")
                 isGeneratingQuestions = false
                 return@launch
             }
@@ -427,8 +440,8 @@ fun GoalCreationWizardScreen(
                 parsedHabits.forEach { aiSuggestedHabits.add(it to true) }
 
                 step = GoalWizardStep.SELECTION
-            } catch (_: Exception) {
-                generationError = "Couldn't generate goal. Check your connection and try again."
+            } catch (e: Exception) {
+                generationError = e.toUserFacingAiMessage("generate goal")
                 step = GoalWizardStep.QUESTIONS
             }
         }
@@ -601,8 +614,14 @@ fun GoalCreationWizardScreen(
                     onToggleAiMilestone = { idx ->
                         aiMilestones[idx] = aiMilestones[idx].copy(second = !aiMilestones[idx].second)
                     },
+                    goalTitle = goalTitle,
+                    goalCategory = goalCategory,
+                    goalDescription = goalDescription,
                     customMilestones = customMilestones,
                     onRemoveCustom = { customMilestones.removeAt(it) },
+                    onAddSuggested = { title ->
+                        if (customMilestones.none { it.equals(title, ignoreCase = true) }) customMilestones.add(title)
+                    },
                     customInput = customMilestoneInput,
                     onCustomInputChange = { customMilestoneInput = it },
                     onAddCustom = {
@@ -657,7 +676,7 @@ fun GoalCreationWizardScreen(
             WhyThisGoalBottomSheet(
                 values = lifeValues,
                 selectedValueId = selectedValueId,
-                onSelect = { selectedValueId = it },
+                onSelect = { valueTouched = true; selectedValueId = it },
                 onDismiss = { showValueSheet = false }
             )
         }

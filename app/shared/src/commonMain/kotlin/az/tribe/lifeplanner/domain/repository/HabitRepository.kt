@@ -21,6 +21,12 @@ interface HabitRepository {
     // Check-in operations
     suspend fun checkIn(habitId: String, date: LocalDate, notes: String = ""): HabitCheckIn
     suspend fun incrementCount(habitId: String, date: LocalDate): HabitCheckIn
+
+    /**
+     * Adds [delta] to the day's count, completing the habit once it reaches the target. A manual
+     * tap adds one; a finished in-app session can add several at once (the minutes it lasted).
+     */
+    suspend fun addCount(habitId: String, date: LocalDate, delta: Int): HabitCheckIn
     suspend fun getCheckInsByHabitId(habitId: String): List<HabitCheckIn>
     suspend fun getCheckInsByDate(date: LocalDate): List<HabitCheckIn>
     suspend fun getCheckInByHabitAndDate(habitId: String, date: LocalDate): HabitCheckIn?

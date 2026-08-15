@@ -115,7 +115,7 @@ internal fun generateHealthStories(
     if (latestWeight != null) {
         stories.add(Story(
             id = "health_weight",
-            title = "Weight: ${"%.1f".format(latestWeight)} kg",
+            title = "Weight: ${(latestWeight * 10).roundToInt() / 10.0} kg",
             subtitle = "You're actively tracking your weight, that alone puts you ahead.\n\nConsistent data points are what make trends visible over time.",
             emoji = "⚖️",
             category = "health",

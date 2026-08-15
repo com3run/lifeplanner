@@ -12,6 +12,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import androidx.savedstate.read
 import az.tribe.lifeplanner.ui.journal.JournalCreationWizardScreen
+import az.tribe.lifeplanner.domain.enum.Mood
 import az.tribe.lifeplanner.ui.journal.JournalEntryDetailScreen
 import az.tribe.lifeplanner.ui.journal.JournalScreen
 import az.tribe.lifeplanner.ui.navigation.Screen
@@ -21,7 +22,8 @@ internal fun NavGraphBuilder.appNavJournal(
     tabIndex: Map<String, Int>,
     slideOffset: (Int) -> Int,
     hubSelectedTab: Int,
-    onTabSelected: (Int) -> Unit
+    onTabSelected: (Int) -> Unit,
+    onSelectedDateChanged: (kotlinx.datetime.LocalDate) -> Unit = {}
 ) {
     composable(
         Screen.Journal.route,
@@ -64,7 +66,7 @@ internal fun NavGraphBuilder.appNavJournal(
     ) {
         // Show back button when navigated from within the app (not bottom nav tab switch)
         val previousRoute = navController.previousBackStackEntry?.destination?.route
-        val isBottomNavEntry = previousRoute == null || previousRoute == Screen.Home.route
+        val isBottomNavEntry = previousRoute == null || previousRoute == Screen.ForYou.route
         JournalScreen(
             onNavigateBack = { navController.popBackStack() },
             onEntryClick = { entryId ->
@@ -72,14 +74,19 @@ internal fun NavGraphBuilder.appNavJournal(
                     launchSingleTop = true
                 }
             },
-            onNavigateToWizard = {
-                navController.navigate("journal_wizard") {
+            onNavigateToWizard = { mood ->
+                val route = if (mood != null) "journal_wizard?mood=${mood.name}" else "journal_wizard"
+                navController.navigate(route) {
                     launchSingleTop = true
                 }
             },
             isFromBottomNav = isBottomNavEntry,
             selectedTab = hubSelectedTab,
             onTabSelected = onTabSelected,
+            onSelectedDateChanged = onSelectedDateChanged,
+            onPracticeHabit = { id ->
+                navController.navigate("habit_practice/$id") { launchSingleTop = true }
+            },
             onGoalClick = { goal ->
                 navController.navigate("goal_detail/${goal.id}") {
                     launchSingleTop = true
@@ -92,6 +99,11 @@ internal fun NavGraphBuilder.appNavJournal(
             },
             onAddHabitClick = {
                 navController.navigate(Screen.AddHabit.route) {
+                    launchSingleTop = true
+                }
+            },
+            onHabitClick = { habitId ->
+                navController.navigate("habit_detail_redesign/$habitId") {
                     launchSingleTop = true
                 }
             },
@@ -121,16 +133,35 @@ internal fun NavGraphBuilder.appNavJournal(
     // Journal Creation Wizard
     composable(
         route = Screen.JournalWizard.route,
-        arguments = listOf(navArgument("goalId") {
-            type = NavType.StringType
-            nullable = true
-            defaultValue = null
-        })
+        arguments = listOf(
+            navArgument("goalId") {
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
+            },
+            navArgument("mood") {
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
+            },
+            navArgument("date") {
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
+            },
+        )
     ) { backStackEntry ->
         val goalId = backStackEntry.arguments?.read { getStringOrNull("goalId") }
+        val mood = backStackEntry.arguments?.read { getStringOrNull("mood") }
+            ?.let { runCatching { Mood.valueOf(it) }.getOrNull() }
+        // The hub's day lens rides along, so writing while looking at Tuesday files under Tuesday.
+        val date = backStackEntry.arguments?.read { getStringOrNull("date") }
+            ?.let { runCatching { kotlinx.datetime.LocalDate.parse(it) }.getOrNull() }
         JournalCreationWizardScreen(
             onNavigateBack = { navController.popBackStack() },
-            preSelectedGoalId = goalId
+            preSelectedGoalId = goalId,
+            initialMood = mood,
+            initialDate = date,
         )
     }
 

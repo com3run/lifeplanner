@@ -3,6 +3,7 @@ package az.tribe.lifeplanner
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
+import az.tribe.lifeplanner.domain.model.TodayWeather
 import az.tribe.lifeplanner.ui.foryou.ForYouScreen
 import az.tribe.lifeplanner.ui.navigation.Screen
 
@@ -11,10 +12,14 @@ import az.tribe.lifeplanner.ui.navigation.Screen
  * (causal insights, becoming, patterns, habit/goal detail), so the reflective You functions live on
  * the front door instead of being hidden in a tab.
  */
-internal fun NavGraphBuilder.appNavForYou(navController: NavController) {
+internal fun NavGraphBuilder.appNavForYou(
+    navController: NavController,
+    onOpenWeather: (TodayWeather) -> Unit,
+) {
     composable(Screen.ForYou.route) {
         ForYouScreen(
             onOpenRoute = { route -> navController.navigate(route) { launchSingleTop = true } },
+            onOpenWeather = onOpenWeather,
         )
     }
 }

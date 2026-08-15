@@ -93,20 +93,7 @@ fun AchievementsCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     recentBadges.take(3).forEach { badgeType ->
-                        Box(
-                            modifier = Modifier
-                                .size(28.dp)
-                                .clip(CircleShape)
-                                .background(Color(badgeType.color)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = getBadgeIcon(badgeType),
-                                contentDescription = badgeType.displayName,
-                                modifier = Modifier.size(14.dp),
-                                tint = Color.White
-                            )
-                        }
+                        BadgeMedallion(type = badgeType, isEarned = true, size = 28.dp)
                     }
                 }
             } else {

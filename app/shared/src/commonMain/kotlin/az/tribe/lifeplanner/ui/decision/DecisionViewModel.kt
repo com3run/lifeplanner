@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import az.tribe.lifeplanner.domain.model.ChoicePoint
 import az.tribe.lifeplanner.domain.model.Decision
+import az.tribe.lifeplanner.domain.model.DecisionStatus
 import az.tribe.lifeplanner.domain.repository.DecisionProfileRepository
 import az.tribe.lifeplanner.domain.repository.DecisionRepository
 import az.tribe.lifeplanner.domain.repository.GoalRepository
@@ -15,6 +16,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.datetime.DatePeriod
@@ -45,8 +47,20 @@ class DecisionViewModel(
     private val decisionProfileRepository: DecisionProfileRepository,
 ) : ViewModel() {
 
-    val decisions: StateFlow<List<Decision>> =
+    private val allDecisions: StateFlow<List<Decision>> =
         decisionRepository.observeAllDecisions()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /** The confirmed decision log (choice-point resolutions, confirmed journal decisions, etc.). */
+    val decisions: StateFlow<List<Decision>> =
+        allDecisions
+            .map { list -> list.filter { it.status == DecisionStatus.CONFIRMED } }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /** AI-detected journal decisions awaiting the user's confirmation, most recent first. */
+    val pendingDecisions: StateFlow<List<Decision>> =
+        allDecisions
+            .map { list -> list.filter { it.status == DecisionStatus.PENDING }.sortedByDescending { it.decidedAt } }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val _choicePoints = MutableStateFlow<List<ChoicePoint>>(emptyList())
@@ -70,6 +84,38 @@ class DecisionViewModel(
     }
 
     suspend fun getDecision(id: String): Decision? = decisionRepository.getDecisionById(id)
+
+    /**
+     * Confirm a PENDING journal decision, optionally with the user's edits (they may correct the
+     * chosen option or reasoning the AI inferred). Confirmed decisions enter the log and, from
+     * Phase 4 on, become the only journal signal allowed to move the wiring dials.
+     */
+    fun confirm(decision: Decision, chosenOption: String? = null, reasoning: String? = null) {
+        viewModelScope.launch {
+            try {
+                decisionRepository.updateDecision(
+                    decision.copy(
+                        chosenOption = chosenOption?.takeIf { it.isNotBlank() } ?: decision.chosenOption,
+                        reasoning = reasoning ?: decision.reasoning,
+                        status = DecisionStatus.CONFIRMED,
+                    )
+                )
+            } catch (e: Exception) {
+                Logger.w("DecisionViewModel") { "Confirming decision failed: ${e.message}" }
+            }
+        }
+    }
+
+    /** Dismiss a PENDING journal decision, the user says it wasn't really a decision. */
+    fun dismiss(decision: Decision) {
+        viewModelScope.launch {
+            try {
+                decisionRepository.updateDecision(decision.copy(status = DecisionStatus.DISMISSED))
+            } catch (e: Exception) {
+                Logger.w("DecisionViewModel") { "Dismissing decision failed: ${e.message}" }
+            }
+        }
+    }
 
     @OptIn(ExperimentalUuidApi::class)
     fun resolve(choicePoint: ChoicePoint, action: ChoicePointAction, reasoning: String) {

@@ -30,6 +30,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.rememberCoroutineScope
+import com.russhwolf.settings.Settings
 import az.tribe.lifeplanner.domain.enum.GoalCategory
 import az.tribe.lifeplanner.domain.model.LifeValue
 import az.tribe.lifeplanner.domain.repository.LifeValueRepository
@@ -47,12 +48,30 @@ import az.tribe.lifeplanner.ui.theme.containerColor
 import az.tribe.lifeplanner.ui.theme.modernColors
 
 /**
+ * Tracks whether the D11 intro (promise + values) has been completed.
+ *
+ * Separate from [az.tribe.lifeplanner.ui.onboarding.CoachOnboardingViewModel.COACH_ONBOARDING_KEY]
+ * on purpose: first run is a **chain**, intro then coach flow, and a user who finishes the intro
+ * but drops out mid-coach-flow must resume at the coach flow rather than repeat the intro.
+ */
+object IntroFlow {
+    const val KEY = "intro_flow_complete"
+    fun isComplete(settings: Settings) = settings.getBoolean(KEY, false)
+    fun markComplete(settings: Settings) = settings.putBoolean(KEY, true)
+}
+
+/**
  * D11, redesigned first-run. Establishes the agency-first promise in minute one, collects *just
  * enough* (a few values, no interrogation), and reaches a meaningful first action fast. Warm and
  * non-pressuring (D9/D12), token-pure with the premium blocks, Crossfade step transitions (D10).
  *
  * Values selected here are persisted as **Pillar 1** `LifeValue` rows on finish (the seam is wired
  * now that Pillar 1 is on `main`).
+ *
+ * This is the **first half** of first run. It hands off to `CoachOnboardingScreen`, which collects
+ * the name, priority and wellbeing answers, picks the coach, and seeds the first goals and habits.
+ * Neither replaces the other: swapping this in for the coach flow would drop all of that and land
+ * new users on an empty feed.
  */
 @OptIn(ExperimentalLayoutApi::class, ExperimentalUuidApi::class)
 @Composable
@@ -97,7 +116,8 @@ fun OnboardingFlowScreen(
             val (label, enabled) = when (step) {
                 0 -> "Get started" to true
                 1 -> "Continue" to selected.value.isNotEmpty()
-                else -> "Go to Today" to true
+                // Hands off to the coach flow, so this must not promise Today.
+                else -> "Continue" to true
             }
             AppButton(
                 text = label,

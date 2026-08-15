@@ -1,0 +1,3 @@
+-- 37: DecisionEntity.source + status (journal-detected decisions await confirmation)
+ALTER TABLE DecisionEntity ADD COLUMN source TEXT NOT NULL DEFAULT 'CHOICE_POINT';
+ALTER TABLE DecisionEntity ADD COLUMN status TEXT NOT NULL DEFAULT 'CONFIRMED';

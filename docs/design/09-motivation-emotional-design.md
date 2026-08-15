@@ -65,5 +65,5 @@ it's the wrong idea.
   — motivation should mostly *reflect* observed progress, not demand more activity.
 - D11 onboarding sets the agency-first, non-pressuring tone from minute one.
 
-*Next: **D6** (signature interaction), **D11** (onboarding), **D13** (handoff), or the **D5** Figma
+*Next: **D6** (signature interaction), **D11** (onboarding), **D13** (handoff). **D5** (visual
 visual-identity pass.*

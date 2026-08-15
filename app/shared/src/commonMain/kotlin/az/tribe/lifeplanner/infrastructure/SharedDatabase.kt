@@ -54,8 +54,10 @@ class SharedDatabase(
             q.deleteAllReviewReports()
             q.deleteAllUserProgress()
             q.deleteAllBeginnerObjectives()
+            q.deleteAllDayRecaps()
             // Tier 1 (no deps)
             q.deleteAllAbilityHabitLinks()
+            q.deleteAllAbilityGoalLinks()
             q.deleteAllAbilities()
             q.deleteAllLifeValues()
             q.deleteAllIdentityStatements()
@@ -70,6 +72,14 @@ class SharedDatabase(
             q.deleteAllUsers()
             q.deleteAllCachedPersonas()
             q.deleteAllScreenTimeEvents()
+            // Personal, and previously left behind: signing in as someone else inherited the
+            // last account's read lessons, and would have inherited their wheel scores.
+            q.deleteAllKnowledgeReads()
+            q.deleteAllWheelScores()
+            q.deleteAllWheelSnapshots()
+            // KnowledgeLessonEntity / KnowledgeCollectionEntity are deliberately kept. They are
+            // server-authored content, identical for every user, so there is nothing to leak and
+            // keeping them means the Learn map is populated before the next fetch returns.
         }
     }
 }

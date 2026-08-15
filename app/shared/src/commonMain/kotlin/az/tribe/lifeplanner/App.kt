@@ -4,6 +4,8 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
@@ -46,9 +48,12 @@ import az.tribe.lifeplanner.domain.service.UpdateState
 import az.tribe.lifeplanner.ui.ForceUpdateScreen
 import az.tribe.lifeplanner.ui.goal.GoalViewModel
 import az.tribe.lifeplanner.ui.onboarding.CoachOnboardingViewModel
+import az.tribe.lifeplanner.ui.onboarding.IntroFlow
 import az.tribe.lifeplanner.ui.components.BottomNavigationBar
 import az.tribe.lifeplanner.ui.components.NavigationRailBar
 import az.tribe.lifeplanner.ui.components.CelebrationOverlay
+import az.tribe.lifeplanner.domain.model.TodayWeather
+import az.tribe.lifeplanner.ui.foryou.WeatherDetailFullScreen
 import az.tribe.lifeplanner.ui.components.CelebrationType
 import az.tribe.lifeplanner.ui.components.NavContextAction
 import az.tribe.lifeplanner.ui.gamification.GamificationEvent
@@ -133,14 +138,25 @@ fun App(
             connectivityObserver.observe().collect { /* keeps StateFlow primed */ }
         }
 
+        // One-time upgrade of pre-track-mode habits ("Drink 8 glasses" -> count habit).
+        val backfillHabitTargets: az.tribe.lifeplanner.usecases.habit.BackfillHabitTargetsUseCase = koinInject()
+        LaunchedEffect(Unit) {
+            runCatching { backfillHabitTargets() }
+        }
+
         val builtinCoachFetcher: az.tribe.lifeplanner.data.network.BuiltinCoachFetcher = koinInject()
         val personaApiFetcher: az.tribe.lifeplanner.data.network.PersonaApiFetcher = koinInject()
         val systemPromptFetcher: az.tribe.lifeplanner.data.network.SystemPromptFetcher = koinInject()
+        val knowledgeFetcher: az.tribe.lifeplanner.data.network.KnowledgeFetcher = koinInject()
         LaunchedEffect(Unit) {
+            // Learn content first: the cached library is a local read, and having it in place before
+            // anything renders avoids the map flashing the bundled lessons and then swapping.
+            knowledgeFetcher.loadCache()
             builtinCoachFetcher.fetch()
             personaApiFetcher.loadCache()  // instant local load before network
             personaApiFetcher.fetch()       // refresh + persist to local DB and Supabase
             systemPromptFetcher.fetch()
+            knowledgeFetcher.fetch()        // refresh lessons + persist to local DB
         }
 
         // Sync widget data on every app resume (processes pending widget check-ins)
@@ -154,10 +170,16 @@ fun App(
             }
         }
 
-        // Pillar 1: one-time migration of onboarding topValues → LifeValue rows (idempotent)
+        // Pillar 1: build the "why" layer, then link goals to it, in order so it works on one launch.
+        // 1) promote onboarding topValues → LifeValue rows, 2) seed category defaults if still none,
+        // 3) auto-link goals to whichever values now exist. All idempotent.
         val promoteTopValues: az.tribe.lifeplanner.usecases.PromoteTopValuesToLifeValuesUseCase = koinInject()
+        val seedDefaultValues: az.tribe.lifeplanner.usecases.SeedDefaultLifeValuesUseCase = koinInject()
+        val autoLinkGoalValues: az.tribe.lifeplanner.usecases.AutoLinkGoalValuesUseCase = koinInject()
         LaunchedEffect(authState) {
-            promoteTopValues()
+            runCatching { promoteTopValues() }
+            runCatching { seedDefaultValues() }
+            runCatching { autoLinkGoalValues() }
         }
         val lifecycleOwner = LocalLifecycleOwner.current
         DisposableEffect(lifecycleOwner) {
@@ -264,13 +286,21 @@ fun App(
         var globalCelebrationType by remember { mutableStateOf(CelebrationType.BADGE_UNLOCKED) }
         var globalCelebrationMessage by remember { mutableStateOf("") }
 
+        // Full-screen weather detail, hoisted to the root so it draws above the bottom nav bar.
+        var weatherDetail by remember { mutableStateOf<TodayWeather?>(null) }
+
         // Collect gamification events for global celebrations
         LaunchedEffect(Unit) {
             gamificationViewModel.gamificationEvents.collect { event ->
                 when (event) {
                     is GamificationEvent.BadgeEarned -> {
                         globalCelebrationType = CelebrationType.BADGE_UNLOCKED
-                        globalCelebrationMessage = "Badge Unlocked: ${event.badge.type.displayName}"
+                        globalCelebrationMessage = buildString {
+                            append("Badge Unlocked: ${event.badge.type.displayName}")
+                            if (event.alsoEarnedCount > 0) {
+                                append(" +${event.alsoEarnedCount} more")
+                            }
+                        }
                         showGlobalCelebration = true
                     }
 
@@ -333,6 +363,21 @@ fun App(
             currentRoute?.let { Analytics.screenViewed(it) }
         }
 
+        // The legacy Home tab is gone; For You is the home.
+        val homeRoute = Screen.ForYou.route
+
+        // Registration is the whole gate. First run used to be a chain — the intro, then thirteen
+        // screens of coach questions — with the app on the far side of it. That contradicted the
+        // promise the intro itself makes ("no heavy setup"), and its final step could not be
+        // completed without typing a goal, so a user who did not want to answer was simply stuck.
+        //
+        // The coach's questions still exist and are still worth answering; they are now offered
+        // from inside the app, where the user can see what they are for, instead of standing
+        // between them and it.
+        val firstRunRoute =
+            if (IntroFlow.isComplete(settings)) homeRoute
+            else Screen.OnboardingRedesign.route
+
         // Determine start destination based on auth state
         val startDestination = when (authState) {
             is AuthState.Loading -> return@LifePlannerTheme // Still loading
@@ -341,14 +386,19 @@ fun App(
                 if (hasCompletedOnboarding == true && !CoachOnboardingViewModel.isComplete(settings)) {
                     settings.putBoolean(CoachOnboardingViewModel.COACH_ONBOARDING_KEY, true)
                 }
-                if (CoachOnboardingViewModel.isComplete(settings)) Screen.ForYou.route
-                else Screen.CoachOnboarding.route
+                firstRunRoute
             }
             else -> Screen.CoachOnboarding.route
         }
 
         // React to auth state changes, navigate to the right screen
         LaunchedEffect(authState) {
+            // On iOS the NavHost below composes *after* this effect's first run, so the graph is
+            // briefly unset and any navigate() here throws "Navigation graph has not been set" —
+            // which aborts the process on startup. Wait for the first back stack entry rather than
+            // bailing out, so the signed-out and verification redirects still fire on a cold start.
+            navController.currentBackStackEntryFlow.firstOrNull()
+
             when {
                 // Authenticated or Guest → ensure on Home or force coach onboarding
                 authState is AuthState.Authenticated || authState is AuthState.Guest -> {
@@ -361,17 +411,29 @@ fun App(
                             if (hasCompletedOnboarding == true && !CoachOnboardingViewModel.isComplete(settings)) {
                                 settings.putBoolean(CoachOnboardingViewModel.COACH_ONBOARDING_KEY, true)
                             }
-                            val next = if (CoachOnboardingViewModel.isComplete(settings)) Screen.ForYou.route
-                                       else Screen.CoachOnboarding.route
+                            val next = if (CoachOnboardingViewModel.isComplete(settings)) homeRoute
+                                       else firstRunRoute
                             navController.navigate(next) { popUpTo(0) { inclusive = true } }
                         }
                         // On a main app screen but onboarding not done, force it.
                         // NOTE: do NOT run the legacy auto-upgrade here, it fires on every
                         // auth-state refresh (e.g. sync updating lastSyncedAt) and would set
                         // COACH_ONBOARDING_KEY mid-onboarding, causing premature navigation.
-                        !CoachOnboardingViewModel.isComplete(settings) && current != null
-                                && current != Screen.CoachOnboarding.route -> {
-                            navController.navigate(Screen.CoachOnboarding.route) {
+                        // NOTE: the intro handoff for users arriving via the auth gate is NOT done
+                        // here. The gate lives inside CoachOnboardingScreen and `signInAsGuest()`
+                        // resolves in that screen's own LaunchedEffect, so an outer observer races
+                        // it and loses. That screen calls `onNeedsIntro` instead.
+                        //
+                        // The intro route must be excluded here, or this fires while the user is
+                        // partway through it (coach onboarding is legitimately incomplete then)
+                        // and yanks them straight out of first run.
+                        // Only the intro is required now. This used to check the coach flow, which
+                        // meant anyone who had not finished thirteen screens of questions was
+                        // yanked back into them on every auth change.
+                        !IntroFlow.isComplete(settings) && current != null
+                                && current != Screen.CoachOnboarding.route
+                                && current != Screen.OnboardingRedesign.route -> {
+                            navController.navigate(firstRunRoute) {
                                 popUpTo(0) { inclusive = true }
                             }
                         }
@@ -401,6 +463,9 @@ fun App(
 
         // Track which tab is selected inside the Hub screen (Journal screen)
         var hubSelectedTab by remember { mutableStateOf(0) }
+        // The hub's day lens, mirrored up here so the Write FAB (which lives outside the hub) can
+        // file the new entry under the day the user is actually looking at.
+        var hubSelectedDate by remember { mutableStateOf<kotlinx.datetime.LocalDate?>(null) }
 
         // Handle marketing deep link (e.g. lifeplanner://promo/chat)
         LaunchedEffect(promoRoute, authState) {
@@ -425,17 +490,19 @@ fun App(
             }
         }
 
+        // 2026-07-21: v2 nav. Three tabs: legacy Home, the Journal hub (Goals/Habits/Journal),
+        // legacy Profile.
         // Routes where bottom navigation should be visible
         val mainRoutes = buildList {
-            add(Screen.ForYou.route)
-            add(Screen.GoalsRedesign.route)
+            add(homeRoute)
+            add(Screen.Journal.route)
             add(Screen.Profile.route)
         }
 
         // Tab index for directional slide transitions between bottom nav tabs
         val tabIndex = mapOf(
-            Screen.ForYou.route to 0,
-            Screen.GoalsRedesign.route to 1,
+            homeRoute to 0,
+            Screen.Journal.route to 1,
             Screen.Profile.route to 2
         )
         // Slide offset = 25% of width for a subtle directional hint
@@ -443,14 +510,16 @@ fun App(
 
         val showBottomNav = currentRoute in mainRoutes
 
-        // Contextual circle button action, changes per screen and hub tab
+        // Contextual circle button action, changes per screen and hub tab (v2 behavior).
         val navContextAction: NavContextAction? = when (currentRoute) {
-            Screen.Home.route -> NavContextAction(
+            // Today's FAB is Search: quick find + act from the front door.
+            homeRoute -> NavContextAction(
                 icon = PhosphorIcons.Regular.MagnifyingGlass,
-                contentDescription = "Search"
-            ) {
-                navController.navigate(Screen.Search.route) { launchSingleTop = true }
-            }
+                contentDescription = "Search",
+                onClick = {
+                    navController.navigate(Screen.Search.route) { launchSingleTop = true }
+                },
+            )
             Screen.Journal.route -> when (hubSelectedTab) {
                 1 -> NavContextAction(
                     icon = PhosphorIcons.Regular.Flag,
@@ -462,7 +531,7 @@ fun App(
                     icon = PhosphorIcons.Regular.Sparkle,
                     contentDescription = "New Habit"
                 ) {
-                    navController.navigate(Screen.SmartHabitGenerator.route) { launchSingleTop = true }
+                    navController.navigate(Screen.HabitChat.route) { launchSingleTop = true }
                 }
                 3 -> if (FeatureFlags.ABILITIES_ENABLED) NavContextAction(
                     icon = PhosphorIcons.Regular.Star,
@@ -474,7 +543,8 @@ fun App(
                     icon = PhosphorIcons.Regular.PencilSimple,
                     contentDescription = "Write"
                 ) {
-                    navController.navigate("journal_wizard") { launchSingleTop = true }
+                    val route = hubSelectedDate?.let { "journal_wizard?date=$it" } ?: "journal_wizard"
+                    navController.navigate(route) { launchSingleTop = true }
                 }
             }
             Screen.Profile.route -> NavContextAction(
@@ -515,37 +585,50 @@ fun App(
                         navController = navController,
                         startDestination = startDestination,
                         modifier = Modifier.fillMaxSize(),
+                        // Restored from v2.2 (production): a directional horizontal slide keyed on
+                        // tab order, uniform tween(300). The redesign had replaced this with a
+                        // vertical slide-up, which reads like a modal sheet on every navigation and
+                        // loses the left/right sense of place between tabs.
                         enterTransition = {
-                            slideInVertically(tween(380, easing = FastOutSlowInEasing)) { it } +
-                                fadeIn(tween(280))
+                            val fromIndex = tabIndex[initialState.destination.route]
+                            val toIndex = tabIndex[targetState.destination.route]
+                            if (fromIndex != null && toIndex != null) {
+                                slideInHorizontally(tween(300)) { w -> if (fromIndex > toIndex) -slideOffset(w) else slideOffset(w) } +
+                                    fadeIn(tween(300))
+                            } else fadeIn(tween(300))
                         },
                         exitTransition = {
-                            fadeOut(tween(200))
+                            val fromIndex = tabIndex[initialState.destination.route]
+                            val toIndex = tabIndex[targetState.destination.route]
+                            if (fromIndex != null && toIndex != null) {
+                                slideOutHorizontally(tween(300)) { w -> if (fromIndex < toIndex) -slideOffset(w) else slideOffset(w) } +
+                                    fadeOut(tween(300))
+                            } else fadeOut(tween(300))
                         },
                         popEnterTransition = {
-                            fadeIn(tween(200))
+                            val fromIndex = tabIndex[initialState.destination.route]
+                            val toIndex = tabIndex[targetState.destination.route]
+                            if (fromIndex != null && toIndex != null) {
+                                slideInHorizontally(tween(300)) { w -> if (fromIndex > toIndex) -slideOffset(w) else slideOffset(w) } +
+                                    fadeIn(tween(300))
+                            } else fadeIn(tween(300))
                         },
                         popExitTransition = {
-                            slideOutVertically(tween(350, easing = FastOutSlowInEasing)) { it } +
-                                fadeOut(tween(250))
+                            val fromIndex = tabIndex[initialState.destination.route]
+                            val toIndex = tabIndex[targetState.destination.route]
+                            if (fromIndex != null && toIndex != null) {
+                                slideOutHorizontally(tween(300)) { w -> if (fromIndex < toIndex) -slideOffset(w) else slideOffset(w) } +
+                                    fadeOut(tween(300))
+                            } else fadeOut(tween(300))
                         }
                     ) {
-                        appNavHome(
-                            navController = navController,
-                            viewModel = viewModel,
-                            tabIndex = tabIndex,
-                            slideOffset = slideOffset,
-                            softUpdateDismissed = softUpdateDismissed,
-                            updateState = updateState,
-                            onHubTabSelected = { hubSelectedTab = it },
-                            onSoftUpdateDismissed = { softUpdateDismissed = false }
-                        )
                         appNavJournal(
                             navController = navController,
                             tabIndex = tabIndex,
                             slideOffset = slideOffset,
                             hubSelectedTab = hubSelectedTab,
-                            onTabSelected = { hubSelectedTab = it }
+                            onTabSelected = { hubSelectedTab = it },
+                            onSelectedDateChanged = { hubSelectedDate = it }
                         )
                         appNavProfile(
                             navController = navController,
@@ -565,18 +648,19 @@ fun App(
                         appNavHabits(navController = navController)
                         appNavHabitDetailRedesign(navController = navController)
                         appNavToday(navController = navController)
-                        appNavForYou(navController = navController)
-                        appNavPossibilityMode(navController = navController)
+                        appNavForYou(navController = navController, onOpenWeather = { weatherDetail = it })
+                        if (FeatureFlags.PILLAR_POSSIBILITY) appNavPossibilityMode(navController = navController)
                         appNavGoalsRedesign(navController = navController)
-                        appNavGoalDetailRedesign(navController = navController)
                         appNavYouRedesign(navController = navController)
-                        appNavOnboardingRedesign(navController = navController)
+                        appNavOnboardingRedesign(navController = navController, homeRoute = homeRoute)
                         appNavCoach(navController = navController)
-                        appNavAuth(navController = navController)
+                        appNavAuth(navController = navController, homeRoute = homeRoute)
                         appNavDecisions(navController = navController)
-                        appNavCausal(navController = navController)
-                        appNavBecoming(navController = navController)
-                        appNavWiring(navController = navController)
+                        if (FeatureFlags.PILLAR_CAUSAL) appNavCausal(navController = navController)
+                        if (FeatureFlags.PILLAR_BECOMING) appNavBecoming(navController = navController)
+                        if (FeatureFlags.PILLAR_WIRING) appNavWiring(navController = navController)
+                        appNavKnowledge(navController = navController)
+                        appNavWheel(navController = navController)
                     }
 
                     if (!useRail) {
@@ -595,6 +679,11 @@ fun App(
                         message = globalCelebrationMessage,
                         onDismiss = { showGlobalCelebration = false }
                     )
+
+                    // Weather detail covers the whole content column, including the bottom nav bar.
+                    weatherDetail?.let { w ->
+                        WeatherDetailFullScreen(weather = w, onDismiss = { weatherDetail = null })
+                    }
                 }
             }
         }

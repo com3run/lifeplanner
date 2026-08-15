@@ -84,7 +84,7 @@ class ChoicePointDetectorTest {
     }
 
     @Test
-    fun `passed deadline still surfaces, with gentle wording under a sensitive profile`() {
+    fun `passed deadline still surfaces with gentle wording under a sensitive profile`() {
         val overdue = testGoal(dueDate = daysAgo(3))
         val cps = detector.detect(today, listOf(overdue), emptyList(), profile = punishmentSensitive())
         val dl = cps.single { it.trigger == ChoicePointTrigger.DEADLINE_PASSED }

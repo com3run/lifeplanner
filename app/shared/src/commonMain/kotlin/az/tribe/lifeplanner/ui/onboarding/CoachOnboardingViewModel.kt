@@ -7,6 +7,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import az.tribe.lifeplanner.data.analytics.Analytics
 import az.tribe.lifeplanner.data.network.AiProxyService
+import az.tribe.lifeplanner.domain.model.WheelArea
+import az.tribe.lifeplanner.domain.service.OnboardingWheelSeed
 import az.tribe.lifeplanner.domain.enum.GoalCategory
 import az.tribe.lifeplanner.domain.enum.GoalStatus
 import az.tribe.lifeplanner.domain.enum.GoalTimeline
@@ -98,8 +100,28 @@ class CoachOnboardingViewModel(
     private val aiProxyService: AiProxyService,
     private val habitRepository: HabitRepository,
     private val settings: Settings,
-    private val smartReminderManager: SmartReminderManager
+    private val smartReminderManager: SmartReminderManager,
+    private val wheelRepository: az.tribe.lifeplanner.domain.repository.WheelRepository,
 ) : ViewModel() {
+
+    /**
+     * Writes the sign-up ratings into the wheel as the user's own scores.
+     *
+     * This is the payoff for asking in areas rather than categories: the wheel is theirs from the
+     * first launch, so the nudge picker, the coach's read on a goal and the wheel's own history all
+     * start from something true instead of from nine invented fives that the user then has to go
+     * find and correct.
+     *
+     * Best-effort. A goal-setting flow should not fail because a score would not write.
+     */
+    private suspend fun seedWheelFromRatings() {
+        wheelRatings.forEach { (area, score) ->
+            runCatching { wheelRepository.setScore(area, score, note = "Set during sign-up") }
+        }
+        // Today's snapshot is what the first comparison will be measured against, and a wheel with
+        // no first day has nothing to compare to.
+        if (wheelRatings.isNotEmpty()) runCatching { wheelRepository.captureSnapshot() }
+    }
 
     /**
      * Schedule the bundled onboarding reminders (morning habits check + evening
@@ -134,6 +156,21 @@ class CoachOnboardingViewModel(
     var userAge by mutableStateOf<Int?>(null)
     var topPriority by mutableStateOf<GoalCategory?>(null)
     var topPriorities by mutableStateOf<List<GoalCategory>>(emptyList())
+
+    /**
+     * The user's own wheel, given at sign-up. Replaces the abstract "which areas matter most"
+     * question: it is less work to answer and it seeds real scores, so the app has something true
+     * to say from the first launch. See [OnboardingWheelSeed].
+     */
+    var wheelRatings by mutableStateOf<Map<WheelArea, Double>>(emptyMap())
+
+    fun rateArea(area: WheelArea, score: Double) {
+        wheelRatings = wheelRatings + (area to score)
+        // Focus follows the ratings rather than being asked for separately: someone who rated Money
+        // 3 and Family 9 has already told us where the work is.
+        topPriorities = OnboardingWheelSeed.prioritiesFrom(wheelRatings)
+        topPriority = topPriorities.firstOrNull()
+    }
     var stressLevel by mutableStateOf(5)
     var sleepQuality by mutableStateOf(7)
 
@@ -213,7 +250,11 @@ class CoachOnboardingViewModel(
             else -> "luna_general"
         }
 
-    private val specialistQuestionCount: Int
+    /**
+     * How many questions this specialist actually asks. The chat transcript must respect this:
+     * rendering a bubble for a question that was never asked is what produced the empty bubbles.
+     */
+    internal val specialistQuestionCount: Int
         get() = when (specialistCoachId) {
             "alex_career" -> 4
             "morgan_finance" -> 4
@@ -309,6 +350,9 @@ class CoachOnboardingViewModel(
         userAge?.let { settings.putInt(KEY_USER_AGE, it) } ?: settings.remove(KEY_USER_AGE)
         topPriority?.let { settings.putString(KEY_TOP_PRIORITY, it.name) } ?: settings.remove(KEY_TOP_PRIORITY)
         if (topPriorities.isNotEmpty()) settings.putString(KEY_TOP_PRIORITIES, topPriorities.joinToString(",") { it.name }) else settings.remove(KEY_TOP_PRIORITIES)
+        if (wheelRatings.isNotEmpty()) {
+            settings.putString(KEY_WHEEL_RATINGS, wheelRatings.entries.joinToString(",") { "${it.key.name}:${it.value}" })
+        } else settings.remove(KEY_WHEEL_RATINGS)
         settings.putInt(KEY_STRESS, stressLevel)
         settings.putInt(KEY_SLEEP_QUALITY, sleepQuality)
         employmentStatus?.let { settings.putString(KEY_EMPLOYMENT, it.name) } ?: settings.remove(KEY_EMPLOYMENT)
@@ -341,6 +385,14 @@ class CoachOnboardingViewModel(
         userAge = settings.getIntOrNull(KEY_USER_AGE)
         topPriority = settings.getStringOrNull(KEY_TOP_PRIORITY)?.let { runCatching { GoalCategory.valueOf(it) }.getOrNull() }
         topPriorities = settings.getStringOrNull(KEY_TOP_PRIORITIES)?.split(",")?.mapNotNull { runCatching { GoalCategory.valueOf(it) }.getOrNull() } ?: emptyList()
+        wheelRatings = settings.getStringOrNull(KEY_WHEEL_RATINGS)
+            ?.split(",")
+            ?.mapNotNull { entry ->
+                val (name, value) = entry.split(":").takeIf { it.size == 2 } ?: return@mapNotNull null
+                val area = runCatching { WheelArea.valueOf(name) }.getOrNull() ?: return@mapNotNull null
+                val score = value.toDoubleOrNull() ?: return@mapNotNull null
+                area to score
+            }?.toMap() ?: emptyMap()
         stressLevel = settings.getInt(KEY_STRESS, 5)
         sleepQuality = settings.getInt(KEY_SLEEP_QUALITY, 7)
         employmentStatus = settings.getStringOrNull(KEY_EMPLOYMENT)?.let { runCatching { EmploymentStatus.valueOf(it) }.getOrNull() }
@@ -374,7 +426,7 @@ class CoachOnboardingViewModel(
         clearInProgressState()
         settings.remove(COACH_ONBOARDING_KEY)
         _phase.value = OnboardingPhase.LUNA_INTRO
-        userName = ""; userAge = null; topPriority = null; topPriorities = emptyList(); stressLevel = 5; sleepQuality = 7
+        userName = ""; userAge = null; topPriority = null; topPriorities = emptyList(); wheelRatings = emptyMap(); stressLevel = 5; sleepQuality = 7
         employmentStatus = null; jobRole = ""; yearsExperience = null; careerGoal = ""
         incomeBand = null; savingsHabit = null; hasDebt = null; financialGoal = ""
         activityLevel = null; sleepHours = 7f; energyRating = 6
@@ -394,6 +446,7 @@ class CoachOnboardingViewModel(
                 if (userId != null) {
                     userSituationRepository.upsert(userId, buildSituation())
                 }
+                seedWheelFromRatings()
                 if (mindDump.isNotBlank()) {
                     val goal = generateFirstGoal()
                     if (goal != null) {
@@ -519,6 +572,7 @@ class CoachOnboardingViewModel(
             try {
                 val userId = userRepository.getCurrentUser()?.id
                 if (userId != null) userSituationRepository.upsert(userId, buildSituation())
+                seedWheelFromRatings()
                 val enrichedDump = buildString {
                     append(mindDump.trim())
                     val qa = analysisQuestions.zip(analysisAnswers).filter { (_, a) -> a.isNotBlank() }
@@ -763,6 +817,7 @@ class CoachOnboardingViewModel(
         private const val KEY_CIRCLE_SIZE = "ob_circle_size"
         private const val KEY_RELATIONSHIP = "ob_relationship"
         private const val KEY_TOP_VALUES = "ob_top_values"
+        private const val KEY_WHEEL_RATINGS = "ob_wheel_ratings"
         private const val KEY_MINDFULNESS = "ob_mindfulness"
         private const val KEY_VISION = "ob_vision"
         private const val KEY_MIND_DUMP = "ob_mind_dump"
@@ -775,6 +830,7 @@ class CoachOnboardingViewModel(
             KEY_EMPLOYMENT, KEY_JOB_ROLE, KEY_YEARS_EXP, KEY_CAREER_GOAL, KEY_INCOME_BAND,
             KEY_SAVINGS_HABIT, KEY_HAS_DEBT, KEY_FINANCIAL_GOAL, KEY_ACTIVITY, KEY_SLEEP_HOURS,
             KEY_ENERGY, KEY_SOCIAL_ENERGY, KEY_CIRCLE_SIZE, KEY_RELATIONSHIP, KEY_TOP_VALUES,
+            KEY_WHEEL_RATINGS,
             KEY_MINDFULNESS, KEY_VISION, KEY_MIND_DUMP, KEY_FAMILY_ROLE, KEY_FAMILY_CHALLENGE,
             KEY_FAMILY_VISION
         )

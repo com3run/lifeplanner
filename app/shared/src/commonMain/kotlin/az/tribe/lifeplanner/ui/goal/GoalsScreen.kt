@@ -40,7 +40,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
-import az.tribe.lifeplanner.domain.enum.GoalFilter
 import az.tribe.lifeplanner.domain.enum.GoalStatus
 import az.tribe.lifeplanner.domain.model.Goal
 import az.tribe.lifeplanner.ui.components.AddGoalBottomSheet
@@ -196,7 +195,6 @@ fun GoalsScreen(
                         SearchResultsSummary(
                             resultCount = filteredGoals.size,
                             searchQuery = searchQuery.text,
-                            selectedFilter = GoalFilter.ALL,
                             onClear = {
                                 searchQuery = TextFieldValue("")
                                 showSearchBar = false

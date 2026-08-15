@@ -117,9 +117,19 @@ object XpRewards {
     const val HABIT_CHECK_IN = 5
     const val HABIT_STREAK_BONUS = 2 // Per day of streak
     const val JOURNAL_ENTRY = 10
+
+    /**
+     * Reading a Learn lesson. Below a journal entry because it is a shorter, lighter act, and
+     * awarded once per lesson only, on reaching the end, so it cannot be farmed by reopening.
+     */
+    const val LESSON_READ = 8
     const val DAILY_CHECK_IN = 5
     const val STREAK_BONUS_MULTIPLIER = 0.1f // 10% bonus per streak day
     const val PERFECT_DAY_BONUS = 25
+
+    // Mindfulness (breathing) XP
+    const val MINDFUL_BREATH = 4
+    const val MINDFUL_BREATH_BOX = 6
 
     // Focus session XP
     const val FOCUS_SESSION_15 = 10

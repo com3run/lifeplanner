@@ -27,6 +27,103 @@ internal fun addColumnSafe(db: SupportSQLiteDatabase, table: String, column: Str
     }
 }
 
+internal fun migrateToVersion40(db: SupportSQLiteDatabase) {
+    // Schema v40: Wheel of Life user-set scores, matches migration 40.sqm. Only the user's own
+    // numbers live here; predictions are recomputed on read, so there is nothing to migrate for
+    // them.
+    db.execSQL(
+        """
+        CREATE TABLE IF NOT EXISTS WheelScoreEntity (
+            id TEXT NOT NULL PRIMARY KEY,
+            score REAL NOT NULL,
+            assessedAt TEXT NOT NULL,
+            note TEXT,
+            sync_updated_at TEXT,
+            is_deleted INTEGER NOT NULL DEFAULT 0,
+            sync_version INTEGER NOT NULL DEFAULT 0,
+            last_synced_at TEXT
+        )
+        """.trimIndent()
+    )
+}
+
+internal fun migrateToVersion41(db: SupportSQLiteDatabase) {
+    // Schema v41: Wheel of Life history, matches migration 41.sqm. One row per day; `scores` holds
+    // the whole wheel as JSON, since a snapshot is always read and written whole.
+    db.execSQL(
+        """
+        CREATE TABLE IF NOT EXISTS WheelSnapshotEntity (
+            id TEXT NOT NULL PRIMARY KEY,
+            scores TEXT NOT NULL,
+            capturedAt TEXT NOT NULL,
+            sync_updated_at TEXT,
+            is_deleted INTEGER NOT NULL DEFAULT 0,
+            sync_version INTEGER NOT NULL DEFAULT 0,
+            last_synced_at TEXT
+        )
+        """.trimIndent()
+    )
+}
+
+internal fun migrateToVersion42(db: SupportSQLiteDatabase) {
+    // Schema v42: the goal's why, as a Wheel of Life area. Matches migration 42.sqm.
+    // Nullable and unbackfilled on purpose: GoalWheelAreaInferrer fills it in when a goal is next
+    // saved, and inferring for every existing row inside a migration would be a schema change
+    // silently rewriting user data.
+    addColumnSafe(db, "GoalEntity", "wheelArea", "TEXT")
+}
+
+/**
+ * The whole Android migration chain, run on every database open.
+ *
+ * The `.sqm` files are not applied at runtime on Android (they drive iOS and SQLDelight's
+ * compile-time verification), so this chain is the only thing that brings an existing install
+ * up to the current schema. Every step is idempotent, which is what makes running the lot on
+ * each open safe.
+ *
+ * Kept out of [DatabaseDriverFactory] so `DatabaseMigrationsTest` can exercise the real
+ * sequence rather than a copy of it that drifts.
+ */
+internal fun runAndroidMigrations(db: SupportSQLiteDatabase) {
+    migrateToVersion5(db)
+    migrateToVersion6(db)
+    migrateToVersion7(db)
+    migrateToVersion8(db)
+    migrateToVersion9(db)
+    migrateToVersion10(db)
+    migrateToVersion11(db)
+    migrateToVersion12(db)
+    migrateToSyncColumns(db)
+    migrateToVersion13(db)
+    migrateToVersion14(db)
+    migrateToVersion15(db)
+    migrateToVersion16(db)
+    migrateToVersion17(db)
+    migrateToVersion18(db)
+    migrateToVersion19(db)
+    migrateToVersion20(db)
+    migrateToVersion21(db)
+    migrateToVersion22(db)
+    migrateToVersion23(db)
+    migrateToVersion24(db)
+    migrateToVersion25(db)
+    migrateToVersion26(db)
+    migrateToVersion29(db)
+    migrateToVersion30(db)
+    migrateToVersion31(db)
+    migrateToVersion32(db)
+    migrateToVersion33(db)
+    migrateToVersion34(db)
+    migrateToVersion35(db)
+    migrateToVersion36(db)
+    migrateToVersion37(db)
+    migrateToVersion38(db)
+    migrateToVersion39(db)
+    migrateToVersion40(db)
+    migrateToVersion41(db)
+    migrateToVersion42(db)
+}
+
 internal fun migrateToVersion5(db: SupportSQLiteDatabase) {
     // Create HabitEntity table if not exists
     db.execSQL(
@@ -790,6 +887,75 @@ internal fun migrateToVersion34(db: SupportSQLiteDatabase) {
             is_deleted INTEGER NOT NULL DEFAULT 0,
             sync_version INTEGER NOT NULL DEFAULT 0,
             last_synced_at TEXT
+        )
+        """.trimIndent()
+    )
+}
+
+internal fun migrateToVersion35(db: SupportSQLiteDatabase) {
+    // Schema v35: health-to-habit auto-complete linkage, matches migration 35.sqm
+    addColumnSafe(db, "HabitEntity", "healthMetricType", "TEXT")
+    addColumnSafe(db, "HabitEntity", "healthTarget", "REAL")
+}
+
+internal fun migrateToVersion36(db: SupportSQLiteDatabase) {
+    // Schema v36: KnowledgeReadEntity table (Learn hub read-state), matches migration 36.sqm
+    db.execSQL(
+        """
+        CREATE TABLE IF NOT EXISTS KnowledgeReadEntity (
+            id TEXT NOT NULL PRIMARY KEY,
+            readAt TEXT NOT NULL,
+            sync_updated_at TEXT,
+            is_deleted INTEGER NOT NULL DEFAULT 0,
+            sync_version INTEGER NOT NULL DEFAULT 0,
+            last_synced_at TEXT
+        )
+        """.trimIndent()
+    )
+}
+
+internal fun migrateToVersion37(db: SupportSQLiteDatabase) {
+    // Schema v37: journal-detected decisions await confirmation, matches migration 37.sqm
+    addColumnSafe(db, "DecisionEntity", "source", "TEXT NOT NULL DEFAULT 'CHOICE_POINT'")
+    addColumnSafe(db, "DecisionEntity", "status", "TEXT NOT NULL DEFAULT 'CONFIRMED'")
+}
+
+internal fun migrateToVersion38(db: SupportSQLiteDatabase) {
+    // Schema v38: which in-app session completes a habit, matches migration 38.sqm
+    addColumnSafe(db, "HabitEntity", "completionSource", "TEXT")
+}
+
+internal fun migrateToVersion39(db: SupportSQLiteDatabase) {
+    // Schema v39: Learn content cache, matches migration 39.sqm. Server-owned content, so no
+    // sync columns; the fetcher replaces the contents wholesale.
+    db.execSQL(
+        """
+        CREATE TABLE IF NOT EXISTS KnowledgeLessonEntity (
+            id TEXT NOT NULL PRIMARY KEY,
+            title TEXT NOT NULL,
+            body TEXT NOT NULL,
+            emoji TEXT NOT NULL,
+            minLevel INTEGER NOT NULL DEFAULT 1,
+            readMin INTEGER NOT NULL DEFAULT 2,
+            detail TEXT NOT NULL DEFAULT '[]',
+            takeaway TEXT NOT NULL DEFAULT '',
+            source TEXT,
+            topics TEXT NOT NULL DEFAULT '[]',
+            sortOrder INTEGER NOT NULL DEFAULT 0,
+            fetchedAt TEXT NOT NULL
+        )
+        """.trimIndent()
+    )
+    db.execSQL(
+        """
+        CREATE TABLE IF NOT EXISTS KnowledgeCollectionEntity (
+            id TEXT NOT NULL PRIMARY KEY,
+            title TEXT NOT NULL,
+            subtitle TEXT NOT NULL,
+            emoji TEXT NOT NULL,
+            lessonIds TEXT NOT NULL DEFAULT '[]',
+            sortOrder INTEGER NOT NULL DEFAULT 0,
+            fetchedAt TEXT NOT NULL
         )
         """.trimIndent()
     )

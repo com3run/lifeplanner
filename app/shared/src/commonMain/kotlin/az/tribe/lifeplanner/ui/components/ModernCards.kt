@@ -31,6 +31,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
+import az.tribe.lifeplanner.ui.theme.LocalIsDarkTheme
 import az.tribe.lifeplanner.ui.theme.LifePlannerGradients
 import kotlinx.coroutines.FlowPreview
 
@@ -46,7 +47,7 @@ fun GlassCard(
     cornerRadius: Dp = LifePlannerDesign.CornerRadius.large,
     content: @Composable () -> Unit
 ) {
-    val isDark = true
+    val isDark = LocalIsDarkTheme.current
 
     if (isDark) {
         Surface(

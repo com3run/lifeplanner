@@ -15,6 +15,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -86,10 +89,16 @@ private fun rememberChatHistory(
 private fun buildChatHistory(phase: OnboardingPhase, vm: CoachOnboardingViewModel): List<ChatMessage> {
     val messages = mutableListOf<ChatMessage>()
 
-    fun coachMsg(text: String, coachName: String = "Luna", coachEmoji: String = "🌟") =
-        messages.add(ChatMessage(isCoach = true, text = text, coachName = coachName, coachEmoji = coachEmoji))
-    fun userMsg(text: String) =
-        messages.add(ChatMessage(isCoach = false, text = text))
+    // Never add an empty bubble. A blank message means the step was skipped or has no copy for
+    // this coach, and rendering it produced the empty chat bubbles a user would otherwise see.
+    fun coachMsg(text: String, coachName: String = "Luna", coachEmoji: String = "🌟") {
+        if (text.isNotBlank()) {
+            messages.add(ChatMessage(isCoach = true, text = text, coachName = coachName, coachEmoji = coachEmoji))
+        }
+    }
+    fun userMsg(text: String) {
+        if (text.isNotBlank()) messages.add(ChatMessage(isCoach = false, text = text))
+    }
 
     val luna = "🌟"
     val specialistEmoji = when (vm.specialistCoachId) {
@@ -119,9 +128,17 @@ private fun buildChatHistory(phase: OnboardingPhase, vm: CoachOnboardingViewMode
         userMsg(if (nameAge.isNotBlank()) nameAge else "Skipped")
     }
     if (OnboardingPhase.LUNA_PRIORITY.isBefore(phase)) {
-        coachMsg("Which areas of life matter most to you right now? Select at least 3.", "Luna", luna)
-        val cats = vm.topPriorities.joinToString(" · ") { it.name.lowercase().replaceFirstChar { c -> c.uppercase() } }
-        userMsg(if (cats.isNotBlank()) cats else "Skipped")
+        coachMsg(
+            "Let's start with where things actually are. How is each part of your life going, out of ten? Rough is fine.",
+            "Luna",
+            luna,
+        )
+        // Echo back the wheel rather than the derived categories: the user answered in areas and
+        // scores, so replaying it as "Career · Financial" would look like we asked something else.
+        val rated = vm.wheelRatings.entries
+            .sortedBy { it.key.order }
+            .joinToString(" · ") { "${it.key.displayName} ${formatRating(it.value)}" }
+        userMsg(if (rated.isNotBlank()) rated else "Skipped")
     }
     if (OnboardingPhase.LUNA_WELLBEING.isBefore(phase)) {
         coachMsg("How are you feeling lately? Be honest, this helps me calibrate your goals.", "Luna", luna)
@@ -130,21 +147,31 @@ private fun buildChatHistory(phase: OnboardingPhase, vm: CoachOnboardingViewMode
     if (OnboardingPhase.SPECIALIST_INTRO.isBefore(phase)) {
         val area = vm.topPriorities.firstOrNull()?.name?.lowercase()?.replaceFirstChar { it.uppercase() }
             ?: vm.topPriority?.name?.lowercase()?.replaceFirstChar { it.uppercase() }
-            ?: "your goals"
-        coachMsg("I'm bringing in $specialistName, our $area specialist.", "Luna", luna)
+        // No area means the wheel was skipped, and "our your goals specialist" is what the
+        // fallback produced when dropped into a sentence built for a real one.
+        coachMsg(
+            if (area != null) "I'm bringing in $specialistName, our $area specialist."
+            else "I'm bringing in $specialistName for a quick check-in.",
+            "Luna",
+            luna,
+        )
         userMsg("Let's meet them!")
     }
-    if (OnboardingPhase.SPECIALIST_Q1.isBefore(phase)) {
-        coachMsg(specialistQSummary(vm, 1), specialistName, specialistEmoji); userMsg(vm.specialistQ1Answer())
+    // Specialists ask a variable number of questions (3 for kai/sam/river, 4 for alex/morgan), and
+    // the flow skips straight to MIND_DUMP once they run out. The transcript has to respect that
+    // count, otherwise it renders a bubble for a question that was never asked. Question text comes
+    // from the same specialistQ*Message functions the live step uses, so the two cannot drift.
+    if (OnboardingPhase.SPECIALIST_Q1.isBefore(phase) && vm.specialistQuestionCount >= 1) {
+        coachMsg(specialistQ1Message(vm), specialistName, specialistEmoji); userMsg(vm.specialistQ1Answer())
     }
-    if (OnboardingPhase.SPECIALIST_Q2.isBefore(phase)) {
-        coachMsg(specialistQSummary(vm, 2), specialistName, specialistEmoji); userMsg(vm.specialistQ2Answer())
+    if (OnboardingPhase.SPECIALIST_Q2.isBefore(phase) && vm.specialistQuestionCount >= 2) {
+        coachMsg(specialistQ2Message(vm), specialistName, specialistEmoji); userMsg(vm.specialistQ2Answer())
     }
-    if (OnboardingPhase.SPECIALIST_Q3.isBefore(phase)) {
-        coachMsg(specialistQSummary(vm, 3), specialistName, specialistEmoji); userMsg(vm.specialistQ3Answer())
+    if (OnboardingPhase.SPECIALIST_Q3.isBefore(phase) && vm.specialistQuestionCount >= 3) {
+        coachMsg(specialistQ3Message(vm), specialistName, specialistEmoji); userMsg(vm.specialistQ3Answer())
     }
-    if (OnboardingPhase.SPECIALIST_Q4.isBefore(phase)) {
-        coachMsg(specialistQSummary(vm, 4), specialistName, specialistEmoji); userMsg(vm.specialistQ4Answer())
+    if (OnboardingPhase.SPECIALIST_Q4.isBefore(phase) && vm.specialistQuestionCount >= 4) {
+        coachMsg(specialistQ4Message(vm), specialistName, specialistEmoji); userMsg(vm.specialistQ4Answer())
     }
     if (OnboardingPhase.MIND_DUMP.isBefore(phase)) {
         coachMsg("What do you actually want to change or achieve right now?", "Luna", luna)
@@ -169,44 +196,6 @@ private fun buildChatHistory(phase: OnboardingPhase, vm: CoachOnboardingViewMode
     }
 
     return messages
-}
-
-private fun specialistQSummary(vm: CoachOnboardingViewModel, q: Int): String {
-    val id = vm.specialistCoachId
-    return when (q) {
-        1 -> when (id) {
-            "alex_career" -> "What's your work situation?"
-            "morgan_finance" -> "What's your rough income range?"
-            "kai_fitness" -> "How active are you day-to-day?"
-            "sam_social" -> "Are you more of an introvert or extrovert?"
-            "river_wellness" -> "What are your top values?"
-            "jamie_family" -> "What best describes your family situation?"
-            else -> "Quick question"
-        }
-        2 -> when (id) {
-            "alex_career" -> "What's your current role?"
-            "morgan_finance" -> "How consistent are your savings?"
-            "kai_fitness" -> "How many hours do you sleep?"
-            "sam_social" -> "How big is your close circle?"
-            "river_wellness" -> "Do you have a mindfulness practice?"
-            "jamie_family" -> "What's your biggest family challenge?"
-            else -> ""
-        }
-        3 -> when (id) {
-            "alex_career" -> "Years of experience?"
-            "morgan_finance" -> "Any debt you're managing?"
-            "kai_fitness" -> "How's your energy level?"
-            "sam_social" -> "What's your relationship status?"
-            "river_wellness" -> "What's your long-term vision?"
-            "jamie_family" -> "What would a happier home look like?"
-            else -> ""
-        }
-        else -> when (id) {
-            "alex_career" -> "What's your main career ambition?"
-            "morgan_finance" -> "What's your main financial goal?"
-            else -> ""
-        }
-    }
 }
 
 private fun CoachOnboardingViewModel.specialistQ1Answer() = when (specialistCoachId) {
@@ -251,6 +240,12 @@ private fun CoachOnboardingViewModel.specialistQ4Answer() = when (specialistCoac
 fun CoachOnboardingScreen(
     onComplete: () -> Unit,
     onBack: () -> Unit = {},
+    /**
+     * D11 chain: called once the user is past the auth gate but has not seen the intro
+     * (promise + values). The intro cannot be routed from `App.kt`'s auth observer, because the
+     * gate lives *inside* this screen and `signInAsGuest()` resolves here first.
+     */
+    onNeedsIntro: () -> Unit = {},
     viewModel: CoachOnboardingViewModel = koinViewModel()
 ) {
     val authViewModel: AuthViewModel = koinInject()
@@ -273,6 +268,12 @@ fun CoachOnboardingScreen(
                     viewModel.resetForNewSession()
                 } else if (CoachOnboardingViewModel.isComplete(settings)) {
                     onComplete()
+                }
+                // D11 chain: the intro runs *between* the auth gate and the coach flow. The
+                // session above is reset first, so returning from the intro starts the coach flow
+                // cleanly at LUNA_INTRO.
+                if (!CoachOnboardingViewModel.isComplete(settings) && !IntroFlow.isComplete(settings)) {
+                    onNeedsIntro()
                 }
             }
             is AuthState.Error, is AuthState.Unauthenticated -> isLoadingGuest = false
@@ -392,6 +393,12 @@ fun CoachOnboardingScreen(
                 ) { currentPhase ->
                     Column(
                         modifier = Modifier
+                            // Capped and scrollable: every step until now was short enough to fit
+                            // the panel, and the wheel's nine rows pushed Continue and Skip off the
+                            // bottom of the screen with no way to reach them. A step that cannot be
+                            // finished is worse than one that scrolls.
+                            .heightIn(max = 560.dp)
+                            .verticalScroll(rememberScrollState())
                             .padding(horizontal = 24.dp, vertical = 20.dp)
                             .imePadding()
                             .navigationBarsPadding()
@@ -620,3 +627,7 @@ private fun AuthGate(
         }
     }
 }
+
+/** "7", not "7.0" — the extra digit makes a rough answer look like a measurement. */
+private fun formatRating(score: Double): String =
+    if (score % 1.0 == 0.0) score.toInt().toString() else score.toString()

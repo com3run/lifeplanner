@@ -1,0 +1,225 @@
+package az.tribe.lifeplanner.ui.health
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Bold
+import com.adamglin.phosphoricons.Fill
+import com.adamglin.phosphoricons.bold.Barbell
+import com.adamglin.phosphoricons.bold.Footprints
+import com.adamglin.phosphoricons.bold.Heartbeat
+import com.adamglin.phosphoricons.bold.Moon
+import com.adamglin.phosphoricons.fill.Lock
+
+/**
+ * Permission ask as a "locked" preview of the real dashboard: the actual metric widgets sit
+ * blurred and dimmed behind a lock + unlock CTA, so the user sees exactly what they unlock before
+ * granting access. Connecting reveals the live widgets (see the Crossfade in HealthDashboardScreen).
+ * Tapping anywhere on the card launches the permission request.
+ */
+@Composable
+internal fun HealthConnectPreview(
+    onRequestPermissions: () -> Unit,
+    modifier: Modifier = Modifier,
+    connecting: Boolean = false,
+    compact: Boolean = false,
+) {
+    val scrim = MaterialTheme.colorScheme.surface
+    Card(
+        onClick = onRequestPermissions,
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+        ),
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Box {
+            // Behind glass: the real widgets you unlock, blurred + dimmed.
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = if (compact) 240.dp else 264.dp)
+                    .padding(16.dp)
+                    .blur(7.dp)
+                    .alpha(0.55f),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                previewMetrics.chunked(2).forEach { rowMetrics ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        rowMetrics.forEach { metric ->
+                            LockedMetricTile(metric, Modifier.weight(1f), compact)
+                        }
+                    }
+                }
+            }
+
+            // The lock / unlock overlay, centered over the blurred widgets.
+            Column(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(scrim.copy(alpha = 0.50f), scrim.copy(alpha = 0.82f))
+                        )
+                    )
+                    .padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(52.dp)
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = PhosphorIcons.Fill.Lock,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(26.dp)
+                    )
+                }
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    text = "Unlock your health data",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = "Steps, sleep, heart rate and weight, filled in automatically.",
+                    style = MaterialTheme.typography.bodySmall,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(16.dp))
+                Button(
+                    onClick = onRequestPermissions,
+                    enabled = !connecting,
+                    shape = RoundedCornerShape(14.dp)
+                ) {
+                    if (connecting) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text("Connecting…")
+                    } else {
+                        Text("Connect with Health Connect")
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = "Read only. Your data stays on your device.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                )
+            }
+        }
+    }
+}
+
+private data class PreviewMetric(
+    val title: String,
+    val sampleValue: String,
+    val sampleCaption: String,
+    val icon: ImageVector,
+    val tint: Color?,
+    /** 0..1 fills the sample progress bar; null hides it. */
+    val sampleProgress: Float? = null,
+)
+
+private val previewMetrics = listOf(
+    PreviewMetric("Steps", "7,842", "of 10,000 today", PhosphorIcons.Bold.Footprints, null, sampleProgress = 0.78f),
+    PreviewMetric("Sleep", "7h 20m", "last night", PhosphorIcons.Bold.Moon, Color(0xFF7986CB)),
+    PreviewMetric("Heart", "68 bpm", "resting avg", PhosphorIcons.Bold.Heartbeat, Color(0xFFE57373)),
+    PreviewMetric("Weight", "72.4 kg", "trending down", PhosphorIcons.Bold.Barbell, null),
+)
+
+@Composable
+private fun LockedMetricTile(
+    metric: PreviewMetric,
+    modifier: Modifier = Modifier,
+    compact: Boolean = false,
+) {
+    val tint = metric.tint ?: MaterialTheme.colorScheme.primary
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        shape = RoundedCornerShape(16.dp),
+        modifier = modifier
+    ) {
+        Column(
+            modifier = Modifier.padding(if (compact) 12.dp else 14.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = metric.icon,
+                    contentDescription = null,
+                    tint = tint.copy(alpha = 0.85f),
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    text = metric.title,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Text(
+                text = metric.sampleValue,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = metric.sampleCaption,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+            )
+            metric.sampleProgress?.let { progress ->
+                LinearProgressIndicator(
+                    progress = { progress },
+                    modifier = Modifier.fillMaxWidth().height(4.dp),
+                    color = tint.copy(alpha = 0.5f),
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+            }
+        }
+    }
+}

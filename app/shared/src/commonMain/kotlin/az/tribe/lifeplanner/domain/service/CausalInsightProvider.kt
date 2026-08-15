@@ -52,7 +52,7 @@ class CausalInsightProvider(
             .groupBy { it.date }
             .mapValues { (_, v) -> v.map { m -> m.value }.average() }
 
-        val dates = (habitsByDay.keys + moodByDay.keys + focusByDay.keys + sleepByDay.keys).toSortedSet()
+        val dates = (habitsByDay.keys + moodByDay.keys + focusByDay.keys + sleepByDay.keys).sorted()
         return dates.map { d ->
             DayMetrics(
                 date = d,

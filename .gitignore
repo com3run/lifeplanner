@@ -25,7 +25,7 @@ firebase-debug.log
 supabase/.temp/
 .env*
 app/androidApp/google-services.json
-iosApp/iosApp/GoogleService-Info.plist
+app/iosApp/iosApp/GoogleService-Info.plist
 .vercel
 .claude/*
 !.claude/skills/
@@ -34,3 +34,19 @@ iosApp/iosApp/GoogleService-Info.plist
 *.ipa
 *.xcarchive
 **/.DS_Store
+
+# local safety backups (not tracked)
+.backups/
+
+# umbrella symlink to ../lifeplanner-assets (docs, design, screenshots, postman, scripts)
+assets
+
+# design-sync scratch
+.ds-sync/
+ds-bundle/
+.design-sync/.cache/
+.design-sync/node_modules
+
+# Kotlin scratch/practice scripts (not app code)
+*.main.kts
+practice/

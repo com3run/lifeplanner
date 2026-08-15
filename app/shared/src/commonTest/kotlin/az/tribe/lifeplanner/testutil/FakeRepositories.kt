@@ -135,14 +135,20 @@ class FakeHabitRepository : HabitRepository {
         emitFlow()
         return ci
     }
-    override suspend fun incrementCount(habitId: String, date: LocalDate): HabitCheckIn {
+    override suspend fun incrementCount(habitId: String, date: LocalDate): HabitCheckIn =
+        addCount(habitId, date, delta = 1)
+
+    override suspend fun addCount(habitId: String, date: LocalDate, delta: Int): HabitCheckIn {
+        val target = habits.find { it.id == habitId }?.targetCount ?: 1
         val idx = checkIns.indexOfFirst { it.habitId == habitId && it.date == date }
+        val newCount = ((if (idx >= 0) checkIns[idx].count else 0) + delta).coerceAtLeast(0)
+        val completed = newCount >= target
         val updated = if (idx >= 0) {
-            val existing = checkIns[idx].copy(count = checkIns[idx].count + 1, completed = true)
+            val existing = checkIns[idx].copy(count = newCount, completed = completed)
             checkIns[idx] = existing
             existing
         } else {
-            val ci = HabitCheckIn(Uuid.random().toString(), habitId, date, completed = true, notes = "", count = 1)
+            val ci = HabitCheckIn(Uuid.random().toString(), habitId, date, completed, notes = "", count = newCount)
             checkIns.add(ci)
             ci
         }
@@ -265,7 +271,9 @@ class FakeGamificationRepository : GamificationRepository {
     override suspend fun cleanupExpiredChallenges() {}
     override suspend fun getAvailableChallenges(): List<ChallengeType> = ChallengeType.entries.toList()
     override suspend fun updateDailyStreakRemote() = streakResult
-    override suspend fun awardXp(amount: Long) {}
+    /** Every XP award, in order, so tests can assert what an action actually paid out. */
+    val xpAwards = mutableListOf<Long>()
+    override suspend fun awardXp(amount: Long) { xpAwards.add(amount) }
     override suspend fun awardBadge(type: BadgeType) {}
 }
 
@@ -463,7 +471,11 @@ class FakeGoalDependencyRepository : GoalDependencyRepository {
 
 class FakeAiProxyService : AiProxyService {
     var responseToReturn = "Great day!"
-    override suspend fun generateText(prompt: String, systemPrompt: String?, provider: AiProvider?) = responseToReturn
+    var errorToThrow: Throwable? = null
+    override suspend fun generateText(prompt: String, systemPrompt: String?, provider: AiProvider?): String {
+        errorToThrow?.let { throw it }
+        return responseToReturn
+    }
     override suspend fun generateStructuredJson(prompt: String, responseSchema: JsonObject, systemPrompt: String?, provider: AiProvider?) = "{}"
     override suspend fun chat(messages: List<AiProxyService.ChatMessage>, systemPrompt: String?, responseSchema: JsonObject?, provider: AiProvider?) = responseToReturn
     override fun chatStream(messages: List<AiProxyService.ChatMessage>, systemPrompt: String?, provider: AiProvider?) = flow<AiProxyService.StreamEvent> {}
@@ -521,4 +533,17 @@ class FakeLifeValueRepository : LifeValueRepository {
         if (idx >= 0) { values[idx] = value; emit() }
     }
     override suspend fun deleteLifeValueById(id: String) { values.removeAll { it.id == id }; emit() }
+}
+
+// ─── KnowledgeRepository ─────────────────────────────────────────────────────
+
+class FakeKnowledgeRepository : KnowledgeRepository {
+    private val read = mutableSetOf<String>()
+    private val _flow = MutableStateFlow<Set<String>>(emptySet())
+
+    fun setRead(ids: Set<String>) { read.clear(); read.addAll(ids); _flow.value = read.toSet() }
+
+    override fun readIds(): Flow<Set<String>> = _flow
+    override suspend fun markRead(id: String) { read.add(id); _flow.value = read.toSet() }
+    override suspend fun markUnread(id: String) { read.remove(id); _flow.value = read.toSet() }
 }

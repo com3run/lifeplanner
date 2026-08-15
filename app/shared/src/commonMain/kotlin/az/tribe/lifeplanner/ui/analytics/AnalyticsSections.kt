@@ -292,15 +292,20 @@ internal fun PerformanceInsightsSection(analytics: GoalAnalytics) {
                 )
             }
 
-            // Most active category insight
-            analytics.goalsByCategory.maxByOrNull { it.value }?.let { (category, count) ->
-                ModernInsightCard(
-                    icon = PhosphorIcons.Regular.Trophy,
-                    title = "Top Category",
-                    description = "${category.name.lowercase().replaceFirstChar { it.uppercase() }} leads with $count goals",
-                    color = Color(0xFF10B981)
-                )
-            }
+            // Most active category insight. Only when one category actually leads: with a goal
+            // in each of three categories, "Career leads with 1 goals" is a tie dressed up as a
+            // ranking (same tie rule as the wheel).
+            analytics.goalsByCategory.maxByOrNull { it.value }
+                ?.takeIf { top -> analytics.goalsByCategory.count { it.value == top.value } == 1 }
+                ?.let { (category, count) ->
+                    ModernInsightCard(
+                        icon = PhosphorIcons.Regular.Trophy,
+                        title = "Top Category",
+                        description = "${category.name.lowercase().replaceFirstChar { it.uppercase() }} " +
+                            "leads with $count ${if (count == 1) "goal" else "goals"}",
+                        color = Color(0xFF10B981)
+                    )
+                }
 
             // Completion rate insight
             val completionPercentage = (analytics.completionRate * 100).toInt()

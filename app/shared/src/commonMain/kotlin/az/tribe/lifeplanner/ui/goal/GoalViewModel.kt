@@ -12,7 +12,6 @@ import az.tribe.lifeplanner.domain.model.GoalAnalytics
 import az.tribe.lifeplanner.domain.model.GoalChange
 import az.tribe.lifeplanner.domain.model.LifeValue
 import az.tribe.lifeplanner.domain.repository.LifeValueRepository
-import az.tribe.lifeplanner.domain.enum.GoalFilter
 import az.tribe.lifeplanner.domain.enum.GoalStatus
 import az.tribe.lifeplanner.domain.model.XpRewards
 import az.tribe.lifeplanner.domain.repository.GamificationRepository
@@ -72,9 +71,6 @@ class GoalViewModel(
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
-    private val _selectedFilter = MutableStateFlow(GoalFilter.ALL)
-    val selectedFilter: StateFlow<GoalFilter> = _selectedFilter.asStateFlow()
-
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
@@ -84,9 +80,8 @@ class GoalViewModel(
     // Reactive goals: auto-updates from DB, with client-side search/filter
     val goals: StateFlow<List<Goal>> = combine(
         goalRepository.observeAllGoals(),
-        _searchQuery,
-        _selectedFilter
-    ) { allGoals, query, filter ->
+        _searchQuery
+    ) { allGoals, query ->
         var result = allGoals
         if (query.isNotBlank()) {
             result = result.filter { goal ->
@@ -94,11 +89,7 @@ class GoalViewModel(
                     goal.description.contains(query, ignoreCase = true)
             }
         }
-        when (filter) {
-            GoalFilter.ALL -> result
-            GoalFilter.ACTIVE -> result.filter { it.status != GoalStatus.COMPLETED }
-            GoalFilter.COMPLETED -> result.filter { it.status == GoalStatus.COMPLETED }
-        }
+        result
     }
         .onEach { _isLoading.value = false }
         .catch { e ->
@@ -156,20 +147,33 @@ class GoalViewModel(
         }
     }
 
-    fun updateFilter(filter: GoalFilter) {
-        _selectedFilter.value = filter
-    }
-
     // Goal CRUD Operations
     fun createGoal(goal: Goal) {
         viewModelScope.launch {
             try {
-                createGoalUseCase(goal)
+                // The "why", set for free. The wheel area is the one that matters: it is always
+                // resolvable from the category the user picked, and it is what ties this goal to a
+                // score they gave us. The free-text value is kept for the identity statements that
+                // still use it, but it is no longer what the Why-Chain leads with.
+                val withArea = if (goal.wheelArea == null) {
+                    goal.copy(
+                        wheelArea = az.tribe.lifeplanner.domain.service.GoalWheelAreaInferrer.infer(
+                            category = goal.category, title = goal.title, description = goal.description,
+                        )
+                    )
+                } else goal
+                val finalGoal = if (withArea.valueId == null) {
+                    val values = runCatching { lifeValueRepository.getActiveLifeValues() }.getOrDefault(emptyList())
+                    withArea.copy(valueId = az.tribe.lifeplanner.domain.service.GoalValueInferrer.infer(
+                        category = withArea.category, title = withArea.title, description = withArea.description, values = values,
+                    ))
+                } else withArea
+                createGoalUseCase(finalGoal)
                 gamificationRepository.awardXp(XpRewards.GOAL_CREATED.toLong())
-                Analytics.goalCreated(goal.category.name, "manual")
-                val result = smartReminderManager.syncRemindersForGoal(goal)
+                Analytics.goalCreated(finalGoal.category.name, "manual")
+                val result = smartReminderManager.syncRemindersForGoal(finalGoal)
                 if (result.hasChanges) {
-                    _reminderEvent.emit("${result.total} smart reminder${if (result.total > 1) "s" else ""} set for \"${goal.title}\"")
+                    _reminderEvent.emit("${result.total} smart reminder${if (result.total > 1) "s" else ""} set for \"${finalGoal.title}\"")
                 }
                 _error.value = null
             } catch (e: Exception) {
@@ -327,6 +331,17 @@ class GoalViewModel(
     fun addMilestone(goalId: String, milestoneTitle: String, dueDate: LocalDate? = null) {
         viewModelScope.launch {
             try {
+                // Adding the same step twice is never what was meant, and it is easy to do: the
+                // coach's suggestion rows stay tappable while the write is still in flight, so a
+                // second tap lands before the list has refreshed and the suggestion has dropped
+                // out. That put "Complete 6 months fund" on a goal four times.
+                val existing = getGoalByIdUseCase(goalId)?.milestones.orEmpty()
+                val wanted = milestoneTitle.trim()
+                if (existing.any { it.title.trim().equals(wanted, ignoreCase = true) }) {
+                    _error.value = null
+                    return@launch
+                }
+
                 val newMilestone = createNewMilestone(milestoneTitle, dueDate)
                 val result = addMilestoneUseCase(goalId, newMilestone)
 

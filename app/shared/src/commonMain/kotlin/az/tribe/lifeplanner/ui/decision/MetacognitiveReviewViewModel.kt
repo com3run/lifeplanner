@@ -3,6 +3,7 @@ package az.tribe.lifeplanner.ui.decision
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import az.tribe.lifeplanner.domain.model.Decision
+import az.tribe.lifeplanner.domain.model.DecisionStatus
 import az.tribe.lifeplanner.domain.model.OutcomeQuality
 import az.tribe.lifeplanner.domain.repository.DecisionRepository
 import kotlinx.coroutines.flow.SharingStarted
@@ -22,13 +23,14 @@ class MetacognitiveReviewViewModel(
     private val decisionRepository: DecisionRepository,
 ) : ViewModel() {
 
-    // Un-graded decisions first, then most recent.
+    // Only confirmed decisions are reviewable, un-graded first, then most recent.
     val decisions: StateFlow<List<Decision>> =
         decisionRepository.observeAllDecisions()
             .map { list ->
-                list.sortedWith(
-                    compareByDescending<Decision> { it.outcomeQuality == null }.thenByDescending { it.decidedAt }
-                )
+                list.filter { it.status == DecisionStatus.CONFIRMED }
+                    .sortedWith(
+                        compareByDescending<Decision> { it.outcomeQuality == null }.thenByDescending { it.decidedAt }
+                    )
             }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 

@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
 import az.tribe.lifeplanner.ui.theme.LifePlannerGradients
+import az.tribe.lifeplanner.ui.theme.heroGradient
 import az.tribe.lifeplanner.ui.theme.modernColors
 
 /**
@@ -38,7 +39,7 @@ fun GradientHero(
     title: String,
     subtitle: String? = null,
     modifier: Modifier = Modifier,
-    gradient: Brush = LifePlannerGradients.primary,
+    gradient: Brush = heroGradient(),
     eyebrow: String? = null,
     trailing: (@Composable () -> Unit)? = null,
 ) {

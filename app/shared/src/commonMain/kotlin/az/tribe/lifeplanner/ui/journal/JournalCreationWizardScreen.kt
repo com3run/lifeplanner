@@ -27,6 +27,9 @@ enum class JournalWizardStep {
 fun JournalCreationWizardScreen(
     onNavigateBack: () -> Unit,
     preSelectedGoalId: String? = null,
+    initialMood: Mood? = null,
+    /** Day this entry belongs to; null means today. */
+    initialDate: kotlinx.datetime.LocalDate? = null,
     viewModel: JournalViewModel = koinViewModel(),
     goalViewModel: GoalViewModel = koinInject(),
     habitViewModel: az.tribe.lifeplanner.ui.habit.HabitViewModel = koinViewModel(),
@@ -44,9 +47,10 @@ fun JournalCreationWizardScreen(
     // Track wizard start
     LaunchedEffect(Unit) { Analytics.journalWizardStarted() }
 
-    // Wizard state
-    var currentStep by remember { mutableStateOf(JournalWizardStep.MOOD) }
-    var selectedMood by remember { mutableStateOf<Mood?>(null) }
+    // Wizard state. When a mood is handed in (from the Today mood prompt), step 1 is already
+    // answered, so start on the PROMPT slide with that mood selected.
+    var currentStep by remember { mutableStateOf(if (initialMood != null) JournalWizardStep.PROMPT else JournalWizardStep.MOOD) }
+    var selectedMood by remember { mutableStateOf(initialMood) }
     var selectedPrompt by remember { mutableStateOf<String?>(null) }
     var userNote by remember { mutableStateOf("") }
     var selectedGoalId by remember { mutableStateOf<String?>(preSelectedGoalId) }
@@ -55,6 +59,7 @@ fun JournalCreationWizardScreen(
     var generatedTitle by remember { mutableStateOf("") }
     var generatedContent by remember { mutableStateOf("") }
     var generatedTags by remember { mutableStateOf<List<String>>(emptyList()) }
+    var detectedDecision by remember { mutableStateOf<DetectedDecision?>(null) }
 
     // Back handler
     val canGoBack = !isGenerating
@@ -146,6 +151,7 @@ fun JournalCreationWizardScreen(
                                     generatedTitle = it.title
                                     generatedContent = it.content
                                     generatedTags = it.tags
+                                    detectedDecision = it.detectedDecision
                                 }
                             } catch (e: Exception) {
                                 Logger.e("JournalCreationWizard", e) { "AI journal generation failed" }
@@ -160,6 +166,7 @@ fun JournalCreationWizardScreen(
                         generatedTitle = ""
                         generatedContent = ""
                         generatedTags = emptyList()
+                        detectedDecision = null
                         currentStep = JournalWizardStep.REVIEW_SAVE
                     }
                 )
@@ -190,7 +197,9 @@ fun JournalCreationWizardScreen(
                                     linkedGoalId = selectedGoalId,
                                     linkedHabitId = selectedHabitId,
                                     tags = generatedTags,
-                                    promptUsed = selectedPrompt
+                                    promptUsed = selectedPrompt,
+                                    detectedDecision = detectedDecision,
+                                    date = initialDate,
                                 )
                                 onNavigateBack()
                             }

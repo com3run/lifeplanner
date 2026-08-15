@@ -1,5 +1,7 @@
 package az.tribe.lifeplanner.ui.navigation
 
+import az.tribe.lifeplanner.core.FeatureFlags
+
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Fill
@@ -49,10 +51,13 @@ sealed class BottomNavItem(
     )
 
     data object Hub : BottomNavItem(
-        route = Screen.GoalsRedesign.route,
-        title = "Goals",
-        selectedIcon = PhosphorIcons.Fill.Flag,
-        unselectedIcon = PhosphorIcons.Regular.Flag
+        // 2026-07-21: reverted to the v2 middle tab, the Journal hub whose sub-tabs are
+        // Goals / Habits / Journal / Planner. v3 had pointed this at the standalone
+        // GoalsRedesign screen.
+        route = Screen.Journal.route,
+        title = "Artifact",
+        selectedIcon = PhosphorIcons.Fill.SquaresFour,
+        unselectedIcon = PhosphorIcons.Regular.SquaresFour
     )
 
     data object Abilities : BottomNavItem(
@@ -63,6 +68,9 @@ sealed class BottomNavItem(
     )
 
     data object Profile : BottomNavItem(
+        // 2026-07-21: reverted to v2. Third tab is the legacy Profile, whose pillar rows are
+        // FeatureFlags-gated (so they vanish with the pillars). The redesigned YouScreen links
+        // to Becoming/Wiring/Causal without guards, which would be dead taps once pillars are off.
         route = Screen.Profile.route,
         title = "You",
         selectedIcon = PhosphorIcons.Fill.User,

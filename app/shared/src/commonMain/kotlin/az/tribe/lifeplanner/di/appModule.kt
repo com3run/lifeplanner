@@ -26,6 +26,10 @@ import az.tribe.lifeplanner.data.repository.GoalHistoryRepositoryImpl
 import az.tribe.lifeplanner.data.repository.FocusRepositoryImpl
 import az.tribe.lifeplanner.data.repository.RetrospectiveRepositoryImpl
 import az.tribe.lifeplanner.data.repository.GoalRepositoryImpl
+import az.tribe.lifeplanner.data.repository.KnowledgeRepositoryImpl
+import az.tribe.lifeplanner.data.repository.WheelRepositoryImpl
+import az.tribe.lifeplanner.ui.wheel.WheelViewModel
+import kotlinx.coroutines.flow.first
 import az.tribe.lifeplanner.data.repository.LifeValueRepositoryImpl
 import az.tribe.lifeplanner.data.repository.DecisionRepositoryImpl
 import az.tribe.lifeplanner.data.repository.DecisionProfileRepositoryImpl
@@ -59,6 +63,8 @@ import az.tribe.lifeplanner.domain.repository.GoalHistoryRepository
 import az.tribe.lifeplanner.domain.repository.FocusRepository
 import az.tribe.lifeplanner.domain.repository.RetrospectiveRepository
 import az.tribe.lifeplanner.domain.repository.GoalRepository
+import az.tribe.lifeplanner.domain.repository.KnowledgeRepository
+import az.tribe.lifeplanner.domain.repository.WheelRepository
 import az.tribe.lifeplanner.domain.repository.LifeValueRepository
 import az.tribe.lifeplanner.domain.repository.DecisionRepository
 import az.tribe.lifeplanner.domain.repository.DecisionProfileRepository
@@ -76,9 +82,11 @@ import az.tribe.lifeplanner.notification.NotificationSchedulerInterface
 import az.tribe.lifeplanner.notification.getNotificationScheduler
 import az.tribe.lifeplanner.util.NetworkConnectivityObserver
 import az.tribe.lifeplanner.widget.WidgetDataSyncService
+import az.tribe.lifeplanner.data.calendar.CalendarReader
 import az.tribe.lifeplanner.data.health.HealthDataManager
 import az.tribe.lifeplanner.ui.ability.AbilityDetailViewModel
 import az.tribe.lifeplanner.ui.ability.AbilityViewModel
+import az.tribe.lifeplanner.ui.calendar.CalendarViewModel
 import az.tribe.lifeplanner.ui.health.HealthViewModel
 import az.tribe.lifeplanner.ui.goal.GoalViewModel
 import az.tribe.lifeplanner.ui.chat.ChatViewModel
@@ -89,15 +97,17 @@ import az.tribe.lifeplanner.ui.journal.JournalViewModel
 import az.tribe.lifeplanner.ui.backup.BackupViewModel
 import az.tribe.lifeplanner.ui.focus.FocusViewModel
 import az.tribe.lifeplanner.ui.retrospective.RetrospectiveViewModel
-import az.tribe.lifeplanner.ui.balance.LifeBalanceViewModel
 import az.tribe.lifeplanner.ui.coach.CoachViewModel
+import az.tribe.lifeplanner.ui.onboarding.AboutYouViewModel
 import az.tribe.lifeplanner.ui.onboarding.CoachOnboardingViewModel
 import az.tribe.lifeplanner.ui.reminder.ReminderViewModel
 import az.tribe.lifeplanner.ui.objectives.BeginnerObjectiveViewModel
 import az.tribe.lifeplanner.ui.viewmodel.AuthViewModel
 import az.tribe.lifeplanner.ui.home.HomeViewModel
 import az.tribe.lifeplanner.ui.habit.SmartHabitGeneratorViewModel
-import az.tribe.lifeplanner.ui.profile.WeeklyEngagementViewModel
+import az.tribe.lifeplanner.ui.habit.HabitChatViewModel
+import az.tribe.lifeplanner.ui.components.WeeklyEngagementViewModel
+import az.tribe.lifeplanner.ui.profile.YouViewModel
 import az.tribe.lifeplanner.ui.search.SearchViewModel
 import az.tribe.lifeplanner.usecases.journal.CreateJournalEntryUseCase
 import az.tribe.lifeplanner.usecases.journal.DeleteJournalEntryUseCase
@@ -106,8 +116,13 @@ import az.tribe.lifeplanner.usecases.journal.GetJournalEntriesByGoalUseCase
 import az.tribe.lifeplanner.usecases.journal.GetRecentJournalEntriesUseCase
 import az.tribe.lifeplanner.usecases.journal.UpdateJournalEntryUseCase
 import az.tribe.lifeplanner.usecases.ability.AwardAbilityXpUseCase
+import az.tribe.lifeplanner.usecases.health.AutoCompleteHealthHabitsUseCase
 import az.tribe.lifeplanner.usecases.health.SyncHealthDataUseCase
+import az.tribe.lifeplanner.usecases.habit.BackfillHabitTargetsUseCase
+import az.tribe.lifeplanner.usecases.habit.AwardHabitCompletionUseCase
 import az.tribe.lifeplanner.usecases.habit.CheckInHabitUseCase
+import az.tribe.lifeplanner.usecases.habit.CreditHabitsFromSessionUseCase
+import az.tribe.lifeplanner.usecases.habit.RecommendLessonsForHabitUseCase
 import az.tribe.lifeplanner.usecases.habit.CreateHabitUseCase
 import az.tribe.lifeplanner.usecases.habit.DeleteHabitUseCase
 import az.tribe.lifeplanner.usecases.habit.GetAllHabitsUseCase
@@ -118,6 +133,7 @@ import az.tribe.lifeplanner.usecases.habit.UpdateHabitUseCase
 import az.tribe.lifeplanner.usecases.AddMilestoneUseCase
 import az.tribe.lifeplanner.usecases.ArchiveGoalUseCase
 import az.tribe.lifeplanner.usecases.CalculateGoalCompletionRateUseCase
+import az.tribe.lifeplanner.usecases.AutoLinkGoalValuesUseCase
 import az.tribe.lifeplanner.usecases.CreateGoalUseCase
 import az.tribe.lifeplanner.usecases.DeleteGoalUseCase
 import az.tribe.lifeplanner.usecases.DeleteMilestoneUseCase
@@ -145,7 +161,6 @@ import az.tribe.lifeplanner.usecases.UpdateGoalUseCase
 import az.tribe.lifeplanner.usecases.UpdateMilestoneUseCase
 import com.russhwolf.settings.Settings
 import az.tribe.lifeplanner.ui.theme.ThemeController
-import az.tribe.lifeplanner.ui.planner.WeeklyPlannerViewModel
 import io.github.jan.supabase.auth.auth
 import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
@@ -156,6 +171,11 @@ const val DB_NAME = "LifePlannerDB.db"
 val appModule = module {
 
     single { DatabaseDriverFactory() }
+    single { az.tribe.lifeplanner.location.LocationProvider() }
+    single { az.tribe.lifeplanner.data.trajectory.BalancePastReconstructor(get()) }
+    single<az.tribe.lifeplanner.domain.repository.WeatherRepository> {
+        az.tribe.lifeplanner.data.network.WeatherRepositoryImpl(get(), get())
+    }
     single { SharedDatabase(get()) }
     single { Settings() }
     single { ThemeController(get()) }
@@ -217,7 +237,40 @@ val appModule = module {
                     session.accessToken
                 }
             } else {
-                throw IllegalStateException("Not authenticated. Please sign in.")
+                // No session at all. This is the guest case, and it is recoverable.
+                //
+                // signInAsGuest() is meant to create a real Supabase *anonymous* session, which
+                // carries a JWT the ai-proxy accepts, so guests are entitled to AI. But that call
+                // has a 10s timeout, and when it expires (flaky network on first launch) the app
+                // silently falls back to a local-only guest with no session. Previously that state
+                // was permanent for the whole install: every AI call threw here, before reaching
+                // the network, so the coach produced nothing and onboarding seeded no goals.
+                //
+                // Heal it instead: establish the anonymous session on demand. Mutex-guarded so
+                // concurrent AI calls do not each start their own sign-in.
+                refreshMutex.lock()
+                try {
+                    supabase.auth.currentSessionOrNull()?.let { existing ->
+                        return@AuthTokenProvider existing.accessToken
+                    }
+                    co.touchlab.kermit.Logger.i("AuthTokenProvider") {
+                        "No session; establishing an anonymous one so this guest can use AI"
+                    }
+                    supabase.auth.signInAnonymously()
+                    supabase.auth.currentSessionOrNull()?.accessToken
+                        ?: throw IllegalStateException("Not authenticated. Please sign in.")
+                } catch (e: IllegalStateException) {
+                    throw e
+                } catch (e: Exception) {
+                    // Offline, or anonymous sign-ups disabled on the project. Genuinely cannot
+                    // reach AI, so surface it as an auth problem rather than a silent nothing.
+                    co.touchlab.kermit.Logger.w("AuthTokenProvider") {
+                        "Anonymous sign-in for guest failed: ${e.message}"
+                    }
+                    throw IllegalStateException("Not authenticated. Please sign in.")
+                } finally {
+                    refreshMutex.unlock()
+                }
             }
         }
     }
@@ -227,6 +280,7 @@ val appModule = module {
     single { BuiltinCoachFetcher(get()) }
     single { PersonaApiFetcher(get(), get()) }
     single { SystemPromptFetcher(get()) }
+    single { az.tribe.lifeplanner.data.network.KnowledgeFetcher(get(), get()) }
 
     // Repositories
     single<GeminiService> { GeminiServiceImpl(get<AiProxyService>()) }
@@ -234,6 +288,21 @@ val appModule = module {
 
     single<GoalRepository> { GoalRepositoryImpl(get(), get(), get()) }
     single<LifeValueRepository> { LifeValueRepositoryImpl(get(), get()) }
+    single<KnowledgeRepository> { KnowledgeRepositoryImpl(get(), get()) }
+    single<WheelRepository> {
+        WheelRepositoryImpl(
+            db = get(),
+            goalRepository = get(),
+            habitRepository = get(),
+            journalRepository = get(),
+            healthRepository = get(),
+            abilityRepository = get(),
+            // Read count comes through the repository's flow rather than a new query, so the
+            // Learn hub stays the only thing that knows how reads are stored.
+            knowledgeReadCount = { get<KnowledgeRepository>().readIds().first().size },
+            syncManager = get(),
+        )
+    }
     single<DecisionRepository> { DecisionRepositoryImpl(get(), get()) }
     single<IdentityStatementRepository> { IdentityStatementRepositoryImpl(get(), get()) }
     single<DecisionProfileRepository> { DecisionProfileRepositoryImpl(get(), get()) }
@@ -266,6 +335,8 @@ val appModule = module {
     single<UserSituationRepository> { UserSituationRepositoryImpl(get(), get()) }
     single { HealthDataManager() }
     single<HealthRepository> { HealthRepositoryImpl(get(), get(), get()) }
+    single { CalendarReader() }
+    single { az.tribe.lifeplanner.data.calendar.CalendarPreferences(get()) }
 
     // Behavior tracking
     single<BehaviorRepository> { BehaviorRepositoryImpl(get()) }
@@ -279,7 +350,9 @@ val appModule = module {
     factory { CreateGoalUseCase(get()) }
     factory { DeleteGoalUseCase(get()) }
     factory { az.tribe.lifeplanner.usecases.PromoteTopValuesToLifeValuesUseCase(get(), get(), get()) }
+    factory { az.tribe.lifeplanner.usecases.SeedDefaultLifeValuesUseCase(get(), get()) }
     factory { UpdateGoalUseCase(get()) }
+    factory { AutoLinkGoalValuesUseCase(get(), get()) }
     factory { UpdateGoalProgressUseCase(get()) }
     factory { LogGoalChangeUseCase(get()) }
     factory { GetGoalHistoryUseCase(get()) }
@@ -316,14 +389,20 @@ val appModule = module {
     factory { AwardAbilityXpUseCase(get()) }
 
     // Health Use Cases
-    factory { SyncHealthDataUseCase(get()) }
+    factory { AutoCompleteHealthHabitsUseCase(get(), get(), get()) }
+    factory { az.tribe.lifeplanner.usecases.health.GetHealthHabitProgressUseCase(get(), get()) }
+    factory { SyncHealthDataUseCase(get(), get()) }
 
     // Habit Use Cases
     factory { GetAllHabitsUseCase(get()) }
     factory { CreateHabitUseCase(get()) }
+    factory { BackfillHabitTargetsUseCase(get(), get()) }
     factory { UpdateHabitUseCase(get()) }
     factory { DeleteHabitUseCase(get()) }
     factory { CheckInHabitUseCase(get()) }
+    factory { AwardHabitCompletionUseCase(get(), get(), get(), get()) }
+    factory { CreditHabitsFromSessionUseCase(get(), get()) }
+    factory { RecommendLessonsForHabitUseCase(get(), get()) }
     factory { UncheckHabitUseCase(get()) }
     factory { GetHabitsWithTodayStatusUseCase(get()) }
     factory { GetHabitsByGoalUseCase(get()) }
@@ -346,6 +425,7 @@ val appModule = module {
     single<StoryRepository> { StoryRepositoryImpl(get()) }
 
     // ViewModels
+    viewModelOf(::WheelViewModel)
     viewModelOf(::GoalViewModel)
     viewModelOf(::GamificationViewModel)
     viewModelOf(::AuthViewModel)
@@ -355,7 +435,6 @@ val appModule = module {
     viewModelOf(::ChatViewModel)
     viewModelOf(::CoachViewModel)
     viewModelOf(::ReminderViewModel)
-    viewModelOf(::LifeBalanceViewModel)
     viewModel { az.tribe.lifeplanner.ui.decision.DecisionViewModel(get(), get(), get(), get(), get()) }
     viewModel { az.tribe.lifeplanner.ui.causal.CausalInsightsViewModel(get(), get(), get()) }
     viewModel { az.tribe.lifeplanner.ui.becoming.BecomingViewModel(get(), get(), get()) }
@@ -363,25 +442,33 @@ val appModule = module {
     viewModel { az.tribe.lifeplanner.ui.wiring.WiringViewModel(get()) }
     viewModelOf(::BackupViewModel)
     viewModelOf(::FocusViewModel)
-    viewModel { az.tribe.lifeplanner.ui.today.TodayViewModel(get(), get(), get()) }
-    single { az.tribe.lifeplanner.ui.foryou.HomeFeedBuilder(get(), get(), get(), get(), get(), get(), get()) }
-    viewModel { az.tribe.lifeplanner.ui.foryou.ForYouViewModel(get(), get(), get()) }
-    single { az.tribe.lifeplanner.usecases.GeneratePossibilitiesUseCase(get()) }
+    viewModel { az.tribe.lifeplanner.ui.today.TodayViewModel(get(), get(), get(), get()) }
+    single { az.tribe.lifeplanner.ui.foryou.HomeFeedBuilder(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    single<az.tribe.lifeplanner.ui.intro.IntroSeenStore> { az.tribe.lifeplanner.ui.intro.SettingsIntroSeenStore() }
+    viewModel { az.tribe.lifeplanner.ui.foryou.ForYouViewModel(get(), get(), get(), get(), get(), get(), get()) }
+    viewModel { az.tribe.lifeplanner.ui.today.TodayWeatherViewModel(get()) }
+    viewModel { az.tribe.lifeplanner.ui.trajectory.TrajectoryViewModel(get(), get()) }
+    viewModel { az.tribe.lifeplanner.ui.foryou.LearnHubViewModel(get(), get(), get(), get()) }
+    viewModel { az.tribe.lifeplanner.ui.foryou.KnowledgeDetailViewModel(get(), get()) }
+    single { az.tribe.lifeplanner.usecases.GeneratePossibilitiesUseCase(get(), az.tribe.lifeplanner.domain.service.LocalPossibilityFallback()) }
     viewModel { params -> az.tribe.lifeplanner.ui.possibility.PossibilityModeViewModel(params.get(), get(), get(), get(), get()) }
     viewModel { az.tribe.lifeplanner.ui.goals.GoalsViewModel(get()) }
-    viewModel { params -> az.tribe.lifeplanner.ui.goals.GoalDetailViewModel(params.get(), get(), get()) }
-    viewModel { params -> az.tribe.lifeplanner.ui.habit.HabitDetailViewModel(params.get(), get(), get(), get(), get(), get()) }
+    viewModel { params -> az.tribe.lifeplanner.ui.habit.HabitDetailViewModel(params.get(), get(), get(), get(), get(), get(), get()) }
     viewModelOf(::RetrospectiveViewModel)
     viewModelOf(::BeginnerObjectiveViewModel)
     viewModelOf(::AbilityViewModel)
     viewModel { params -> AbilityDetailViewModel(params.get(), get(), get(), get(), get()) }
+    viewModel { params -> az.tribe.lifeplanner.ui.habit.HabitPracticeViewModel(params.get(), get(), get()) }
     viewModelOf(::HealthViewModel)
+    viewModelOf(::CalendarViewModel)
     viewModelOf(::HomeViewModel)
     viewModel { az.tribe.lifeplanner.ui.home.PossibilityViewModel(get(), get()) }
     viewModelOf(::WeeklyEngagementViewModel)
+    viewModelOf(::YouViewModel)
     viewModelOf(::SearchViewModel)
     viewModelOf(::SmartHabitGeneratorViewModel)
+    viewModelOf(::HabitChatViewModel)
     viewModelOf(::CoachOnboardingViewModel)
-    viewModelOf(::WeeklyPlannerViewModel)
+    viewModelOf(::AboutYouViewModel)
     viewModelOf(::ScreenTimeInsightViewModel)
 }

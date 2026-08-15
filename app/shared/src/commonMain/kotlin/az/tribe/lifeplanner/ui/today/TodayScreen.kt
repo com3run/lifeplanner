@@ -63,10 +63,13 @@ fun TodayScreen(
     onBackClick: () -> Unit,
     showBack: Boolean = true,
     onOpenHabit: (String) -> Unit = {},
+    onOpenGoal: (String) -> Unit = {},
+    onStartFocus: () -> Unit = {},
     viewModel: TodayViewModel = koinViewModel(),
 ) {
     val habits by viewModel.habitsToday.collectAsState()
     val possibilities by viewModel.possibilities.collectAsState()
+    val plan by viewModel.todayPlan.collectAsState()
     val c = MaterialTheme.modernColors
     val doneCount = habits.count { it.doneToday }
 
@@ -122,6 +125,15 @@ fun TodayScreen(
                 )
             }
 
+            item { SectionLabel("Today's plan") }
+            if (plan.isEmpty()) {
+                item { Hint("Nothing scheduled for today. Add a milestone with a date to a goal and it shows up here.") }
+            } else {
+                items(plan, key = { "plan_${it.milestoneId}" }) { p ->
+                    PlanRow(item = p, onComplete = { viewModel.completePlanItem(p.milestoneId) })
+                }
+            }
+
             item { SectionLabel("Right now you could…") }
             if (possibilities.isEmpty()) {
                 item { Hint("Add a goal or a habit and your next best move shows up here.") }
@@ -147,6 +159,43 @@ fun TodayScreen(
                         onToggle = { viewModel.checkInHabit(h.habit.id) },
                         onOpen = { onOpenHabit(h.habit.id) },
                     )
+                }
+            }
+
+            // Focus lives on Today too: the timer is how a plan item actually gets done, and
+            // asking people to go find it in another tab is asking them not to.
+            item { SectionLabel("Focus") }
+            item {
+                Surface(
+                    modifier = Modifier.fillMaxWidth().bouncyClickable(onClick = onStartFocus),
+                    color = c.cardBackground,
+                    shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large),
+                ) {
+                    Row(
+                        Modifier.fillMaxWidth().padding(LifePlannerDesign.Padding.cardContent),
+                        horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        IconChip(PhosphorIcons.Regular.Lightning, tint = c.primary)
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text(
+                                "Give one thing 25 minutes",
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                                color = c.textPrimary,
+                            )
+                            Text(
+                                "A timer, one thing, nothing else.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = c.textSecondary,
+                            )
+                        }
+                        Icon(
+                            PhosphorIcons.Regular.CaretRight,
+                            contentDescription = null,
+                            tint = c.textTertiary,
+                            modifier = Modifier.size(LifePlannerDesign.IconSize.small),
+                        )
+                    }
                 }
             }
         }
@@ -175,6 +224,49 @@ private fun Hint(text: String) {
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.modernColors.textSecondary,
             modifier = Modifier.padding(LifePlannerDesign.Padding.cardContent),
+        )
+    }
+}
+
+@Composable
+private fun PlanRow(item: PlanItem, onComplete: () -> Unit) {
+    val c = MaterialTheme.modernColors
+    val overdueColor = Color(0xFFE53935)
+    Surface(
+        modifier = Modifier.fillMaxWidth().bouncyClickable(onClick = onComplete),
+        color = c.cardBackground,
+        shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large),
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(LifePlannerDesign.Padding.cardContent),
+            horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = PhosphorIcons.Regular.Circle,
+                contentDescription = "Mark done",
+                tint = if (item.overdue) overdueColor else c.textTertiary,
+                modifier = Modifier.size(LifePlannerDesign.IconSize.large),
+            )
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(item.title, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = c.textPrimary, maxLines = 1)
+                Text(item.goalTitle, style = MaterialTheme.typography.bodySmall, color = c.textSecondary, maxLines = 1)
+            }
+            DueChip(overdue = item.overdue)
+        }
+    }
+}
+
+@Composable
+private fun DueChip(overdue: Boolean) {
+    val c = MaterialTheme.modernColors
+    val accent = if (overdue) Color(0xFFE53935) else c.primary
+    Surface(color = accent.copy(alpha = 0.12f), shape = RoundedCornerShape(8.dp)) {
+        Text(
+            if (overdue) "Overdue" else "Today",
+            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+            color = accent,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
         )
     }
 }

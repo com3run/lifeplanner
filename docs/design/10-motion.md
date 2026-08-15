@@ -63,4 +63,4 @@ collapse to instant or a soft crossfade; nothing depends on animation to be usab
 - D9 owns the celebration moments (which wins, how loud); D12 wires reduce-motion.
 
 *Next: **D8** (data-viz / the Today headline pulse), **D9** (motivation & emotional design), **D12**
-(a11y, empty/error, copy), or **D5** (Figma visual identity).*
+(a11y, empty/error, copy). **D5** (visual identity) shipped: `ui/theme/VisualIdentity.kt`.*

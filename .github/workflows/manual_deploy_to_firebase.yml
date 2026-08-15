@@ -14,25 +14,38 @@ jobs:
     name: Building and distributing app
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-java@v3
+      - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: "21"
 
       - name: Setup Gradle
-        uses: gradle/gradle-build-action@v2
+        uses: gradle/actions/setup-gradle@v4
 
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
-#      - name: Execute Gradle command - assembleDebug
-#        run: ./gradlew assembleDebug
-#      app/androidApp/build/outputs/bundle/release/androidApp-release.aab \
+      - name: Restore build secrets
+        uses: ./.github/actions/restore-android-secrets
+        with:
+          supabase-url: ${{ secrets.SUPABASE_URL }}
+          supabase-anon-key: ${{ secrets.SUPABASE_ANON_KEY }}
+          posthog-api-key: ${{ secrets.POSTHOG_API_KEY }}
+          persona-api-secret: ${{ secrets.PERSONA_API_SECRET }}
+          google-services-json: ${{ secrets.GOOGLE_SERVICES_JSON }}
+          keystore-base64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          store-password: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          key-alias: ${{ secrets.RELEASE_KEY_ALIAS }}
+          key-password: ${{ secrets.RELEASE_KEY_PASSWORD }}
 
       - name: Build Release AAB
         run: ./gradlew :app:androidApp:bundleRelease
+
+      - name: Clean up secrets
+        if: always()
+        run: rm -f lifeplanner.jks local.properties app/androidApp/google-services.json
 
       - name: Upload Artifact to Firebase App Distribution
         uses: wzieba/Firebase-Distribution-Github-Action@v1

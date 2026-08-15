@@ -145,8 +145,9 @@ class AiProxyServiceStreamingTest {
         assertEquals(1, events.size, "Expected 1 Error event, got: $events")
         assertTrue(events[0] is AiProxyService.StreamEvent.Error)
         val errorMsg = (events[0] as AiProxyService.StreamEvent.Error).message
-        assertTrue(errorMsg.contains("401"), "Error should mention 401: $errorMsg")
-        assertTrue(errorMsg.contains("Unauthorized"), "Error should contain body: $errorMsg")
+        // A 401 is an auth problem, not connectivity: the user sees the sign-in message, never
+        // the raw status or response body.
+        assertTrue(errorMsg.contains("Sign in"), "Error should tell the user to sign in: $errorMsg")
     }
 
     @Test

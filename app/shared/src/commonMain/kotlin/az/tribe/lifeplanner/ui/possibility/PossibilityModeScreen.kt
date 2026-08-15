@@ -31,10 +31,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import az.tribe.lifeplanner.domain.model.Possibility
 import az.tribe.lifeplanner.ui.components.AppButton
 import az.tribe.lifeplanner.ui.components.AppButtonVariant
-import az.tribe.lifeplanner.ui.components.GradientHero
 import az.tribe.lifeplanner.ui.components.StateView
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
 import az.tribe.lifeplanner.ui.theme.bouncyClickable
@@ -42,6 +42,7 @@ import az.tribe.lifeplanner.ui.theme.modernColors
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.ArrowLeft
+import com.adamglin.phosphoricons.regular.ChatCircleText
 import com.adamglin.phosphoricons.regular.CheckCircle
 import com.adamglin.phosphoricons.regular.Circle
 import com.adamglin.phosphoricons.regular.Flag
@@ -60,29 +61,35 @@ import org.koin.core.parameter.parametersOf
 fun PossibilityModeScreen(
     goalId: String,
     onBackClick: () -> Unit,
+    onOpenGoal: (String) -> Unit,
+    onOpenDecision: (String) -> Unit,
+    onTalkToCoach: (String, String) -> Unit,
     viewModel: PossibilityModeViewModel = koinViewModel { parametersOf(goalId) },
 ) {
     val goal by viewModel.goal.collectAsState()
     val possibilities by viewModel.possibilities.collectAsState()
     val selectedIds by viewModel.selectedIds.collectAsState()
-    val isGenerating by viewModel.isGenerating.collectAsState()
+    val isEnhancing by viewModel.isEnhancing.collectAsState()
     val error by viewModel.error.collectAsState()
-    val actionDone by viewModel.actionDone.collectAsState()
+    val nav by viewModel.nav.collectAsState()
     val c = MaterialTheme.modernColors
-    val snackbar = remember { SnackbarHostState() }
 
-    androidx.compose.runtime.LaunchedEffect(actionDone) {
-        actionDone?.let {
-            snackbar.showSnackbar(it)
-            viewModel.clearActionDone()
+    // Actions move the user somewhere real instead of just flashing a toast.
+    androidx.compose.runtime.LaunchedEffect(nav) {
+        when (val n = nav) {
+            is PossibilityNav.OpenGoal -> onOpenGoal(n.goalId)
+            is PossibilityNav.OpenDecision -> onOpenDecision(n.decisionId)
+            is PossibilityNav.TalkToCoach -> onTalkToCoach(n.coachId, n.message)
+            PossibilityNav.Back -> onBackClick()
+            null -> Unit
         }
+        if (nav != null) viewModel.consumeNav()
     }
 
     val selected = remember(possibilities, selectedIds) { possibilities.filter { it.id in selectedIds } }
 
     Scaffold(
         containerColor = c.background,
-        snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             TopAppBar(
                 title = { Text("Possibility Mode", fontWeight = FontWeight.Bold) },
@@ -105,24 +112,42 @@ fun PossibilityModeScreen(
             ),
             verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.md),
         ) {
+            // The goal's own name used to be shouted from a gradient poster here. Paper rules,
+            // same as the detail screens: overline, a title that wraps, one quiet line of intent.
             item {
-                GradientHero(
-                    eyebrow = "WHEN YOU'RE STUCK",
-                    title = "Possibility Mode",
-                    subtitle = goal?.let { "Widen the options for \"${it.title}\"" }
-                        ?: "Generate many options, then choose.",
-                )
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Text(
+                        "WHEN YOU'RE STUCK",
+                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.5.sp),
+                        fontWeight = FontWeight.SemiBold,
+                        color = c.primary,
+                    )
+                    Text(
+                        goal?.title ?: "Get unstuck",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = c.textPrimary,
+                    )
+                    Text(
+                        "Widen the options, then pick what to try or talk it through.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = c.textSecondary,
+                    )
+                }
             }
 
             when {
-                isGenerating -> item { GeneratingRow() }
-                error != null -> item {
+                error != null && possibilities.isEmpty() -> item {
                     Column(verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm)) {
                         StateView(title = "Nothing yet", message = error ?: "", modifier = Modifier.fillMaxWidth())
                         AppButton(text = "Try again", onClick = viewModel::generate, modifier = Modifier.fillMaxWidth())
                     }
                 }
                 else -> {
+                    if (isEnhancing) item { GeneratingRow() }
                     item {
                         Text(
                             "Pick the ones worth trying",
@@ -131,39 +156,61 @@ fun PossibilityModeScreen(
                             modifier = Modifier.padding(top = LifePlannerDesign.Spacing.xs),
                         )
                     }
+                    if (!isEnhancing && possibilities.isNotEmpty() && possibilities.all { it.isLocal }) {
+                        item {
+                            Text(
+                                "AI could not be reached just now, so these were drawn from the goal itself.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = c.textTertiary,
+                            )
+                        }
+                    }
                     items(possibilities, key = { it.id }) { p ->
                         PossibilityCard(p, selected = p.id in selectedIds, onToggle = { viewModel.toggleSelect(p.id) })
                     }
-                    if (selected.isNotEmpty()) {
+                    if (possibilities.isNotEmpty()) {
                         item {
                             Column(verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.xs)) {
-                                Text(
-                                    "${selected.size} selected",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = c.textSecondary,
-                                    modifier = Modifier.padding(top = LifePlannerDesign.Spacing.xs),
-                                )
+                                if (selected.isNotEmpty()) {
+                                    Text(
+                                        "${selected.size} selected",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = c.textSecondary,
+                                        modifier = Modifier.padding(top = LifePlannerDesign.Spacing.xs),
+                                    )
+                                }
+                                // The coach hand-off is always available: pick a few first for context,
+                                // or just talk it through. Chat opens and the persona reacts to this goal.
                                 AppButton(
-                                    text = if (selected.size == 1) "Make it a goal" else "Make ${selected.size} new goals",
-                                    onClick = { selected.forEach(viewModel::makeGoal) },
+                                    text = "Talk it through with your coach",
+                                    onClick = viewModel::talkToCoach,
                                     variant = AppButtonVariant.PRIMARY,
-                                    leadingIcon = PhosphorIcons.Regular.Flag,
+                                    leadingIcon = PhosphorIcons.Regular.ChatCircleText,
                                     modifier = Modifier.fillMaxWidth(),
                                 )
-                                AppButton(
-                                    text = "Add as steps to this goal",
-                                    onClick = { selected.forEach(viewModel::addStep) },
-                                    variant = AppButtonVariant.SECONDARY,
-                                    leadingIcon = PhosphorIcons.Regular.Plus,
-                                    modifier = Modifier.fillMaxWidth(),
-                                )
-                                AppButton(
-                                    text = "Log as a decision",
-                                    onClick = viewModel::logAsDecision,
-                                    variant = AppButtonVariant.SECONDARY,
-                                    leadingIcon = PhosphorIcons.Regular.Scales,
-                                    modifier = Modifier.fillMaxWidth(),
-                                )
+                                if (selected.isNotEmpty()) {
+                                    AppButton(
+                                        text = if (selected.size == 1) "Add as a step to this goal" else "Add as steps to this goal",
+                                        onClick = viewModel::addStepsFromSelection,
+                                        variant = AppButtonVariant.SECONDARY,
+                                        leadingIcon = PhosphorIcons.Regular.Plus,
+                                        modifier = Modifier.fillMaxWidth(),
+                                    )
+                                    AppButton(
+                                        text = if (selected.size == 1) "Make it a goal" else "Make ${selected.size} new goals",
+                                        onClick = viewModel::makeGoalsFromSelection,
+                                        variant = AppButtonVariant.SECONDARY,
+                                        leadingIcon = PhosphorIcons.Regular.Flag,
+                                        modifier = Modifier.fillMaxWidth(),
+                                    )
+                                    AppButton(
+                                        text = "Log as a decision",
+                                        onClick = viewModel::logSelectionAsDecision,
+                                        variant = AppButtonVariant.TERTIARY,
+                                        leadingIcon = PhosphorIcons.Regular.Scales,
+                                        modifier = Modifier.fillMaxWidth(),
+                                    )
+                                }
                             }
                         }
                     }
@@ -183,13 +230,14 @@ private fun GeneratingRow() {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = c.primary)
-            Text("Widening the options...", style = MaterialTheme.typography.bodyMedium, color = c.textSecondary)
+            Text("Finding more ideas for you...", style = MaterialTheme.typography.bodyMedium, color = c.textSecondary)
         }
     }
 }
 
+// Internal so the JVM preview harness (PreviewScreenshots) can render it with fixture data.
 @Composable
-private fun PossibilityCard(p: Possibility, selected: Boolean, onToggle: () -> Unit) {
+internal fun PossibilityCard(p: Possibility, selected: Boolean, onToggle: () -> Unit) {
     val c = MaterialTheme.modernColors
     Surface(
         modifier = Modifier.fillMaxWidth().bouncyClickable(onClick = onToggle),

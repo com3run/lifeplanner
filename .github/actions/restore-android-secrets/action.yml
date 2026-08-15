@@ -1,0 +1,87 @@
+name: Restore Android build secrets
+description: >
+  Recreates the gitignored files an Android release build needs (local.properties,
+  google-services.json, the release keystore) from repository secrets, and fails the job
+  when one is missing rather than distributing a build that cannot reach the backend or
+  cannot be uploaded to Play.
+
+inputs:
+  supabase-url:
+    required: true
+    description: SUPABASE_URL
+  supabase-anon-key:
+    required: true
+    description: SUPABASE_ANON_KEY
+  posthog-api-key:
+    required: false
+    default: ''
+    description: PostHog project API key. Blank disables analytics and the force-update check.
+  posthog-host:
+    required: false
+    default: 'https://us.i.posthog.com'
+    description: POSTHOG_HOST
+  persona-api-secret:
+    required: false
+    default: ''
+    description: PERSONA_API_SECRET
+  google-services-json:
+    required: true
+    description: Full contents of app/androidApp/google-services.json
+  keystore-base64:
+    required: true
+    description: base64 of the release keystore (base64 -i lifeplanner.jks)
+  store-password:
+    required: true
+    description: RELEASE_STORE_PASSWORD
+  key-alias:
+    required: true
+    description: RELEASE_KEY_ALIAS
+  key-password:
+    required: true
+    description: RELEASE_KEY_PASSWORD
+
+runs:
+  using: composite
+  steps:
+    - name: Restore build secrets
+      shell: bash
+      env:
+        SUPABASE_URL: ${{ inputs.supabase-url }}
+        SUPABASE_ANON_KEY: ${{ inputs.supabase-anon-key }}
+        POSTHOG_API_KEY: ${{ inputs.posthog-api-key }}
+        POSTHOG_HOST: ${{ inputs.posthog-host }}
+        PERSONA_API_SECRET: ${{ inputs.persona-api-secret }}
+        GOOGLE_SERVICES_JSON: ${{ inputs.google-services-json }}
+        RELEASE_KEYSTORE_BASE64: ${{ inputs.keystore-base64 }}
+        RELEASE_STORE_PASSWORD: ${{ inputs.store-password }}
+        RELEASE_KEY_ALIAS: ${{ inputs.key-alias }}
+        RELEASE_KEY_PASSWORD: ${{ inputs.key-password }}
+      run: |
+        set -euo pipefail
+        missing=""
+        for v in SUPABASE_URL SUPABASE_ANON_KEY GOOGLE_SERVICES_JSON \
+                 RELEASE_KEYSTORE_BASE64 RELEASE_STORE_PASSWORD \
+                 RELEASE_KEY_ALIAS RELEASE_KEY_PASSWORD; do
+          if [ -z "${!v:-}" ]; then missing="$missing $v"; fi
+        done
+        if [ -n "$missing" ]; then
+          echo "::error::Missing repository secrets:$missing"
+          echo "Add them under Settings -> Secrets and variables -> Actions."
+          exit 1
+        fi
+
+        printf '%s\n' "$GOOGLE_SERVICES_JSON" > app/androidApp/google-services.json
+        printf '%s' "$RELEASE_KEYSTORE_BASE64" | base64 -d > lifeplanner.jks
+
+        # printf per line, so a value containing shell metacharacters stays intact.
+        {
+          printf 'SUPABASE_URL=%s\n' "$SUPABASE_URL"
+          printf 'SUPABASE_ANON_KEY=%s\n' "$SUPABASE_ANON_KEY"
+          printf 'POSTHOG_API_KEY=%s\n' "$POSTHOG_API_KEY"
+          printf 'POSTHOG_HOST=%s\n' "$POSTHOG_HOST"
+          printf 'PERSONA_API_SECRET=%s\n' "$PERSONA_API_SECRET"
+          printf 'RELEASE_STORE_FILE=%s\n' "lifeplanner.jks"
+          printf 'RELEASE_STORE_PASSWORD=%s\n' "$RELEASE_STORE_PASSWORD"
+          printf 'RELEASE_KEY_ALIAS=%s\n' "$RELEASE_KEY_ALIAS"
+          printf 'RELEASE_KEY_PASSWORD=%s\n' "$RELEASE_KEY_PASSWORD"
+        } > local.properties

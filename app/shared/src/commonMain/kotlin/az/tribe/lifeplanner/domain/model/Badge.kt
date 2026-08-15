@@ -1,6 +1,7 @@
 package az.tribe.lifeplanner.domain.model
 
 import az.tribe.lifeplanner.domain.enum.BadgeType
+import az.tribe.lifeplanner.domain.service.KnowledgeLibrary
 import kotlinx.datetime.LocalDateTime
 import kotlinx.serialization.Serializable
 
@@ -50,6 +51,35 @@ object BadgeRequirements {
         BadgeType.FOCUS_10 -> 10
         BadgeType.FOCUS_50 -> 50
         BadgeType.GETTING_STARTED -> 10
+        // Derived from the library so adding lessons to a path moves its bar automatically.
+        BadgeType.LEARN_HABITS, BadgeType.LEARN_MOTIVATION,
+        BadgeType.LEARN_MIND, BadgeType.LEARN_REST -> KnowledgeLibrary.lessonCountFor(type)
+    }
+
+    /**
+     * How rare/hard-won a badge is, 1 (starter) to 5 (legendary). Used to pick the single badge
+     * worth celebrating when several are earned at once, so a batch leads with its best moment
+     * instead of burying it under starter badges.
+     */
+    fun getSignificance(type: BadgeType): Int = when (type) {
+        BadgeType.STREAK_100, BadgeType.GOAL_50,
+        BadgeType.HABIT_PERFECT_MONTH, BadgeType.FOCUS_50 -> 5
+
+        BadgeType.STREAK_30, BadgeType.GOAL_25, BadgeType.JOURNAL_30,
+        BadgeType.HABIT_PERFECT_WEEK, BadgeType.FOCUS_10, BadgeType.BALANCED -> 4
+
+        BadgeType.STREAK_14, BadgeType.GOAL_10, BadgeType.JOURNAL_10, BadgeType.HABIT_5,
+        BadgeType.FOCUS_HOUR, BadgeType.HEALTH_FOCUS, BadgeType.CAREER_FOCUS,
+        BadgeType.COMEBACK,
+        BadgeType.LEARN_HABITS, BadgeType.LEARN_MOTIVATION,
+        BadgeType.LEARN_MIND, BadgeType.LEARN_REST -> 3
+
+        BadgeType.STREAK_7, BadgeType.GOAL_5,
+        BadgeType.PERFECTIONIST, BadgeType.GETTING_STARTED -> 2
+
+        BadgeType.FIRST_STEP, BadgeType.STREAK_3, BadgeType.GOAL_1, BadgeType.HABIT_STARTER,
+        BadgeType.JOURNAL_FIRST, BadgeType.FOCUS_FIRST,
+        BadgeType.EARLY_BIRD, BadgeType.NIGHT_OWL -> 1
     }
 
     /**
@@ -78,6 +108,9 @@ object BadgeRequirements {
         BadgeType.FOCUS_10, BadgeType.FOCUS_50 -> BadgeCategory.SPECIAL
 
         BadgeType.GETTING_STARTED -> BadgeCategory.SPECIAL
+
+        BadgeType.LEARN_HABITS, BadgeType.LEARN_MOTIVATION,
+        BadgeType.LEARN_MIND, BadgeType.LEARN_REST -> BadgeCategory.LEARNING
     }
 }
 
@@ -86,6 +119,7 @@ enum class BadgeCategory(val displayName: String) {
     GOALS("Goals"),
     HABITS("Habits"),
     JOURNAL("Journal"),
+    LEARNING("Learning"),
     CATEGORY("Categories"),
     SPECIAL("Special")
 }

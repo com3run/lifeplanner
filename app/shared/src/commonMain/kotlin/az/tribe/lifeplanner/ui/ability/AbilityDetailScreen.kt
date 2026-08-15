@@ -1,5 +1,6 @@
 package az.tribe.lifeplanner.ui.ability
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -15,7 +16,6 @@ import com.adamglin.phosphoricons.regular.Check
 import com.adamglin.phosphoricons.regular.X
 import com.adamglin.phosphoricons.regular.PencilSimple
 import com.adamglin.phosphoricons.regular.Flag
-import com.adamglin.phosphoricons.regular.ArrowsClockwise
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -27,6 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import az.tribe.lifeplanner.domain.enum.GoalStatus
@@ -101,23 +102,36 @@ fun AbilityDetailScreen(
                 .padding(horizontal = LifePlannerDesign.Padding.screenHorizontal, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            // Hero section
+            // The ability written like a page, matching the other detail screens. The old hero
+            // was a half-poster: a 56sp centered emoji, a centered bold title, a Level pill, and
+            // an 8dp XP bar. Paper rules: the level is an overline said once, identity is a
+            // byline row (still tap-to-rename), and progression is a thin line with the numbers
+            // written next to it.
             ability?.let { ab ->
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(20.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Text(ab.iconEmoji, fontSize = 56.sp)
+                    Text(
+                        "LEVEL ${ab.currentLevel}",
+                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.5.sp),
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
 
-                        // Tappable / editable title
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.surfaceVariant),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(ab.iconEmoji, fontSize = 24.sp)
+                        }
                         if (isEditingTitle) {
                             OutlinedTextField(
                                 value = titleInput,
@@ -138,15 +152,14 @@ fun AbilityDetailScreen(
                                     isEditingTitle = false
                                 }),
                                 modifier = Modifier
-                                    .fillMaxWidth()
+                                    .weight(1f)
                                     .focusRequester(titleFocusRequester),
                                 shape = RoundedCornerShape(12.dp)
                             )
                         } else {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center,
-                                modifier = Modifier.clickable {
+                                modifier = Modifier.weight(1f).clickable {
                                     titleInput = ab.title
                                     isEditingTitle = true
                                 }
@@ -154,7 +167,9 @@ fun AbilityDetailScreen(
                                 Text(
                                     ab.title,
                                     style = MaterialTheme.typography.headlineSmall,
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.weight(1f, fill = false)
                                 )
                                 Spacer(Modifier.width(6.dp))
                                 Icon(
@@ -165,47 +180,28 @@ fun AbilityDetailScreen(
                                 )
                             }
                         }
-
-                        if (ab.description.isNotBlank()) {
-                            Text(
-                                ab.description,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                        ) {
-                            Text(
-                                "Level ${ab.currentLevel}",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
-                            )
-                        }
-                        // XP bar
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            LinearProgressIndicator(
-                                progress = { ab.levelProgress },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(8.dp)
-                                    .clip(RoundedCornerShape(4.dp)),
-                                color = MaterialTheme.colorScheme.primary,
-                                trackColor = MaterialTheme.colorScheme.primaryContainer
-                            )
-                            Text(
-                                "${ab.xpIntoCurrentLevel} / ${ab.xpForNextLevel} XP to Level ${ab.currentLevel + 1}",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
                     }
+
+                    if (ab.description.isNotBlank()) {
+                        Text(
+                            ab.description,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    LinearProgressIndicator(
+                        progress = { ab.levelProgress },
+                        modifier = Modifier.fillMaxWidth().height(4.dp).clip(CircleShape),
+                        color = MaterialTheme.colorScheme.primary,
+                        trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                        strokeCap = StrokeCap.Round,
+                    )
+                    Text(
+                        "${ab.xpIntoCurrentLevel} / ${ab.xpForNextLevel} XP to Level ${ab.currentLevel + 1}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
 
@@ -297,7 +293,11 @@ fun AbilityDetailScreen(
                 }
             }
 
-            // ── AI Coaching Insight ──────────────────────────────────────────
+            // The coaching read, without the production it used to arrive in (Sparkle-in-a-
+            // circle avatar, "AI Coaching Insight" header, "Get personalized coaching to build
+            // this ability faster"). The words are the value; staging an AI presence around them
+            // is the same offer-card pattern the goal detail dropped. Generation stays behind a
+            // deliberate tap because it costs a network call.
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.medium),
@@ -305,52 +305,39 @@ fun AbilityDetailScreen(
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            PhosphorIcons.Regular.Sparkle,
-                            null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Text(
-                            "AI Coaching Insight",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-
                     if (supervisionInsight.isNotBlank()) {
                         Text(
                             supervisionInsight,
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    } else if (!isGeneratingInsight) {
-                        Text(
-                            "Get personalized coaching to build this ability faster.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
 
                     if (isGeneratingInsight) {
-                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth().height(4.dp).clip(CircleShape))
                     }
 
-                    Button(
-                        onClick = { viewModel.generateSupervisionInsight() },
-                        enabled = !isGeneratingInsight && linkedHabits.isNotEmpty(),
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Icon(PhosphorIcons.Regular.ArrowsClockwise, null, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text(if (supervisionInsight.isBlank()) "Get Insight" else "Refresh Insight")
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            when {
+                                isGeneratingInsight -> "Reading your habits…"
+                                supervisionInsight.isBlank() && linkedHabits.isEmpty() ->
+                                    "Link a habit first, then there is something to read."
+                                supervisionInsight.isBlank() ->
+                                    "A coaching read on how to build this faster."
+                                else -> ""
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.weight(1f)
+                        )
+                        if (!isGeneratingInsight && linkedHabits.isNotEmpty()) {
+                            TextButton(onClick = { viewModel.generateSupervisionInsight() }) {
+                                Text(if (supervisionInsight.isBlank()) "Get insight" else "Refresh")
+                            }
+                        }
                     }
                 }
             }

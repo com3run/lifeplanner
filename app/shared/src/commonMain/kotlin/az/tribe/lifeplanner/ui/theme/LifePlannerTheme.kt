@@ -9,6 +9,13 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 
+/**
+ * Whether the active theme is dark. Components that pick their own surface treatment (glass
+ * cards, the nav pill) must read this instead of hardcoding, or the Light / Dark / System
+ * control in [ThemeController] cannot actually reach them.
+ */
+val LocalIsDarkTheme = staticCompositionLocalOf { true }
+
 // Static composition local for providing modern colors throughout the app
 val LocalModernColors = staticCompositionLocalOf {
     ModernColorScheme(
@@ -75,19 +82,15 @@ fun LifePlannerTheme(
     darkTheme: Boolean = true,
     content: @Composable () -> Unit
 ) {
-    // Create Material3 color scheme from our modern colors
-    val colorScheme = createColorScheme(darkTheme)
-
-    // Select the appropriate modern color scheme based on theme
-    val modernColorScheme = if (darkTheme) {
-        ModernThemeColors.Dark
-    } else {
-        ModernThemeColors.Light
-    }
+    // D5: the active visual identity drives both token sets. Swap ACTIVE_VISUAL_IDENTITY to
+    // restyle the whole app; VisualIdentity.CLASSIC restores the v2 look exactly.
+    val modernColorScheme = visualScheme(ACTIVE_VISUAL_IDENTITY, darkTheme)
+    val colorScheme = createColorScheme(modernColorScheme, darkTheme)
 
     // Provide the modern colors to the composition
     CompositionLocalProvider(
-        LocalModernColors provides modernColorScheme
+        LocalModernColors provides modernColorScheme,
+        LocalIsDarkTheme provides darkTheme
     ) {
         MaterialTheme(
             colorScheme = colorScheme,
@@ -103,77 +106,79 @@ val MaterialTheme.modernColors: ModernColorScheme
     @Composable
     get() = LocalModernColors.current
 
-// Create Material3 ColorScheme from our modern colors
-private fun createColorScheme(darkTheme: Boolean): ColorScheme {
+// Create Material3 ColorScheme from the active identity's modern token set.
+// Deriving it from ModernColorScheme (rather than hardcoding ModernColors) is what makes a
+// D5 identity swap reach the 164 files that read MaterialTheme.colorScheme instead of modernColors.
+private fun createColorScheme(c: ModernColorScheme, darkTheme: Boolean): ColorScheme {
     return if (darkTheme) {
         darkColorScheme(
-            primary = ModernColors.Dark.primary,
-            onPrimary = ModernColors.Dark.textPrimary,
-            primaryContainer = ModernColors.Dark.primaryContainer,
-            onPrimaryContainer = ModernColors.Dark.onPrimaryContainer,
+            primary = c.primary,
+            onPrimary = c.textPrimary,
+            primaryContainer = c.primaryContainer,
+            onPrimaryContainer = c.onPrimaryContainer,
 
-            secondary = ModernColors.Dark.secondary,
-            onSecondary = ModernColors.Dark.textPrimary,
-            secondaryContainer = ModernColors.Dark.secondaryContainer,
-            onSecondaryContainer = ModernColors.Dark.onSecondaryContainer,
+            secondary = c.secondary,
+            onSecondary = c.textPrimary,
+            secondaryContainer = c.secondaryContainer,
+            onSecondaryContainer = c.onSecondaryContainer,
 
-            tertiary = ModernColors.Dark.accent,
-            onTertiary = ModernColors.Dark.textPrimary,
-            tertiaryContainer = ModernColors.Dark.tertiaryContainer,
-            onTertiaryContainer = ModernColors.Dark.onTertiaryContainer,
+            tertiary = c.accent,
+            onTertiary = c.textPrimary,
+            tertiaryContainer = c.tertiaryContainer,
+            onTertiaryContainer = c.onTertiaryContainer,
 
-            error = ModernColors.Dark.error,
-            onError = ModernColors.Dark.textPrimary,
-            errorContainer = ModernColors.Dark.errorContainer,
-            onErrorContainer = ModernColors.Dark.onErrorContainer,
+            error = c.error,
+            onError = c.textPrimary,
+            errorContainer = c.errorContainer,
+            onErrorContainer = c.onErrorContainer,
 
-            background = ModernColors.Dark.background,
-            onBackground = ModernColors.Dark.textPrimary,
+            background = c.background,
+            onBackground = c.textPrimary,
 
-            surface = ModernColors.Dark.surface,
-            onSurface = ModernColors.Dark.textPrimary,
-            surfaceVariant = ModernColors.Dark.surfaceVariant,
-            onSurfaceVariant = ModernColors.Dark.textSecondary,
+            surface = c.surface,
+            onSurface = c.textPrimary,
+            surfaceVariant = c.surfaceVariant,
+            onSurfaceVariant = c.textSecondary,
 
-            outline = ModernColors.Dark.outline,
-            outlineVariant = ModernColors.Dark.outlineVariant,
+            outline = c.outline,
+            outlineVariant = c.outlineVariant,
 
-            scrim = ModernColors.Dark.scrim
+            scrim = c.scrim
         )
     } else {
         lightColorScheme(
-            primary = ModernColors.primary,
+            primary = c.primary,
             onPrimary = Color.White,
-            primaryContainer = ModernColors.primaryContainer,
-            onPrimaryContainer = ModernColors.onPrimaryContainer,
+            primaryContainer = c.primaryContainer,
+            onPrimaryContainer = c.onPrimaryContainer,
 
-            secondary = ModernColors.secondary,
+            secondary = c.secondary,
             onSecondary = Color.White,
-            secondaryContainer = ModernColors.secondaryContainer,
-            onSecondaryContainer = ModernColors.onSecondaryContainer,
+            secondaryContainer = c.secondaryContainer,
+            onSecondaryContainer = c.onSecondaryContainer,
 
-            tertiary = ModernColors.accent,
+            tertiary = c.accent,
             onTertiary = Color.White,
-            tertiaryContainer = ModernColors.tertiaryContainer,
-            onTertiaryContainer = ModernColors.onTertiaryContainer,
+            tertiaryContainer = c.tertiaryContainer,
+            onTertiaryContainer = c.onTertiaryContainer,
 
-            error = ModernColors.error,
+            error = c.error,
             onError = Color.White,
-            errorContainer = ModernColors.errorContainer,
-            onErrorContainer = ModernColors.onErrorContainer,
+            errorContainer = c.errorContainer,
+            onErrorContainer = c.onErrorContainer,
 
-            background = ModernColors.background,
-            onBackground = ModernColors.textPrimary,
+            background = c.background,
+            onBackground = c.textPrimary,
 
-            surface = ModernColors.surface,
-            onSurface = ModernColors.textPrimary,
-            surfaceVariant = ModernColors.surfaceVariant,
-            onSurfaceVariant = ModernColors.textSecondary,
+            surface = c.surface,
+            onSurface = c.textPrimary,
+            surfaceVariant = c.surfaceVariant,
+            onSurfaceVariant = c.textSecondary,
 
-            outline = ModernColors.outline,
-            outlineVariant = ModernColors.outlineVariant,
+            outline = c.outline,
+            outlineVariant = c.outlineVariant,
 
-            scrim = ModernColors.scrim
+            scrim = c.scrim
         )
     }
 }

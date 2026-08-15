@@ -278,10 +278,14 @@ class BeginnerObjectiveViewModel(
                 // not gated on the user tapping the dismiss button.
                 Analytics.allObjectivesCompleted()
 
-                // Notify UI to show celebration, card stays visible so the user
-                // can see the "All objectives complete!" state. The card is
-                // dismissed when the user taps the dismiss button.
+                // Notify UI to show the celebration; the card stays visible for THIS session so
+                // the user sees the "All done" state once.
                 _celebrationEvent.tryEmit(Unit)
+
+                // Persist completion now, so the card does not come back on the next visit. We do
+                // NOT flip _isDismissed here, so it remains visible for the current session (the
+                // one time). There is no manual Dismiss button any more; hiding is automatic.
+                settings.putBoolean("objectives_completed", true)
             }
         }
     }

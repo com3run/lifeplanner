@@ -24,7 +24,9 @@ import com.adamglin.phosphoricons.regular.CheckCircle
 import com.adamglin.phosphoricons.regular.Flag
 import com.adamglin.phosphoricons.regular.Hourglass
 import com.adamglin.phosphoricons.regular.Play
+import com.adamglin.phosphoricons.regular.Repeat
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -44,8 +46,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import az.tribe.lifeplanner.domain.enum.GoalStatus
 import az.tribe.lifeplanner.domain.model.Goal
+import az.tribe.lifeplanner.domain.model.GoalPractice
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
-import az.tribe.lifeplanner.ui.theme.gradientColors
+import az.tribe.lifeplanner.ui.theme.backgroundColor
 import kotlin.time.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
@@ -53,185 +56,73 @@ import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
 
 /**
- * Hero header with gradient background, circular progress, and key stats
+ * The goal written like a document rather than announced like a poster.
+ *
+ * Replaces the hero header: a full-bleed category gradient, a 140dp progress ring, and the title
+ * in bold white on top of it. The title was the one thing on that banner that mattered and the one
+ * thing that suffered; a real goal name clipped or wrapped into a shout. Paper rules instead: the
+ * category is a quiet overline, the title is text that wraps as long as it needs to, and progress
+ * is a thin line with the numbers written beside it.
  */
 @Composable
-fun GoalDetailHeroHeader(
+fun GoalPaperHeader(
     goal: Goal,
+    /** Non-null when habits are linked, which makes this a practice rather than a checklist. */
+    practice: GoalPractice? = null,
     modifier: Modifier = Modifier
 ) {
-    val gradientColors = goal.category.gradientColors()
+    val accent = goal.category.backgroundColor()
     val progress = (goal.progress?.toFloat() ?: 0f) / 100f
+    val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+    val daysLeft = goal.dueDate.toEpochDays() - today.toEpochDays()
 
-    val animatedProgress by animateFloatAsState(
-        targetValue = progress,
-        animationSpec = tween(1000),
-        label = "progress"
-    )
-
-    Box(
+    Column(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        gradientColors.first(),
-                        gradientColors.last()
-                    )
-                )
-            )
-            .padding(24.dp),
-
+            .padding(horizontal = 20.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // Circular Progress Ring (auto-calculated from milestones)
-            Box(
-                modifier = Modifier
-                    .size(140.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                // Background ring
-                Box(
-                    modifier = Modifier
-                        .size(140.dp)
-                        .drawBehind {
-                            drawArc(
-                                color = Color.White.copy(alpha = 0.3f),
-                                startAngle = -90f,
-                                sweepAngle = 360f,
-                                useCenter = false,
-                                style = Stroke(width = 12.dp.toPx(), cap = StrokeCap.Round)
-                            )
-                        }
-                )
-
-                // Progress ring
-                Box(
-                    modifier = Modifier
-                        .size(140.dp)
-                        .drawBehind {
-                            drawArc(
-                                color = Color.White,
-                                startAngle = -90f,
-                                sweepAngle = animatedProgress * 360f,
-                                useCenter = false,
-                                style = Stroke(width = 12.dp.toPx(), cap = StrokeCap.Round)
-                            )
-                        }
-                )
-
-                // Center content
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    val hasProgress = (goal.progress ?: 0) > 0
-                    if (hasProgress) {
-                        Text(
-                            text = "${goal.progress}%",
-                            style = MaterialTheme.typography.headlineLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
-                        Text(
-                            text = "Progress",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.White.copy(alpha = 0.8f)
-                        )
-                    } else {
-                        val today = Clock.System.now()
-                            .toLocalDateTime(TimeZone.currentSystemDefault()).date
-                        val daysLeft = (goal.dueDate.toEpochDays() - today.toEpochDays()).toInt()
-                        Text(
-                            text = if (daysLeft == 0) "Today" else "${if (daysLeft > 0) daysLeft else -daysLeft}",
-                            style = MaterialTheme.typography.headlineLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
-                        Text(
-                            text = when {
-                                daysLeft == 0 -> "due today"
-                                daysLeft > 0 -> "days left"
-                                else -> "days over"
-                            },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.White.copy(alpha = 0.8f)
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // Goal title
-            Text(
-                text = goal.title,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                color = Color.White,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 16.dp)
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Stats row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                HeroStatItem(
-                    icon = PhosphorIcons.Regular.Flag,
-                    value = "${goal.milestones.count { it.isCompleted }}/${goal.milestones.size}",
-                    label = "Milestones"
-                )
-                HeroStatItem(
-                    icon = PhosphorIcons.Regular.CalendarBlank,
-                    value = formatShortDate(goal.dueDate),
-                    label = "Due Date"
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun HeroStatItem(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    value: String,
-    label: String
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Surface(
-            shape = CircleShape,
-            color = Color.White.copy(alpha = 0.2f),
-            modifier = Modifier.size(48.dp)
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-        }
-        Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = value,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = Color.White
+            text = goal.category.displayName.uppercase(),
+            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.5.sp),
+            fontWeight = FontWeight.SemiBold,
+            color = accent
         )
+
         Text(
-            text = label,
+            text = goal.title,
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+
+        if (progress > 0f) {
+            LinearProgressIndicator(
+                progress = { progress },
+                modifier = Modifier.fillMaxWidth().height(4.dp).clip(CircleShape),
+                color = accent,
+                trackColor = accent.copy(alpha = 0.15f),
+                strokeCap = StrokeCap.Round
+            )
+        }
+
+        val due = when {
+            daysLeft == 0L -> "due today"
+            daysLeft < 0L -> "was due ${formatShortDate(goal.dueDate)}"
+            else -> "due ${formatShortDate(goal.dueDate)}"
+        }
+        Text(
+            text = when {
+                practice != null && practice.isEstablished ->
+                    "Day ${practice.dayNumber} · $due"
+                practice != null ->
+                    "Day ${practice.dayNumber} of ${practice.windowDays} · $due"
+                goal.milestones.isNotEmpty() ->
+                    "${goal.milestones.count { it.isCompleted }} of ${goal.milestones.size} steps · $due"
+                else -> due.replaceFirstChar { it.uppercase() }
+            },
             style = MaterialTheme.typography.bodySmall,
-            color = Color.White.copy(alpha = 0.7f)
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }

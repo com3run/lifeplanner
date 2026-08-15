@@ -14,6 +14,9 @@ CREATE TABLE GoalEntity (
     isArchived INTEGER NOT NULL DEFAULT 0,
     aiReasoning TEXT,
     valueId TEXT,
+    -- Which Wheel of Life area this goal serves. The goal's "why", and the link that lets a goal
+    -- move a score the user actually gave us. See GoalWheelAreaInferrer.
+    wheelArea TEXT,
     predictedDueDate TEXT,
     sync_updated_at TEXT,
     is_deleted INTEGER NOT NULL DEFAULT 0,
@@ -29,8 +32,8 @@ SELECT * FROM GoalEntity WHERE id = ?;
 
 -- Updated insert query with conflict resolution
 insertGoal:
-INSERT OR REPLACE INTO GoalEntity(id, category, title, description, status, timeline, dueDate, progress, notes, createdAt, completionRate, isArchived, aiReasoning, valueId, predictedDueDate, sync_updated_at, is_deleted, sync_version, last_synced_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT OR REPLACE INTO GoalEntity(id, category, title, description, status, timeline, dueDate, progress, notes, createdAt, completionRate, isArchived, aiReasoning, valueId, wheelArea, predictedDueDate, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 selectGoalsByTimeline:
 SELECT * FROM GoalEntity
@@ -61,6 +64,7 @@ SET
   isArchived = ?,
   aiReasoning = ?,
   valueId = ?,
+  wheelArea = ?,
   predictedDueDate = ?,
   sync_updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
 WHERE id = ?;
@@ -200,6 +204,14 @@ toggleMilestoneCompletion:
 UPDATE MilestoneEntity
 SET isCompleted = ?, sync_updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
 WHERE id = ?;
+
+-- Touch a milestone's parent goal so GoalEntity-observing flows (observeAllGoals) re-emit after a
+-- milestone toggle; without this the goals query, which only invalidates on GoalEntity writes, would
+-- keep serving the stale milestone state.
+touchGoalByMilestone:
+UPDATE GoalEntity
+SET sync_updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+WHERE id = (SELECT goalId FROM MilestoneEntity WHERE id = ?);
 
 -- Existing tables remain the same
 CREATE TABLE GoalHistoryEntity (
@@ -371,6 +383,9 @@ CREATE TABLE IF NOT EXISTS HabitEntity (
     last_synced_at TEXT,
     type TEXT NOT NULL DEFAULT 'BUILD',
     unit TEXT,
+    healthMetricType TEXT,
+    healthTarget REAL,
+    completionSource TEXT,
     FOREIGN KEY (linkedGoalId) REFERENCES GoalEntity(id) ON DELETE SET NULL
 );
 
@@ -390,8 +405,8 @@ CREATE TABLE IF NOT EXISTS HabitCheckInEntity (
 
 -- Habit queries
 insertHabit:
-INSERT OR REPLACE INTO HabitEntity(id, title, description, category, frequency, targetCount, currentStreak, longestStreak, totalCompletions, lastCompletedDate, linkedGoalId, correlationScore, isActive, createdAt, reminderTime, sync_updated_at, is_deleted, sync_version, last_synced_at, type, unit)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT OR REPLACE INTO HabitEntity(id, title, description, category, frequency, targetCount, currentStreak, longestStreak, totalCompletions, lastCompletedDate, linkedGoalId, correlationScore, isActive, createdAt, reminderTime, sync_updated_at, is_deleted, sync_version, last_synced_at, type, unit, healthMetricType, healthTarget, completionSource)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 getAllHabits:
 SELECT * FROM HabitEntity WHERE isActive = 1 AND is_deleted = 0 ORDER BY createdAt DESC;
@@ -407,7 +422,7 @@ SELECT * FROM HabitEntity WHERE linkedGoalId = ? AND isActive = 1 AND is_deleted
 
 updateHabit:
 UPDATE HabitEntity
-SET title = ?, description = ?, category = ?, frequency = ?, targetCount = ?, linkedGoalId = ?, reminderTime = ?, type = ?, unit = ?, sync_updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+SET title = ?, description = ?, category = ?, frequency = ?, targetCount = ?, linkedGoalId = ?, reminderTime = ?, type = ?, unit = ?, healthMetricType = ?, healthTarget = ?, completionSource = ?, sync_updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
 WHERE id = ?;
 
 updateHabitStreak:
@@ -1742,8 +1757,8 @@ DELETE FROM FocusSessionEntity WHERE is_deleted = 1 AND last_synced_at IS NOT NU
 -- ============== Upsert From Sync Queries ==============
 
 upsertGoalFromSync:
-INSERT OR REPLACE INTO GoalEntity(id, category, title, description, status, timeline, dueDate, progress, notes, createdAt, completionRate, isArchived, aiReasoning, valueId, predictedDueDate, sync_updated_at, is_deleted, sync_version, last_synced_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT OR REPLACE INTO GoalEntity(id, category, title, description, status, timeline, dueDate, progress, notes, createdAt, completionRate, isArchived, aiReasoning, valueId, wheelArea, predictedDueDate, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 upsertMilestoneFromSync:
 INSERT OR REPLACE INTO MilestoneEntity(id, goalId, title, isCompleted, dueDate, estimatedEffort, createdAt, sync_updated_at, is_deleted, sync_version, last_synced_at)
@@ -1762,8 +1777,8 @@ INSERT OR REPLACE INTO UserEntity(id, firebaseUid, email, displayName, isGuest, 
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 upsertHabitFromSync:
-INSERT OR REPLACE INTO HabitEntity(id, title, description, category, frequency, targetCount, currentStreak, longestStreak, totalCompletions, lastCompletedDate, linkedGoalId, correlationScore, isActive, createdAt, reminderTime, sync_updated_at, is_deleted, sync_version, last_synced_at, type, unit)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT OR REPLACE INTO HabitEntity(id, title, description, category, frequency, targetCount, currentStreak, longestStreak, totalCompletions, lastCompletedDate, linkedGoalId, correlationScore, isActive, createdAt, reminderTime, sync_updated_at, is_deleted, sync_version, last_synced_at, type, unit, healthMetricType, healthTarget, completionSource)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 upsertHabitCheckInFromSync:
 INSERT OR REPLACE INTO HabitCheckInEntity(id, habitId, date, completed, notes, count, sync_updated_at, is_deleted, sync_version, last_synced_at)
@@ -2283,6 +2298,99 @@ upsertLifeValueFromSync:
 INSERT OR REPLACE INTO LifeValueEntity(id, title, description, isActive, sortOrder, sync_updated_at, is_deleted, sync_version, last_synced_at)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
 
+-- ============== KnowledgeReadEntity (Learn hub: which lessons the user has read) ==============
+-- `id` is the KnowledgeBit id (e.g. 'tip_2min_rule'). `readAt` is an ISO-8601 timestamp.
+CREATE TABLE KnowledgeReadEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    readAt TEXT NOT NULL,
+    sync_updated_at TEXT,
+    is_deleted INTEGER NOT NULL DEFAULT 0,
+    sync_version INTEGER NOT NULL DEFAULT 0,
+    last_synced_at TEXT
+);
+
+selectAllKnowledgeReads:
+SELECT * FROM KnowledgeReadEntity WHERE is_deleted = 0 ORDER BY readAt DESC;
+
+selectKnowledgeReadById:
+SELECT * FROM KnowledgeReadEntity WHERE id = ?;
+
+markKnowledgeRead:
+INSERT OR REPLACE INTO KnowledgeReadEntity(id, readAt, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), 0, 0, NULL);
+
+softDeleteKnowledgeRead:
+UPDATE KnowledgeReadEntity SET is_deleted = 1, sync_updated_at = ? WHERE id = ?;
+
+deleteAllKnowledgeReads:
+DELETE FROM KnowledgeReadEntity;
+
+-- KnowledgeRead sync queries
+getUnsyncedKnowledgeReads:
+SELECT * FROM KnowledgeReadEntity WHERE (last_synced_at IS NULL OR sync_updated_at > last_synced_at) AND is_deleted = 0;
+
+getDeletedKnowledgeReads:
+SELECT * FROM KnowledgeReadEntity WHERE is_deleted = 1;
+
+markKnowledgeReadSynced:
+UPDATE KnowledgeReadEntity SET last_synced_at = ? WHERE id = ?;
+
+purgeDeletedKnowledgeReads:
+DELETE FROM KnowledgeReadEntity WHERE is_deleted = 1 AND last_synced_at IS NOT NULL;
+
+upsertKnowledgeReadFromSync:
+INSERT OR REPLACE INTO KnowledgeReadEntity(id, readAt, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, ?, ?, ?, ?);
+
+-- ============== Learn content cache (server-owned, one-way pull from Supabase) ==============
+-- Lesson *content* is authored in Supabase and cached here so the Learn map works offline and on
+-- the next cold start. Deliberately outside the syncer set: this is not user data, it never gets
+-- pushed, and there is nothing to merge. `detail`, `topics` and `lessonIds` hold JSON arrays.
+CREATE TABLE KnowledgeLessonEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    title TEXT NOT NULL,
+    body TEXT NOT NULL,
+    emoji TEXT NOT NULL,
+    minLevel INTEGER NOT NULL DEFAULT 1,
+    readMin INTEGER NOT NULL DEFAULT 2,
+    detail TEXT NOT NULL DEFAULT '[]',
+    takeaway TEXT NOT NULL DEFAULT '',
+    source TEXT,
+    topics TEXT NOT NULL DEFAULT '[]',
+    sortOrder INTEGER NOT NULL DEFAULT 0,
+    fetchedAt TEXT NOT NULL
+);
+
+CREATE TABLE KnowledgeCollectionEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    title TEXT NOT NULL,
+    subtitle TEXT NOT NULL,
+    emoji TEXT NOT NULL,
+    lessonIds TEXT NOT NULL DEFAULT '[]',
+    sortOrder INTEGER NOT NULL DEFAULT 0,
+    fetchedAt TEXT NOT NULL
+);
+
+selectAllKnowledgeLessons:
+SELECT * FROM KnowledgeLessonEntity ORDER BY sortOrder ASC;
+
+selectAllKnowledgeCollections:
+SELECT * FROM KnowledgeCollectionEntity ORDER BY sortOrder ASC;
+
+upsertKnowledgeLesson:
+INSERT OR REPLACE INTO KnowledgeLessonEntity(id, title, body, emoji, minLevel, readMin, detail, takeaway, source, topics, sortOrder, fetchedAt)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+upsertKnowledgeCollection:
+INSERT OR REPLACE INTO KnowledgeCollectionEntity(id, title, subtitle, emoji, lessonIds, sortOrder, fetchedAt)
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+deleteAllKnowledgeLessons:
+DELETE FROM KnowledgeLessonEntity;
+
+deleteAllKnowledgeCollections:
+DELETE FROM KnowledgeCollectionEntity;
+
 -- ============== DecisionEntity (Pillar 3: decisions as first-class objects) ==============
 -- optionsConsidered stored as a newline-delimited string; outcomeQuality as the enum name.
 CREATE TABLE DecisionEntity (
@@ -2298,6 +2406,8 @@ CREATE TABLE DecisionEntity (
     actualOutcome TEXT,
     outcomeReviewedAt TEXT,
     outcomeQuality TEXT,
+    source TEXT NOT NULL DEFAULT 'CHOICE_POINT',
+    status TEXT NOT NULL DEFAULT 'CONFIRMED',
     sync_updated_at TEXT,
     is_deleted INTEGER NOT NULL DEFAULT 0,
     sync_version INTEGER NOT NULL DEFAULT 0,
@@ -2316,13 +2426,13 @@ selectDecisionsByGoal:
 SELECT * FROM DecisionEntity WHERE relatedGoalId = ? AND is_deleted = 0 ORDER BY decidedAt DESC;
 
 insertDecision:
-INSERT OR REPLACE INTO DecisionEntity(id, question, optionsConsidered, chosenOption, reasoning, relatedGoalId, expectedOutcome, confidence, decidedAt, actualOutcome, outcomeReviewedAt, outcomeQuality, sync_updated_at, is_deleted, sync_version, last_synced_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT OR REPLACE INTO DecisionEntity(id, question, optionsConsidered, chosenOption, reasoning, relatedGoalId, expectedOutcome, confidence, decidedAt, actualOutcome, outcomeReviewedAt, outcomeQuality, source, status, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 updateDecision:
 UPDATE DecisionEntity
 SET question = ?, optionsConsidered = ?, chosenOption = ?, reasoning = ?, relatedGoalId = ?,
-    expectedOutcome = ?, confidence = ?, decidedAt = ?, actualOutcome = ?, outcomeReviewedAt = ?, outcomeQuality = ?,
+    expectedOutcome = ?, confidence = ?, decidedAt = ?, actualOutcome = ?, outcomeReviewedAt = ?, outcomeQuality = ?, status = ?,
     sync_updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
 WHERE id = ?;
 
@@ -2346,8 +2456,8 @@ purgeDeletedDecisions:
 DELETE FROM DecisionEntity WHERE is_deleted = 1 AND last_synced_at IS NOT NULL;
 
 upsertDecisionFromSync:
-INSERT OR REPLACE INTO DecisionEntity(id, question, optionsConsidered, chosenOption, reasoning, relatedGoalId, expectedOutcome, confidence, decidedAt, actualOutcome, outcomeReviewedAt, outcomeQuality, sync_updated_at, is_deleted, sync_version, last_synced_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT OR REPLACE INTO DecisionEntity(id, question, optionsConsidered, chosenOption, reasoning, relatedGoalId, expectedOutcome, confidence, decidedAt, actualOutcome, outcomeReviewedAt, outcomeQuality, source, status, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 -- ============== IdentityStatementEntity (Pillar 5: "I'm becoming someone who…") ==============
 -- Identity layer above XP/levels, tied to a LifeValue (Pillar 1) via valueId (soft ref).
@@ -2464,3 +2574,104 @@ DELETE FROM DecisionProfileEntity WHERE is_deleted = 1 AND last_synced_at IS NOT
 upsertDecisionProfileFromSync:
 INSERT OR REPLACE INTO DecisionProfileEntity(id, confidenceThresholdValue, confidenceThresholdConfidence, confidenceThresholdSamples, noveltySalienceValue, noveltySalienceConfidence, noveltySalienceSamples, delayDiscountingValue, delayDiscountingConfidence, delayDiscountingSamples, punishmentSensitivityValue, punishmentSensitivityConfidence, punishmentSensitivitySamples, rewardSensitivityValue, rewardSensitivityConfidence, rewardSensitivitySamples, riskAversionValue, riskAversionConfidence, riskAversionSamples, sync_updated_at, is_deleted, sync_version, last_synced_at)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+-- ============== Wheel of Life ==============
+-- Only the scores the user set themselves. Predictions are recomputed from live signals on every
+-- read (see WheelScorePredictor), so persisting them would just create a staleness problem: a
+-- cached "Physical 7" would outlive the week of steps that produced it. One row per area, keyed by
+-- the WheelArea enum name.
+CREATE TABLE WheelScoreEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    score REAL NOT NULL,
+    assessedAt TEXT NOT NULL,
+    note TEXT,
+    sync_updated_at TEXT,
+    is_deleted INTEGER NOT NULL DEFAULT 0,
+    sync_version INTEGER NOT NULL DEFAULT 0,
+    last_synced_at TEXT
+);
+
+selectAllWheelScores:
+SELECT * FROM WheelScoreEntity WHERE is_deleted = 0;
+
+selectWheelScoreById:
+SELECT * FROM WheelScoreEntity WHERE id = ?;
+
+setWheelScore:
+INSERT OR REPLACE INTO WheelScoreEntity(id, score, assessedAt, note, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), 0, 0, NULL);
+
+clearWheelScore:
+UPDATE WheelScoreEntity SET is_deleted = 1, sync_updated_at = ? WHERE id = ?;
+
+deleteAllWheelScores:
+DELETE FROM WheelScoreEntity;
+
+-- WheelScore sync queries
+getUnsyncedWheelScores:
+SELECT * FROM WheelScoreEntity WHERE (last_synced_at IS NULL OR sync_updated_at > last_synced_at) AND is_deleted = 0;
+
+getDeletedWheelScores:
+SELECT * FROM WheelScoreEntity WHERE is_deleted = 1;
+
+markWheelScoreSynced:
+UPDATE WheelScoreEntity SET last_synced_at = ? WHERE id = ?;
+
+purgeDeletedWheelScores:
+DELETE FROM WheelScoreEntity WHERE is_deleted = 1 AND last_synced_at IS NOT NULL;
+
+upsertWheelScoreFromSync:
+INSERT OR REPLACE INTO WheelScoreEntity(id, score, assessedAt, note, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+
+-- ============== Wheel of Life snapshots ==============
+-- One row per day, keyed by date, holding the whole wheel as JSON.
+-- Snapshots exist because a past wheel cannot be recomputed: predictions read trailing windows (a
+-- week of steps, a month of mood), so the evidence behind an old score has aged out by the time you
+-- want to compare against it. Keyed by date so writing twice in a day updates that day rather than
+-- accumulating duplicates, which makes the capture-on-open path trivially idempotent.
+CREATE TABLE WheelSnapshotEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    scores TEXT NOT NULL,
+    capturedAt TEXT NOT NULL,
+    sync_updated_at TEXT,
+    is_deleted INTEGER NOT NULL DEFAULT 0,
+    sync_version INTEGER NOT NULL DEFAULT 0,
+    last_synced_at TEXT
+);
+
+selectAllWheelSnapshots:
+SELECT * FROM WheelSnapshotEntity WHERE is_deleted = 0 ORDER BY id DESC;
+
+selectWheelSnapshotById:
+SELECT * FROM WheelSnapshotEntity WHERE id = ?;
+
+-- The nearest snapshot at or before a date: someone who did not open the app on the exact day
+-- should still get a comparison rather than nothing.
+selectWheelSnapshotOnOrBefore:
+SELECT * FROM WheelSnapshotEntity WHERE is_deleted = 0 AND id <= ? ORDER BY id DESC LIMIT 1;
+
+putWheelSnapshot:
+INSERT OR REPLACE INTO WheelSnapshotEntity(id, scores, capturedAt, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), 0, 0, NULL);
+
+deleteAllWheelSnapshots:
+DELETE FROM WheelSnapshotEntity;
+
+-- WheelSnapshot sync queries
+getUnsyncedWheelSnapshots:
+SELECT * FROM WheelSnapshotEntity WHERE (last_synced_at IS NULL OR sync_updated_at > last_synced_at) AND is_deleted = 0;
+
+getDeletedWheelSnapshots:
+SELECT * FROM WheelSnapshotEntity WHERE is_deleted = 1;
+
+markWheelSnapshotSynced:
+UPDATE WheelSnapshotEntity SET last_synced_at = ? WHERE id = ?;
+
+purgeDeletedWheelSnapshots:
+DELETE FROM WheelSnapshotEntity WHERE is_deleted = 1 AND last_synced_at IS NOT NULL;
+
+upsertWheelSnapshotFromSync:
+INSERT OR REPLACE INTO WheelSnapshotEntity(id, scores, capturedAt, sync_updated_at, is_deleted, sync_version, last_synced_at)
+VALUES (?, ?, ?, ?, ?, ?, ?);

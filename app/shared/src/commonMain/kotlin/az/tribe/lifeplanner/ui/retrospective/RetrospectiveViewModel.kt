@@ -5,7 +5,9 @@ import androidx.lifecycle.viewModelScope
 import az.tribe.lifeplanner.data.network.AiProxyService
 import az.tribe.lifeplanner.domain.model.DaySnapshot
 import az.tribe.lifeplanner.domain.repository.RetrospectiveRepository
+import az.tribe.lifeplanner.ui.foryou.GoalSettingCascade
 import co.touchlab.kermit.Logger
+import com.russhwolf.settings.Settings
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -44,6 +46,12 @@ class RetrospectiveViewModel(
         get() = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
 
     init {
+        // Opening the retrospective is the weekly review; stamp it so the For You goal-setting
+        // cascade knows when to invite the next one. Best-effort: the no-arg Settings() needs an
+        // Android Context, which host unit tests do not have.
+        runCatching {
+            Settings().putLong(GoalSettingCascade.LAST_REVIEW_AT_KEY, Clock.System.now().toEpochMilliseconds())
+        }
         viewModelScope.launch {
             // Always load today's snapshot eagerly for compare section
             val todaySnap = safeGetSnapshot(today)
@@ -148,7 +156,8 @@ class RetrospectiveViewModel(
             "${snapshot.habitSummary.completedHabits} of ${snapshot.habitSummary.totalHabits} habits completed"
         } else "no habits tracked"
 
-        val moodLine = snapshot.dominantMood?.let { "dominant mood: ${it.displayName}" } ?: "no journal entries"
+        val moodLine = snapshot.dominantMood?.let { "dominant mood: ${it.displayName}" }
+            ?: if (snapshot.journalEntries.isEmpty()) "no journal entries" else "mixed moods across entries"
         val focusLine = if (snapshot.totalFocusMinutes > 0) "${snapshot.totalFocusMinutes} minutes of focused work" else "no focus sessions"
         val journalLine = if (snapshot.journalEntries.isNotEmpty()) {
             "wrote ${snapshot.journalEntries.size} journal ${if (snapshot.journalEntries.size == 1) "entry" else "entries"}"

@@ -7,7 +7,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import androidx.savedstate.read
 import az.tribe.lifeplanner.ui.backup.BackupSettingsScreen
-import az.tribe.lifeplanner.ui.balance.LifeBalanceScreen
 import az.tribe.lifeplanner.ui.habit.AddHabitScreen
 import az.tribe.lifeplanner.ui.habit.HabitTrackerScreen
 import az.tribe.lifeplanner.ui.habit.SmartHabitGeneratorScreen
@@ -35,6 +34,9 @@ internal fun NavGraphBuilder.appNavHabits(navController: NavController) {
             },
             onOpenDetail = { id ->
                 navController.navigate("habit_detail_redesign/$id") { launchSingleTop = true }
+            },
+            onOpenLesson = { id ->
+                navController.navigate("knowledge_detail/$id") { launchSingleTop = true }
             }
         )
     }
@@ -46,6 +48,13 @@ internal fun NavGraphBuilder.appNavHabits(navController: NavController) {
             onNavigateToManual = {
                 navController.navigate(Screen.AddHabit.route) { launchSingleTop = true }
             }
+        )
+    }
+
+    // Conversational habit setup (the friendly default entry).
+    composable(Screen.HabitChat.route) {
+        az.tribe.lifeplanner.ui.habit.HabitChatScreen(
+            onBackClick = { navController.popBackStack() }
         )
     }
 
@@ -82,28 +91,11 @@ internal fun NavGraphBuilder.appNavHabits(navController: NavController) {
         )
     }
 
-    // Life Balance Screen, primary bottom nav tab; no back button in TopAppBar
-    composable(Screen.LifeBalance.route) {
-        LifeBalanceScreen(
-            onNavigateBack = { navController.popBackStack() },
-            showBackButton = false,
-            onCreateHabit = { _ ->
-                navController.navigate(Screen.HabitTracker.route)
-            },
-            onNavigateToCoach = { coachId, message ->
-                az.tribe.lifeplanner.ui.balance.InsightMessageHolder.pendingMessage = message
-                navController.navigate("ai_chat/$coachId") {
-                    launchSingleTop = true
-                }
-            },
-            onNavigateToStoryReader = {
-                navController.navigate(Screen.StoryReader.route) {
-                    launchSingleTop = true
-                }
-            },
-            onNavigateToHabitCreation = { _ ->
-                navController.navigate(Screen.HabitTracker.route)
-            }
+
+    // Life-balance trajectory graph (explorable projections)
+    composable(Screen.Trajectory.route) {
+        az.tribe.lifeplanner.ui.trajectory.TrajectoryScreen(
+            onBackClick = { navController.popBackStack() }
         )
     }
 
@@ -180,7 +172,8 @@ internal fun NavGraphBuilder.appNavHabits(navController: NavController) {
                     az.tribe.lifeplanner.ui.search.SearchDestination.JOURNAL -> Screen.Journal.route
                     az.tribe.lifeplanner.ui.search.SearchDestination.AI_COACH -> Screen.AIChat.route
                     az.tribe.lifeplanner.ui.search.SearchDestination.REMINDERS -> Screen.Reminders.route
-                    az.tribe.lifeplanner.ui.search.SearchDestination.LIFE_BALANCE -> Screen.LifeBalance.route
+                                    // Balance lives on the Today feed now, so search lands there.
+                    az.tribe.lifeplanner.ui.search.SearchDestination.LIFE_BALANCE -> Screen.ForYou.route
                     az.tribe.lifeplanner.ui.search.SearchDestination.ACHIEVEMENTS -> Screen.Achievements.route
                     az.tribe.lifeplanner.ui.search.SearchDestination.HEALTH -> Screen.Health.route
                     az.tribe.lifeplanner.ui.search.SearchDestination.FOCUS -> "focus_setup"

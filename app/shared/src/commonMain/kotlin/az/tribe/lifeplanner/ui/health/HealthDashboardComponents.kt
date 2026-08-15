@@ -1,10 +1,16 @@
 package az.tribe.lifeplanner.ui.health
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -13,6 +19,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -42,6 +49,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -54,6 +62,7 @@ import com.adamglin.phosphoricons.bold.Barbell
 import com.adamglin.phosphoricons.bold.CaretDown
 import com.adamglin.phosphoricons.bold.CaretUp
 import com.adamglin.phosphoricons.bold.Footprints
+import com.adamglin.phosphoricons.bold.Heartbeat
 import com.adamglin.phosphoricons.bold.Minus
 import com.adamglin.phosphoricons.bold.Plus
 import com.adamglin.phosphoricons.bold.TrendDown
@@ -133,7 +142,12 @@ internal fun ExpandableMetricCard(
 }
 
 @Composable
-internal fun StepsCard(todaySteps: Long?, stepsGoal: Long) {
+internal fun StepsCard(
+    todaySteps: Long?,
+    stepsGoal: Long,
+    weekTotal: Long? = null,
+    monthTotal: Long? = null,
+) {
     val steps = todaySteps ?: 0L
     val progress = (steps.toFloat() / stepsGoal).coerceIn(0f, 1f)
     val animatedProgress by animateFloatAsState(
@@ -148,10 +162,8 @@ internal fun StepsCard(todaySteps: Long?, stepsGoal: Long) {
         ),
         shape = RoundedCornerShape(16.dp)
     ) {
-        Row(
-            modifier = Modifier.padding(20.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier.size(100.dp)
@@ -209,18 +221,54 @@ internal fun StepsCard(todaySteps: Long?, stepsGoal: Long) {
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
                 Text(
-                    text = steps.toString(),
+                    text = formatThousands(steps),
                     style = MaterialTheme.typography.headlineLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
                 Text(
-                    text = "Goal: $stepsGoal",
+                    text = "Goal: ${formatThousands(stepsGoal)}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                 )
             }
         }
+
+        if (weekTotal != null || monthTotal != null) {
+            Spacer(modifier = Modifier.height(14.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                weekTotal?.let { PeriodPill(label = "This Week", value = formatCompact(it.toDouble())) }
+                monthTotal?.let { PeriodPill(label = "This Month", value = formatCompact(it.toDouble())) }
+            }
+        }
+        }
+    }
+}
+
+/** Small stat pill used under the steps ring: "This Week 24.3K". */
+@Composable
+private fun PeriodPill(label: String, value: String) {
+    Row(
+        modifier = Modifier
+            .background(
+                MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.08f),
+                RoundedCornerShape(50)
+            )
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.75f)
+        )
+        Spacer(modifier = Modifier.width(6.dp))
+        Text(
+            text = value,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onPrimaryContainer
+        )
     }
 }
 
@@ -333,46 +381,6 @@ internal fun HealthNotAvailableCard() {
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-        }
-    }
-}
-
-@Composable
-internal fun PermissionDeniedCard(onRequestPermissions: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Icon(
-                PhosphorIcons.Bold.Footprints,
-                contentDescription = null,
-                modifier = Modifier.size(48.dp),
-                tint = MaterialTheme.colorScheme.primary
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = "Health Permissions Required",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Grant access to steps, weight, heart rate and sleep data to see your health metrics here.\n\nOn Android, make sure Health Connect is installed from Play Store.",
-                style = MaterialTheme.typography.bodyMedium,
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            androidx.compose.material3.Button(
-                onClick = onRequestPermissions,
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text("Grant Access")
-            }
         }
     }
 }

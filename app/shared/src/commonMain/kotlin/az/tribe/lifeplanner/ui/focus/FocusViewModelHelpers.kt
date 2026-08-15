@@ -1,6 +1,5 @@
 package az.tribe.lifeplanner.ui.focus
 
-import az.tribe.lifeplanner.domain.enum.Mood
 import az.tribe.lifeplanner.domain.model.XpRewards
 import co.touchlab.kermit.Logger
 import kotlinx.coroutines.flow.firstOrNull
@@ -33,10 +32,6 @@ internal fun calculatePartialXp(elapsedSeconds: Int): Int {
 // ---------------------------------------------------------------------------
 // Extension functions, ViewModel helpers that load / refresh state
 // ---------------------------------------------------------------------------
-
-internal fun FocusViewModel.autoSuggestMood() {
-    _selectedMood.value = Mood.HAPPY
-}
 
 internal fun FocusViewModel.loadTodayStats() {
     viewModelScope.launch {

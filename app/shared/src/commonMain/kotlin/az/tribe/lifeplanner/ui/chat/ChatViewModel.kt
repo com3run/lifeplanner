@@ -416,6 +416,11 @@ class ChatViewModel(
         // Skip if already processed or an active questionnaire is in progress
         if (goalSuggestion.id in state.questionnairedSuggestionIds) return
         if (state.goalQuestionnaire != null && !state.goalQuestionnaire.submitted) return
+        // Only ONE questionnaire per conversation. After the user has answered one, the coach's
+        // follow-up goal suggestions must render as their normal "Add goal" action, not spawn a
+        // fresh questionnaire, otherwise answering just loops back into more questions instead of
+        // producing a goal to create.
+        if (state.goalQuestionnaire?.submitted == true) return
 
         startGoalQuestionnaire(goalSuggestion)
     }

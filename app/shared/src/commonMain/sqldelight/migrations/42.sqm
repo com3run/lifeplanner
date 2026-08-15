@@ -1,0 +1,2 @@
+-- 42: GoalEntity.wheelArea (the goal's why, as a Wheel of Life area rather than a free-text value)
+ALTER TABLE GoalEntity ADD COLUMN wheelArea TEXT;

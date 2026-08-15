@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import az.tribe.lifeplanner.ui.navigation.BottomNavItem
+import az.tribe.lifeplanner.ui.theme.LocalIsDarkTheme
 import az.tribe.lifeplanner.ui.theme.LifePlannerGradients
 
 private val RailWidth = 80.dp
@@ -52,8 +53,9 @@ fun NavigationRailBar(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     val pillShape = RoundedCornerShape(24.dp)
-    val pillBackground = LifePlannerGradients.glassNavDark
-    val pillBorder = LifePlannerGradients.glassBorderDark
+    val isDark = LocalIsDarkTheme.current
+    val pillBackground = if (isDark) LifePlannerGradients.glassNavDark else LifePlannerGradients.glassOverlayHigh
+    val pillBorder = if (isDark) LifePlannerGradients.glassBorderDark else LifePlannerGradients.glassBorder
 
     AnimatedVisibility(
         visible = isVisible,

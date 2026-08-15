@@ -55,18 +55,24 @@ async function sendTelegram(text: string): Promise<boolean> {
   }
 }
 
-async function probe(name: string) {
+const TIMEOUT_MS = 15_000;
+const RETRY_DELAY_MS = 3_000;
+
+async function attempt(name: string) {
   const started = Date.now();
   try {
     const res = await fetch(`${BASE}/${name}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: "{}",
-      signal: AbortSignal.timeout(10_000),
+      signal: AbortSignal.timeout(TIMEOUT_MS),
     });
-    const ms = Date.now() - started;
-    const healthy = res.status < 500 && res.status !== 404;
-    return { name, status: res.status, ms, healthy };
+    return {
+      name,
+      status: res.status,
+      ms: Date.now() - started,
+      healthy: res.status < 500 && res.status !== 404,
+    };
   } catch (e) {
     return {
       name,
@@ -76,6 +82,22 @@ async function probe(name: string) {
       error: String(e),
     };
   }
+}
+
+// A single blip is not an outage. Cold starts on the edge runtime can blow past
+// the timeout occasionally, and alerting on one failed request just trains you
+// to ignore the alerts. Only report a function down when two consecutive
+// attempts fail.
+async function probe(name: string) {
+  const first = await attempt(name);
+  if (first.healthy) return { ...first, attempts: 1 };
+
+  await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+  const second = await attempt(name);
+
+  return second.healthy
+    ? { ...second, attempts: 2, recoveredAfterRetry: true }
+    : { ...second, attempts: 2, firstError: first.error ?? first.status };
 }
 
 function json(body: unknown, status = 200) {
@@ -126,7 +148,8 @@ Deno.serve(async (req) => {
     );
     await sendTelegram(
       `🚨 <b>LifePlanner backend alert</b>\n` +
-        `${down.length} function(s) unhealthy:\n${lines.join("\n")}`,
+        `${down.length} function(s) unhealthy ` +
+        `(failed 2 consecutive attempts):\n${lines.join("\n")}`,
     );
   }
 

@@ -80,7 +80,7 @@ internal fun TextInputStep(
     value: String,
     onChange: (String) -> Unit,
     onContinue: () -> Unit,
-    optional: Boolean = false
+    optional: Boolean = false,
 ) {
     OutlinedTextField(
         value = value,
@@ -92,7 +92,12 @@ internal fun TextInputStep(
     )
     Spacer(Modifier.height(16.dp))
     PrimaryButton("Continue", onClick = onContinue, enabled = optional || value.isNotBlank())
-    if (optional) TextButton(onClick = onContinue) { Text("Skip") }
+    // Always offered. Every other step in this flow has an unconditional skip, and the flow tells
+    // the user outright that any question is safe to skip — but this one hid it unless the step
+    // was marked optional, so a blank field left a greyed Continue and no way past it. The
+    // "Your main goal" fallback, which is what you get when no specialist area was chosen, was
+    // exactly that dead end.
+    TextButton(onClick = onContinue) { Text("Skip") }
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -189,15 +194,26 @@ internal fun phaseMessage(phase: OnboardingPhase, vm: CoachOnboardingViewModel):
         OnboardingPhase.LUNA_NAME ->
             "Let's start with the basics. What's your name, and how old are you? (You can skip either if you prefer.)"
         OnboardingPhase.LUNA_PRIORITY ->
-            "$name Great! Which areas of life matter most to you right now? Select at least 3."
+            // Asking where things actually are, rather than which labels appeal. The answer seeds
+            // the user's own wheel, and what to focus on follows from it.
+            "$name Let's start with where things actually are. How is each part of your life going, out of ten? Rough is fine, and you can change any of it later."
         OnboardingPhase.LUNA_WELLBEING ->
             "Got it. How are you feeling lately? Be honest, this helps me calibrate your goals."
         OnboardingPhase.SPECIALIST_INTRO -> {
             val specialistName = runCatching { CoachPersona.getById(vm.specialistCoachId).name }.getOrElse { "Your coach" }
             val area = vm.topPriorities.firstOrNull()?.name?.lowercase()?.replaceFirstChar { it.uppercase() }
                 ?: vm.topPriority?.name?.lowercase()?.replaceFirstChar { it.uppercase() }
-                ?: "your goals"
-            "Great choices! I'm bringing in $specialistName, our $area specialist. They'll do a quick check-in so your $area goals are actually built for you."
+            // Only claim the wheel picked them when the wheel was actually filled in. Someone who
+            // skipped it being told "that is where you rated yourself lowest" is being told
+            // something about themselves that never happened.
+            when {
+                area != null && vm.wheelRatings.isNotEmpty() ->
+                    "Thanks for being honest. You rated $area lowest, so I'm bringing in $specialistName, our $area specialist. They'll do a quick check-in so your $area goals are actually built for you."
+                area != null ->
+                    "I'm bringing in $specialistName, our $area specialist. They'll do a quick check-in so your $area goals are actually built for you."
+                else ->
+                    "I'm bringing in $specialistName to do a quick check-in, so the goals we set are actually built for you."
+            }
         }
         OnboardingPhase.SPECIALIST_Q1 -> specialistQ1Message(vm)
         OnboardingPhase.SPECIALIST_Q2 -> specialistQ2Message(vm)
@@ -218,7 +234,7 @@ internal fun phaseMessage(phase: OnboardingPhase, vm: CoachOnboardingViewModel):
     }
 }
 
-private fun specialistQ1Message(vm: CoachOnboardingViewModel) = when (vm.specialistCoachId) {
+internal fun specialistQ1Message(vm: CoachOnboardingViewModel) = when (vm.specialistCoachId) {
     "alex_career" -> ageAdaptedCareerQ1(vm.userAge ?: 25)
     "morgan_finance" -> "What's your rough income range? I keep everything private, this helps me tailor financial goals to your reality."
     "kai_fitness" -> "How active are you day-to-day?"
@@ -228,7 +244,7 @@ private fun specialistQ1Message(vm: CoachOnboardingViewModel) = when (vm.special
     else -> "What's on your mind?"
 }
 
-private fun specialistQ2Message(vm: CoachOnboardingViewModel) = when (vm.specialistCoachId) {
+internal fun specialistQ2Message(vm: CoachOnboardingViewModel) = when (vm.specialistCoachId) {
     "alex_career" -> ageBandedRoleQuestion(vm.userAge ?: 25)
     "morgan_finance" -> "How consistent are your savings habits?"
     "kai_fitness" -> "How many hours do you sleep on a typical night?"
@@ -238,7 +254,7 @@ private fun specialistQ2Message(vm: CoachOnboardingViewModel) = when (vm.special
     else -> ""
 }
 
-private fun specialistQ3Message(vm: CoachOnboardingViewModel) = when (vm.specialistCoachId) {
+internal fun specialistQ3Message(vm: CoachOnboardingViewModel) = when (vm.specialistCoachId) {
     "alex_career" -> "Roughly how many years of work experience do you have?"
     "morgan_finance" -> "Do you currently have any debt you're managing?"
     "kai_fitness" -> "On a scale of 1-10, how's your energy level on a typical day?"
@@ -248,7 +264,7 @@ private fun specialistQ3Message(vm: CoachOnboardingViewModel) = when (vm.special
     else -> ""
 }
 
-private fun specialistQ4Message(vm: CoachOnboardingViewModel) = when (vm.specialistCoachId) {
+internal fun specialistQ4Message(vm: CoachOnboardingViewModel) = when (vm.specialistCoachId) {
     "alex_career" -> "What's your main career ambition right now? (One sentence is fine.)"
     "morgan_finance" -> "What's your main financial goal? Build savings? Pay off debt? Invest?"
     else -> ""

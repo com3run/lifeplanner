@@ -4,6 +4,7 @@ import az.tribe.lifeplanner.data.network.AiProxyService
 import az.tribe.lifeplanner.domain.model.Goal
 import az.tribe.lifeplanner.domain.model.PermutationKind
 import az.tribe.lifeplanner.domain.model.Possibility
+import az.tribe.lifeplanner.domain.service.LocalPossibilityFallback
 import co.touchlab.kermit.Logger
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.daysUntil
@@ -22,6 +23,7 @@ import kotlin.uuid.Uuid
 @OptIn(ExperimentalUuidApi::class)
 class GeneratePossibilitiesUseCase(
     private val aiProxyService: AiProxyService,
+    private val fallback: LocalPossibilityFallback,
 ) {
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
 
@@ -38,11 +40,11 @@ class GeneratePossibilitiesUseCase(
 
         val response = runCatching { aiProxyService.generateText(prompt = userPrompt, systemPrompt = SYSTEM_PROMPT) }
             .getOrElse {
-                Logger.w("GeneratePossibilities") { "AI call failed: ${it.message}" }
-                return emptyList()
+                Logger.w("GeneratePossibilities") { "AI call failed, using local fallback: ${it.message}" }
+                return fallback(goal)
             }
 
-        return parse(response)
+        return parse(response).ifEmpty { fallback(goal) }
     }
 
     private fun parse(response: String): List<Possibility> = runCatching {

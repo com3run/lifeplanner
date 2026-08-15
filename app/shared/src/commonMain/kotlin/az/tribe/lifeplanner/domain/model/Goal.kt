@@ -22,6 +22,12 @@ data class Goal(
     val isArchived: Boolean = false,
     val aiReasoning: String? = null,
     val valueId: String? = null,
+    /**
+     * The Wheel of Life area this goal serves: the goal's "why", and what ties it to a score the
+     * user gave us. Null only for goals saved before this existed; [GoalWheelAreaInferrer] fills it
+     * in on the next save.
+     */
+    val wheelArea: WheelArea? = null,
     // Pillar 4 (Causal Model): the user's forecast captured at creation, kept separate from
     // the live, editable dueDate, so we can later calibrate predicted vs actual.
     val predictedDueDate: LocalDate? = null

@@ -52,7 +52,8 @@ fun testHabit(
     isActive: Boolean = true,
     createdAt: LocalDateTime = NOW,
     reminderTime: String? = null,
-    type: HabitType = HabitType.BUILD
+    type: HabitType = HabitType.BUILD,
+    completionSource: HabitCompletionSource = HabitCompletionSource.MANUAL
 ) = Habit(
     id = id,
     title = title,
@@ -70,7 +71,8 @@ fun testHabit(
     isActive = isActive,
     createdAt = createdAt,
     reminderTime = reminderTime,
-    type = type
+    type = type,
+    completionSource = completionSource
 )
 
 fun testHabitCheckIn(

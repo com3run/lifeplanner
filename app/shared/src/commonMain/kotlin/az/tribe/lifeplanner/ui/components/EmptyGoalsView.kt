@@ -1,5 +1,6 @@
 package az.tribe.lifeplanner.ui.components
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -35,6 +36,10 @@ import androidx.compose.ui.unit.dp
 import az.tribe.lifeplanner.data.repository.GoalTemplateProvider
 import az.tribe.lifeplanner.domain.enum.GoalCategory
 import az.tribe.lifeplanner.domain.model.GoalTemplate
+import leanlifeplanner.app.shared.generated.resources.Res
+import leanlifeplanner.app.shared.generated.resources.illus_empty_goals
+import leanlifeplanner.app.shared.generated.resources.illus_empty_search
+import org.jetbrains.compose.resources.painterResource
 
 @Composable
 fun EmptyGoalsView(
@@ -70,6 +75,11 @@ private fun FilteredEmptyState() {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            Image(
+                painter = painterResource(Res.drawable.illus_empty_search),
+                contentDescription = null,
+                modifier = Modifier.size(140.dp)
+            )
             Text(
                 "No goals match your search",
                 style = MaterialTheme.typography.titleMedium,
@@ -115,6 +125,12 @@ private fun EmptyStateWithTemplates(
                 .padding(vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Image(
+                painter = painterResource(Res.drawable.illus_empty_goals),
+                contentDescription = null,
+                modifier = Modifier.size(160.dp)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
             Text(
                 text = "Start Your Journey",
                 style = MaterialTheme.typography.headlineSmall,

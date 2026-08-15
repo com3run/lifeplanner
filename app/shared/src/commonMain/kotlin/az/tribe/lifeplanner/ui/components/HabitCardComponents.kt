@@ -20,10 +20,30 @@ import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.ArrowCounterClockwise
 import com.adamglin.phosphoricons.regular.Check
+import com.adamglin.phosphoricons.regular.ShieldCheck
 import com.adamglin.phosphoricons.regular.Trash
 import com.adamglin.phosphoricons.regular.CheckCircle
 import com.adamglin.phosphoricons.regular.PencilSimple
 import com.adamglin.phosphoricons.regular.Fire
+import com.adamglin.phosphoricons.regular.Alarm
+import com.adamglin.phosphoricons.regular.Bank
+import com.adamglin.phosphoricons.regular.Barbell
+import com.adamglin.phosphoricons.regular.Book
+import com.adamglin.phosphoricons.regular.BookOpen
+import com.adamglin.phosphoricons.regular.Brain
+import com.adamglin.phosphoricons.regular.Briefcase
+import com.adamglin.phosphoricons.regular.ChatCircle
+import com.adamglin.phosphoricons.regular.Drop
+import com.adamglin.phosphoricons.regular.Flower
+import com.adamglin.phosphoricons.regular.Footprints
+import com.adamglin.phosphoricons.regular.Heart
+import com.adamglin.phosphoricons.regular.House
+import com.adamglin.phosphoricons.regular.Moon
+import com.adamglin.phosphoricons.regular.Notebook
+import com.adamglin.phosphoricons.regular.PiggyBank
+import com.adamglin.phosphoricons.regular.Sun
+import com.adamglin.phosphoricons.regular.Users
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -249,19 +269,22 @@ internal fun CheckInBurstOverlay(
  */
 @Composable
 internal fun CategoryIconBadge(
-    category: GoalCategory,
+    icon: ImageVector,
     isCompleted: Boolean
 ) {
-    val categoryColor = category.backgroundColor()
+    // The icon is a quiet, monochrome marker: it should identify the habit, not compete for
+    // attention. Color is reserved for the things that carry meaning (the check-in state, the
+    // count, the progress). Completed habits fade a step further.
+    val neutral = MaterialTheme.colorScheme.onSurfaceVariant
 
     val bgColor by animateColorAsState(
-        targetValue = if (isCompleted) Color(0xFF4CAF50) else categoryColor.copy(alpha = 0.12f),
+        targetValue = neutral.copy(alpha = if (isCompleted) 0.10f else 0.12f),
         animationSpec = tween(300),
         label = "iconBgColor"
     )
 
     val iconTint by animateColorAsState(
-        targetValue = if (isCompleted) Color.White else categoryColor,
+        targetValue = if (isCompleted) neutral.copy(alpha = 0.55f) else neutral,
         animationSpec = tween(300),
         label = "iconTint"
     )
@@ -274,13 +297,44 @@ internal fun CategoryIconBadge(
         ) {
             Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
                 Icon(
-                    imageVector = category.getIcon(),
-                    contentDescription = category.name,
+                    imageVector = icon,
+                    contentDescription = null,
                     tint = iconTint,
                     modifier = Modifier.size(22.dp)
                 )
             }
         }
+    }
+}
+
+/**
+ * A semantically related icon for a habit, matched from its title (so "Drink water" gets a water
+ * drop, "Read" a book, "Sleep early" a moon), with the habit's category icon as the fallback.
+ */
+fun habitIcon(title: String, category: GoalCategory): ImageVector {
+    val t = title.lowercase()
+    fun has(vararg keys: String) = keys.any { t.contains(it) }
+    return when {
+        has("water", "hydrate", "drink") -> PhosphorIcons.Regular.Drop
+        has("run", "jog", "walk", "steps", "cardio", "10k", "5k", "stroll") -> PhosphorIcons.Regular.Footprints
+        has("gym", "workout", "work out", "exercise", "lift", "train", "strength", "fitness", "push-up", "pushup", "pull-up", "squat", "yoga", "stretch", "pilates") -> PhosphorIcons.Regular.Barbell
+        has("read", "book", "novel", "chapter") -> PhosphorIcons.Regular.BookOpen
+        has("study", "learn", "course", "class", "lesson", "revise", "revision", "practice") -> PhosphorIcons.Regular.Book
+        has("sleep", "bed", "nap", "wind down", "wind-down", "lights out") -> PhosphorIcons.Regular.Moon
+        has("meditat", "mindful", "breath", "calm", "relax", "yoga") -> PhosphorIcons.Regular.Flower
+        has("journal", "diary") -> PhosphorIcons.Regular.Notebook
+        has("write", "writing", "blog", "note") -> PhosphorIcons.Regular.PencilSimple
+        has("money", "save", "saving", "budget", "expense", "spend", "invest", "finance") -> PhosphorIcons.Regular.PiggyBank
+        has("bank", "bill") -> PhosphorIcons.Regular.Bank
+        has("clean", "tidy", "chore", "dishes", "laundry", "home", "house") -> PhosphorIcons.Regular.House
+        has("call", "friend", "social", "connect", "reach out", "meet", "people", "network", "family") -> PhosphorIcons.Regular.Users
+        has("message", "text", "chat", "talk") -> PhosphorIcons.Regular.ChatCircle
+        has("work", "job", "career", "email", "inbox", "meeting", "deep work", "focus block") -> PhosphorIcons.Regular.Briefcase
+        has("focus", "think", "brain", "memor", "concentrat") -> PhosphorIcons.Regular.Brain
+        has("gratitude", "kind", "self care", "self-care", "compliment", "affirm") -> PhosphorIcons.Regular.Heart
+        has("morning", "sunrise", "sunlight", "outside", "daylight", "sunshine") -> PhosphorIcons.Regular.Sun
+        has("wake", "alarm", "early") -> PhosphorIcons.Regular.Alarm
+        else -> category.getIcon()
     }
 }
 
@@ -305,8 +359,9 @@ internal fun CheckInCircle(
         label = "checkScale"
     )
 
+    // Muted gray "done", not green. The check still reads clearly; it just does not shout.
     val fillColor by animateColorAsState(
-        targetValue = if (isCompleted) Color(0xFF4CAF50) else Color.Transparent,
+        targetValue = if (isCompleted) MaterialTheme.colorScheme.onSurfaceVariant else Color.Transparent,
         animationSpec = tween(200),
         label = "fillColor"
     )
@@ -341,7 +396,8 @@ internal fun CheckInCircle(
                     Icon(
                         imageVector = PhosphorIcons.Regular.Check,
                         contentDescription = "Completed",
-                        tint = Color.White,
+                        // Contrast against the gray fill in both light and dark.
+                        tint = MaterialTheme.colorScheme.surface,
                         modifier = Modifier
                             .size(16.dp)
                             .scale(checkScale)
@@ -394,43 +450,55 @@ internal fun WeeklyDots(
     }
 }
 
+/** QUIT habits count days resisted, shown as a green "N days clean" pill. */
 @Composable
-internal fun StreakBadge(
-    streak: Int
-) {
+internal fun DaysCleanPill(days: Int) {
+    val green = Color(0xFF28C76F)
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = Modifier
+            .background(green.copy(alpha = 0.12f), RoundedCornerShape(50))
+            .padding(horizontal = 8.dp, vertical = 3.dp)
     ) {
         Icon(
-            imageVector = PhosphorIcons.Regular.Fire,
+            imageVector = PhosphorIcons.Regular.ShieldCheck,
             contentDescription = null,
-            tint = Color(0xFFFF6B35),
-            modifier = Modifier.size(14.dp)
+            tint = green,
+            modifier = Modifier.size(12.dp)
         )
         Text(
-            text = "${streak}d",
-            style = MaterialTheme.typography.labelSmall.copy(
-                fontWeight = FontWeight.SemiBold
-            ),
-            color = Color(0xFFFF6B35)
+            text = if (days == 1) "1 day clean" else "$days days clean",
+            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+            color = green
         )
     }
 }
 
 @Composable
-internal fun HabitTypePill(type: HabitType) {
-    val color = if (type == HabitType.BUILD) Color(0xFF4CAF50) else Color(0xFFF44336)
-    Surface(
-        shape = RoundedCornerShape(8.dp),
-        color = color.copy(alpha = 0.12f),
-        modifier = Modifier.height(20.dp)
+internal fun StreakBadge(
+    streak: Int
+) {
+    val flame = Color(0xFFFF6B35)
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = Modifier
+            .background(flame.copy(alpha = 0.12f), RoundedCornerShape(50))
+            .padding(horizontal = 8.dp, vertical = 3.dp)
     ) {
+        Icon(
+            imageVector = PhosphorIcons.Regular.Fire,
+            contentDescription = null,
+            tint = flame,
+            modifier = Modifier.size(12.dp)
+        )
         Text(
-            text = type.displayName,
-            style = MaterialTheme.typography.labelSmall,
-            color = color,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+            text = if (streak == 1) "1 day streak" else "$streak day streak",
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontWeight = FontWeight.SemiBold
+            ),
+            color = flame
         )
     }
 }

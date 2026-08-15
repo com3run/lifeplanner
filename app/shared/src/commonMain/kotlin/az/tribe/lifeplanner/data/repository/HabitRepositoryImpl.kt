@@ -88,7 +88,10 @@ class HabitRepositoryImpl(
             linkedGoalId = habit.linkedGoalId,
             reminderTime = habit.reminderTime,
             type = habit.type.name,
-            unit = habit.unit
+            unit = habit.unit,
+            healthMetricType = habit.healthMetricType?.name,
+            healthTarget = habit.healthTarget,
+            completionSource = habit.completionSource.name
         )
         notifyWidgets()
         syncManager.requestSync()
@@ -106,21 +109,36 @@ class HabitRepositoryImpl(
         syncManager.requestSync()
     }
 
-    override suspend fun incrementCount(habitId: String, date: LocalDate): HabitCheckIn {
+    override suspend fun incrementCount(habitId: String, date: LocalDate): HabitCheckIn =
+        addCount(habitId, date, delta = 1)
+
+    override suspend fun addCount(habitId: String, date: LocalDate, delta: Int): HabitCheckIn {
         val habit = getHabitById(habitId)
         val existing = getCheckInByHabitAndDate(habitId, date)
-        val newCount = (existing?.count ?: 0) + 1
+        val newCount = ((existing?.count ?: 0) + delta).coerceAtLeast(0)
         val completed = habit != null && newCount >= habit.targetCount
 
         if (existing == null) {
-            // Create new check-in with count=1
-            val checkIn = createNewCheckIn(
-                habitId = habitId,
-                date = date,
-                completed = completed,
-                count = newCount
-            )
-            database.insertHabitCheckInOrIgnore(checkIn.toEntity())
+            // A soft-deleted row (from an undo) still occupies the UNIQUE (habitId, date)
+            // slot and would silently swallow INSERT OR IGNORE; restore it instead.
+            val softDeleted = database.getSoftDeletedCheckIn(habitId, date.toString())
+            if (softDeleted != null) {
+                database.restoreHabitCheckIn(softDeleted.id)
+                database.updateHabitCheckInCount(
+                    habitId = habitId,
+                    date = date.toString(),
+                    count = newCount.toLong(),
+                    completed = if (completed) 1L else 0L
+                )
+            } else {
+                val checkIn = createNewCheckIn(
+                    habitId = habitId,
+                    date = date,
+                    completed = completed,
+                    count = newCount
+                )
+                database.insertHabitCheckInOrIgnore(checkIn.toEntity())
+            }
         } else {
             database.updateHabitCheckInCount(
                 habitId = habitId,

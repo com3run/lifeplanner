@@ -37,7 +37,10 @@ class HabitMapperTest {
             sync_version = 0L,
             last_synced_at = null,
             type = "BUILD",
-            unit = null
+            unit = null,
+            healthMetricType = null,
+            healthTarget = null,
+            completionSource = null
         )
 
         val habit = entity.toDomain()
@@ -82,7 +85,10 @@ class HabitMapperTest {
             sync_version = 0L,
             last_synced_at = null,
             type = "BUILD",
-            unit = null
+            unit = null,
+            healthMetricType = null,
+            healthTarget = null,
+            completionSource = null
         )
 
         assertFalse(entity.toDomain().isActive)
@@ -111,7 +117,10 @@ class HabitMapperTest {
             sync_version = 0L,
             last_synced_at = null,
             type = "BUILD",
-            unit = null
+            unit = null,
+            healthMetricType = null,
+            healthTarget = null,
+            completionSource = null
         )
 
         assertNull(entity.toDomain().lastCompletedDate)
@@ -140,7 +149,10 @@ class HabitMapperTest {
             sync_version = 0L,
             last_synced_at = null,
             type = "BUILD",
-            unit = null
+            unit = null,
+            healthMetricType = null,
+            healthTarget = null,
+            completionSource = null
         )
 
         assertNull(entity.toDomain().linkedGoalId)
@@ -169,7 +181,10 @@ class HabitMapperTest {
             sync_version = 0L,
             last_synced_at = null,
             type = "BUILD",
-            unit = null
+            unit = null,
+            healthMetricType = null,
+            healthTarget = null,
+            completionSource = null
         )
 
         assertNull(entity.toDomain().reminderTime)
@@ -199,7 +214,10 @@ class HabitMapperTest {
                 sync_version = 0L,
                 last_synced_at = null,
                 type = "BUILD",
-                unit = null
+                unit = null,
+                healthMetricType = null,
+                healthTarget = null,
+                completionSource = null
             )
             assertEquals(freq, entity.toDomain().frequency, "Failed for frequency $freq")
         }
@@ -228,7 +246,10 @@ class HabitMapperTest {
             sync_version = 0L,
             last_synced_at = null,
             type = "BUILD",
-            unit = null
+            unit = null,
+            healthMetricType = null,
+            healthTarget = null,
+            completionSource = null
         )
 
         assertEquals(HabitFrequency.DAILY, entity.toDomain().frequency)
@@ -258,7 +279,10 @@ class HabitMapperTest {
                 sync_version = 0L,
                 last_synced_at = null,
                 type = "BUILD",
-                unit = null
+                unit = null,
+                healthMetricType = null,
+                healthTarget = null,
+                completionSource = null
             )
             assertEquals(category, entity.toDomain().category, "Failed for category $category")
         }
@@ -287,7 +311,10 @@ class HabitMapperTest {
             sync_version = 0L,
             last_synced_at = null,
             type = "BUILD",
-            unit = null
+            unit = null,
+            healthMetricType = null,
+            healthTarget = null,
+            completionSource = null
         )
 
         assertEquals(LocalDateTime(2026, 3, 6, 10, 0, 0), entity.toDomain().createdAt)
@@ -582,7 +609,10 @@ class HabitMapperTest {
                 createdAt = "2026-01-01T00:00:00", reminderTime = null,
                 sync_updated_at = null, is_deleted = 0L, sync_version = 0L, last_synced_at = null,
                 type = "BUILD",
-                unit = null
+                unit = null,
+                healthMetricType = null,
+                healthTarget = null,
+                completionSource = null
             ),
             HabitEntity(
                 id = "h2", title = "B", description = "", category = "BODY",
@@ -592,7 +622,10 @@ class HabitMapperTest {
                 createdAt = "2026-01-01T00:00:00", reminderTime = "09:00",
                 sync_updated_at = null, is_deleted = 0L, sync_version = 0L, last_synced_at = null,
                 type = "BUILD",
-                unit = null
+                unit = null,
+                healthMetricType = null,
+                healthTarget = null,
+                completionSource = null
             )
         )
 

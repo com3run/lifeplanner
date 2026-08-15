@@ -1,0 +1,3 @@
+-- 35: HabitEntity.healthMetricType + healthTarget (health data auto-completes linked habits)
+ALTER TABLE HabitEntity ADD COLUMN healthMetricType TEXT;
+ALTER TABLE HabitEntity ADD COLUMN healthTarget REAL;

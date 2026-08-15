@@ -145,5 +145,5 @@ primitive on first need and migrating ad-hoc usages to the canonical ones. Every
 **empty and error** states (§3). `AppButton` is the template for what "done, all states, token-pure"
 looks like.
 
-*Next: **D5 — Visual identity (iconography, illustration, warmth)** [Figma-side], or **D7 — Core
+*Next: **D5 — Visual identity** is delivered in code (`ui/theme/VisualIdentity.kt`, Warm Ink), or **D7 — Core
 screen redesigns** if we prioritize shipping screens on the new primitives.*

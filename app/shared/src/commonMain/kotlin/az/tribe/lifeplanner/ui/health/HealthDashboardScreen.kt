@@ -1,5 +1,7 @@
 package az.tribe.lifeplanner.ui.health
 
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -45,6 +47,8 @@ import com.adamglin.phosphoricons.bold.Moon
 import kotlin.math.roundToInt
 import org.koin.compose.viewmodel.koinViewModel
 
+private enum class HealthScreenState { LOADING, NOT_AVAILABLE, NEEDS_PERMISSION, CONNECTED }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HealthDashboardScreen(
@@ -56,6 +60,8 @@ fun HealthDashboardScreen(
     val permissionState by viewModel.permissionState.collectAsState()
     val todaySteps by viewModel.todaySteps.collectAsState()
     val stepsHistory by viewModel.stepsHistory.collectAsState()
+    val stepsWeekTotal by viewModel.stepsWeekTotal.collectAsState()
+    val stepsMonthTotal by viewModel.stepsMonthTotal.collectAsState()
     val weightHistory by viewModel.weightHistory.collectAsState()
     val latestWeight by viewModel.latestWeight.collectAsState()
     val heartRateHistory by viewModel.heartRateHistory.collectAsState()
@@ -118,32 +124,54 @@ fun HealthDashboardScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            when {
-                isLoading && todaySteps == null && weightHistory.isEmpty() -> {
-                    Box(
-                        modifier = Modifier.fillMaxWidth().height(200.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
-                    }
-                }
-                permissionState == HealthPermissionState.NOT_AVAILABLE -> {
-                    HealthNotAvailableCard()
-                }
-                permissionState == HealthPermissionState.DENIED -> {
-                    PermissionDeniedCard(onRequestPermissions = requestPermissions)
-                }
-                else -> {
-                    // Steps card with ring
-                    StepsCard(todaySteps = todaySteps, stepsGoal = 10_000L)
+        // Pick one of four content states. Crossfading between them means that when the user grants
+        // permission, the connect story fades out and the live metrics fade in ("story hides,
+        // widgets appear") instead of a hard cut.
+        val screenState = when {
+            isLoading && todaySteps == null && weightHistory.isEmpty() -> HealthScreenState.LOADING
+            permissionState == HealthPermissionState.NOT_AVAILABLE -> HealthScreenState.NOT_AVAILABLE
+            permissionState == HealthPermissionState.DENIED -> HealthScreenState.NEEDS_PERMISSION
+            else -> HealthScreenState.CONNECTED
+        }
+
+        Crossfade(
+            targetState = screenState,
+            animationSpec = tween(400),
+            label = "health-content",
+            modifier = Modifier.fillMaxSize().padding(padding)
+        ) { state ->
+            when (state) {
+                HealthScreenState.LOADING -> Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) { CircularProgressIndicator() }
+
+                HealthScreenState.NOT_AVAILABLE -> Box(
+                    modifier = Modifier.fillMaxSize().padding(24.dp),
+                    contentAlignment = Alignment.Center
+                ) { HealthNotAvailableCard() }
+
+                HealthScreenState.NEEDS_PERMISSION -> Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(16.dp)
+                ) { HealthConnectPreview(onRequestPermissions = requestPermissions) }
+
+                HealthScreenState.CONNECTED -> Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    // Steps card with ring + week/month pills
+                    StepsCard(
+                        todaySteps = todaySteps,
+                        stepsGoal = 10_000L,
+                        weekTotal = stepsWeekTotal,
+                        monthTotal = stepsMonthTotal
+                    )
 
                     // Steps last 7 days, collapsed, just total
                     if (stepsHistory.isNotEmpty()) {

@@ -14,6 +14,9 @@ import androidx.compose.ui.unit.dp
 import az.tribe.lifeplanner.data.network.AiProxyService
 import az.tribe.lifeplanner.domain.model.Goal
 import az.tribe.lifeplanner.domain.model.Habit
+import az.tribe.lifeplanner.domain.service.HabitTrackMode
+import az.tribe.lifeplanner.domain.service.KnowledgeBit
+import az.tribe.lifeplanner.domain.service.trackMode
 import az.tribe.lifeplanner.ui.components.SwipeableHabitCard
 import az.tribe.lifeplanner.ui.goal.GoalViewModel
 import az.tribe.lifeplanner.ui.journal.JournalViewModel
@@ -31,6 +34,7 @@ fun HabitTrackerScreen(
     onNavigateToAddHabit: () -> Unit = {},
     onNavigateToFocus: () -> Unit = {},
     onOpenDetail: (String) -> Unit = {},
+    onOpenLesson: (String) -> Unit = {},
     isFromBottomNav: Boolean = false,
     viewModel: HabitViewModel = koinViewModel(),
     journalViewModel: JournalViewModel = koinViewModel(),
@@ -47,6 +51,8 @@ fun HabitTrackerScreen(
     var showReflectionSheet by remember { mutableStateOf(false) }
     var habitForReflection by remember { mutableStateOf<Habit?>(null) }
     var linkedGoalForReflection by remember { mutableStateOf<Goal?>(null) }
+    var xpForReflection by remember { mutableStateOf(0) }
+    var lessonForReflection by remember { mutableStateOf<KnowledgeBit?>(null) }
 
 
     val snackbarHostState = remember { SnackbarHostState() }
@@ -55,6 +61,14 @@ fun HabitTrackerScreen(
     LaunchedEffect(Unit) {
         viewModel.reminderEvent.collect { message ->
             snackbarHostState.showSnackbar(message)
+        }
+    }
+
+    // Earned XP. The reflection sheet carries it when it opens, so this is the fallback for the
+    // check-ins that do not raise a sheet.
+    LaunchedEffect(Unit) {
+        viewModel.xpEvent.collect { xp ->
+            if (xp > 0 && !showReflectionSheet) snackbarHostState.showSnackbar("+$xp XP")
         }
     }
 
@@ -72,6 +86,8 @@ fun HabitTrackerScreen(
             linkedGoalForReflection = checkIn.habit.linkedGoalId?.let { goalId ->
                 goals.find { it.id == goalId }
             }
+            xpForReflection = checkIn.xpAwarded
+            lessonForReflection = checkIn.lesson
             showReflectionSheet = true
             viewModel.clearRecentCheckIn()
         }
@@ -191,7 +207,7 @@ fun HabitTrackerScreen(
                             onEdit = { habitToEdit = habitWithStatus.habit },
                             onCardClick = { onOpenDetail(habitWithStatus.habit.id) },
                             onFocusClick = { onNavigateToFocus() },
-                            onIncrement = if (habitWithStatus.habit.targetCount > 1) {
+                            onIncrement = if (habitWithStatus.habit.trackMode == HabitTrackMode.COUNT) {
                                 { viewModel.incrementCheckIn(habitWithStatus.habit.id) }
                             } else null,
                             modifier = Modifier.animateItem()
@@ -220,6 +236,9 @@ fun HabitTrackerScreen(
                 habit = currentHabitForReflection,
                 linkedGoal = linkedGoalForReflection,
                 aiProxy = aiProxy,
+                xpAwarded = xpForReflection,
+                lesson = lessonForReflection,
+                onOpenLesson = onOpenLesson,
                 onDismiss = {
                     showReflectionSheet = false
                     habitForReflection = null

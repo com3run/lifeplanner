@@ -8,11 +8,14 @@ import az.tribe.lifeplanner.domain.service.SmartReminderManager
 import az.tribe.lifeplanner.testutil.FakeAbilityRepository
 import az.tribe.lifeplanner.testutil.FakeGamificationRepository
 import az.tribe.lifeplanner.testutil.FakeHabitRepository
+import az.tribe.lifeplanner.testutil.FakeKnowledgeRepository
 import az.tribe.lifeplanner.testutil.FakeReminderRepository
 import az.tribe.lifeplanner.usecases.ability.AwardAbilityXpUseCase
 import az.tribe.lifeplanner.testutil.testHabit
 import az.tribe.lifeplanner.testutil.testHabitCheckIn
+import az.tribe.lifeplanner.usecases.habit.AwardHabitCompletionUseCase
 import az.tribe.lifeplanner.usecases.habit.CheckInHabitUseCase
+import az.tribe.lifeplanner.usecases.habit.RecommendLessonsForHabitUseCase
 import az.tribe.lifeplanner.usecases.habit.CreateHabitUseCase
 import az.tribe.lifeplanner.usecases.habit.DeleteHabitUseCase
 import az.tribe.lifeplanner.usecases.habit.UncheckHabitUseCase
@@ -64,9 +67,16 @@ class HabitViewModelTest {
             checkInHabitUseCase = CheckInHabitUseCase(fakeRepository),
             uncheckHabitUseCase = UncheckHabitUseCase(fakeRepository),
             smartReminderManager = SmartReminderManager(FakeReminderRepository()),
-            awardAbilityXpUseCase = AwardAbilityXpUseCase(FakeAbilityRepository()),
-            gamificationRepository = FakeGamificationRepository(),
-            settings = MapSettings()
+            awardHabitCompletionUseCase = AwardHabitCompletionUseCase(
+                habitRepository = fakeRepository,
+                gamificationRepository = FakeGamificationRepository(),
+                awardAbilityXpUseCase = AwardAbilityXpUseCase(FakeAbilityRepository()),
+                settings = MapSettings(),
+            ),
+            recommendLessonsForHabit = RecommendLessonsForHabitUseCase(
+                knowledgeRepository = FakeKnowledgeRepository(),
+                gamificationRepository = FakeGamificationRepository(),
+            ),
         )
     }
 

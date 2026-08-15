@@ -188,15 +188,21 @@ internal fun HealthConnectionCard(
 internal fun CalendarIntegrationCard(
     permissionState: CalendarPermissionState,
     onConnect: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    /** e.g. "3 of 4 calendars • you@gmail.com". Null until the calendar list has loaded. */
+    calendarSummary: String? = null,
+    onManage: () -> Unit = {}
 ) {
+    val connected = permissionState == CalendarPermissionState.GRANTED
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(LifePlannerDesign.Padding.standard),
+            modifier = Modifier.fillMaxWidth()
+                .then(if (connected) Modifier.clickable(onClick = onManage) else Modifier)
+                .padding(LifePlannerDesign.Padding.standard),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -219,7 +225,8 @@ internal fun CalendarIntegrationCard(
                 Text("Calendar", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                 Text(
                     when (permissionState) {
-                        CalendarPermissionState.GRANTED -> "Connected, events syncing with your goals"
+                        // Once connected, say which calendars/accounts we actually read.
+                        CalendarPermissionState.GRANTED -> calendarSummary ?: "Connected — tap to see your calendars"
                         CalendarPermissionState.DENIED -> "Connect to surface upcoming events in your plan"
                         CalendarPermissionState.NOT_AVAILABLE -> "Calendar not available on this device"
                         CalendarPermissionState.UNKNOWN -> "Checking calendar access..."
@@ -233,6 +240,14 @@ internal fun CalendarIntegrationCard(
                     TextButton(onClick = onConnect) {
                         Text("Connect", style = MaterialTheme.typography.labelMedium)
                     }
+                }
+                CalendarPermissionState.GRANTED -> {
+                    Icon(
+                        PhosphorIcons.Regular.CaretRight,
+                        contentDescription = "Manage calendars",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(18.dp)
+                    )
                 }
                 else -> {}
             }

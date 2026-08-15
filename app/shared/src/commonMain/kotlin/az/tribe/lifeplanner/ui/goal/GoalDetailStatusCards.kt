@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -267,72 +268,19 @@ internal fun ModernNotesCard(
 }
 
 @Composable
-internal fun AiReasoningCard(reasoning: String) {
-    var expanded by remember { mutableStateOf(false) }
-
-    GlassCard(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp)
-            .clickable { expanded = !expanded }
-    ) {
-        Column(
-            modifier = Modifier.padding(LifePlannerDesign.Padding.standard),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Icon(
-                        PhosphorIcons.Regular.Sparkle,
-                        contentDescription = null,
-                        tint = Color(0xFF7C4DFF),
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Text(
-                        text = "Why this goal?",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
-                Surface(
-                    shape = RoundedCornerShape(50),
-                    color = Color(0xFF7C4DFF).copy(alpha = 0.1f)
-                ) {
-                    Text(
-                        "AI",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF7C4DFF),
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                    )
-                }
-            }
-
-            Text(
-                text = reasoning,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = if (expanded) Int.MAX_VALUE else 3,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-    }
-}
-
-@Composable
 internal fun ModernMilestonesCard(
     milestones: List<Milestone>,
     isReadOnly: Boolean = false,
     onMilestoneToggle: (String) -> Unit,
-    onAddMilestone: () -> Unit
+    onAddMilestone: () -> Unit,
+    /**
+     * The coach's draft of what to add next, rendered under the list inside this card.
+     *
+     * It used to be a card of its own further down the page, which made taking a step look like it
+     * did nothing: the step was added, but to a list the user could no longer see. Here the new
+     * milestone appears directly above the row that was tapped.
+     */
+    coachDraft: (@Composable () -> Unit)? = null,
 ) {
     GlassCard(
         modifier = Modifier
@@ -405,6 +353,14 @@ internal fun ModernMilestonesCard(
                     isReadOnly = isReadOnly,
                     onClick = { onMilestoneToggle(milestone.id) }
                 )
+            }
+
+            if (coachDraft != null) {
+                HorizontalDivider(
+                    modifier = Modifier.padding(top = 4.dp),
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                )
+                coachDraft()
             }
         }
     }

@@ -2,8 +2,10 @@ package az.tribe.lifeplanner.ui.today
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import az.tribe.lifeplanner.domain.enum.GoalStatus
 import az.tribe.lifeplanner.domain.model.ActionOption
 import az.tribe.lifeplanner.domain.model.Habit
+import az.tribe.lifeplanner.domain.repository.GoalRepository
 import az.tribe.lifeplanner.domain.repository.HabitRepository
 import az.tribe.lifeplanner.domain.service.PossibilityContextProvider
 import az.tribe.lifeplanner.domain.service.PossibilityEngine
@@ -15,6 +17,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import kotlin.time.Clock
@@ -28,12 +31,33 @@ class TodayViewModel(
     private val habitRepository: HabitRepository,
     private val contextProvider: PossibilityContextProvider,
     private val engine: PossibilityEngine,
+    private val goalRepository: GoalRepository,
 ) : ViewModel() {
 
     /** Today's habits with their done-status, the daily check-in surface. */
     val habitsToday: StateFlow<List<HabitToday>> =
         habitRepository.observeHabitsWithTodayStatus()
             .map { list -> list.map { (h, done) -> HabitToday(h, done) } }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /**
+     * Today's plan: the concrete things scheduled for today, the incomplete milestones due today or
+     * overdue across active goals. A compact planner strip on the Today screen, soonest first.
+     */
+    val todayPlan: StateFlow<List<PlanItem>> =
+        goalRepository.observeAllGoals()
+            .map { goals ->
+                val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
+                goals.asSequence()
+                    .filter { it.status != GoalStatus.COMPLETED }
+                    .flatMap { g ->
+                        g.milestones.asSequence()
+                            .filter { !it.isCompleted && (it.dueDate?.let { d -> d <= today } == true) }
+                            .map { m -> PlanItem(g.id, m.id, g.title, m.title, m.dueDate!!, m.dueDate!! < today) }
+                    }
+                    .sortedBy { it.dueDate }
+                    .toList()
+            }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     /** "Right now you could…", ranked options from the Pillar 2 engine. */
@@ -53,6 +77,14 @@ class TodayViewModel(
         }
     }
 
+    /** Planner-style: tick a plan item (milestone) done in place. */
+    fun completePlanItem(milestoneId: String) {
+        viewModelScope.launch {
+            runCatching { goalRepository.toggleMilestoneCompletion(milestoneId, true) }
+                .onFailure { Logger.w("TodayViewModel") { "Complete plan item failed: ${it.message}" } }
+        }
+    }
+
     fun checkInHabit(habitId: String) {
         viewModelScope.launch {
             runCatching {
@@ -65,3 +97,13 @@ class TodayViewModel(
 
 /** A habit plus whether it's done today. */
 data class HabitToday(val habit: Habit, val doneToday: Boolean)
+
+/** One scheduled item on today's plan: a milestone due today/overdue, with its parent goal. */
+data class PlanItem(
+    val goalId: String,
+    val milestoneId: String,
+    val goalTitle: String,
+    val title: String,
+    val dueDate: LocalDate,
+    val overdue: Boolean,
+)

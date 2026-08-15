@@ -63,7 +63,10 @@ sealed class NextAction {
 fun NextActionCard(
     nextAction: NextAction,
     onGoalClick: (Goal) -> Unit,
-    onHabitCheckIn: (String) -> Unit
+    // Tapping the card opens the habit's detail; it does not check it in. Completing from a
+    // glanceable card is too easy to do by accident, and the card is meant to point you at the
+    // thing, not silently mark it done.
+    onHabitClick: (String) -> Unit
 ) {
     val isHabitDone = nextAction is NextAction.NextHabit &&
             nextAction.habitWithStatus.isCompletedToday
@@ -122,7 +125,7 @@ fun NextActionCard(
                 when (nextAction) {
                     is NextAction.GoalDueToday -> onGoalClick(nextAction.goal)
                     is NextAction.ContinueGoal -> onGoalClick(nextAction.goal)
-                    is NextAction.NextHabit -> if (!isHabitDone) onHabitCheckIn(nextAction.habitWithStatus.habit.id)
+                    is NextAction.NextHabit -> onHabitClick(nextAction.habitWithStatus.habit.id)
                     is NextAction.AllCaughtUp -> {}
                 }
             },

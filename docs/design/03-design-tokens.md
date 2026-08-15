@@ -11,12 +11,18 @@
 
 Unlike a greenfield D3, LifePlannerhas a **mature, working token system on both sides**:
 
-- **Design side:** `lifeplanner-assets/design/tokens.json` (Tokens-Studio format, `global/light/dark`)
-  + `figma-variables-light.json` / `figma-variables-dark.json`.
+- **Design side:** `lifeplanner-assets/design/tokens.json` (`global/light/dark`).
 - **Code side:** a complete Compose theme under `app/shared/src/commonMain/.../ui/theme/`.
 
-And they **already agree** — e.g. `primary #4A6FFF`, `background #F8F9FC`, `text.primary #2C3345`,
-and the entire 8dp `spacing` scale are byte-identical between `tokens.json` and the Compose objects.
+> **Updated 2026-07-18.** Figma is gone; design now happens in Claude Design. The Figma variable
+> exports (`figma-variables-{light,dark}.json`) are deleted, and the direction of truth has
+> **reversed**: `ui/theme/VisualIdentity.kt` is now authoritative and `tokens.json` is *generated
+> from it*, so the two cannot drift. Regenerate it rather than hand-editing.
+>
+> The values below (`primary #4A6FFF`, `background #F8F9FC`) describe the **v2 Classic** palette.
+> The app now ships the **Warm Ink** identity (`primary #A65A2E`). Classic is retained in
+> `VisualIdentity.kt` as the exact-rollback target, so these values are still real, just no longer
+> the active ones.
 
 So D3's job is **not to invent a parallel system** (that would create exactly the token drift we're
 warned against). D3 **ratifies** the existing system as the foundation, **documents** it as the
@@ -28,15 +34,18 @@ code is rewritten here.
 ## 1. Token architecture — the source of truth
 
 ```
-DESIGN (Figma / Tokens Studio)                 CODE (Compose Multiplatform)
-  tokens.json  (global / light / dark)  ──►   ui/theme/
-  figma-variables-{light,dark}.json            ├─ LifePlannerColors.kt   color tokens (light + Dark)
-                                               ├─ LifePlannerTheme.kt    composition + modernColors accessor
-                                               ├─ LifePlannerTypography.kt  type scale (Satoshi)
-                                               ├─ LifePlannerShapes.kt   M3 shape scale
-                                               ├─ DesignSystem.kt        spacing/radius/elevation/size/alpha
-                                               ├─ CategoryColors.kt      per-GoalCategory color
-                                               └─ Gradients.kt           gradient sets
+CODE (Compose Multiplatform)                          DESIGN (Claude Design)
+  ui/theme/                                    ──►   tokens.json (global / light / dark)
+    ├─ VisualIdentity.kt     D5 identity: Warm Ink / Sage / Classic + hero gradient
+    ├─ LifePlannerColors.kt  color tokens (light + Dark)
+    ├─ LifePlannerTheme.kt   composition + modernColors accessor
+    ├─ LifePlannerTypography.kt  type scale (Satoshi)
+    ├─ LifePlannerShapes.kt  M3 shape scale
+    ├─ DesignSystem.kt       spacing/radius/elevation/size/alpha
+    ├─ CategoryColors.kt     per-GoalCategory color
+    └─ Gradients.kt          gradient sets
+
+Code is authoritative; tokens.json is generated from VisualIdentity.kt.
 ```
 
 | Token group | tokens.json | Compose symbol | File |
@@ -51,9 +60,10 @@ DESIGN (Figma / Tokens Studio)                 CODE (Compose Multiplatform)
 | Alpha | `global.*` | `LifePlannerDesign.Alpha` | `DesignSystem.kt` |
 | Category / gradients | `category.*` / `gradient.*` | `CategoryColors`, `Gradients`, `ModernColorScheme.gradient*` | `CategoryColors.kt` / `Gradients.kt` |
 
-**Rule:** `tokens.json` is the **design** source of truth; the Compose objects are the **runtime**
-source of truth; they must stay in lock-step. Neither a screen nor a component may hardcode a raw
-hex or dp — always reference a token (§8).
+**Rule (revised 2026-07-18):** the Compose objects are the **single** source of truth, and
+`tokens.json` is generated from them for Claude Design. There is no lock-step to maintain by hand
+any more, and no second place to edit. Neither a screen nor a component may hardcode a raw hex or dp
+— always reference a token (§8).
 
 ---
 
@@ -150,12 +160,12 @@ to system/user preference (§7).
 
 | # | Finding | Severity | Status / Recommendation |
 |---|---|---|---|
-| G1 | **Category naming drift** — code showed "Money/Body/People/Wellbeing/Purpose" (incl. a buggy `name.lowercase()` derive and a duplicate hardcoded map) while `terminology.md` (canonical) + the Figma tokens say Financial/Physical/Social/Emotional/Spiritual. | **High** | ✅ **Done.** Added a canonical `GoalCategory.displayName` (single source of truth) and pointed `LifeArea`, `CoachPreviewCards`, onboarding, and the goal-generator at it. Enum constant/DB names unchanged. Cross-walk below. |
+| G1 | **Category naming drift** — code showed "Money/Body/People/Wellbeing/Purpose" (incl. a buggy `name.lowercase()` derive and a duplicate hardcoded map) while `terminology.md` (canonical) + the design tokens say Financial/Physical/Social/Emotional/Spiritual. | **High** | ✅ **Done.** Added a canonical `GoalCategory.displayName` (single source of truth) and pointed `LifeArea`, `CoachPreviewCards`, onboarding, and the goal-generator at it. Enum constant/DB names unchanged. Cross-walk below. |
 | G2 | **Dark-mode is the hardcoded default** (`darkTheme = true`), not tied to system or a user setting. | High | ✅ **Done (backing).** Added `ThemeController` (persists `ThemeMode` System/Light/Dark via `Settings`, default **System**) + root wiring in `App.kt` → appearance now follows the OS. The visible toggle lands with the Settings screen (D7). |
 
 ### Canonical category cross-walk (G1)
 
-| `GoalCategory` (enum / DB — stable) | `displayName` (canonical, terminology.md) | Figma token key | Base color |
+| `GoalCategory` (enum / DB — stable) | `displayName` (canonical, terminology.md) | token key | Base color |
 |---|---|---|---|
 | `CAREER` | Career | `career` | `#4A6FFF` |
 | `MONEY` | Financial | `financial` | `#28C76F` |
@@ -165,7 +175,7 @@ to system/user preference (§7).
 | `PURPOSE` | Spiritual | `spiritual` | `#EA5455` |
 | `FAMILY` | Family | `family` | `#F57C00`* |
 
-\* `family` base color drifts between the Figma token (`#6236FF`) and `CategoryColors.FAMILY` (`#F57C00`) — a remaining minor color reconciliation for D4. Life Balance adds an 8th area, **Personal Growth**, mapping to Career.
+\* `family` base color drifted between the old design-side token (`#6236FF`) and `CategoryColors.FAMILY` (`#F57C00`). With `tokens.json` now generated from code, `CategoryColors.FAMILY` is authoritative and the drift is closed. Life Balance adds an 8th area, **Personal Growth**, mapping to Career.
 | G3 | **Type styles embed color** (`bodyMedium → textSecondary`, etc.). | Medium | Prefer color applied at usage (or via M3 `onSurface*`); keep type role purely typographic. (D4) |
 | G4 | **Two radius sources** (`ModernShapes` 3 steps vs `CornerRadius` 6). | Low | Treat `CornerRadius` as canonical; derive `ModernShapes` from it. (D4) |
 | G5 | **Dimensions are a static object**, not provided via the theme/CompositionLocal like colors. | Low | Fine for KMP; optionally expose `LocalSpacing` for parity/testability. (D4) |

@@ -35,6 +35,8 @@ suspend fun SharedDatabase.insertDecision(d: DecisionEntity) {
             actualOutcome = d.actualOutcome,
             outcomeReviewedAt = d.outcomeReviewedAt,
             outcomeQuality = d.outcomeQuality,
+            source = d.source,
+            status = d.status,
             sync_updated_at = nowTimestamp(),
             is_deleted = 0L,
             sync_version = 0L,
@@ -57,6 +59,7 @@ suspend fun SharedDatabase.updateDecision(d: DecisionEntity) {
             actualOutcome = d.actualOutcome,
             outcomeReviewedAt = d.outcomeReviewedAt,
             outcomeQuality = d.outcomeQuality,
+            status = d.status,
             id = d.id
         )
     }

@@ -47,6 +47,7 @@ suspend fun SharedDatabase.insertGoal(goal: GoalEntity) {
             isArchived = goal.isArchived,
             aiReasoning = goal.aiReasoning,
             valueId = goal.valueId,
+            wheelArea = goal.wheelArea,
             predictedDueDate = goal.predictedDueDate,
             sync_updated_at = nowTimestamp(),
             is_deleted = 0L,
@@ -74,6 +75,7 @@ suspend fun SharedDatabase.insertGoals(goals: List<GoalEntity>) {
                 isArchived = goal.isArchived,
                 aiReasoning = goal.aiReasoning,
                 valueId = goal.valueId,
+            wheelArea = goal.wheelArea,
                 predictedDueDate = goal.predictedDueDate,
                 sync_updated_at = nowTimestamp(),
                 is_deleted = 0L,
@@ -120,6 +122,7 @@ suspend fun SharedDatabase.updateGoal(goal: GoalEntity) {
             isArchived = goal.isArchived,
             aiReasoning = goal.aiReasoning,
             valueId = goal.valueId,
+            wheelArea = goal.wheelArea,
             predictedDueDate = goal.predictedDueDate,
             id = goal.id,
             createdAt = goal.createdAt
@@ -287,6 +290,8 @@ suspend fun SharedDatabase.toggleMilestoneCompletion(id: String, isCompleted: Bo
             isCompleted = if (isCompleted) 1L else 0L,
             id = id
         )
+        // Bump the parent goal so observeAllGoals re-emits and the toggle actually shows up.
+        db.lifePlannerDBQueries.touchGoalByMilestone(id = id)
     }
 }
 

@@ -1,19 +1,27 @@
 package az.tribe.lifeplanner.ui.foryou
 
+import az.tribe.lifeplanner.core.FeatureFlags
+
+import az.tribe.lifeplanner.domain.enum.GoalStatus
 import az.tribe.lifeplanner.domain.model.ActionOptionType
 import az.tribe.lifeplanner.domain.model.FeedItem
 import az.tribe.lifeplanner.domain.model.FeedKind
 import az.tribe.lifeplanner.domain.model.InsightConfidence
 import az.tribe.lifeplanner.domain.repository.BehaviorRepository
 import az.tribe.lifeplanner.domain.repository.GamificationRepository
+import az.tribe.lifeplanner.domain.repository.GoalRepository
+import az.tribe.lifeplanner.domain.repository.LifeValueRepository
 import az.tribe.lifeplanner.domain.repository.IdentityStatementRepository
 import az.tribe.lifeplanner.domain.service.CausalInsightProvider
 import az.tribe.lifeplanner.domain.service.KnowledgeLibrary
 import az.tribe.lifeplanner.domain.service.PossibilityContextProvider
 import az.tribe.lifeplanner.domain.service.PossibilityEngine
+import az.tribe.lifeplanner.ui.intro.FeatureIntroCatalog
 import az.tribe.lifeplanner.ui.navigation.Screen
+import az.tribe.lifeplanner.ui.objectives.BeginnerObjectiveViewModel
 import az.tribe.lifeplanner.usecases.ComputeValueAlignmentUseCase
 import co.touchlab.kermit.Logger
+import com.russhwolf.settings.Settings
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.daysUntil
@@ -47,6 +55,10 @@ class HomeFeedBuilder(
     private val possibilityContextProvider: PossibilityContextProvider,
     private val gamificationRepository: GamificationRepository,
     private val behaviorRepository: BehaviorRepository,
+    private val goalRepository: GoalRepository,
+    private val lifeValueRepository: LifeValueRepository,
+    private val knowledgeRepository: az.tribe.lifeplanner.domain.repository.KnowledgeRepository,
+    private val settings: Settings = Settings(),
 ) {
 
     suspend fun build(): List<FeedItem> {
@@ -58,6 +70,17 @@ class HomeFeedBuilder(
         val items = mutableListOf<FeedItem>()
         val ctx = runCatching { possibilityContextProvider.currentContext() }.getOrNull()
 
+        // Pillar 1 lookup: goal -> the value it serves. This is what turns the feed's most
+        // prominent card from a task ("fits (overdue)") into a reason ("Toward Family"), which is
+        // D1's P4 (always show the why) and the difference between this and a generic planner.
+        val goals = runCatching { goalRepository.getAllGoals() }.getOrDefault(emptyList())
+        val lifeValues = runCatching { lifeValueRepository.getAllLifeValues() }.getOrDefault(emptyList())
+        val valueTitleById = lifeValues.associate { it.id to it.title }
+        fun whyFor(goalId: String?): String? = goalId
+            ?.let { id -> goals.firstOrNull { it.id == id } }
+            ?.valueId
+            ?.let { valueTitleById[it] }
+
         // ── Right now: the single best next moves ───────────────────────────
         runCatching { ctx?.let { possibilityEngine.rank(it, limit = 2) } ?: emptyList() }
             .getOrDefault(emptyList())
@@ -67,15 +90,26 @@ class HomeFeedBuilder(
                     kind = FeedKind.DO_NEXT,
                     eyebrow = "DO NEXT",
                     title = o.title,
-                    body = o.fitReason,
+                    // Lead with the why when the goal has one, and drop fitReason entirely there:
+                    // it restates the title and ends in "(overdue)", which is scheduling logic
+                    // plus a guilt note that D1's P3 rejects. Without a value link there is no why
+                    // to show yet, so the fit reason still earns its place.
+                    body = whyFor(o.goalId)?.let { "Toward $it." } ?: o.fitReason,
                     category = o.category,
-                    actionLabel = if (o.type == ActionOptionType.HABIT) "Check in" else null,
+                    // Every "Do next" card gets one clear, labeled action so the tap is never a
+                    // mystery: habits check in inline; the rest open the right place to act.
+                    actionLabel = when (o.type) {
+                        ActionOptionType.HABIT -> "Check in"
+                        ActionOptionType.GOAL -> "Open goal"
+                        ActionOptionType.MILESTONE -> "Open step"
+                        ActionOptionType.FOCUS -> "Start focus"
+                    },
                     actionHabitId = if (o.type == ActionOptionType.HABIT) o.refId else null,
                     route = when (o.type) {
                         ActionOptionType.HABIT -> "habit_detail_redesign/${o.refId}"
-                        ActionOptionType.GOAL -> "goal_detail_redesign/${o.refId}"
+                        ActionOptionType.GOAL -> "goal_detail/${o.refId}"
                         ActionOptionType.MILESTONE, ActionOptionType.FOCUS ->
-                            o.goalId?.let { "goal_detail_redesign/$it" }
+                            o.goalId?.let { "goal_detail/$it" }
                     },
                     score = 100.0 - i,
                 )
@@ -83,6 +117,7 @@ class HomeFeedBuilder(
 
         // Pillar 6 stall trigger: surface the most stalled goal as a Possibility Mode prompt.
         ctx?.dueOrStalledGoals
+            ?.takeIf { FeatureFlags.PILLAR_POSSIBILITY }
             ?.firstOrNull { (it.progress ?: 0L) < 25L && it.createdAt.date.daysUntil(today) > 14 }
             ?.let { g ->
                 items += FeedItem(
@@ -92,6 +127,7 @@ class HomeFeedBuilder(
                     title = "\"${g.title}\" has not moved lately",
                     body = "Widen the options instead of forcing the same path. Tap to explore possibilities.",
                     route = "possibility_mode/${g.id}",
+                    introId = FeatureIntroCatalog.POSSIBILITY,
                     score = 90.0,
                 )
             }
@@ -99,7 +135,7 @@ class HomeFeedBuilder(
         // ── Reflect: insights about you (deep-link to the full You screens) ──
         runCatching { causalInsightProvider.insights(windowDays = 90) }
             .getOrDefault(emptyList())
-            .filter { it.confidence != InsightConfidence.LOW }
+            .filter { FeatureFlags.PILLAR_CAUSAL && it.confidence != InsightConfidence.LOW }
             .take(2)
             .forEachIndexed { i, ins ->
                 items += FeedItem(
@@ -118,6 +154,7 @@ class HomeFeedBuilder(
         val topAlign = alignments.firstOrNull { it.completedGoalCount > 0 }
         val statements = runCatching { identityRepo.getAll() }.getOrDefault(emptyList()).filter { it.isActive }
         when {
+            !FeatureFlags.PILLAR_BECOMING -> Unit
             topAlign != null -> items += FeedItem(
                 id = "becoming_${topAlign.valueId}",
                 kind = FeedKind.BECOMING,
@@ -142,12 +179,13 @@ class HomeFeedBuilder(
         }
 
         // Pattern: when the user actually shows up
-        runCatching { behaviorRepository.getPattern() }.getOrNull()?.takeIf { it.hasEnoughData }?.let { p ->
+        runCatching { behaviorRepository.getPattern() }.getOrNull()?.takeIf { it.hasEnoughData }
+            ?.peakHourLabel()?.let { peak ->
             items += FeedItem(
                 id = "pattern_peak",
                 kind = FeedKind.PATTERN,
                 eyebrow = "YOUR PATTERN",
-                title = "You show up most in the ${p.peakHourLabel()}",
+                title = "You show up most in the $peak",
                 body = "Your follow-through is strongest then. Try anchoring your most important habit to that window.",
                 route = Screen.ScreenTimeInsight.route,
                 score = 64.0,
@@ -167,18 +205,174 @@ class HomeFeedBuilder(
             )
         }
 
-        // ── Learn: curated, leveled knowledge ───────────────────────────────
-        KnowledgeLibrary.forLevel(level, daySeed, count = 3).forEachIndexed { i, k ->
-            items += FeedItem(
-                id = k.id,
-                kind = FeedKind.KNOWLEDGE,
-                eyebrow = "LEARN · ${k.readMin} min",
-                title = k.title,
-                body = k.body,
-                emoji = k.emoji,
-                score = 50.0 - i,
+        // ── Cold start: invitations where a pillar has no data yet ──────────
+        //
+        // Every distinctive card above is gated behind history a new user does not have
+        // (Possibility needs a 14-day stall, Insight needs samples, Becoming needs a completed
+        // goal, Pattern needs enough data). Without this block the only cards that can fire in
+        // week one are DO_NEXT and KNOWLEDGE, so the app introduces itself as a to-do list with a
+        // blog and the pillars are invisible exactly when the impression forms.
+        //
+        // An invitation is not filler: it is the pillar asking for the one input that switches it
+        // on. Capped at two so the feed never becomes a chore list of setup prompts.
+        val present = items.map { it.kind }.toSet()
+        val invitations = mutableListOf<FeedItem>()
+
+        // The goal-setting cascade leads the invitations: vision, then one 90-day quest, then a
+        // weekly review cadence. Unlike the pillar invites below it needs no history at all, and
+        // the quest and review steps are v2-safe (goals and the retrospective are not pillar
+        // features), so a brand-new user's first card is a method, not an empty planner. Only the
+        // first missing step shows; it is added first so the cap below never drops it.
+        val quest = goals
+            .filter { it.id != BeginnerObjectiveViewModel.GETTING_STARTED_GOAL_ID }
+            .filter { !it.isArchived && it.status != GoalStatus.COMPLETED }
+            .filter { today.daysUntil(it.dueDate) in 0..GoalSettingCascade.QUEST_WINDOW_DAYS }
+            .maxByOrNull { it.createdAt }
+        val daysSinceReview = settings.getLongOrNull(GoalSettingCascade.LAST_REVIEW_AT_KEY)?.let {
+            ((Clock.System.now().toEpochMilliseconds() - it) / MILLIS_PER_DAY).toInt()
+        }
+        when (GoalSettingCascade.nextStep(
+            valuesEnabled = FeatureFlags.PILLAR_BECOMING,
+            hasActiveValues = lifeValues.any { it.isActive },
+            questAgeDays = quest?.createdAt?.date?.daysUntil(today),
+            daysSinceLastReview = daysSinceReview,
+        )) {
+            GoalSettingCascade.Step.VISION -> invitations += FeedItem(
+                id = "cascade_vision",
+                kind = FeedKind.BECOMING,
+                eyebrow = "YOUR COMPASS",
+                title = "Name what matters to you",
+                body = "Pick a few values to steer by. Takes two minutes, and every goal you set can serve one.",
+                route = Screen.Becoming.route,
+                introId = FeatureIntroCatalog.VISION,
+                score = 88.0,
+            )
+            GoalSettingCascade.Step.QUEST -> invitations += FeedItem(
+                id = "cascade_quest",
+                kind = FeedKind.DO_NEXT,
+                eyebrow = "QUARTERLY QUEST",
+                title = "Pick one goal for the next 90 days",
+                body = "One quest with a finish line beats a wish list. Set a goal due about three months out and the feed keeps it in front of you.",
+                route = Screen.GoalWizard.route,
+                introId = FeatureIntroCatalog.QUEST,
+                score = 96.0,
+            )
+            GoalSettingCascade.Step.WEEKLY_REVIEW -> invitations += FeedItem(
+                id = "cascade_review",
+                kind = FeedKind.INSIGHT,
+                eyebrow = "WEEKLY REVIEW",
+                title = "Look back at your week",
+                body = "About ten minutes to see what moved and what needs a different approach next week.",
+                route = Screen.Retrospective.route,
+                introId = FeatureIntroCatalog.WEEKLY_REVIEW,
+                score = 84.0,
+            )
+            null -> Unit
+        }
+
+        // Pillar 1: a goal with no value is the orphaned-goal nudge D1 P4 calls for.
+        // AutoLinkGoalValuesUseCase links the unambiguous ones at app start, so this question
+        // only remains for goals whose why genuinely is not inferable.
+        val orphan = goals.firstOrNull { it.valueId == null && !it.isArchived }
+        if (orphan != null) {
+            invitations += FeedItem(
+                id = "why_invite_${orphan.id}",
+                kind = FeedKind.INSIGHT,
+                eyebrow = "YOUR WHY",
+                title = "What is \"${orphan.title}\" really for?",
+                body = "Connect it to something you value. Goals with a why are the ones you finish.",
+                route = "goal_detail/${orphan.id}",
+                score = 86.0,
+            )
+        } else {
+            // The why is known; state it instead of asking (one YOUR WHY card at a time).
+            goals.firstOrNull {
+                it.valueId != null && !it.isArchived && it.status == GoalStatus.IN_PROGRESS
+            }?.let { linked ->
+                valueTitleById[linked.valueId]?.let { valueTitle ->
+                    invitations += FeedItem(
+                        id = "why_known_${linked.id}",
+                        kind = FeedKind.INSIGHT,
+                        eyebrow = "YOUR WHY",
+                        title = "\"${linked.title}\" is for \"$valueTitle\"",
+                        body = "That is the why behind this one. Your coach knows this ground, " +
+                            "the goal page connects you.",
+                        route = "goal_detail/${linked.id}",
+                        score = 74.0,
+                    )
+                }
+            }
+        }
+
+        // Pillar 5: no completed goals and no identity statement yet. Skipped when the cascade's
+        // vision step is already asking for the same visit, two Becoming invites is nagging.
+        if (FeatureFlags.PILLAR_BECOMING && FeedKind.BECOMING !in present &&
+            invitations.none { it.kind == FeedKind.BECOMING }
+        ) {
+            invitations += FeedItem(
+                id = "becoming_invite",
+                kind = FeedKind.BECOMING,
+                eyebrow = "BECOMING",
+                title = "Who are you becoming?",
+                body = "Name the person your goals are building toward. Every action becomes a vote for it.",
+                route = Screen.Becoming.route,
+                score = 76.0,
             )
         }
+
+        // Pillar 7: no decision profile inferred yet.
+        if (FeatureFlags.PILLAR_WIRING && ctx?.profile == null) {
+            invitations += FeedItem(
+                id = "wiring_invite",
+                kind = FeedKind.INSIGHT,
+                eyebrow = "YOUR WIRING",
+                title = "How do you actually decide?",
+                body = "The app learns your decision profile as you log choices, then adapts what it suggests.",
+                route = Screen.YourWiring.route,
+                score = 68.0,
+            )
+        }
+
+        items += invitations.take(2)
+
+        // ── Learn: the session, inline ──────────────────────────────────────
+        // The resume card leads the band: the next lesson of the path in progress, so the learn
+        // session lives on this tab rather than behind a separate hub page. The daily picks
+        // follow it, skipping anything already read; re-recommending a read lesson tells the
+        // user we are not paying attention.
+        val readIds = runCatching { knowledgeRepository.readIds().first() }.getOrDefault(emptySet())
+        val resume = KnowledgeLibrary.resumePoint(level, readIds)
+        resume?.let { r ->
+            items += FeedItem(
+                id = "learn_resume_${r.lesson.id}",
+                kind = FeedKind.KNOWLEDGE,
+                eyebrow = if (r.readInPath == 0) {
+                    "START ${r.path.title.uppercase()} · ${r.lesson.readMin} min"
+                } else {
+                    "CONTINUE ${r.path.title.uppercase()} · ${r.readInPath + 1} of ${r.totalInPath}"
+                },
+                title = r.lesson.title,
+                body = r.lesson.body,
+                emoji = r.lesson.emoji,
+                route = "knowledge_detail/${r.lesson.id}",
+                score = 60.0,
+            )
+        }
+        KnowledgeLibrary.forLevel(level, daySeed, count = 5)
+            .filter { it.id !in readIds && it.id != resume?.lesson?.id }
+            .take(2)
+            .forEachIndexed { i, k ->
+                items += FeedItem(
+                    id = k.id,
+                    kind = FeedKind.KNOWLEDGE,
+                    eyebrow = "LEARN · ${k.readMin} min",
+                    title = k.title,
+                    body = k.body,
+                    emoji = k.emoji,
+                    route = "knowledge_detail/${k.id}",
+                    score = 50.0 - i,
+                )
+            }
 
         Logger.d("HomeFeedBuilder") { "Built feed: ${items.size} items (level $level)" }
         // Group into bands (Right now, Reflect, Learn), strongest first within each.
@@ -186,4 +380,8 @@ class HomeFeedBuilder(
     }
 
     private fun plural(n: Int, one: String, many: String) = if (n == 1) one else many
+
+    private companion object {
+        const val MILLIS_PER_DAY = 86_400_000L
+    }
 }

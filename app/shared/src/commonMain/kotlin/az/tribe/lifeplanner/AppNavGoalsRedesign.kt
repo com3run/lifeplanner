@@ -13,7 +13,7 @@ internal fun NavGraphBuilder.appNavGoalsRedesign(navController: NavController) {
             onBackClick = {},
             showBack = false,
             onNewGoal = { navController.navigate(Screen.GoalWizard.route) { launchSingleTop = true } },
-            onOpenGoal = { id -> navController.navigate("goal_detail_redesign/$id") { launchSingleTop = true } },
+            onOpenGoal = { id -> navController.navigate("goal_detail/$id") { launchSingleTop = true } },
         )
     }
 }

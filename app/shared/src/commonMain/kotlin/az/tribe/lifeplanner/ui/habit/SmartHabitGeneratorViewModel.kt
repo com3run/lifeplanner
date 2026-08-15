@@ -1,5 +1,7 @@
 package az.tribe.lifeplanner.ui.habit
 
+import az.tribe.lifeplanner.data.network.toUserFacingAiMessage
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import az.tribe.lifeplanner.data.mapper.createNewHabit
@@ -7,6 +9,7 @@ import az.tribe.lifeplanner.data.network.AiProxyService
 import az.tribe.lifeplanner.domain.enum.GoalCategory
 import az.tribe.lifeplanner.domain.enum.HabitFrequency
 import az.tribe.lifeplanner.domain.enum.HabitType
+import az.tribe.lifeplanner.domain.service.HabitNumericParser
 import az.tribe.lifeplanner.domain.service.SmartReminderManager
 import az.tribe.lifeplanner.usecases.habit.CreateHabitUseCase
 import co.touchlab.kermit.Logger
@@ -89,7 +92,7 @@ class SmartHabitGeneratorViewModel(
                 }
             } catch (e: Exception) {
                 Logger.e("SmartHabitGenerator") { "Generation failed: ${e.message}" }
-                _error.value = "Generation failed. Check your connection and try again."
+                _error.value = e.toUserFacingAiMessage("generate habits")
                 _step.value = HabitGeneratorStep.SCENARIO_SELECT
             }
         }

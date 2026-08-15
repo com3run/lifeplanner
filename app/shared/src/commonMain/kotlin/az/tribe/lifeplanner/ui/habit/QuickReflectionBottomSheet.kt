@@ -2,6 +2,7 @@ package az.tribe.lifeplanner.ui.habit
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -13,6 +14,7 @@ import az.tribe.lifeplanner.data.network.AiProxyService
 import az.tribe.lifeplanner.domain.enum.Mood
 import az.tribe.lifeplanner.domain.model.Goal
 import az.tribe.lifeplanner.domain.model.Habit
+import az.tribe.lifeplanner.domain.service.KnowledgeBit
 import co.touchlab.kermit.Logger
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
@@ -34,7 +36,12 @@ internal fun QuickReflectionBottomSheet(
     linkedGoal: Goal?,
     aiProxy: AiProxyService,
     onDismiss: () -> Unit,
-    onSave: (String, String, Mood) -> Unit
+    onSave: (String, String, Mood) -> Unit,
+    /** XP the check-in just earned. Shown as a chip so the reward is not invisible. */
+    xpAwarded: Int = 0,
+    /** A lesson about this habit, offered in the moment the user just did it. */
+    lesson: KnowledgeBit? = null,
+    onOpenLesson: (String) -> Unit = {},
 ) {
     var title by remember { mutableStateOf("Reflection: ${habit.title}") }
     var content by remember { mutableStateOf("") }
@@ -104,6 +111,20 @@ internal fun QuickReflectionBottomSheet(
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp)
                         )
+                        if (xpAwarded > 0) {
+                            Surface(
+                                shape = RoundedCornerShape(50),
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                            ) {
+                                Text(
+                                    "+$xpAwarded XP",
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
                     }
                     Text(
                         "How was your ${habit.title}?",
@@ -124,6 +145,40 @@ internal fun QuickReflectionBottomSheet(
                         contentDescription = "Close"
                     )
                 }
+            }
+
+            // A relevant idea, offered at the moment the habit was actually done. Small and skippable:
+            // the point is that the knowledge meets the practice, not that it demands attention.
+            if (lesson != null) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp)
+                        .clickable { onOpenLesson(lesson.id) },
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(lesson.emoji, style = MaterialTheme.typography.titleLarge)
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                lesson.title,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                "${lesson.readMin} min read",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(16.dp))
             }
 
             // Mood selector

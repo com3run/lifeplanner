@@ -1,6 +1,8 @@
 package az.tribe.lifeplanner.ui.habit
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -9,9 +11,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 import az.tribe.lifeplanner.domain.enum.GoalCategory
 import az.tribe.lifeplanner.domain.enum.HabitFrequency
+import az.tribe.lifeplanner.domain.enum.HealthMetricType
 import az.tribe.lifeplanner.domain.model.Habit
+import az.tribe.lifeplanner.domain.service.isTimeUnit
+import az.tribe.lifeplanner.domain.service.trackMode
+import az.tribe.lifeplanner.domain.service.HabitTrackMode
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.Clock
@@ -31,6 +39,22 @@ internal fun EditHabitBottomSheet(
     var expandedCategory by remember { mutableStateOf(false) }
     var reminderTime by remember { mutableStateOf(habit.reminderTime) }
     var showTimePicker by remember { mutableStateOf(false) }
+    var healthMetric by remember { mutableStateOf(habit.healthMetricType) }
+    var healthTargetText by remember {
+        mutableStateOf(habit.healthTarget?.let {
+            if (it == it.toLong().toDouble()) it.toLong().toString() else it.toString()
+        } ?: "")
+    }
+    // Use the shared rule rather than re-deriving it. The local copy tested `unit == "min"`, so
+    // seconds and hours habits opened as COUNT and a 30-sec plank looked like 30 reps.
+    var trackMode by remember { mutableStateOf(habit.trackMode) }
+    var countTargetText by remember {
+        mutableStateOf(if (habit.targetCount > 1) habit.targetCount.toString() else "")
+    }
+    var countUnitText by remember {
+        mutableStateOf(habit.unit?.takeIf { !isTimeUnit(it) } ?: "")
+    }
+    var completionSource by remember { mutableStateOf(habit.completionSource) }
     val timePickerState = rememberTimePickerState(
         initialHour = habit.reminderTime?.split(":")?.firstOrNull()?.toIntOrNull() ?: 8,
         initialMinute = habit.reminderTime?.split(":")?.getOrNull(1)?.toIntOrNull() ?: 0,
@@ -70,9 +94,12 @@ internal fun EditHabitBottomSheet(
         containerColor = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
     ) {
+        // Scrollable: the form is taller than the sheet on ordinary phone screens, so without this
+        // the Save button sits below the fold and the sheet cannot be submitted at all.
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
                 .navigationBarsPadding()
         ) {
             // Header
@@ -243,18 +270,165 @@ internal fun EditHabitBottomSheet(
                     }
                 }
 
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // How do you track it
+                Text(
+                    "How do you track it?",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    HabitTrackMode.entries.forEach { mode ->
+                        FilterChip(
+                            selected = trackMode == mode,
+                            onClick = { trackMode = mode },
+                            label = {
+                                Text(
+                                    mode.label,
+                                    fontWeight = if (trackMode == mode) FontWeight.SemiBold else FontWeight.Normal
+                                )
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+                if (trackMode == HabitTrackMode.COUNT) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(
+                            value = countTargetText,
+                            onValueChange = { countTargetText = it.filter { c -> c.isDigit() } },
+                            label = { Text("Times a day") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            singleLine = true,
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                        OutlinedTextField(
+                            value = countUnitText,
+                            onValueChange = { countUnitText = it },
+                            label = { Text("Unit") },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                    }
+                } else if (trackMode == HabitTrackMode.DURATION) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = countTargetText,
+                        onValueChange = { countTargetText = it.filter { c -> c.isDigit() } },
+                        label = { Text("Minutes a day") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                CompletionSourcePicker(
+                    selected = completionSource,
+                    trackMode = trackMode,
+                    targetCount = countTargetText.toIntOrNull() ?: 1,
+                    onSelect = { completionSource = it }
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Sync with Health
+                Text(
+                    "Sync with Health",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = healthMetric == null,
+                        onClick = { healthMetric = null; healthTargetText = "" },
+                        label = { Text("None") }
+                    )
+                    listOf(HealthMetricType.STEPS, HealthMetricType.SLEEP).forEach { metric ->
+                        FilterChip(
+                            selected = healthMetric == metric,
+                            onClick = {
+                                healthMetric = metric
+                                healthTargetText = when (metric) {
+                                    HealthMetricType.STEPS -> "10000"
+                                    HealthMetricType.SLEEP -> "8"
+                                    else -> ""
+                                }
+                            },
+                            label = { Text(metric.displayName) }
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    listOf(HealthMetricType.HEART_RATE, HealthMetricType.WEIGHT).forEach { metric ->
+                        FilterChip(
+                            selected = healthMetric == metric,
+                            onClick = { healthMetric = metric; healthTargetText = "" },
+                            label = { Text(metric.displayName) }
+                        )
+                    }
+                }
+                if (healthMetric == HealthMetricType.STEPS || healthMetric == HealthMetricType.SLEEP) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = healthTargetText,
+                        onValueChange = { healthTargetText = it.filter { c -> c.isDigit() || c == '.' } },
+                        label = {
+                            Text(if (healthMetric == HealthMetricType.STEPS) "Daily step target" else "Hours of sleep")
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(32.dp))
 
                 Button(
                     onClick = {
                         if (title.isNotBlank()) {
+                            val target = countTargetText.toIntOrNull()?.coerceAtLeast(1)
                             onConfirm(
                                 habit.copy(
                                     title = title,
                                     description = description,
                                     category = selectedCategory,
                                     frequency = selectedFrequency,
-                                    reminderTime = reminderTime
+                                    targetCount = when (trackMode) {
+                                        HabitTrackMode.SINGLE -> 1
+                                        else -> target ?: 1
+                                    },
+                                    unit = when (trackMode) {
+                                        HabitTrackMode.SINGLE -> null
+                                        HabitTrackMode.COUNT -> countUnitText.trim().ifBlank { "times" }
+                                        // Keep the unit it already had. Hardcoding "min" turned a
+                                        // 30-second habit into a 30-minute one on any edit.
+                                        HabitTrackMode.DURATION ->
+                                            habit.unit?.takeIf { isTimeUnit(it) } ?: "min"
+                                    },
+                                    reminderTime = reminderTime,
+                                    healthMetricType = healthMetric,
+                                    healthTarget = healthTargetText.toDoubleOrNull(),
+                                    completionSource = completionSource
                                 )
                             )
                         }
