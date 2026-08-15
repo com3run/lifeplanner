@@ -66,7 +66,7 @@ fun SearchScreen(
         when {
             showEmptyState -> SearchEmptyState(modifier = Modifier.fillMaxSize())
             showBrowseState -> SearchBrowseState(
-                filter = selectedFilters.first(),
+                filters = selectedFilters,
                 modifier = Modifier.fillMaxSize(),
             )
             showNoResults -> SearchNoResults(query = query, modifier = Modifier.fillMaxSize())

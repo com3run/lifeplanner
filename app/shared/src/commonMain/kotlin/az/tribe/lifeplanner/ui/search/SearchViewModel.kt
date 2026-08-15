@@ -107,9 +107,11 @@ class SearchViewModel(
 
     fun toggleFilter(filter: SearchFilter) {
         val current = _selectedFilters.value
-        val new = if (filter in current) current - filter else current + filter
-        // Selecting all individual filters is equivalent to "All"
-        _selectedFilters.value = if (new.size == SearchFilter.entries.size) emptySet() else new
+        // Lighting the last chip used to collapse the set to "All" (empty), which sounds tidy
+        // but wiped a browse list mid-use: with a blank query, empty filters means the landing
+        // state, so selecting everything showed nothing. All four lit simply means all four;
+        // the All chip stays the explicit way back to the landing state.
+        _selectedFilters.value = if (filter in current) current - filter else current + filter
     }
 
     val results: StateFlow<SearchResults> = combine(_query.debounce(250), _selectedFilters) { q, filters ->

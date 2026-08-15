@@ -503,21 +503,25 @@ internal fun SearchEmptyState(modifier: Modifier = Modifier) {
 }
 
 @Composable
-internal fun SearchBrowseState(filter: SearchFilter, modifier: Modifier = Modifier) {
+internal fun SearchBrowseState(filters: Set<SearchFilter>, modifier: Modifier = Modifier) {
+    // With several chips lit this used to name only whichever filter came first in the set,
+    // reporting "No Goals yet" about a browse that also covered habits and entries.
+    val single = filters.singleOrNull()
     Box(modifier = modifier.padding(bottom = 136.dp), contentAlignment = Alignment.Center) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text(filter.emoji, fontSize = 48.sp)
+            Text(single?.emoji ?: "🔍", fontSize = 48.sp)
             Text(
-                "No ${filter.label} yet",
+                if (single != null) "No ${single.label} yet" else "Nothing here yet",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                "Start adding ${filter.label.lowercase()} to see them here",
+                if (single != null) "Start adding ${single.label.lowercase()} to see them here"
+                else "Nothing filed under these yet. Add something and it shows up here.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

@@ -175,8 +175,20 @@ fun WeekStrip(
         if (engagement != null) {
             Spacer(Modifier.height(8.dp))
             // Collapsed: one line you can read without stopping. Expanded: the same week as counts
-            // you can actually compare.
-            if (expanded) WeekOutputGrid(engagement) else WeekOutputLine(engagement)
+            // you can actually compare. The counts are always this week's, and expanded they sit
+            // under a heading that says "This month" (or a paged month), so without their own
+            // label the weekly numbers silently claim a period they do not cover.
+            if (expanded) {
+                Text(
+                    "This week",
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                    color = c.textTertiary,
+                )
+                Spacer(Modifier.height(4.dp))
+                WeekOutputGrid(engagement)
+            } else {
+                WeekOutputLine(engagement)
+            }
         }
     }
     }
