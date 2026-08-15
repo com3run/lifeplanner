@@ -37,15 +37,14 @@ fun ChatViewModel.selectCoach(coach: CoachPersona) {
 
             loadSessions()
 
-            if (isNewSession) {
-                val userName = _uiState.value.userContext?.userName?.takeIf { it.isNotBlank() }
-                val nameHint = if (userName != null) " The user's name is $userName." else ""
-                triggerWelcomeMessage(
-                    "[NEW SESSION]$nameHint Introduce yourself as ${coach.name} (${coach.title}). " +
-                    "Your personality is ${coach.personality}. Your specialties: ${coach.specialties.take(2).joinToString(", ")}. " +
-                    "Warmly welcome the user${if (userName != null) " by name" else ""}. Ask ONE focused question about their current goals or challenges in your area."
-                )
-            }
+            // No auto-greeting. Opening a coach used to fire an AI call purely to generate a
+            // hello, and the instruction that produced it was sent as a real user message —
+            // persisted, filtered from the view exactly once, and back in the transcript on the
+            // next load. Users were reading "[NEW SESSION] Introduce yourself as Morgan..." in
+            // their own chat.
+            //
+            // A coach you open and talk to needs neither. The screen is quiet until someone says
+            // something.
         } catch (e: Exception) {
             _uiState.value = _uiState.value.copy(
                 isLoading = false,
@@ -83,13 +82,7 @@ fun ChatViewModel.selectCouncil() {
 
             loadSessions()
 
-            if (isNewSession) {
-                val userName = _uiState.value.userContext?.userName?.takeIf { it.isNotBlank() }
-                val nameHint = if (userName != null) " The user's name is $userName." else ""
-                triggerWelcomeMessage(
-                    "[NEW SESSION]$nameHint You are The Council, all 7 coaches speaking together. Each coach introduces themselves briefly in one sentence. End with a unified invitation for the user to share their biggest goal or challenge."
-                )
-            }
+
         } catch (e: Exception) {
             _uiState.value = _uiState.value.copy(
                 isLoading = false,
@@ -132,13 +125,6 @@ fun ChatViewModel.selectCustomCoach(customCoach: CustomCoach) {
 
             loadSessions()
 
-            if (isNewSession) {
-                val userName = _uiState.value.userContext?.userName?.takeIf { it.isNotBlank() }
-                val nameHint = if (userName != null) " The user's name is $userName." else ""
-                triggerWelcomeMessage(
-                    "[NEW SESSION]$nameHint Introduce yourself as ${customCoach.name} and warmly welcome the user${if (userName != null) " by name" else ""}. Ask one opening question to understand what they need help with today."
-                )
-            }
         } catch (e: Exception) {
             _uiState.value = _uiState.value.copy(
                 isLoading = false,
