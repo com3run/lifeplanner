@@ -33,6 +33,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import com.russhwolf.settings.Settings
+import org.koin.compose.koinInject
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -121,9 +123,24 @@ fun ChatContent(
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        var storyDismissed by remember { mutableStateOf(false) }
+        // Once per coach, ever. The card is an introduction — name, tagline, a fun fact — which is
+        // worth reading the first time you meet someone and is furniture every time after. It used
+        // to reappear on every visit to an empty chat, because "dismissed" only lived as long as
+        // the composable did.
+        val chatSettings: Settings = koinInject()
+        val introKey = coach?.id?.let { "coach_intro_seen_$it" }
+        var storyDismissed by remember(introKey) {
+            mutableStateOf(introKey != null && chatSettings.getBoolean(introKey, false))
+        }
 
-        if (messages.isEmpty() && !storyDismissed) {
+        val showStory = messages.isEmpty() && !storyDismissed
+        // Marked on display rather than on the button: backing out without tapping Start chatting
+        // still means you have met them.
+        LaunchedEffect(showStory, introKey) {
+            if (showStory && introKey != null) chatSettings.putBoolean(introKey, true)
+        }
+
+        if (showStory) {
             CoachStoryIntro(
                 coach = coach,
                 modifier = Modifier.weight(1f).fillMaxWidth(),
@@ -133,6 +150,10 @@ fun ChatContent(
                     keyboardController?.show()
                 }
             )
+        } else if (messages.isEmpty()) {
+            // Been here before, nothing said yet. The full introduction would be furniture, but a
+            // blank screen does not tell you whose chat you are in either.
+            CoachQuietIntro(coach = coach, modifier = Modifier.weight(1f).fillMaxWidth())
         } else {
             val visibleMessages = if (isCouncilMode) messages.take(revealedMessageCount) else messages
             val reversedMessages = remember(visibleMessages) { visibleMessages.reversed() }
