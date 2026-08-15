@@ -60,9 +60,29 @@ class CoachOrchestrator {
             }
         }
 
-        return if (lines.isEmpty()) "" else buildString {
-            appendLine("USER PROFILE (use to personalize, do NOT re-ask what you already know here):")
-            lines.forEach { appendLine("• $it") }
+        val missing = coach?.id?.let { getMissingSlots(situation, it) }.orEmpty()
+
+        return if (lines.isEmpty() && missing.isEmpty()) "" else buildString {
+            if (lines.isNotEmpty()) {
+                appendLine("USER PROFILE (use to personalize, do NOT re-ask what you already know here):")
+                lines.forEach { appendLine("• $it") }
+            }
+            if (missing.isNotEmpty()) {
+                if (lines.isNotEmpty()) appendLine()
+                // These used to be asked as a questionnaire during sign-up, before the user had
+                // seen anything the app does. Asked here they are the same questions on a
+                // completely different footing: the user came to this coach, about this area, of
+                // their own accord.
+                //
+                // One at a time, and only when it fits. A coach that opens with a checklist is the
+                // questionnaire again wearing a chat bubble.
+                appendLine("NOT YET KNOWN: ${missing.joinToString(", ")}.")
+                appendLine(
+                    "If one of these comes up naturally, ask about it — at most ONE per reply, " +
+                        "and only when it genuinely helps the answer you are giving. Never open " +
+                        "with it, never list them, and drop it if the user does not want to say."
+                )
+            }
         }.trimEnd()
     }
 
@@ -103,10 +123,11 @@ class CoachOrchestrator {
                     if (longTermVision == null) add("long-term vision")
                 }
             }
+            // Relationship status is deliberately absent, here and everywhere else. Nothing read
+            // it except prompt padding, and it is a lot to ask of someone for that.
             "jamie_family" -> buildList {
                 with(situation.people) {
                     if (familyContext == null) add("family situation")
-                    if (relationshipStatus == null) add("relationship status")
                     if (closeCircleSize == null) add("close social circle size")
                 }
             }

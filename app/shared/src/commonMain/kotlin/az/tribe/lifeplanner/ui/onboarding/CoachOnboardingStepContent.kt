@@ -19,6 +19,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -495,13 +496,9 @@ private fun SpecialistQ3(vm: CoachOnboardingViewModel, onAdvance: () -> Unit) {
             PrimaryButton("Continue", onClick = onAdvance)
             TextButton(onClick = onAdvance) { Text("Skip") }
         }
-        "morgan_finance" -> ChipQuestion(
-            options = listOf("Yes, some debt", "No debt"),
-            selected = vm.hasDebt?.let { if (it) "Yes, some debt" else "No debt" },
-            onSelect = { label -> vm.hasDebt = "Yes" in label },
-            onContinue = onAdvance,
-            onSkip = onAdvance
-        )
+        // Debt is not asked. Nothing read it but prompt padding, and "do you have debt you're
+        // managing" is a lot to ask of someone who has been in the app for ninety seconds.
+        "morgan_finance" -> SkippedQuestion(onAdvance)
         "kai_fitness" -> {
             LabeledSlider(
                 label = "Energy level: ${vm.energyRating} / 10",
@@ -511,20 +508,9 @@ private fun SpecialistQ3(vm: CoachOnboardingViewModel, onAdvance: () -> Unit) {
             Spacer(Modifier.height(16.dp))
             PrimaryButton("Continue", onClick = onAdvance)
         }
-        "sam_social" -> ChipQuestion(
-            options = listOf("Single", "In a relationship", "Married", "Other"),
-            selected = vm.relationshipStatus?.name,
-            onSelect = { label ->
-                vm.relationshipStatus = when {
-                    "Single" == label -> RelationshipStatus.SINGLE
-                    "relationship" in label -> RelationshipStatus.IN_RELATIONSHIP
-                    "Married" == label -> RelationshipStatus.MARRIED
-                    else -> null
-                }
-            },
-            onContinue = onAdvance,
-            onSkip = onAdvance
-        )
+        // Relationship status is not asked, for the same reason. Romance already has its own
+        // wheel area the user can score without telling anyone their marital status.
+        "sam_social" -> SkippedQuestion(onAdvance)
         "river_wellness" -> TextInputStep(
             label = "Your long-term vision (optional)",
             value = vm.longTermVision,
@@ -564,3 +550,13 @@ private fun SpecialistQ4(vm: CoachOnboardingViewModel, onAdvance: () -> Unit) {
     }
 }
 
+/**
+ * A question that used to be here and no longer is.
+ *
+ * The step exists so the phase machine still has something to render for that slot; it just moves
+ * the user straight on. Renumbering the phases would touch resume state for anyone mid-flow.
+ */
+@Composable
+private fun SkippedQuestion(onAdvance: () -> Unit) {
+    LaunchedEffect(Unit) { onAdvance() }
+}
