@@ -175,6 +175,17 @@ data class WheelReport(
 
     val highest: WheelScore? get() = segments.maxByOrNull { it.score }
 
+    /**
+     * The lowest segment only when it is alone down there, else null.
+     *
+     * [lowest] answers "which sorts first", which is a different question from "which area is
+     * the problem". On a rounded 0..10 scale areas tie for last more often than not, and every
+     * caller that names a lowest area to the user has had to re-implement this guard; two forgot.
+     * Use this for user-facing claims and [lowest] for maths.
+     */
+    val soleLowest: WheelScore?
+        get() = lowest?.takeIf { low -> segments.count { it.score == low.score } == 1 }
+
     /** Areas we guessed at and would like the user to confirm, worst-guessed first. */
     val unconfirmed: List<WheelScore>
         get() = scores.filter { it.needsConfirmation }.sortedBy { it.confidence }

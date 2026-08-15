@@ -87,8 +87,13 @@ internal fun BalanceGlanceCard(
     onClick: () -> Unit,
 ) {
     val c = MaterialTheme.modernColors
+    // Only claim a strongest or lowest area when it actually stands alone. New accounts score
+    // every area identically, and "Career is carrying it" on a six-way tie is the app picking
+    // whichever sorts first (same tie rule as the wheel).
     val strongest = areaScores.maxByOrNull { it.score }
+        ?.takeIf { top -> areaScores.count { it.score == top.score } == 1 }
     val weakest = areaScores.minByOrNull { it.score }
+        ?.takeIf { low -> areaScores.count { it.score == low.score } == 1 }
 
     GlassCard(
         modifier = Modifier.fillMaxWidth().bouncyClickable(onClick = onClick),

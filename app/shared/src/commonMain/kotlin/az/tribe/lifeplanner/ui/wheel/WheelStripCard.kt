@@ -108,7 +108,10 @@ fun WheelStripCard(
                     unconfirmed > 0 ->
                         "$unconfirmed still to set."
                     report.spread >= 3.0 ->
-                        report.lowest?.let { "${it.area.displayName} is furthest behind." }.orEmpty()
+                        // soleLowest: "furthest behind" is a claim about one area; when several
+                        // tie for last the honest reading is that the low end is shared.
+                        report.soleLowest?.let { "${it.area.displayName} is furthest behind." }
+                            ?: "A few areas are equally behind."
                     else -> "Fairly even across the board."
                 }
                 if (detail.isNotBlank()) {
@@ -182,7 +185,10 @@ private fun WheelProminentCard(
                 unconfirmed >= report.segments.size -> "Tap to tell us where you are."
                 unconfirmed > 0 -> "$unconfirmed still to set."
                 report.spread >= 3.0 ->
-                    report.lowest?.let { "${it.area.displayName} is furthest behind." }.orEmpty()
+                    // soleLowest, because "furthest behind" is a claim about one area; when
+                    // several tie for last the honest reading is that the low end is shared.
+                    report.soleLowest?.let { "${it.area.displayName} is furthest behind." }
+                        ?: "A few areas are equally behind."
                 else -> "Fairly even across the board."
             }
             if (detail.isNotBlank()) {

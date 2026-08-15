@@ -40,9 +40,11 @@ object WheelNudgePicker {
 
         // A flat wheel has no weakest area in any meaningful sense, only a lowest one. If the
         // spread is tiny the pick is noise, and acting on noise is how an app starts feeling
-        // arbitrary.
+        // arbitrary. This holds at every level: the old guard switched off below STRUGGLING,
+        // so a wheel of all 3s crowned an arbitrary area, which is exactly the case the doc
+        // above promises not to do. Uniformly low is a hard time, not a Friends problem.
         val spread = known.maxOf { it.score } - known.minOf { it.score }
-        if (spread < 1.5 && weakest.score >= STRUGGLING) return null
+        if (spread < 1.5) return null
 
         return weakest.area
     }

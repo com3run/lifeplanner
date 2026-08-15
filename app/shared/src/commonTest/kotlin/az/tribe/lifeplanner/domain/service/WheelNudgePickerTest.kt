@@ -70,6 +70,21 @@ class WheelNudgePickerTest {
     }
 
     @Test
+    fun `a uniformly bad wheel is not blamed on one area either`() {
+        val picked = WheelNudgePicker.pick(
+            report(
+                WheelArea.PHYSICAL to 3.0,
+                WheelArea.MONEY to 3.0,
+                WheelArea.FRIENDS to 3.0,
+            )
+        )
+
+        // The old guard only held above STRUGGLING, so the flat-wheel rule switched off exactly
+        // when the whole wheel was low, and an all-3 wheel crowned whichever area sorted first.
+        assertNull(picked)
+    }
+
+    @Test
     fun `a genuinely struggling area is still surfaced from a low wheel`() {
         val picked = WheelNudgePicker.pick(
             report(

@@ -183,7 +183,14 @@ private fun WheelContent(
             )
         }
 
-        item { WheelSuggestionCard(suggestion) }
+        item {
+            // "Your lowest" is a solo claim; when the picked area shares the bottom with others
+            // the header has to say so, same tie rule as everywhere else on the wheel.
+            val sharedLowest = suggestion != null && report.segments.count {
+                it.score == (report.lowest?.score ?: Double.MIN_VALUE)
+            } > 1
+            WheelSuggestionCard(suggestion, lowestIsShared = sharedLowest)
+        }
 
         report.joy?.let { joy ->
             item { JoyCard(joy) }

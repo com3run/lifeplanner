@@ -36,6 +36,8 @@ import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
 fun WheelSuggestionCard(
     suggestion: WheelSuggestion?,
     modifier: Modifier = Modifier,
+    /** True when other areas share the bottom score, so the header does not claim a solo lowest. */
+    lowestIsShared: Boolean = false,
 ) {
     if (suggestion == null) return
 
@@ -56,7 +58,8 @@ fun WheelSuggestionCard(
                 Text(
                     // Named rather than dressed up as a generic tip. The user should be able to see
                     // why this appeared without working it out.
-                    text = "${suggestion.area.displayName} is your lowest",
+                    text = if (lowestIsShared) "${suggestion.area.displayName} is among your lowest"
+                    else "${suggestion.area.displayName} is your lowest",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(start = LifePlannerDesign.Spacing.xs),

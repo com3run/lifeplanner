@@ -73,7 +73,11 @@ class YouViewModel(
             val areaScores = runCatching { lifeBalanceRepository.getAllAreaScores() }
                 .getOrDefault(emptyList())
             val overall = if (areaScores.isEmpty()) 0 else areaScores.map { it.score }.average().toInt()
+            // Only when one area is alone at the bottom. A new account scores every area the
+            // same, and "Career is slipping" on a six-way tie is an invented problem (same tie
+            // rule as the wheel).
             val weakest = areaScores.minByOrNull { it.score }
+                ?.takeIf { low -> areaScores.count { it.score == low.score } == 1 }
 
             val quietDays = runCatching {
                 retrospectiveRepository.observeWeeklySnapshots().first().count { !it.hasAnyActivity }

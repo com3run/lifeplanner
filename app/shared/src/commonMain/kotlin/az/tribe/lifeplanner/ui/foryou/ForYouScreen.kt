@@ -17,6 +17,7 @@ import az.tribe.lifeplanner.ui.calendar.rememberCalendarPermission
 import az.tribe.lifeplanner.ui.components.rememberHapticManager
 import androidx.compose.foundation.background
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
@@ -196,6 +197,16 @@ fun ForYouScreen(
         if (f == null) feed else feed.filter { it.kind.section() == f }
     }
     val grouped = remember(visible) { visible.groupBy { it.kind.section() } }
+    // Only sections that actually have cards earn a chip. A week-one feed is DO_NEXT and
+    // KNOWLEDGE only, and tapping "Reflect on today" used to render a feed of nothing at all
+    // (same rule as the wheel history's offered periods).
+    val offeredSections = remember(feed) {
+        FeedSection.entries.filter { sec -> feed.any { it.kind.section() == sec } }
+    }
+    LaunchedEffect(offeredSections) {
+        // A selected section can empty out from under the filter (last card acted on).
+        if (filter != null && filter !in offeredSections) filter = null
+    }
 
     // Confirm what an action was worth. Ticking a plan item or a habit used to award XP silently.
     val snackbarHostState = remember { SnackbarHostState() }
@@ -299,7 +310,11 @@ fun ForYouScreen(
                 item(key = "breath") { BreathingCard(reason = breathMoment.reason) }
             }
 
-            item { FilterRow(selected = filter, onSelect = { filter = it }) }
+            // With one section there is nothing to filter between, so the row would be All plus
+            // one chip showing the identical list.
+            if (offeredSections.size >= 2) {
+                item { FilterRow(selected = filter, offered = offeredSections, onSelect = { filter = it }) }
+            }
 
             if (feed.isEmpty()) {
                 item {
@@ -374,10 +389,14 @@ private fun Header(progress: UserProgress?) {
 }
 
 @Composable
-private fun FilterRow(selected: FeedSection?, onSelect: (FeedSection?) -> Unit) {
+private fun FilterRow(
+    selected: FeedSection?,
+    offered: List<FeedSection>,
+    onSelect: (FeedSection?) -> Unit,
+) {
     Row(horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.xs)) {
         FilterChip("All", selected == null) { onSelect(null) }
-        FeedSection.entries.forEach { sec ->
+        offered.forEach { sec ->
             FilterChip(sec.label, selected == sec) { onSelect(sec) }
         }
     }
@@ -1029,11 +1048,20 @@ private fun StepTimerButton(
     onCancel: () -> Unit,
 ) {
     val c = MaterialTheme.modernColors
-    val progress by animateFloatAsState(
-        targetValue = if (remaining == null) 0f else 1f - (remaining.toFloat() / totalSeconds),
-        animationSpec = tween(950),
-        label = "stepTimer",
-    )
+    // One continuous sweep over the whole duration, not a new 950ms tween per tick. Chasing the
+    // per-second state made the arc advance in visible steps; time does not pass in steps.
+    val progress = remember { Animatable(0f) }
+    LaunchedEffect(remaining != null) {
+        if (remaining == null) {
+            progress.snapTo(0f)
+        } else {
+            progress.snapTo(1f - (remaining.toFloat() / totalSeconds))
+            progress.animateTo(
+                1f,
+                tween(durationMillis = remaining * 1000, easing = LinearEasing),
+            )
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -1049,7 +1077,7 @@ private fun StepTimerButton(
                     drawArc(
                         color = accent,
                         startAngle = -90f,
-                        sweepAngle = progress * 360f,
+                        sweepAngle = progress.value * 360f,
                         useCenter = false,
                         style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round),
                     )

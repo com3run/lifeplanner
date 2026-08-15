@@ -61,8 +61,6 @@ import az.tribe.lifeplanner.ui.components.GoalPaperHeader
 import az.tribe.lifeplanner.ui.components.StatusToggleButtons
 import az.tribe.lifeplanner.ui.components.backgroundColor
 import az.tribe.lifeplanner.ui.dependency.GoalDependencyViewModel
-import az.tribe.lifeplanner.ui.goal.AiReasoningCard
-import az.tribe.lifeplanner.ui.goal.CoachInsightCard
 import az.tribe.lifeplanner.ui.goal.CompletedGoalBanner
 import az.tribe.lifeplanner.ui.goal.GoalNotFoundState
 import az.tribe.lifeplanner.ui.goal.ModernMilestonesCard
@@ -109,7 +107,13 @@ fun GoalDetailScreen(
     var practice by remember(goalId) { mutableStateOf<GoalPractice?>(null) }
     // The wheel, so the goal's why can carry the user's own score for that area rather than just
     // naming it. Null until the wheel has been filled in at least once.
-    val wheelReport by wheelRepository.observeWheel()
+    //
+    // remember is load-bearing: observeWheel() builds a fresh Flow, and calling it inside
+    // composition made every recomposition resubscribe, every subscription emit a report stamped
+    // with a new generatedAt, and every new report schedule the next recomposition. The screen
+    // sat in that loop flickering until the flow instance was pinned.
+    val wheelFlow = remember { wheelRepository.observeWheel() }
+    val wheelReport by wheelFlow
         .collectAsState(initial = null as az.tribe.lifeplanner.domain.model.WheelReport?)
     val coroutineScope = rememberCoroutineScope()
 

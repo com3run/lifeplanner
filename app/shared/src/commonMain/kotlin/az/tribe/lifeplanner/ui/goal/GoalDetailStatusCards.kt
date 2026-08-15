@@ -268,67 +268,6 @@ internal fun ModernNotesCard(
 }
 
 @Composable
-internal fun AiReasoningCard(reasoning: String) {
-    var expanded by remember { mutableStateOf(false) }
-
-    GlassCard(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp)
-            .clickable { expanded = !expanded }
-    ) {
-        Column(
-            modifier = Modifier.padding(LifePlannerDesign.Padding.standard),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Icon(
-                        PhosphorIcons.Regular.Sparkle,
-                        contentDescription = null,
-                        tint = Color(0xFF7C4DFF),
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Text(
-                        text = "Why this goal?",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
-                Surface(
-                    shape = RoundedCornerShape(50),
-                    color = Color(0xFF7C4DFF).copy(alpha = 0.1f)
-                ) {
-                    Text(
-                        "AI",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF7C4DFF),
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                    )
-                }
-            }
-
-            Text(
-                text = reasoning,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = if (expanded) Int.MAX_VALUE else 3,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-    }
-}
-
-@Composable
 internal fun ModernMilestonesCard(
     milestones: List<Milestone>,
     isReadOnly: Boolean = false,

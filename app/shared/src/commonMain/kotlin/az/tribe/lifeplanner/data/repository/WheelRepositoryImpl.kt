@@ -30,6 +30,7 @@ import az.tribe.lifeplanner.infrastructure.observeWheelScores
 import az.tribe.lifeplanner.infrastructure.setWheelScoreLocal
 import co.touchlab.kermit.Logger
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.LocalDate
@@ -58,9 +59,14 @@ class WheelRepositoryImpl(
     private val json = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
 
     override fun observeWheel(): Flow<WheelReport> =
-        db.observeWheelScores().map { entities ->
-            build(entities.associate { it.id to it.score })
-        }
+        db.observeWheelScores()
+            // SQLDelight notifies on any write to the table, including ones that leave these rows
+            // as they were, and build() stamps each report with a fresh generatedAt. Without this,
+            // a no-op notification produces a "new" report and every collector re-renders.
+            .distinctUntilChanged()
+            .map { entities ->
+                build(entities.associate { it.id to it.score })
+            }
 
     override suspend fun getWheel(): WheelReport = observeWheel().first()
 
