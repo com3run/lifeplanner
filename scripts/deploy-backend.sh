@@ -18,6 +18,19 @@ cd "$ROOT"
 # All deployable edge functions.
 ALL_FUNCTIONS=(ai-proxy auth-redirect mcp-server persona-sync-webhook resend-verification health store-watch)
 
+# Monitoring functions must be publicly callable: pg_cron invokes them over HTTP
+# without a JWT. Deployed with --no-verify-jwt rather than via config.toml, so
+# this repo does not trip Supabase's preview-branching integration.
+PUBLIC_FUNCTIONS=(health store-watch)
+
+is_public() {
+  local needle="$1"
+  for f in "${PUBLIC_FUNCTIONS[@]}"; do
+    [[ "$f" == "$needle" ]] && return 0
+  done
+  return 1
+}
+
 # --- auth check -------------------------------------------------------------
 if ! supabase projects list >/dev/null 2>&1; then
   echo "ERROR: Supabase CLI is not authenticated."
@@ -43,7 +56,11 @@ fi
 echo ">> Deploying functions: ${TARGETS[*]}"
 for fn in "${TARGETS[@]}"; do
   echo "---- deploy $fn ----"
-  supabase functions deploy "$fn" --project-ref "$PROJECT_REF"
+  if is_public "$fn"; then
+    supabase functions deploy "$fn" --project-ref "$PROJECT_REF" --no-verify-jwt
+  else
+    supabase functions deploy "$fn" --project-ref "$PROJECT_REF"
+  fi
 done
 
 echo ">> Done. Deployed: ${TARGETS[*]}"
