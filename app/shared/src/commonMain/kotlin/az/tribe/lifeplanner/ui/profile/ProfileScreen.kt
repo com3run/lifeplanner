@@ -60,7 +60,6 @@ fun ProfileScreen(
     onNavigateToDecisions: () -> Unit = {},
     onNavigateToCausalInsights: () -> Unit = {},
     onNavigateToSearch: () -> Unit = {},
-    onNavigateToLifeBalance: () -> Unit = {},
     onNavigateToBecoming: () -> Unit = {},
     onNavigateToYourWiring: () -> Unit = {},
     onNavigateToAICoach: () -> Unit,
@@ -161,24 +160,10 @@ fun ProfileScreen(
             // ── Where you stand ───────────────────────────────────────────
             // Each card is one feature's answer, not a link to go find it. They degrade to an
             // honest invitation when there isn't data yet, so nothing becomes unreachable.
+            // The 0-100 "Life balance" glance used to lead this section, one tap away from the
+            // wheel answering the same question 0-10. The owner does not rely on it; the wheel
+            // is the one instrument, and it already leads the For You feed.
             item { ProfileSectionHeader("Where you stand") }
-            item {
-                if (youState.areaScores.isEmpty()) {
-                    FindingCard(
-                        icon = PhosphorIcons.Regular.Scales,
-                        accent = MaterialTheme.colorScheme.primary,
-                        headline = "Life balance",
-                        detail = "Set a few goals and habits and your areas will start scoring themselves.",
-                        onClick = onNavigateToLifeBalance,
-                    )
-                } else {
-                    BalanceGlanceCard(
-                        overall = youState.overallBalance,
-                        areaScores = youState.areaScores,
-                        onClick = onNavigateToLifeBalance,
-                    )
-                }
-            }
 
             if (FeatureFlags.PILLAR_CAUSAL) {
                 item {

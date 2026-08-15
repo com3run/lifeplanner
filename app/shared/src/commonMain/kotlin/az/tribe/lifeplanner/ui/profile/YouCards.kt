@@ -24,7 +24,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import az.tribe.lifeplanner.domain.model.LifeAreaScore
 import az.tribe.lifeplanner.ui.components.GlassCard
 import az.tribe.lifeplanner.ui.components.ProgressRing
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
@@ -76,126 +75,6 @@ internal fun AttentionCard(item: YouAttention, onClick: () -> Unit) {
     }
 }
 
-/**
- * Life balance as an answer rather than a link: the overall score in a ring, who's carrying it, and
- * who isn't. Tapping opens the full report.
- */
-@Composable
-internal fun BalanceGlanceCard(
-    overall: Int,
-    areaScores: List<LifeAreaScore>,
-    onClick: () -> Unit,
-) {
-    val c = MaterialTheme.modernColors
-    // Only claim a strongest or lowest area when it actually stands alone. New accounts score
-    // every area identically, and "Career is carrying it" on a six-way tie is the app picking
-    // whichever sorts first (same tie rule as the wheel).
-    val strongest = areaScores.maxByOrNull { it.score }
-        ?.takeIf { top -> areaScores.count { it.score == top.score } == 1 }
-    val weakest = areaScores.minByOrNull { it.score }
-        ?.takeIf { low -> areaScores.count { it.score == low.score } == 1 }
-
-    GlassCard(
-        modifier = Modifier.fillMaxWidth().bouncyClickable(onClick = onClick),
-        cornerRadius = LifePlannerDesign.CornerRadius.large,
-    ) {
-        Column {
-            Box(Modifier.fillMaxWidth().height(4.dp).background(LifePlannerGradients.primary))
-            Column(Modifier.padding(LifePlannerDesign.Padding.standard)) {
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.md),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    ProgressRing(
-                        progress = overall / 100f,
-                        diameter = 62.dp,
-                        strokeWidth = 6.dp,
-                        color = c.primary,
-                    ) {
-                        Text(
-                            "$overall",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = c.textPrimary,
-                        )
-                    }
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text(
-                            "Life balance",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = c.textPrimary,
-                        )
-                        if (strongest != null) {
-                            Text(
-                                "${strongest.area.icon} ${strongest.area.displayName} is carrying it at ${strongest.score}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = c.textSecondary,
-                            )
-                        }
-                        if (weakest != null && weakest.area != strongest?.area) {
-                            Text(
-                                "${weakest.area.icon} ${weakest.area.displayName} is lowest at ${weakest.score}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = c.textSecondary,
-                            )
-                        }
-                    }
-                    Icon(
-                        PhosphorIcons.Regular.CaretRight,
-                        contentDescription = null,
-                        tint = c.textTertiary,
-                        modifier = Modifier.size(LifePlannerDesign.IconSize.small),
-                    )
-                }
-
-                if (areaScores.isNotEmpty()) {
-                    Spacer(Modifier.height(14.dp))
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        areaScores.forEach { area ->
-                            AreaSpark(area, Modifier.weight(1f))
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-/** One area as a labelled bar, so the shape of the whole life reads at a glance. */
-@Composable
-private fun AreaSpark(area: LifeAreaScore, modifier: Modifier = Modifier) {
-    val c = MaterialTheme.modernColors
-    val tint = when {
-        area.score >= 70 -> c.success
-        area.score >= 40 -> c.primary
-        else -> c.warning
-    }
-    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(
-            Modifier.fillMaxWidth().height(6.dp).clip(CircleShape).background(c.surfaceVariant),
-        ) {
-            Box(
-                Modifier
-                    .fillMaxWidth((area.score / 100f).coerceIn(0f, 1f))
-                    .height(6.dp)
-                    .clip(CircleShape)
-                    .background(tint),
-            )
-        }
-        Spacer(Modifier.height(4.dp))
-        Text(area.area.icon, style = MaterialTheme.typography.labelSmall)
-    }
-}
-
-/**
- * A live finding stated in plain language. When there isn't enough data yet it degrades to an
- * honest invitation rather than disappearing, so the feature stays discoverable.
- */
 @Composable
 internal fun FindingCard(
     icon: ImageVector,

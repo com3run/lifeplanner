@@ -5,10 +5,8 @@ import androidx.lifecycle.viewModelScope
 import az.tribe.lifeplanner.domain.model.CausalInsight
 import az.tribe.lifeplanner.domain.model.DecisionStatus
 import az.tribe.lifeplanner.domain.model.InsightConfidence
-import az.tribe.lifeplanner.domain.model.LifeAreaScore
 import az.tribe.lifeplanner.domain.repository.BehaviorRepository
 import az.tribe.lifeplanner.domain.repository.DecisionRepository
-import az.tribe.lifeplanner.domain.repository.LifeBalanceRepository
 import az.tribe.lifeplanner.domain.repository.RetrospectiveRepository
 import az.tribe.lifeplanner.domain.service.CausalInsightProvider
 import az.tribe.lifeplanner.ui.navigation.Screen
@@ -41,16 +39,12 @@ data class YouAttention(
 data class YouState(
     val loading: Boolean = true,
     val attention: List<YouAttention> = emptyList(),
-    val areaScores: List<LifeAreaScore> = emptyList(),
-    val overallBalance: Int = 0,
-    val weakestArea: LifeAreaScore? = null,
     val topInsight: CausalInsight? = null,
     val peakHourLabel: String? = null,
 )
 
 class YouViewModel(
     private val decisionRepository: DecisionRepository,
-    private val lifeBalanceRepository: LifeBalanceRepository,
     private val retrospectiveRepository: RetrospectiveRepository,
     private val behaviorRepository: BehaviorRepository,
     private val causalInsightProvider: CausalInsightProvider,
@@ -69,15 +63,6 @@ class YouViewModel(
                 decisionRepository.getAllDecisions()
                     .count { it.status == DecisionStatus.CONFIRMED && it.outcomeQuality == null }
             }.getOrDefault(0)
-
-            val areaScores = runCatching { lifeBalanceRepository.getAllAreaScores() }
-                .getOrDefault(emptyList())
-            val overall = if (areaScores.isEmpty()) 0 else areaScores.map { it.score }.average().toInt()
-            // Only when one area is alone at the bottom. A new account scores every area the
-            // same, and "Career is slipping" on a six-way tie is an invented problem (same tie
-            // rule as the wheel).
-            val weakest = areaScores.minByOrNull { it.score }
-                ?.takeIf { low -> areaScores.count { it.score == low.score } == 1 }
 
             val quietDays = runCatching {
                 retrospectiveRepository.observeWeeklySnapshots().first().count { !it.hasAnyActivity }
@@ -118,34 +103,15 @@ class YouViewModel(
                         )
                     )
                 }
-                if (weakest != null && weakest.score < BALANCE_ATTENTION_THRESHOLD) {
-                    add(
-                        YouAttention(
-                            id = "weak_area",
-                            title = "${weakest.area.displayName} is slipping",
-                            body = "It's your lowest area at ${weakest.score}/100. Worth a look before it drifts further.",
-                            actionLabel = "Open balance",
-                            route = Screen.ForYou.route,
-                            score = 76,
-                        )
-                    )
-                }
             }.sortedByDescending { it.score }
 
             _state.value = YouState(
                 loading = false,
                 attention = attention,
-                areaScores = areaScores,
-                overallBalance = overall,
-                weakestArea = weakest,
                 topInsight = topInsight,
                 peakHourLabel = peakHour,
             )
         }
     }
 
-    private companion object {
-        /** Below this an area reads as neglected rather than merely uneven. */
-        const val BALANCE_ATTENTION_THRESHOLD = 40
-    }
 }
