@@ -111,7 +111,7 @@ fun ProfileScreen(
             // signed-in-only the way the old identity-only header was.
             if (currentUser != null) {
                 item {
-                    PlayerCardHero(
+                    ProfilePaperHeader(
                         user = currentUser,
                         userProgress = userProgress,
                         syncStatus = syncStatus,

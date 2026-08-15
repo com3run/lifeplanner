@@ -247,6 +247,30 @@ class PreviewScreenshots {
         )
     }
 
+    /** Profile paper header: level and rank once, identity as a byline, one thin XP line. */
+    @Test
+    fun profilePaperHeader() = snap("ProfilePaperHeader") {
+        az.tribe.lifeplanner.ui.profile.ProfilePaperHeader(
+            user = az.tribe.lifeplanner.domain.model.User(
+                id = "preview-user",
+                email = "kamran@example.com",
+                displayName = "Kamran",
+                selectedSymbol = "🦅",
+                createdAt = kotlin.time.Instant.parse("2026-06-01T07:00:00Z"),
+            ),
+            userProgress = az.tribe.lifeplanner.domain.model.UserProgress(
+                currentStreak = 5,
+                lastCheckInDate = LocalDate(2026, 8, 14),
+                totalXp = 1240,
+                currentLevel = 4,
+            ),
+            syncStatus = az.tribe.lifeplanner.data.sync.SyncStatus(
+                state = az.tribe.lifeplanner.data.sync.SyncState.SYNCED,
+            ),
+            onRetrySync = {},
+        )
+    }
+
     /** Journal entry paper header: mood overline, wrapping title, date line. */
     @Test
     fun journalPaperHeader() = snap("JournalPaperHeader") {
