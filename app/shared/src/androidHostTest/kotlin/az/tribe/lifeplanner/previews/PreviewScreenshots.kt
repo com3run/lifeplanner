@@ -185,16 +185,46 @@ class PreviewScreenshots {
         }
     }
 
-    /** The chain now pads itself like every other card; the extra outer padding here mirrors the list. */
+    /**
+     * The chain as the goal's whole story: area with score, goal, milestone progress with the
+     * next step, and the coach's read closing the card with a byline.
+     */
     @Test
     fun whyChain() = snap("WhyChain") {
         az.tribe.lifeplanner.ui.goal.WhyChainComponent(
             valueTitle = "💪 Physical",
             goalTitle = "Run a half marathon",
             milestoneCount = 3,
+            milestonesDone = 1,
+            nextStep = "Finish a 10K race",
             areaScore = 4.0,
             lowestNote = "your lowest",
+            coachRead = "1 of 3 done. Next is \"Finish a 10K race\". Physical is your lowest " +
+                "area right now, which makes this the goal with the most to move.",
+            coachName = "Kai",
+            coachTitle = "Fitness Coach",
+            onChat = {},
+            reasoning = "Training for something concrete beats exercising in the abstract.",
             onValueClick = {},
+        )
+    }
+
+    /** The paper header: overline, wrapping title, thin progress line, one quiet meta line. */
+    @Test
+    fun goalPaperHeader() = snap("GoalPaperHeader") {
+        az.tribe.lifeplanner.ui.components.GoalPaperHeader(
+            goal = goal(milestonesDone = 1).copy(completionRate = 1 / 3f, progress = 33L),
+        )
+    }
+
+    /** A real-length title has to wrap like text, not clip like a banner. */
+    @Test
+    fun goalPaperHeaderLongTitle() = snap("GoalPaperHeader_longTitle") {
+        az.tribe.lifeplanner.ui.components.GoalPaperHeader(
+            goal = goal(milestonesDone = 2).copy(
+                title = "Run the Valencia half marathon with my brother without walking any of it",
+                progress = 66L,
+            ),
         )
     }
 

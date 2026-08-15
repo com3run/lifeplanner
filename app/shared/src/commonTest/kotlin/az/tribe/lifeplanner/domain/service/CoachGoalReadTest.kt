@@ -156,4 +156,28 @@ class CoachGoalReadTest {
             assertFalse("null" in read, "a missing value leaked into the copy: $read")
         }
     }
+
+    @Test
+    fun `a goal that is simply moving along gets silence, not an echo of its own numbers`() {
+        // The chain's milestones node already shows the count and the next step.
+        val plain = snap(done = 2, total = 4)
+        assertTrue(CoachGoalRead.readBeyondProgress("Morgan", plain) == null)
+    }
+
+    @Test
+    fun `anything worth remarking on still gets its read`() {
+        val notable = listOf(
+            snap(done = 2, total = 4, areaIsLowest = true),
+            snap(done = 2, total = 4, daysUntilDue = -3),
+            snap(done = 3, total = 4),
+            snap(done = 0, total = 4, ageDays = 40),
+            snap(practiceDay = 8, practiceStreak = 8, total = 0, next = null),
+        )
+        notable.forEach { s ->
+            assertTrue(
+                CoachGoalRead.readBeyondProgress("Morgan", s) != null,
+                "state worth remarking on was silenced: $s",
+            )
+        }
+    }
 }

@@ -52,9 +52,12 @@ fun WheelAreaPickerSheet(
     val c = MaterialTheme.modernColors
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val segments = scores.filter { it.area.isWheelSegment }
-    val lowestScore = segments.minOfOrNull { it.score }
     // Two areas can tie for last. Calling one of them "your lowest" because it happens to sort
-    // first claims a precision the numbers do not have.
+    // first claims a precision the numbers do not have. And when every area ties there is no
+    // lowest at all — nine rows each marked "among your lowest" is the app inventing a problem
+    // (same tie rule as the wheel's headline).
+    val allTied = segments.isNotEmpty() && segments.all { it.score == segments.first().score }
+    val lowestScore = if (allTied) null else segments.minOfOrNull { it.score }
     val lowestIsShared = lowestScore != null && segments.count { it.score == lowestScore } > 1
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {

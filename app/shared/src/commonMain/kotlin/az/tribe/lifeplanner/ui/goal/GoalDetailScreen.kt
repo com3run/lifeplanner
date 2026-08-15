@@ -9,8 +9,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.fillMaxWidth
 import com.adamglin.phosphoricons.regular.Sparkle
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import com.adamglin.PhosphorIcons
@@ -33,7 +31,6 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,9 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.graphics.lerp
 import az.tribe.lifeplanner.data.analytics.Analytics
 import az.tribe.lifeplanner.domain.enum.GoalStatus
 import az.tribe.lifeplanner.domain.model.Ability
@@ -62,7 +57,7 @@ import az.tribe.lifeplanner.ui.components.CelebrationOverlay
 import az.tribe.lifeplanner.ui.components.CelebrationType
 import az.tribe.lifeplanner.ui.components.DependenciesCard
 import az.tribe.lifeplanner.ui.components.GoalDetailDialogs
-import az.tribe.lifeplanner.ui.components.GoalDetailHeroHeader
+import az.tribe.lifeplanner.ui.components.GoalPaperHeader
 import az.tribe.lifeplanner.ui.components.StatusToggleButtons
 import az.tribe.lifeplanner.ui.components.backgroundColor
 import az.tribe.lifeplanner.ui.dependency.GoalDependencyViewModel
@@ -166,37 +161,12 @@ fun GoalDetailScreen(
     val isCompleted = goal.status == GoalStatus.COMPLETED
     val coach = CoachPersona.getByCategory(goal.category)
     val primaryColor = goal.category.backgroundColor()
-    val gradientColors = goal.category.gradientColors()
 
     val listState = rememberLazyListState()
-    // How far the bar has travelled off the hero and onto the page: 0 while it still sits on the
-    // gradient, 1 once the page is what is behind it.
-    //
-    // Driven by the list rather than a collapsing-bar behaviour on purpose. This is a small
-    // TopAppBar, and exitUntilCollapsed does not collapse one — it slides the whole bar away, which
-    // took Back and the overflow menu off screen with it and meant the colour never crossed
-    // anywhere the user could see. Pinned bar, colour on a scroll fraction.
-    val density = LocalDensity.current
-    val barHeightPx = with(density) { 64.dp.toPx() } +
-        WindowInsets.statusBars.getTop(density)
-    val fadeDistancePx = with(density) { 72.dp.toPx() }
-    val barFraction by remember(barHeightPx, fadeDistancePx) {
-        derivedStateOf {
-            // Measured against the hero's bottom edge rather than raw scroll distance. Fading on
-            // distance alone turned the bar dark while the gradient was still filling the screen
-            // behind it, which just moved the seam rather than removing it.
-            val hero = listState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == 0 }
-                // Hero scrolled out of the list entirely: nothing left to blend with.
-                ?: return@derivedStateOf 1f
-            val gradientUnderBar = (hero.offset + hero.size) - barHeightPx
-            1f - (gradientUnderBar / fadeDistancePx).coerceIn(0f, 1f)
-        }
-    }
-    // White reads on every category gradient and disappears against the page, so the icons have to
-    // cross with the bar behind them.
-    val barIconColor = lerp(Color.White, MaterialTheme.colorScheme.onSurface, barFraction)
-    val barContainerColor =
-        lerp(gradientColors.first(), MaterialTheme.colorScheme.background, barFraction)
+    // The paper header sits on the page background, so the bar has nothing to blend with any
+    // more; the scroll-fraction colour crossing left with the gradient hero it was built for.
+    val barIconColor = MaterialTheme.colorScheme.onSurface
+    val barContainerColor = MaterialTheme.colorScheme.background
 
     Scaffold(
         topBar = {
@@ -284,8 +254,7 @@ fun GoalDetailScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             item {
-                GoalDetailHeroHeader(
-                    modifier = Modifier,
+                GoalPaperHeader(
                     goal = goal,
                     practice = practice,
                 )
@@ -332,9 +301,12 @@ fun GoalDetailScreen(
                 GoalJourneyCard(goal = goal, isPractice = practice != null)
             }
 
-            // Pillar 1: Why-Chain (value → goal → milestones) + orphan nudge
+            // Pillar 1: the Why-Chain, which now tells the goal's whole story in one card:
+            // area (the why), goal, milestones with their progress, and the coach's read on
+            // where it stands. The read and the progress used to be a separate coach card and a
+            // hero banner stat; three surfaces repeating each other is why none of them read as
+            // meaningful.
             item {
-                val linkedValue = lifeValues.find { it.id == goal.valueId }
                 // Goals saved before wheel areas existed have none stored. Inferring at display
                 // time means every goal shows a correct area straight away, without a migration
                 // rewriting rows the user never asked us to touch.
@@ -349,32 +321,16 @@ fun GoalDetailScreen(
                 // out because it sorts first claims precision the scores do not have.
                 val lowestNote = when {
                     areaScore == null || lowestScore == null || areaScore != lowestScore -> null
+                    // A wheel where every area ties has no low point at all. "Among your lowest"
+                    // on a row of tens is the app inventing a problem (same tie rule as the
+                    // wheel's own headline).
+                    segments.all { it.score == lowestScore } -> null
                     segments.count { it.score == lowestScore } > 1 -> "among your lowest"
                     else -> "your lowest"
                 }
 
-                WhyChainComponent(
-                    valueTitle = "${area.emoji} ${area.displayName}",
-                    goalTitle = goal.title,
-                    milestoneCount = goal.milestones.size,
-                    areaScore = areaScore,
-                    lowestNote = lowestNote,
-                    onValueClick = { showValueSheet = true }
-                )
-            }
-
-            // The why and the coach saying it are one card, sitting high on the page where the
-            // question is still fresh. They used to be two: reasoning here, and a full coach
-            // profile far below that reintroduced the same coach on every goal.
-            item(key = "coach_why") {
                 val today = Clock.System.now()
                     .toLocalDateTime(TimeZone.currentSystemDefault()).date
-                val area = goal.wheelArea
-                    ?: az.tribe.lifeplanner.domain.service.GoalWheelAreaInferrer.infer(
-                        goal.category, goal.title, goal.description,
-                    )
-                val segs = wheelReport?.segments.orEmpty()
-                val low = segs.minOfOrNull { it.score }
                 val snapshot = az.tribe.lifeplanner.domain.service.GoalSnapshot(
                     status = goal.status,
                     milestonesTotal = goal.milestones.size,
@@ -386,14 +342,27 @@ fun GoalDetailScreen(
                     practiceDay = practice?.dayNumber,
                     practiceStreak = practice?.currentStreak,
                     areaName = area.displayName,
-                    areaIsLowest = low != null &&
-                        segs.firstOrNull { it.area == area }?.score == low,
+                    // A full tie means no area is meaningfully lowest, so the coach does not get
+                    // to claim this one is (same tie rule as the wheel's headline).
+                    areaIsLowest = lowestScore != null && areaScore == lowestScore &&
+                        segments.any { it.score != lowestScore },
                 )
-                CoachWhyCard(
-                    coach = coach,
-                    read = az.tribe.lifeplanner.domain.service.CoachGoalRead.read(coach.name, snapshot),
+
+                WhyChainComponent(
+                    valueTitle = "${area.emoji} ${area.displayName}",
+                    goalTitle = goal.title,
+                    milestoneCount = goal.milestones.size,
+                    milestonesDone = goal.milestones.count { it.isCompleted },
+                    nextStep = goal.milestones.firstOrNull { !it.isCompleted }?.title,
+                    areaScore = areaScore,
+                    lowestNote = lowestNote,
+                    coachRead = az.tribe.lifeplanner.domain.service.CoachGoalRead
+                        .readBeyondProgress(coach.name, snapshot),
+                    coachName = coach.name,
+                    coachTitle = coach.title,
+                    onChat = { onCoachClick(coach.id) },
                     reasoning = goal.aiReasoning?.takeIf { it.isNotBlank() },
-                    onMeetCoach = { onCoachClick(coach.id) },
+                    onValueClick = { showValueSheet = true }
                 )
             }
 

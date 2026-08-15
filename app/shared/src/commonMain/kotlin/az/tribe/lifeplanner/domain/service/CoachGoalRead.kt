@@ -52,6 +52,20 @@ object CoachGoalRead {
         return if (area != null) "$head $area" else head
     }
 
+    /**
+     * The read, or null when all it would say is the progress the caller already shows.
+     *
+     * The Why-Chain's milestones node displays "2 of 7 done" and the next step itself, and the
+     * plain in-progress read says exactly that sentence. A goal in any state worth remarking on
+     * (stalled, overdue, one step left, a practice, a lowest area) still gets its read; a goal
+     * that is simply moving along gets silence instead of an echo.
+     */
+    fun readBeyondProgress(coachName: String, s: GoalSnapshot): String? {
+        val full = read(coachName, s)
+        val plainProgress = "${s.milestonesDone} of ${s.milestonesTotal} done. Next is \"${s.nextStep}\"."
+        return full.takeIf { it != plainProgress }
+    }
+
     private fun headline(coachName: String, s: GoalSnapshot, open: Int): String = when {
 
         s.status == GoalStatus.COMPLETED ->
