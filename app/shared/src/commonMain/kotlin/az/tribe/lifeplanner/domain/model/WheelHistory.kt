@@ -44,6 +44,30 @@ enum class ComparisonPeriod(val displayName: String, val days: Int) {
     DAY("since yesterday", 1),
     WEEK("this week", 7),
     MONTH("this month", 30),
+
+    ;
+
+    companion object {
+        /**
+         * The periods whose chips are worth pressing, given the days actually on record.
+         *
+         * Each period resolves the same way the comparison itself does: the nearest snapshot at or
+         * before today minus [days]. With thin history several periods resolve to the same
+         * snapshot, and offering both means two chips that produce identical numbers, which reads
+         * as the card being broken rather than the history being short. A period earns its chip
+         * only when it resolves at all and lands on a different snapshot than every shorter one.
+         */
+        fun offered(snapshotDates: Collection<LocalDate>, today: LocalDate): List<ComparisonPeriod> {
+            val past = snapshotDates.filter { it < today }
+            if (past.isEmpty()) return emptyList()
+            val used = mutableSetOf<LocalDate>()
+            return entries.filter { period ->
+                val target = today.toEpochDays() - period.days
+                val resolved = past.filter { it.toEpochDays() <= target }.maxOrNull()
+                resolved != null && used.add(resolved)
+            }
+        }
+    }
 }
 
 /**

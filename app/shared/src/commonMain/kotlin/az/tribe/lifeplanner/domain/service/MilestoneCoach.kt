@@ -68,6 +68,20 @@ object MilestoneCoach {
         GoalCategory.FAMILY -> "$coachName would protect the time first, then fill it."
     }
 
+    /**
+     * The same framing with no coach in it, for surfaces where the steps read as plain advice
+     * rather than a named draft (the goal detail milestones card).
+     */
+    fun advice(category: GoalCategory): String = when (category) {
+        GoalCategory.CAREER -> "Break this into moves you can point at in a review."
+        GoalCategory.MONEY -> "Make each step a number you can check."
+        GoalCategory.BODY -> "Start smaller than feels impressive, then build."
+        GoalCategory.PEOPLE -> "Turn this into specific people and specific dates."
+        GoalCategory.WELLBEING -> "Keep the steps gentle and repeatable."
+        GoalCategory.PURPOSE -> "Start with why, then make it visible."
+        GoalCategory.FAMILY -> "Protect the time first, then fill it."
+    }
+
     // ── Template matching ─────────────────────────────────────────────────────
 
     /**

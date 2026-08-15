@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
+import kotlinx.datetime.toLocalDateTime
 
 data class WheelUiState(
     val report: WheelReport? = null,
@@ -27,6 +28,12 @@ data class WheelUiState(
      * to tell the user.
      */
     val snapshotCount: Int = 0,
+    /**
+     * The periods whose chip would actually change what is below. See [ComparisonPeriod.offered]:
+     * with thin history, "this week" and "this month" resolve to the same snapshot as a shorter
+     * period and their chips become decoration that looks broken when pressed.
+     */
+    val offeredPeriods: List<ComparisonPeriod> = emptyList(),
     val comparisonLoading: Boolean = false,
     val suggestion: az.tribe.lifeplanner.domain.service.WheelSuggestion? = null,
     /** Offer the user the chance to replace our predictions with their own nine numbers. */
@@ -148,11 +155,19 @@ class WheelViewModel(
 
     private suspend fun loadComparison(period: ComparisonPeriod) {
         _state.value = _state.value.copy(comparisonLoading = true)
-        val comparison = runCatching { repository.compareTo(period) }.getOrNull()
-        val count = runCatching { repository.snapshots().size }.getOrDefault(0)
+        val snapshots = runCatching { repository.snapshots() }.getOrDefault(emptyList())
+        val today = kotlinx.datetime.Clock.System.now()
+            .toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault()).date
+        val offered = ComparisonPeriod.offered(snapshots.map { it.date }, today)
+        // A period whose chip is not offered would show the same numbers as a shorter one, so
+        // showing it selected would be the exact confusion the offer list exists to prevent.
+        val effective = if (period in offered || offered.isEmpty()) period else offered.first()
+        val comparison = runCatching { repository.compareTo(effective) }.getOrNull()
         _state.value = _state.value.copy(
+            period = effective,
             comparison = comparison,
-            snapshotCount = count,
+            snapshotCount = snapshots.size,
+            offeredPeriods = offered,
             comparisonLoading = false,
         )
     }

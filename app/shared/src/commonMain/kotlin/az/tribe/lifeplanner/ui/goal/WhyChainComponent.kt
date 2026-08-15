@@ -49,7 +49,9 @@ fun WhyChainComponent(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        modifier = modifier.fillMaxWidth(),
+        // Self-pads like every other card on the goal detail list (GoalDescriptionCard,
+        // ModernMilestonesCard); without this it is the one block running edge to edge.
+        modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp),
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.modernColors.cardBackground
     ) {

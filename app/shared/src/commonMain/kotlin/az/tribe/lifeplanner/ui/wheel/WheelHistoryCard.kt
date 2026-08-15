@@ -42,6 +42,12 @@ fun WheelHistoryCard(
     isLoading: Boolean,
     onPeriodChange: (ComparisonPeriod) -> Unit,
     modifier: Modifier = Modifier,
+    /**
+     * Which chips to draw. On thin history most periods resolve to the same snapshot, and a row
+     * of chips that all show identical numbers reads as the card being broken. One chip is still
+     * drawn alone so the stats below carry their period label.
+     */
+    offeredPeriods: List<ComparisonPeriod> = ComparisonPeriod.entries,
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
@@ -54,13 +60,15 @@ fun WheelHistoryCard(
         ) {
             Text("What moved", style = MaterialTheme.typography.titleSmall)
 
-            Row(horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.xs)) {
-                ComparisonPeriod.entries.forEach { option ->
-                    FilterChip(
-                        selected = option == period,
-                        onClick = { onPeriodChange(option) },
-                        label = { Text(option.displayName) },
-                    )
+            if (offeredPeriods.isNotEmpty()) {
+                Row(horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.xs)) {
+                    offeredPeriods.forEach { option ->
+                        FilterChip(
+                            selected = option == period,
+                            onClick = { onPeriodChange(option) },
+                            label = { Text(option.displayName) },
+                        )
+                    }
                 }
             }
 

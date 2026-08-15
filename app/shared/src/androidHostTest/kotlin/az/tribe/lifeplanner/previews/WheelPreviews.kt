@@ -173,7 +173,11 @@ class WheelPreviews {
         )
     }
 
-    /** The first-snapshot empty state: there is history, there is just not enough of it yet. */
+    /**
+     * The first-snapshot empty state: there is history, there is just not enough of it yet. No
+     * chips either — with nothing to compare, every chip produced the identical sentence, which
+     * is how the owner read the card as broken.
+     */
     @Test
     fun wheelHistoryFirstSnapshot() = snap("Wheel_history_firstSnapshot") {
         WheelHistoryCard(
@@ -182,6 +186,25 @@ class WheelPreviews {
             snapshotCount = 1,
             isLoading = false,
             onPeriodChange = {},
+            offeredPeriods = emptyList(),
+        )
+    }
+
+    /** Two days on record: exactly one chip, labelling the stats rather than pretending choice. */
+    @Test
+    fun wheelHistoryDayOnly() = snap("Wheel_history_dayOnly") {
+        WheelHistoryCard(
+            comparison = WheelComparison(
+                period = ComparisonPeriod.DAY,
+                previousDate = LocalDate(2026, 8, 14),
+                currentDate = LocalDate(2026, 8, 15),
+                deltas = listOf(WheelDelta(WheelArea.FRIENDS, from = 3.0, to = 3.5)),
+            ),
+            period = ComparisonPeriod.DAY,
+            snapshotCount = 2,
+            isLoading = false,
+            onPeriodChange = {},
+            offeredPeriods = listOf(ComparisonPeriod.DAY),
         )
     }
 

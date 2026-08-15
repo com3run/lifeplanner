@@ -171,4 +171,44 @@ class WheelHistoryTest {
             assertTrue(it.displayName.isNotBlank(), "${it.name} has no label")
         }
     }
+
+    // ── Which period chips are worth offering ─────────────────────────────────
+
+    private val today = LocalDate(2026, 8, 15)
+    private fun daysAgo(n: Int) = LocalDate.fromEpochDays(today.toEpochDays() - n)
+
+    @Test
+    fun `a first day on record offers no periods at all`() {
+        assertEquals(emptyList(), ComparisonPeriod.offered(emptyList(), today))
+        assertEquals(emptyList(), ComparisonPeriod.offered(listOf(today), today))
+    }
+
+    @Test
+    fun `yesterday and today offer only the day chip`() {
+        val offered = ComparisonPeriod.offered(listOf(daysAgo(1), today), today)
+        assertEquals(listOf(ComparisonPeriod.DAY), offered)
+    }
+
+    @Test
+    fun `a lone old snapshot is one chip, not three showing the same numbers`() {
+        // Ten days back, every period resolves to the same snapshot; two of the chips would be
+        // decoration that produces identical stats.
+        val offered = ComparisonPeriod.offered(listOf(daysAgo(10), today), today)
+        assertEquals(listOf(ComparisonPeriod.DAY), offered)
+    }
+
+    @Test
+    fun `each chip appears once its period has a snapshot of its own`() {
+        val dates = listOf(daysAgo(1), daysAgo(8), daysAgo(31), today)
+        assertEquals(ComparisonPeriod.entries.toList(), ComparisonPeriod.offered(dates, today))
+    }
+
+    @Test
+    fun `week appears without month when history spans a week but not a month`() {
+        val dates = listOf(daysAgo(1), daysAgo(9), today)
+        assertEquals(
+            listOf(ComparisonPeriod.DAY, ComparisonPeriod.WEEK),
+            ComparisonPeriod.offered(dates, today),
+        )
+    }
 }

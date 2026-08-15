@@ -88,6 +88,7 @@ fun WheelScreen(
                 comparison = state.comparison,
                 period = state.period,
                 snapshotCount = state.snapshotCount,
+                offeredPeriods = state.offeredPeriods,
                 comparisonLoading = state.comparisonLoading,
                 onPeriodChange = viewModel::setPeriod,
                 showSetupPrompt = state.showSetupPrompt,
@@ -110,6 +111,7 @@ private fun WheelContent(
     comparison: az.tribe.lifeplanner.domain.model.WheelComparison?,
     period: az.tribe.lifeplanner.domain.model.ComparisonPeriod,
     snapshotCount: Int,
+    offeredPeriods: List<az.tribe.lifeplanner.domain.model.ComparisonPeriod>,
     comparisonLoading: Boolean,
     onPeriodChange: (az.tribe.lifeplanner.domain.model.ComparisonPeriod) -> Unit,
     showSetupPrompt: Boolean = false,
@@ -192,6 +194,7 @@ private fun WheelContent(
                 comparison = comparison,
                 period = period,
                 snapshotCount = snapshotCount,
+                offeredPeriods = offeredPeriods,
                 isLoading = comparisonLoading,
                 onPeriodChange = onPeriodChange,
             )
@@ -248,13 +251,28 @@ private fun WheelHeadline(report: WheelReport) {
             )
         }
         // The shape matters more than the mean, so name the gap rather than only the average.
-        report.lowest?.let { low ->
+        //
+        // But only when there is a gap to name. A wheel of nine identical predictions has no
+        // lowest area, and singling one out was crowning the winner of a nine-way tie — on numbers
+        // the app invented, directly above a card admitting it invented them.
+        val segments = report.segments
+        val lowestScore = segments.minOfOrNull { it.score }
+        val tied = lowestScore != null && segments.count { it.score == lowestScore } > 1
+        val detail = when {
+            segments.isEmpty() || lowestScore == null -> null
+            segments.none { it.source == ScoreSource.USER } && tied ->
+                "Nothing here is yours yet, so there is no low point to point at."
+            report.spread >= 3.0 -> report.lowest?.let { low ->
+                "${low.area.displayName} is furthest behind, ${formatScore(report.spread)} below your best."
+            }
+            tied -> "Your wheel is fairly even."
+            else -> report.lowest?.let { low ->
+                "Your wheel is fairly even. ${low.area.displayName} is the lowest."
+            }
+        }
+        detail?.let {
             Text(
-                text = if (report.spread >= 3.0) {
-                    "${low.area.displayName} is furthest behind, ${formatScore(report.spread)} below your best."
-                } else {
-                    "Your wheel is fairly even. ${low.area.displayName} is the lowest."
-                },
+                text = it,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

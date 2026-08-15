@@ -430,7 +430,6 @@ fun GoalDetailScreen(
                                     category = goal.category,
                                     description = goal.description,
                                     existingTitles = goal.milestones.map { it.title },
-                                    onAdd = { title -> viewModel.addMilestone(goalId, title) },
                                 )
                             }
                         },

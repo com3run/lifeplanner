@@ -185,6 +185,37 @@ class PreviewScreenshots {
         }
     }
 
+    /** The chain now pads itself like every other card; the extra outer padding here mirrors the list. */
+    @Test
+    fun whyChain() = snap("WhyChain") {
+        az.tribe.lifeplanner.ui.goal.WhyChainComponent(
+            valueTitle = "💪 Physical",
+            goalTitle = "Run a half marathon",
+            milestoneCount = 3,
+            areaScore = 4.0,
+            lowestNote = "your lowest",
+            onValueClick = {},
+        )
+    }
+
+    /** The coach draft as it now reads inside the milestones card: advice lines, not an offer. */
+    @Test
+    fun milestonesWithAdvice() = snap("Milestones_withAdvice") {
+        az.tribe.lifeplanner.ui.goal.ModernMilestonesCard(
+            milestones = goal(milestonesDone = 1).milestones,
+            onMilestoneToggle = {},
+            onAddMilestone = {},
+            coachDraft = {
+                az.tribe.lifeplanner.ui.goal.CoachMilestonesContent(
+                    goalTitle = "Run a half marathon",
+                    category = GoalCategory.BODY,
+                    description = "Train up to 21K by mid October",
+                    existingTitles = goal(milestonesDone = 1).milestones.map { it.title },
+                )
+            },
+        )
+    }
+
     @Test
     fun featureIntroPossibility() = snapIntro(FeatureIntroCatalog.POSSIBILITY)
 
