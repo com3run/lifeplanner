@@ -123,7 +123,7 @@ class ScreenTimeInsightViewModel(
         val topScreens = p.topFeatures(3).joinToString(", ") { pair ->
             "${pair.first} (avg ${pair.second / 1000}s)"
         }
-        val peakHour = p.peakHourLabel()
+        val peakHour = p.peakHourLabel() ?: "unknown"
         val days = p.mostActiveDays.take(3).joinToString(", ")
         val avgMin = (p.sessionAvgMinutes * 10).toLong() / 10.0
         val sessWk = (p.sessionsPerWeek * 10).toLong() / 10.0
@@ -165,11 +165,15 @@ class ScreenTimeInsightViewModel(
     }
 
     private fun fallbackRecommendations(p: AppUsagePattern?): List<BehaviorRecommendation> {
-        val peak = p?.peakHourLabel() ?: "morning"
+        val peak = p?.peakHourLabel()
         return listOf(
             BehaviorRecommendation(
                 title = "Build your peak-hour ritual",
-                body = "You're most active in the $peak. Schedule your hardest habit check-ins then for best follow-through.",
+                // Only claim a peak when one is on record; "morning" as a default was invented.
+                body = if (peak != null)
+                    "You're most active in the $peak. Schedule your hardest habit check-ins then for best follow-through."
+                else
+                    "Anchor your hardest habit check-ins to the hour you already reliably show up.",
                 actionRoute = "habit_tracker"
             ),
             BehaviorRecommendation(

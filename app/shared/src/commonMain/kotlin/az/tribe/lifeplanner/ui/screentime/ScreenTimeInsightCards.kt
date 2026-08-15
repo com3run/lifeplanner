@@ -73,7 +73,7 @@ fun OverviewCard(pattern: AppUsagePattern) {
                     StatChip(
                         icon = { Icon(PhosphorIcons.Regular.Clock, null, modifier = Modifier.size(16.dp)) },
                         label = "Peak time",
-                        value = pattern.peakHourLabel(),
+                        value = pattern.peakHourLabel() ?: "n/a",
                         modifier = Modifier.weight(1f)
                     )
                     StatChip(

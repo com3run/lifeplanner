@@ -6,7 +6,6 @@ import az.tribe.lifeplanner.data.model.GoalTypeQuestions
 import az.tribe.lifeplanner.data.model.Question
 import az.tribe.lifeplanner.data.model.Result
 import az.tribe.lifeplanner.data.model.UserQuestionnaireAnswers
-import az.tribe.lifeplanner.domain.enum.GoalFilter
 import az.tribe.lifeplanner.domain.enum.GoalStatus
 import az.tribe.lifeplanner.domain.model.Goal
 import az.tribe.lifeplanner.domain.repository.GeminiRepository
@@ -233,81 +232,12 @@ class GoalViewModelTest {
         }
     }
 
-    // ─── Filter ──────────────────────────────────────────────────────────────
+    // ─── Search over the live list ───────────────────────────────────────────
+    // The status filter this section used to exercise is gone: nothing in the app ever rendered
+    // the tabs that drove it, so the machinery came out (see the audit). Search remains.
 
     @Test
-    fun `updateFilter updates selectedFilter state`() = runTest(testDispatcher) {
-        viewModel.updateFilter(GoalFilter.ACTIVE)
-        assertEquals(GoalFilter.ACTIVE, viewModel.selectedFilter.value)
-    }
-
-    @Test
-    fun `filter ALL shows all goals`() = runTest(testDispatcher) {
-        fakeGoalRepository.setGoals(
-            listOf(
-                testGoal(id = "g1", status = GoalStatus.IN_PROGRESS),
-                testGoal(id = "g2", status = GoalStatus.COMPLETED),
-                testGoal(id = "g3", status = GoalStatus.NOT_STARTED)
-            )
-        )
-
-        viewModel.goals.test {
-            awaitItem() // initial emptyList
-            testDispatcher.scheduler.advanceUntilIdle()
-            val goals = awaitItem()
-            assertEquals(3, goals.size)
-            cancelAndIgnoreRemainingEvents()
-        }
-    }
-
-    @Test
-    fun `filter ACTIVE excludes completed goals`() = runTest(testDispatcher) {
-        fakeGoalRepository.setGoals(
-            listOf(
-                testGoal(id = "g1", status = GoalStatus.IN_PROGRESS),
-                testGoal(id = "g2", status = GoalStatus.COMPLETED),
-                testGoal(id = "g3", status = GoalStatus.NOT_STARTED)
-            )
-        )
-
-        viewModel.goals.test {
-            awaitItem() // initial emptyList
-            testDispatcher.scheduler.advanceUntilIdle()
-            awaitItem() // all 3 goals
-
-            viewModel.updateFilter(GoalFilter.ACTIVE)
-            val goals = awaitItem()
-            assertEquals(2, goals.size)
-            assertTrue(goals.none { it.status == GoalStatus.COMPLETED })
-            cancelAndIgnoreRemainingEvents()
-        }
-    }
-
-    @Test
-    fun `filter COMPLETED shows only completed goals`() = runTest(testDispatcher) {
-        fakeGoalRepository.setGoals(
-            listOf(
-                testGoal(id = "g1", status = GoalStatus.IN_PROGRESS),
-                testGoal(id = "g2", status = GoalStatus.COMPLETED),
-                testGoal(id = "g3", status = GoalStatus.NOT_STARTED)
-            )
-        )
-
-        viewModel.goals.test {
-            awaitItem() // initial emptyList
-            testDispatcher.scheduler.advanceUntilIdle()
-            awaitItem() // all 3 goals
-
-            viewModel.updateFilter(GoalFilter.COMPLETED)
-            val goals = awaitItem()
-            assertEquals(1, goals.size)
-            assertEquals(GoalStatus.COMPLETED, goals.first().status)
-            cancelAndIgnoreRemainingEvents()
-        }
-    }
-
-    @Test
-    fun `search and filter combine correctly`() = runTest(testDispatcher) {
+    fun `search narrows the live goal list`() = runTest(testDispatcher) {
         fakeGoalRepository.setGoals(
             listOf(
                 testGoal(id = "g1", title = "Learn Kotlin", status = GoalStatus.IN_PROGRESS),
@@ -319,15 +249,14 @@ class GoalViewModelTest {
         viewModel.goals.test {
             awaitItem() // initial emptyList
             testDispatcher.scheduler.advanceUntilIdle()
-            awaitItem() // all 3 goals
+            assertEquals(3, awaitItem().size)
 
             viewModel.updateSearchQuery("Learn")
-            viewModel.updateFilter(GoalFilter.ACTIVE)
             testDispatcher.scheduler.advanceUntilIdle()
 
             val goals = awaitItem()
-            assertEquals(1, goals.size)
-            assertEquals("g1", goals.first().id)
+            assertEquals(2, goals.size)
+            assertTrue(goals.all { "Learn" in it.title })
             cancelAndIgnoreRemainingEvents()
         }
     }

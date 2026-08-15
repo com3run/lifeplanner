@@ -18,13 +18,20 @@ data class AppUsagePattern(
             .take(limit)
             .map { it.toPair() }
 
-    fun peakHourLabel(): String {
-        val h = mostActiveHours.firstOrNull() ?: return "morning"
+    /**
+     * The stretch of day the user shows up most, or null when nothing is recorded yet. The exact
+     * hour used to ride along ("morning (11:00)"), which on the 10-event sample that unlocks
+     * this claim is more precision than the data holds, and tied hours resolved to whichever
+     * came first. A period is a claim the sample can actually carry; "morning" as a default was
+     * an invented fact.
+     */
+    fun peakHourLabel(): String? {
+        val h = mostActiveHours.firstOrNull() ?: return null
         return when (h) {
-            in 5..11 -> "morning ($h:00)"
-            in 12..17 -> "afternoon ($h:00)"
-            in 18..21 -> "evening ($h:00)"
-            else -> "night ($h:00)"
+            in 5..11 -> "morning"
+            in 12..17 -> "afternoon"
+            in 18..21 -> "evening"
+            else -> "night"
         }
     }
 }

@@ -179,12 +179,13 @@ class HomeFeedBuilder(
         }
 
         // Pattern: when the user actually shows up
-        runCatching { behaviorRepository.getPattern() }.getOrNull()?.takeIf { it.hasEnoughData }?.let { p ->
+        runCatching { behaviorRepository.getPattern() }.getOrNull()?.takeIf { it.hasEnoughData }
+            ?.peakHourLabel()?.let { peak ->
             items += FeedItem(
                 id = "pattern_peak",
                 kind = FeedKind.PATTERN,
                 eyebrow = "YOUR PATTERN",
-                title = "You show up most in the ${p.peakHourLabel()}",
+                title = "You show up most in the $peak",
                 body = "Your follow-through is strongest then. Try anchoring your most important habit to that window.",
                 route = Screen.ScreenTimeInsight.route,
                 score = 64.0,

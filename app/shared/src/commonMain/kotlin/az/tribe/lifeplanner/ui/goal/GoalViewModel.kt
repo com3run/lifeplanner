@@ -12,7 +12,6 @@ import az.tribe.lifeplanner.domain.model.GoalAnalytics
 import az.tribe.lifeplanner.domain.model.GoalChange
 import az.tribe.lifeplanner.domain.model.LifeValue
 import az.tribe.lifeplanner.domain.repository.LifeValueRepository
-import az.tribe.lifeplanner.domain.enum.GoalFilter
 import az.tribe.lifeplanner.domain.enum.GoalStatus
 import az.tribe.lifeplanner.domain.model.XpRewards
 import az.tribe.lifeplanner.domain.repository.GamificationRepository
@@ -72,9 +71,6 @@ class GoalViewModel(
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
-    private val _selectedFilter = MutableStateFlow(GoalFilter.ALL)
-    val selectedFilter: StateFlow<GoalFilter> = _selectedFilter.asStateFlow()
-
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
@@ -84,9 +80,8 @@ class GoalViewModel(
     // Reactive goals: auto-updates from DB, with client-side search/filter
     val goals: StateFlow<List<Goal>> = combine(
         goalRepository.observeAllGoals(),
-        _searchQuery,
-        _selectedFilter
-    ) { allGoals, query, filter ->
+        _searchQuery
+    ) { allGoals, query ->
         var result = allGoals
         if (query.isNotBlank()) {
             result = result.filter { goal ->
@@ -94,11 +89,7 @@ class GoalViewModel(
                     goal.description.contains(query, ignoreCase = true)
             }
         }
-        when (filter) {
-            GoalFilter.ALL -> result
-            GoalFilter.ACTIVE -> result.filter { it.status != GoalStatus.COMPLETED }
-            GoalFilter.COMPLETED -> result.filter { it.status == GoalStatus.COMPLETED }
-        }
+        result
     }
         .onEach { _isLoading.value = false }
         .catch { e ->
@@ -154,10 +145,6 @@ class GoalViewModel(
         if (query.length >= 3) {
             FacebookAnalytics.logSearch(query, "goal")
         }
-    }
-
-    fun updateFilter(filter: GoalFilter) {
-        _selectedFilter.value = filter
     }
 
     // Goal CRUD Operations

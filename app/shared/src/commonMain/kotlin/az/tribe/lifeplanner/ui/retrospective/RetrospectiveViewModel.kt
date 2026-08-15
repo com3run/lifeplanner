@@ -156,7 +156,8 @@ class RetrospectiveViewModel(
             "${snapshot.habitSummary.completedHabits} of ${snapshot.habitSummary.totalHabits} habits completed"
         } else "no habits tracked"
 
-        val moodLine = snapshot.dominantMood?.let { "dominant mood: ${it.displayName}" } ?: "no journal entries"
+        val moodLine = snapshot.dominantMood?.let { "dominant mood: ${it.displayName}" }
+            ?: if (snapshot.journalEntries.isEmpty()) "no journal entries" else "mixed moods across entries"
         val focusLine = if (snapshot.totalFocusMinutes > 0) "${snapshot.totalFocusMinutes} minutes of focused work" else "no focus sessions"
         val journalLine = if (snapshot.journalEntries.isNotEmpty()) {
             "wrote ${snapshot.journalEntries.size} journal ${if (snapshot.journalEntries.size == 1) "entry" else "entries"}"

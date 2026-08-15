@@ -14,12 +14,14 @@ data class DaySnapshot(
     val goalChanges: List<GoalChangeWithTitle>,
     val badgesEarned: List<Badge>
 ) {
+    // Null on a tie as well as on an empty day: one happy and one anxious entry has no dominant
+    // mood, and picking whichever grouped first narrated the user a feeling they never led with.
     val dominantMood: Mood?
-        get() = journalEntries
-            .map { it.mood }
-            .groupBy { it }
-            .maxByOrNull { it.value.size }
-            ?.key
+        get() {
+            val counts = journalEntries.groupingBy { it.mood }.eachCount()
+            val top = counts.maxByOrNull { it.value } ?: return null
+            return top.key.takeIf { counts.count { c -> c.value == top.value } == 1 }
+        }
 
     val totalFocusMinutes: Int
         get() = focusSessions.sumOf { it.actualDurationSeconds } / 60
