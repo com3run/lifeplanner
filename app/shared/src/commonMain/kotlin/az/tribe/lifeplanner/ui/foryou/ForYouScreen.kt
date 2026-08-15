@@ -98,6 +98,7 @@ import az.tribe.lifeplanner.ui.wheel.WheelStripCard
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import az.tribe.lifeplanner.domain.service.KnowledgeLibrary
 import az.tribe.lifeplanner.domain.service.StepDuration
 import com.adamglin.phosphoricons.fill.Play
 import az.tribe.lifeplanner.ui.today.PlanItem
@@ -191,6 +192,8 @@ fun ForYouScreen(
         weatherViewModel.onPermissionState(locationPermission.state == LocationPermissionState.GRANTED)
     }
     var filter by remember { mutableStateOf<FeedSection?>(null) }
+    // Which learn card is open, reading inline. One at a time: the feed is a page, not an accordion.
+    var expandedLessonId by remember { mutableStateOf<String?>(null) }
     val introGate = rememberFeatureIntroGate()
     val visible = remember(feed, filter) {
         val f = filter
@@ -337,9 +340,18 @@ fun ForYouScreen(
                         }
                         items(cards, key = { it.id }) { fi ->
                             val accent = accentFor(fi)
-                            // Opening the card's destination (a feature the user hasn't met explains
-                            // itself first via the intro gate). Shared by the card body and the button.
-                            val open: () -> Unit = { fi.route?.let { route -> introGate.open(fi.introId, accent) { onOpenRoute(route) } } }
+                            // A lesson reads where it is: tapping expands the card into the full
+                            // lesson instead of leaving for a reader page. Everything else keeps
+                            // navigating (a feature the user hasn't met explains itself first via
+                            // the intro gate).
+                            val lesson = if (fi.kind == FeedKind.KNOWLEDGE) {
+                                fi.route?.substringAfterLast("/")?.let(KnowledgeLibrary::byId)
+                            } else null
+                            val open: () -> Unit = if (lesson != null) {
+                                { expandedLessonId = if (expandedLessonId == fi.id) null else fi.id }
+                            } else {
+                                { fi.route?.let { route -> introGate.open(fi.introId, accent) { onOpenRoute(route) } } }
+                            }
                             FeedCard(
                                 item = fi,
                                 accent = accent,
@@ -348,6 +360,14 @@ fun ForYouScreen(
                                 // place to act, so the labeled button always does what it says.
                                 onAction = { fi.actionHabitId?.let(viewModel::checkInHabit) ?: open() },
                                 onOpen = open,
+                                lesson = lesson,
+                                lessonExpanded = expandedLessonId == fi.id,
+                                onCompleteLesson = lesson?.let {
+                                    {
+                                        viewModel.completeLesson(it.id)
+                                        expandedLessonId = null
+                                    }
+                                },
                             )
                         }
                     }
@@ -426,6 +446,10 @@ private fun FeedCard(
     pulse: ForYouViewModel.CheckinPulse? = null,
     onAction: () -> Unit,
     onOpen: () -> Unit,
+    /** Non-null for learn cards: tapping expands the lesson here instead of opening a page. */
+    lesson: az.tribe.lifeplanner.domain.service.KnowledgeBit? = null,
+    lessonExpanded: Boolean = false,
+    onCompleteLesson: (() -> Unit)? = null,
 ) {
     val c = MaterialTheme.modernColors
     Surface(
@@ -446,6 +470,35 @@ private fun FeedCard(
                 }
                 if (item.route != null && item.actionLabel == null) {
                     Icon(PhosphorIcons.Regular.CaretRight, contentDescription = null, tint = c.textTertiary, modifier = Modifier.size(LifePlannerDesign.IconSize.small))
+                }
+            }
+            if (lesson != null && lessonExpanded) {
+                lesson.detail.forEach { paragraph ->
+                    Text(paragraph, style = MaterialTheme.typography.bodyMedium, color = c.textSecondary)
+                }
+                if (lesson.takeaway.isNotBlank()) {
+                    Surface(
+                        color = accent.copy(alpha = 0.08f),
+                        shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.medium),
+                    ) {
+                        Text(
+                            "Try it: ${lesson.takeaway}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = c.textPrimary,
+                            modifier = Modifier.fillMaxWidth().padding(12.dp),
+                        )
+                    }
+                }
+                lesson.source?.let {
+                    Text(it, style = MaterialTheme.typography.labelSmall, color = c.textTertiary)
+                }
+                if (onCompleteLesson != null) {
+                    AppButton(
+                        text = "Got it",
+                        onClick = onCompleteLesson,
+                        variant = AppButtonVariant.PRIMARY,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                 }
             }
             if (item.actionLabel != null) {

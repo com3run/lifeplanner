@@ -43,6 +43,7 @@ class ForYouViewModel(
     private val habitRepository: HabitRepository,
     private val getHealthHabitProgress: GetHealthHabitProgressUseCase,
     private val wheelRepository: az.tribe.lifeplanner.domain.repository.WheelRepository,
+    private val knowledgeRepository: az.tribe.lifeplanner.domain.repository.KnowledgeRepository,
 ) : ViewModel() {
 
     /**
@@ -109,6 +110,33 @@ class ForYouViewModel(
 
     init {
         refresh()
+    }
+
+
+    /**
+     * Inline lesson completion, mirroring the reader screen's rules: mark read, pay the XP once
+     * (surfaced through the same xpEvent snackbar as every other reward), clear the zone badge
+     * when this was the path's last lesson, then rebuild the feed so the Learn band continues to
+     * the next lesson in place.
+     */
+    fun completeLesson(id: String) {
+        viewModelScope.launch {
+            runCatching {
+                val alreadyRead = knowledgeRepository.readIds().first().contains(id)
+                knowledgeRepository.markRead(id)
+                if (!alreadyRead) {
+                    gamificationRepository.awardXp(az.tribe.lifeplanner.domain.model.XpRewards.LESSON_READ.toLong())
+                    _xpEvent.emit(az.tribe.lifeplanner.domain.model.XpRewards.LESSON_READ)
+                }
+                val collection = az.tribe.lifeplanner.domain.service.KnowledgeLibrary.collectionOf(id)
+                val badge = collection?.let { az.tribe.lifeplanner.domain.service.KnowledgeLibrary.badgeFor(it.id) }
+                if (badge != null && !gamificationRepository.hasBadge(badge)) {
+                    val read = knowledgeRepository.readIds().first()
+                    if (collection.lessonIds.all { it in read }) gamificationRepository.awardBadge(badge)
+                }
+            }.onFailure { Logger.w("ForYouViewModel") { "complete lesson $id failed: ${it.message}" } }
+            refresh()
+        }
     }
 
     fun refresh() {
