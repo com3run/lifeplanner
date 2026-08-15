@@ -31,10 +31,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import az.tribe.lifeplanner.domain.model.Possibility
 import az.tribe.lifeplanner.ui.components.AppButton
 import az.tribe.lifeplanner.ui.components.AppButtonVariant
-import az.tribe.lifeplanner.ui.components.GradientHero
 import az.tribe.lifeplanner.ui.components.StateView
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
 import az.tribe.lifeplanner.ui.theme.bouncyClickable
@@ -112,12 +112,31 @@ fun PossibilityModeScreen(
             ),
             verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.md),
         ) {
+            // The goal's own name used to be shouted from a gradient poster here. Paper rules,
+            // same as the detail screens: overline, a title that wraps, one quiet line of intent.
             item {
-                GradientHero(
-                    eyebrow = "WHEN YOU'RE STUCK",
-                    title = goal?.title ?: "Get unstuck",
-                    subtitle = "Widen the options, then pick what to try or talk it through.",
-                )
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Text(
+                        "WHEN YOU'RE STUCK",
+                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.5.sp),
+                        fontWeight = FontWeight.SemiBold,
+                        color = c.primary,
+                    )
+                    Text(
+                        goal?.title ?: "Get unstuck",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = c.textPrimary,
+                    )
+                    Text(
+                        "Widen the options, then pick what to try or talk it through.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = c.textSecondary,
+                    )
+                }
             }
 
             when {
