@@ -209,6 +209,44 @@ class PreviewScreenshots {
         )
     }
 
+    private fun habit(
+        title: String,
+        type: az.tribe.lifeplanner.domain.enum.HabitType = az.tribe.lifeplanner.domain.enum.HabitType.BUILD,
+        completions: Int = 18,
+    ) = az.tribe.lifeplanner.domain.model.Habit(
+        id = "preview-habit",
+        title = title,
+        category = GoalCategory.BODY,
+        frequency = az.tribe.lifeplanner.domain.enum.HabitFrequency.DAILY,
+        currentStreak = 5,
+        longestStreak = 12,
+        totalCompletions = completions,
+        createdAt = LocalDateTime(2026, 6, 1, 7, 0),
+        type = type,
+    )
+
+    /** Habit paper header, same language as the goal one. Streak lives in the tiles, not here. */
+    @Test
+    fun habitPaperHeader() = snap("HabitPaperHeader") {
+        az.tribe.lifeplanner.ui.habit.HabitPaperHeader(
+            habit = habit("Run before the day starts, whatever the weather looks like"),
+            ratePercent = 72f,
+        )
+    }
+
+    /** A quit habit that has not started yet: no progress line, and the meta says day one. */
+    @Test
+    fun habitPaperHeaderQuitFresh() = snap("HabitPaperHeader_quitFresh") {
+        az.tribe.lifeplanner.ui.habit.HabitPaperHeader(
+            habit = habit(
+                "No sugar after dinner",
+                type = az.tribe.lifeplanner.domain.enum.HabitType.QUIT,
+                completions = 0,
+            ),
+            ratePercent = 0f,
+        )
+    }
+
     /** The paper header: overline, wrapping title, thin progress line, one quiet meta line. */
     @Test
     fun goalPaperHeader() = snap("GoalPaperHeader") {
