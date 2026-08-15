@@ -81,6 +81,8 @@ CREATE TABLE IF NOT EXISTS goals (
     completion_rate REAL        NOT NULL DEFAULT 0.0,
     is_archived     BOOLEAN     NOT NULL DEFAULT FALSE,
     value_id        TEXT,
+    -- Which Wheel of Life area this goal serves (MISSION, FRIENDS, MONEY, ...). The goal's "why".
+    wheel_area      TEXT,
     predicted_due_date TEXT,
     -- sync metadata
     updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -156,6 +158,9 @@ CREATE TABLE IF NOT EXISTS habits (
     reminder_time     TEXT,
     type              TEXT        NOT NULL DEFAULT 'BUILD',
     unit              TEXT,
+    health_metric_type TEXT,
+    health_target     DOUBLE PRECISION,
+    completion_source TEXT,
     -- sync metadata
     updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
     is_deleted   BOOLEAN     NOT NULL DEFAULT FALSE,
@@ -961,11 +966,17 @@ CREATE TABLE IF NOT EXISTS decisions (
     actual_outcome      TEXT,
     outcome_reviewed_at TEXT,
     outcome_quality     TEXT,
+    source              TEXT        NOT NULL DEFAULT 'CHOICE_POINT',
+    status              TEXT        NOT NULL DEFAULT 'CONFIRMED',
     -- sync metadata
     updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
     is_deleted   BOOLEAN     NOT NULL DEFAULT FALSE,
     sync_version BIGINT      NOT NULL DEFAULT 0
 );
+
+-- Idempotent for existing deployments (v37: journal-detected decisions await confirmation).
+ALTER TABLE decisions ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'CHOICE_POINT';
+ALTER TABLE decisions ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'CONFIRMED';
 
 CREATE INDEX IF NOT EXISTS idx_decisions_user_id ON decisions(user_id);
 CREATE INDEX IF NOT EXISTS idx_decisions_goal ON decisions(related_goal_id);
@@ -1090,7 +1101,8 @@ BEGIN
             'goal_dependencies', 'chat_sessions', 'chat_messages', 'review_reports',
             'reminders', 'custom_coaches', 'coach_groups', 'coach_group_members',
             'focus_sessions', 'coach_persona_overrides', 'user_situations',
-            'life_values', 'decisions', 'identity_statements', 'decision_profiles'
+            'life_values', 'decisions', 'identity_statements', 'decision_profiles',
+            'knowledge_reads', 'wheel_scores', 'wheel_snapshots'
         ])
     LOOP
         EXECUTE format(
@@ -1110,3 +1122,115 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 --       '0 3 * * *',
 --       $$SELECT cleanup_tombstones()$$
 --   );
+
+-- ────────────────────────────────────────────────────────────
+-- knowledge_reads  (Learn hub — which lessons a user has read)
+-- Composite PK (user_id, id): `id` is the KnowledgeBit id (e.g. 'tip_2min_rule'),
+-- which is shared across users, so the primary key is scoped per user.
+-- ────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS knowledge_reads (
+    id           TEXT        NOT NULL,
+    user_id      UUID        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    read_at      TEXT        NOT NULL,
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    -- sync metadata
+    updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    is_deleted   BOOLEAN     NOT NULL DEFAULT FALSE,
+    sync_version BIGINT      NOT NULL DEFAULT 0,
+    PRIMARY KEY (user_id, id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_knowledge_reads_user_id ON knowledge_reads(user_id);
+
+ALTER TABLE knowledge_reads ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS knowledge_reads_select ON knowledge_reads;
+CREATE POLICY knowledge_reads_select ON knowledge_reads FOR SELECT TO authenticated USING ((select auth.uid()) = user_id);
+DROP POLICY IF EXISTS knowledge_reads_insert ON knowledge_reads;
+CREATE POLICY knowledge_reads_insert ON knowledge_reads FOR INSERT TO authenticated WITH CHECK ((select auth.uid()) = user_id);
+DROP POLICY IF EXISTS knowledge_reads_update ON knowledge_reads;
+CREATE POLICY knowledge_reads_update ON knowledge_reads FOR UPDATE TO authenticated USING ((select auth.uid()) = user_id) WITH CHECK ((select auth.uid()) = user_id);
+DROP POLICY IF EXISTS knowledge_reads_delete ON knowledge_reads;
+CREATE POLICY knowledge_reads_delete ON knowledge_reads FOR DELETE TO authenticated USING ((select auth.uid()) = user_id);
+
+DROP TRIGGER IF EXISTS trg_knowledge_reads_sync ON knowledge_reads;
+CREATE TRIGGER trg_knowledge_reads_sync
+    BEFORE UPDATE ON knowledge_reads
+    FOR EACH ROW EXECUTE FUNCTION update_sync_metadata();
+
+-- ────────────────────────────────────────────────────────────
+-- wheel_scores  (Wheel of Life — the scores a user set themselves)
+-- Composite PK (user_id, id): `id` is the WheelArea enum name (e.g. 'ROMANCE'),
+-- shared across users, so the primary key is scoped per user.
+-- Only user-set scores live here. Predictions are recomputed on the client from
+-- live signals, so there is nothing to store and nothing to go stale.
+-- ────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS wheel_scores (
+    id           TEXT        NOT NULL,
+    user_id      UUID        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    score        DOUBLE PRECISION NOT NULL CHECK (score >= 0 AND score <= 10),
+    assessed_at  TEXT        NOT NULL,
+    note         TEXT,
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    -- sync metadata
+    updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    is_deleted   BOOLEAN     NOT NULL DEFAULT FALSE,
+    sync_version BIGINT      NOT NULL DEFAULT 0,
+    PRIMARY KEY (user_id, id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_wheel_scores_user_id ON wheel_scores(user_id);
+
+ALTER TABLE wheel_scores ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS wheel_scores_select ON wheel_scores;
+CREATE POLICY wheel_scores_select ON wheel_scores FOR SELECT TO authenticated USING ((select auth.uid()) = user_id);
+DROP POLICY IF EXISTS wheel_scores_insert ON wheel_scores;
+CREATE POLICY wheel_scores_insert ON wheel_scores FOR INSERT TO authenticated WITH CHECK ((select auth.uid()) = user_id);
+DROP POLICY IF EXISTS wheel_scores_update ON wheel_scores;
+CREATE POLICY wheel_scores_update ON wheel_scores FOR UPDATE TO authenticated USING ((select auth.uid()) = user_id) WITH CHECK ((select auth.uid()) = user_id);
+DROP POLICY IF EXISTS wheel_scores_delete ON wheel_scores;
+CREATE POLICY wheel_scores_delete ON wheel_scores FOR DELETE TO authenticated USING ((select auth.uid()) = user_id);
+
+DROP TRIGGER IF EXISTS trg_wheel_scores_sync ON wheel_scores;
+CREATE TRIGGER trg_wheel_scores_sync
+    BEFORE UPDATE ON wheel_scores
+    FOR EACH ROW EXECUTE FUNCTION update_sync_metadata();
+
+-- ────────────────────────────────────────────────────────────
+-- wheel_snapshots  (Wheel of Life history — the wheel as it stood each day)
+-- Composite PK (user_id, id): `id` is the ISO date, so re-recording a day updates
+-- it rather than accumulating rows, and the same day from two devices merges.
+-- `scores` is a JSON object of WheelArea name -> score. Areas the app could only
+-- estimate are omitted by the client rather than stored as a placeholder.
+-- ────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS wheel_snapshots (
+    id           TEXT        NOT NULL,
+    user_id      UUID        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    scores       JSONB       NOT NULL,
+    captured_at  TEXT        NOT NULL,
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    -- sync metadata
+    updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    is_deleted   BOOLEAN     NOT NULL DEFAULT FALSE,
+    sync_version BIGINT      NOT NULL DEFAULT 0,
+    PRIMARY KEY (user_id, id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_wheel_snapshots_user_id ON wheel_snapshots(user_id);
+
+ALTER TABLE wheel_snapshots ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS wheel_snapshots_select ON wheel_snapshots;
+CREATE POLICY wheel_snapshots_select ON wheel_snapshots FOR SELECT TO authenticated USING ((select auth.uid()) = user_id);
+DROP POLICY IF EXISTS wheel_snapshots_insert ON wheel_snapshots;
+CREATE POLICY wheel_snapshots_insert ON wheel_snapshots FOR INSERT TO authenticated WITH CHECK ((select auth.uid()) = user_id);
+DROP POLICY IF EXISTS wheel_snapshots_update ON wheel_snapshots;
+CREATE POLICY wheel_snapshots_update ON wheel_snapshots FOR UPDATE TO authenticated USING ((select auth.uid()) = user_id) WITH CHECK ((select auth.uid()) = user_id);
+DROP POLICY IF EXISTS wheel_snapshots_delete ON wheel_snapshots;
+CREATE POLICY wheel_snapshots_delete ON wheel_snapshots FOR DELETE TO authenticated USING ((select auth.uid()) = user_id);
+
+DROP TRIGGER IF EXISTS trg_wheel_snapshots_sync ON wheel_snapshots;
+CREATE TRIGGER trg_wheel_snapshots_sync
+    BEFORE UPDATE ON wheel_snapshots
+    FOR EACH ROW EXECUTE FUNCTION update_sync_metadata();
