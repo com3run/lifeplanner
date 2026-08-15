@@ -57,6 +57,7 @@ class HomeFeedBuilder(
     private val behaviorRepository: BehaviorRepository,
     private val goalRepository: GoalRepository,
     private val lifeValueRepository: LifeValueRepository,
+    private val knowledgeRepository: az.tribe.lifeplanner.domain.repository.KnowledgeRepository,
     private val settings: Settings = Settings(),
 ) {
 
@@ -333,19 +334,44 @@ class HomeFeedBuilder(
 
         items += invitations.take(2)
 
-        // ── Learn: curated, leveled knowledge ───────────────────────────────
-        KnowledgeLibrary.forLevel(level, daySeed, count = 3).forEachIndexed { i, k ->
+        // ── Learn: the session, inline ──────────────────────────────────────
+        // The resume card leads the band: the next lesson of the path in progress, so the learn
+        // session lives on this tab rather than behind a separate hub page. The daily picks
+        // follow it, skipping anything already read; re-recommending a read lesson tells the
+        // user we are not paying attention.
+        val readIds = runCatching { knowledgeRepository.readIds().first() }.getOrDefault(emptySet())
+        val resume = KnowledgeLibrary.resumePoint(level, readIds)
+        resume?.let { r ->
             items += FeedItem(
-                id = k.id,
+                id = "learn_resume_${r.lesson.id}",
                 kind = FeedKind.KNOWLEDGE,
-                eyebrow = "LEARN · ${k.readMin} min",
-                title = k.title,
-                body = k.body,
-                emoji = k.emoji,
-                route = "knowledge_detail/${k.id}",
-                score = 50.0 - i,
+                eyebrow = if (r.readInPath == 0) {
+                    "START ${r.path.title.uppercase()} · ${r.lesson.readMin} min"
+                } else {
+                    "CONTINUE ${r.path.title.uppercase()} · ${r.readInPath + 1} of ${r.totalInPath}"
+                },
+                title = r.lesson.title,
+                body = r.lesson.body,
+                emoji = r.lesson.emoji,
+                route = "knowledge_detail/${r.lesson.id}",
+                score = 60.0,
             )
         }
+        KnowledgeLibrary.forLevel(level, daySeed, count = 5)
+            .filter { it.id !in readIds && it.id != resume?.lesson?.id }
+            .take(2)
+            .forEachIndexed { i, k ->
+                items += FeedItem(
+                    id = k.id,
+                    kind = FeedKind.KNOWLEDGE,
+                    eyebrow = "LEARN · ${k.readMin} min",
+                    title = k.title,
+                    body = k.body,
+                    emoji = k.emoji,
+                    route = "knowledge_detail/${k.id}",
+                    score = 50.0 - i,
+                )
+            }
 
         Logger.d("HomeFeedBuilder") { "Built feed: ${items.size} items (level $level)" }
         // Group into bands (Right now, Reflect, Learn), strongest first within each.

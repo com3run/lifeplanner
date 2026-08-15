@@ -64,6 +64,7 @@ fun TodayScreen(
     showBack: Boolean = true,
     onOpenHabit: (String) -> Unit = {},
     onOpenGoal: (String) -> Unit = {},
+    onStartFocus: () -> Unit = {},
     viewModel: TodayViewModel = koinViewModel(),
 ) {
     val habits by viewModel.habitsToday.collectAsState()
@@ -158,6 +159,43 @@ fun TodayScreen(
                         onToggle = { viewModel.checkInHabit(h.habit.id) },
                         onOpen = { onOpenHabit(h.habit.id) },
                     )
+                }
+            }
+
+            // Focus lives on Today too: the timer is how a plan item actually gets done, and
+            // asking people to go find it in another tab is asking them not to.
+            item { SectionLabel("Focus") }
+            item {
+                Surface(
+                    modifier = Modifier.fillMaxWidth().bouncyClickable(onClick = onStartFocus),
+                    color = c.cardBackground,
+                    shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large),
+                ) {
+                    Row(
+                        Modifier.fillMaxWidth().padding(LifePlannerDesign.Padding.cardContent),
+                        horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        IconChip(PhosphorIcons.Regular.Lightning, tint = c.primary)
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text(
+                                "Give one thing 25 minutes",
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                                color = c.textPrimary,
+                            )
+                            Text(
+                                "A timer, one thing, nothing else.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = c.textSecondary,
+                            )
+                        }
+                        Icon(
+                            PhosphorIcons.Regular.CaretRight,
+                            contentDescription = null,
+                            tint = c.textTertiary,
+                            modifier = Modifier.size(LifePlannerDesign.IconSize.small),
+                        )
+                    }
                 }
             }
         }

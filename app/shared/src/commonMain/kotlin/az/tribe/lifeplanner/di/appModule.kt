@@ -443,7 +443,7 @@ val appModule = module {
     viewModelOf(::BackupViewModel)
     viewModelOf(::FocusViewModel)
     viewModel { az.tribe.lifeplanner.ui.today.TodayViewModel(get(), get(), get(), get()) }
-    single { az.tribe.lifeplanner.ui.foryou.HomeFeedBuilder(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { az.tribe.lifeplanner.ui.foryou.HomeFeedBuilder(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single<az.tribe.lifeplanner.ui.intro.IntroSeenStore> { az.tribe.lifeplanner.ui.intro.SettingsIntroSeenStore() }
     viewModel { az.tribe.lifeplanner.ui.foryou.ForYouViewModel(get(), get(), get(), get(), get(), get(), get()) }
     viewModel { az.tribe.lifeplanner.ui.today.TodayWeatherViewModel(get()) }

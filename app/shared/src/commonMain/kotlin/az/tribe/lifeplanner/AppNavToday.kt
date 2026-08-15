@@ -14,6 +14,7 @@ internal fun NavGraphBuilder.appNavToday(navController: NavController) {
             showBack = false,
             onOpenHabit = { id -> navController.navigate("habit_detail_redesign/$id") { launchSingleTop = true } },
             onOpenGoal = { id -> navController.navigate("goal_detail/$id") { launchSingleTop = true } },
+            onStartFocus = { navController.navigate("focus_setup") { launchSingleTop = true } },
         )
     }
 }

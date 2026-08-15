@@ -422,6 +422,37 @@ object KnowledgeLibrary {
     fun lessonsOf(collection: KnowledgeCollection): List<KnowledgeBit> =
         collection.lessonIds.mapNotNull { byId(it) }
 
+    /**
+     * Where a learn session picks back up: the next unread lesson of the path already in
+     * progress, else the first lesson of the first unstarted path. Null when everything unlocked
+     * at [level] has been read. Shared by the Learn hub and the For You feed so "continue" means
+     * the same lesson wherever it is offered.
+     */
+    data class LearnResumePoint(
+        val lesson: KnowledgeBit,
+        val path: KnowledgeCollection,
+        /** Lessons of [path] already read (unlocked ones; locked lessons cannot be read). */
+        val readInPath: Int,
+        /** Every lesson of [path], locked ones included, so "3 of 7" matches the hub. */
+        val totalInPath: Int,
+    )
+
+    fun resumePoint(level: Int, readIds: Set<String>): LearnResumePoint? {
+        val perPath = collections.map { c ->
+            val unlocked = lessonsOf(c).filter { it.minLevel <= level }
+            Triple(c, unlocked, unlocked.count { it.id in readIds })
+        }
+        val inProgress = perPath.firstOrNull { (_, unlocked, read) ->
+            read >= 1 && unlocked.any { it.id !in readIds }
+        }
+        val chosen = inProgress
+            ?: perPath.firstOrNull { (_, unlocked, _) -> unlocked.any { it.id !in readIds } }
+            ?: return null
+        val (path, unlocked, read) = chosen
+        val next = unlocked.firstOrNull { it.id !in readIds } ?: return null
+        return LearnResumePoint(next, path, read, lessonsOf(path).size)
+    }
+
     /** The collection a lesson belongs to, or null if it is not filed under one. */
     fun collectionOf(lessonId: String): KnowledgeCollection? =
         collections.firstOrNull { lessonId in it.lessonIds }
