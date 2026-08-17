@@ -78,9 +78,15 @@ class CoachOrchestrator {
                 // questionnaire again wearing a chat bubble.
                 appendLine("NOT YET KNOWN: ${missing.joinToString(", ")}.")
                 appendLine(
-                    "If one of these comes up naturally, ask about it — at most ONE per reply, " +
-                        "and only when it genuinely helps the answer you are giving. Never open " +
-                        "with it, never list them, and drop it if the user does not want to say."
+                    // Phrased as a reason to ask rather than a list of reasons not to. The first
+                    // version said "only when it genuinely helps", "never open with it" and "drop
+                    // it if they do not want to say" — three discouragements to one weak
+                    // invitation, and across real conversations with two coaches it never asked
+                    // once, including where the answer plainly depended on it.
+                    "A real coach would ask for one of these before giving specific advice. Do " +
+                        "the same: end your reply with ONE short question about whichever of them " +
+                        "would most change what you would say. Ask it plainly, as part of the " +
+                        "conversation. If the user waves it off, let it go and do not raise it again."
                 )
             }
         }.trimEnd()
