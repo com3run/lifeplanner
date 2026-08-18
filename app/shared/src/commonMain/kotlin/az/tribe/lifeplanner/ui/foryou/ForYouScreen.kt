@@ -90,6 +90,7 @@ import az.tribe.lifeplanner.location.LocationPermissionState
 import az.tribe.lifeplanner.location.rememberLocationPermission
 import az.tribe.lifeplanner.ui.navigation.Screen
 import az.tribe.lifeplanner.domain.service.BreathMoment
+import az.tribe.lifeplanner.domain.service.PresentMoment
 import az.tribe.lifeplanner.domain.model.WheelArea
 import az.tribe.lifeplanner.domain.model.ScoreSource
 import az.tribe.lifeplanner.ui.components.todayBreathKey
@@ -191,20 +192,56 @@ fun ForYouScreen(
     LaunchedEffect(locationPermission.state) {
         weatherViewModel.onPermissionState(locationPermission.state == LocationPermissionState.GRANTED)
     }
+    // The present is the one thing on this screen that goes stale on its own: an event that was
+    // twenty minutes away when the screen opened is not, ten minutes later. A minute of granularity
+    // is as fine as anything here is phrased.
+    var nowMillis by remember { mutableStateOf(Clock.System.now().toEpochMilliseconds()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(60_000)
+            nowMillis = Clock.System.now().toEpochMilliseconds()
+        }
+    }
+    // What is happening in this hour, above the day it belongs to. Falls back through the feed's
+    // top habit card so the slot holds something doable rather than something to read.
+    val topHabitCard = remember(feed) { feed.firstOrNull { it.actionHabitId != null } }
+    val presentMoment = remember(nowMillis, todayEvents, plan, topHabitCard, calendarConnected) {
+        PresentMoment.of(
+            nowEpochMillis = nowMillis,
+            events = if (calendarConnected) todayEvents else emptyList(),
+            steps = plan.map {
+                PresentMoment.Step(
+                    goalId = it.goalId,
+                    milestoneId = it.milestoneId,
+                    title = it.title,
+                    goalTitle = it.goalTitle,
+                    overdue = it.overdue,
+                )
+            },
+            nudge = topHabitCard,
+        )
+    }
+    // A habit lifted into the now card is not printed again as a full card two screens down.
+    // The plan keeps its rows: that list is the day in full, and losing a line out of a checklist
+    // reads as a bug, where a repeated suggestion just reads as noise.
+    val promotedCardId = if (presentMoment?.kind == PresentMoment.Kind.HABIT) topHabitCard?.id else null
+
     var filter by remember { mutableStateOf<FeedSection?>(null) }
     // Which learn card is open, reading inline. One at a time: the feed is a page, not an accordion.
     var expandedLessonId by remember { mutableStateOf<String?>(null) }
     val introGate = rememberFeatureIntroGate()
-    val visible = remember(feed, filter) {
+    val visible = remember(feed, filter, promotedCardId) {
         val f = filter
-        if (f == null) feed else feed.filter { it.kind.section() == f }
+        feed.filter { (f == null || it.kind.section() == f) && it.id != promotedCardId }
     }
     val grouped = remember(visible) { visible.groupBy { it.kind.section() } }
     // Only sections that actually have cards earn a chip. A week-one feed is DO_NEXT and
     // KNOWLEDGE only, and tapping "Reflect on today" used to render a feed of nothing at all
     // (same rule as the wheel history's offered periods).
-    val offeredSections = remember(feed) {
-        FeedSection.entries.filter { sec -> feed.any { it.kind.section() == sec } }
+    val offeredSections = remember(feed, promotedCardId) {
+        FeedSection.entries.filter { sec ->
+            feed.any { it.kind.section() == sec && it.id != promotedCardId }
+        }
     }
     LaunchedEffect(offeredSections) {
         // A selected section can empty out from under the filter (last card acted on).
@@ -222,7 +259,7 @@ fun ForYouScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("For You", fontWeight = FontWeight.Bold) },
+                title = { Text("Present", fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = c.background, titleContentColor = c.textPrimary),
             )
         },
@@ -245,6 +282,42 @@ fun ForYouScreen(
             // Hourly detail lives inside the tap-to-expand weather popup, not as a second feed card.
             if (weatherState is TodayWeatherViewModel.State.NeedsPermission) {
                 item(key = "weather_prompt") { WeatherPromptCard(onEnable = locationPermission.request) }
+            }
+
+            // Then the hour itself. The plan, the wheel and the feed are all true of the day or the
+            // life; this one line is true of right now, which is the question the tab is named after.
+            presentMoment?.let { m ->
+                val milestoneId = m.milestoneId
+                val habitId = m.habitId
+                val goalId = m.goalId
+                item(key = "present_now") {
+                    PresentNowCard(
+                        moment = m,
+                        tz = tz,
+                        onAct = when {
+                            milestoneId != null -> ({ viewModel.completePlanItem(milestoneId) })
+                            habitId != null -> ({ viewModel.checkInHabit(habitId) })
+                            else -> null
+                        },
+                        onOpen = goalId?.let { g -> ({ onOpenRoute("goal_detail/$g") }) },
+                    )
+                }
+            }
+
+            // A breath, still only on a day that gives us a reason to mention it, but now beside the
+            // rest of the present rather than under the day's list: on the days it has something to
+            // say, this minute is the thing to do with this minute.
+            val breathMoment = BreathMoment.of(
+                hourOfDay = feedNowHour,
+                planItems = plan.size + healthHabits.size + todayEvents.size,
+                mentalScore = wheel?.scores
+                    ?.firstOrNull { it.area == WheelArea.MENTAL && it.source != ScoreSource.ESTIMATED }
+                    ?.score,
+                breathsToday = breathsToday,
+                overdueItems = plan.count { it.overdue },
+            )
+            if (breathMoment != null) {
+                item(key = "breath") { BreathingCard(reason = breathMoment.reason) }
             }
 
             if (!coachSetupDone) {
@@ -296,21 +369,6 @@ fun ForYouScreen(
                         onOpen = { onOpenRoute("goal_detail/${p.goalId}") },
                     )
                 }
-            }
-
-            // A breath, but only on a day that gives us a reason to mention it, and below the plan
-            // rather than above it: it is a reminder, not the first thing you came here for.
-            val breathMoment = BreathMoment.of(
-                hourOfDay = feedNowHour,
-                planItems = plan.size + healthHabits.size + todayEvents.size,
-                mentalScore = wheel?.scores
-                    ?.firstOrNull { it.area == WheelArea.MENTAL && it.source != ScoreSource.ESTIMATED }
-                    ?.score,
-                breathsToday = breathsToday,
-                overdueItems = plan.count { it.overdue },
-            )
-            if (breathMoment != null) {
-                item(key = "breath") { BreathingCard(reason = breathMoment.reason) }
             }
 
             // With one section there is nothing to filter between, so the row would be All plus

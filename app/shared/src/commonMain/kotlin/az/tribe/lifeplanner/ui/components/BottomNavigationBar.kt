@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import az.tribe.lifeplanner.ui.navigation.BottomNavItem
+import az.tribe.lifeplanner.ui.navigation.rememberDayPhase
 import az.tribe.lifeplanner.ui.theme.LocalIsDarkTheme
 import az.tribe.lifeplanner.ui.theme.LifePlannerGradients
 
@@ -77,6 +78,8 @@ fun BottomNavigationBar(
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
+    // The Present tab wears the sky: sun by day, low sun at dawn and dusk, moon at night.
+    val dayPhase = rememberDayPhase()
     val pillShape = RoundedCornerShape(50)
     val isDark = LocalIsDarkTheme.current
     val pillBackground = if (isDark) LifePlannerGradients.glassNavDark else LifePlannerGradients.glassOverlayHigh
@@ -145,7 +148,7 @@ fun BottomNavigationBar(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            imageVector = if (isSelected) item.selectedIcon else item.unselectedIcon,
+                            imageVector = item.iconFor(dayPhase, isSelected),
                             contentDescription = item.title,
                             tint = if (isSelected) MaterialTheme.colorScheme.primary
                             else MaterialTheme.colorScheme.onSurfaceVariant,

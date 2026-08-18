@@ -77,7 +77,7 @@ fun TodayScreen(
         containerColor = c.background,
         topBar = {
             TopAppBar(
-                title = { Text("Today", fontWeight = FontWeight.Bold) },
+                title = { Text("Present", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     if (showBack) {
                         IconButton(onClick = onBackClick) {
