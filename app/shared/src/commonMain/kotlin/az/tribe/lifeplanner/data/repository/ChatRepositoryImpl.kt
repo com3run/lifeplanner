@@ -204,9 +204,20 @@ class ChatRepositoryImpl(
         // Get conversation history BEFORE adding current message to avoid duplication
         val recentMessages = getRecentMessages(sessionId, 10)
 
-        // Load user situation for personalized prompts
+        // Load user situation for personalized prompts.
+        //
+        // Falls back to an empty one rather than null. A user with no stored situation is not a
+        // user we have nothing to say about — it is the case where every slot is missing, which is
+        // exactly when the coach should be asking. Returning null skipped the whole situation block
+        // including that instruction, so the asking behaviour was dead for every new user: the only
+        // ones it existed for.
         val situation = userSituationRepository?.let {
-            try { database.getUserSituation()?.toUserSituationDomain() } catch (_: Exception) { null }
+            try {
+                database.getUserSituation()?.toUserSituationDomain()
+                    ?: az.tribe.lifeplanner.domain.model.UserSituation()
+            } catch (_: Exception) {
+                az.tribe.lifeplanner.domain.model.UserSituation()
+            }
         }
 
         // Load active goals for habit linking
@@ -287,9 +298,20 @@ class ChatRepositoryImpl(
         // Get conversation history BEFORE adding current message
         val recentMessages = getRecentMessages(sessionId, 10)
 
-        // Load user situation for personalized prompts
+        // Load user situation for personalized prompts.
+        //
+        // Falls back to an empty one rather than null. A user with no stored situation is not a
+        // user we have nothing to say about — it is the case where every slot is missing, which is
+        // exactly when the coach should be asking. Returning null skipped the whole situation block
+        // including that instruction, so the asking behaviour was dead for every new user: the only
+        // ones it existed for.
         val situation = userSituationRepository?.let {
-            try { database.getUserSituation()?.toUserSituationDomain() } catch (_: Exception) { null }
+            try {
+                database.getUserSituation()?.toUserSituationDomain()
+                    ?: az.tribe.lifeplanner.domain.model.UserSituation()
+            } catch (_: Exception) {
+                az.tribe.lifeplanner.domain.model.UserSituation()
+            }
         }
 
         // Load active goals for habit linking

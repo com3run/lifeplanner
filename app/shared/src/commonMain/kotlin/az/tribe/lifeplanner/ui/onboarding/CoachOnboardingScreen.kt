@@ -313,12 +313,6 @@ fun CoachOnboardingScreen(
 
     // ── Normal onboarding flow ────────────────────────────────────────────────
 
-    // Luna video intro replaces the chat scaffold entirely for the first phase
-    if (phase == OnboardingPhase.LUNA_INTRO) {
-        LunaVideoIntro(onContinue = { viewModel.advance() })
-        return
-    }
-
     val completeness = viewModel.overallCompleteness()
 
     PlatformBackHandler(enabled = true) { viewModel.back() }

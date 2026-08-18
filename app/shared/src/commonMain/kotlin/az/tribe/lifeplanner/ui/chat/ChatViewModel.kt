@@ -336,42 +336,6 @@ class ChatViewModel(
         }
     }
 
-    /**
-     * Sends a hidden intro prompt so the coach produces a personalised first message.
-     * Only the coach response is shown; the hidden prompt is filtered out.
-     */
-    internal fun triggerWelcomeMessage(prompt: String) {
-        val session = _uiState.value.currentSession ?: return
-        val userContext = _uiState.value.userContext ?: defaultUserContext()
-
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isSending = true)
-            try {
-                chatRepository.sendMessage(
-                    sessionId = session.id,
-                    userMessage = prompt,
-                    userContext = userContext,
-                    relatedGoalId = null
-                )
-
-                val allMessages = chatRepository.getMessages(session.id)
-                val hiddenId = allMessages.lastOrNull {
-                    it.role == MessageRole.USER &&
-                    it.content == prompt
-                }?.id
-                val visibleMessages = allMessages.filter { it.id != hiddenId }
-
-                _uiState.value = _uiState.value.copy(
-                    isSending = false,
-                    messages = visibleMessages
-                )
-                loadSessions()
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(isSending = false)
-            }
-        }
-    }
-
     fun deleteSession(session: ChatSession) {
         viewModelScope.launch {
             try {

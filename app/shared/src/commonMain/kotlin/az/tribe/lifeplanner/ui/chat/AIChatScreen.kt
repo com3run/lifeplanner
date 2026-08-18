@@ -23,6 +23,10 @@ import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -151,27 +155,60 @@ fun AIChatScreen(
                             try { Color(("FF" + coach.avatar.backgroundColor.removePrefix("#")).toLong(16)) }
                             catch (_: Exception) { Color(0xFF6366F1) }
                         }
+                        // Whoever you opened arrives rather than being already there. Keyed on the
+                        // coach, so switching between them replays it: the point is knowing which
+                        // character loaded, and a header that never moves does not tell you that.
+                        val entrance = remember(coach.id) { Animatable(0f) }
+                        LaunchedEffect(coach.id) {
+                            entrance.snapTo(0f)
+                            entrance.animateTo(
+                                1f,
+                                animationSpec = spring(
+                                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                                    stiffness = Spring.StiffnessLow,
+                                ),
+                            )
+                        }
+
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.clickable { onNavigateToCoachProfile(coach.id) }
                         ) {
+                            val avatarModifier = Modifier
+                                .size(40.dp)
+                                .graphicsLayer {
+                                    // Settles slightly past full size and back, so it reads as
+                                    // arriving rather than fading up.
+                                    scaleX = entrance.value
+                                    scaleY = entrance.value
+                                    alpha = entrance.value.coerceIn(0f, 1f)
+                                }
+                                .clip(CircleShape)
+
                             if (coach.imageUrl != null) {
                                 AsyncImage(
                                     model = coach.imageUrl,
                                     contentDescription = null,
                                     contentScale = ContentScale.Crop,
-                                    modifier = Modifier.size(40.dp).clip(CircleShape)
+                                    modifier = avatarModifier
                                 )
                             } else {
                                 Box(
-                                    modifier = Modifier.size(40.dp).clip(CircleShape).background(bgColor),
+                                    modifier = avatarModifier.background(bgColor),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(coach.emoji, fontSize = 18.sp)
                                 }
                             }
                             Spacer(Modifier.width(10.dp))
-                            Column {
+                            Column(
+                                // Slides in behind the avatar, a beat later, so the name reads as
+                                // following the face rather than appearing with it.
+                                modifier = Modifier.graphicsLayer {
+                                    alpha = ((entrance.value - 0.3f) / 0.7f).coerceIn(0f, 1f)
+                                    translationX = (1f - entrance.value.coerceIn(0f, 1f)) * -24f
+                                }
+                            ) {
                                 Text(
                                     coach.name,
                                     style = MaterialTheme.typography.titleMedium,

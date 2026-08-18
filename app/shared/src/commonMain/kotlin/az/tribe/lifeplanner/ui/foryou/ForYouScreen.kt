@@ -17,9 +17,7 @@ import az.tribe.lifeplanner.ui.calendar.rememberCalendarPermission
 import az.tribe.lifeplanner.ui.components.rememberHapticManager
 import androidx.compose.foundation.background
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
@@ -90,16 +88,14 @@ import az.tribe.lifeplanner.location.LocationPermissionState
 import az.tribe.lifeplanner.location.rememberLocationPermission
 import az.tribe.lifeplanner.ui.navigation.Screen
 import az.tribe.lifeplanner.domain.service.BreathMoment
+import az.tribe.lifeplanner.domain.service.PresentMoment
 import az.tribe.lifeplanner.domain.model.WheelArea
 import az.tribe.lifeplanner.domain.model.ScoreSource
 import az.tribe.lifeplanner.ui.components.todayBreathKey
 import az.tribe.lifeplanner.ui.onboarding.CoachOnboardingViewModel
 import az.tribe.lifeplanner.ui.wheel.WheelStripCard
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
+import az.tribe.lifeplanner.domain.service.KnowledgeLibrary
 import az.tribe.lifeplanner.domain.service.StepDuration
-import com.adamglin.phosphoricons.fill.Play
 import az.tribe.lifeplanner.ui.today.PlanItem
 import az.tribe.lifeplanner.ui.today.TodayWeatherViewModel
 import az.tribe.lifeplanner.ui.intro.rememberFeatureIntroGate
@@ -190,18 +186,60 @@ fun ForYouScreen(
     LaunchedEffect(locationPermission.state) {
         weatherViewModel.onPermissionState(locationPermission.state == LocationPermissionState.GRANTED)
     }
+    // The present is the one thing on this screen that goes stale on its own: an event that was
+    // twenty minutes away when the screen opened is not, ten minutes later. A minute of granularity
+    // is as fine as anything here is phrased.
+    var nowMillis by remember { mutableStateOf(Clock.System.now().toEpochMilliseconds()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(60_000)
+            nowMillis = Clock.System.now().toEpochMilliseconds()
+        }
+    }
+    // What is happening in this hour, above the day it belongs to. Falls back through the feed's
+    // top habit card so the slot holds something doable rather than something to read.
+    val topHabitCard = remember(feed) { feed.firstOrNull { it.actionHabitId != null } }
+    val presentMoment = remember(nowMillis, todayEvents, plan, topHabitCard, calendarConnected) {
+        PresentMoment.of(
+            nowEpochMillis = nowMillis,
+            events = if (calendarConnected) todayEvents else emptyList(),
+            steps = plan.map {
+                PresentMoment.Step(
+                    goalId = it.goalId,
+                    milestoneId = it.milestoneId,
+                    title = it.title,
+                    goalTitle = it.goalTitle,
+                    overdue = it.overdue,
+                )
+            },
+            nudge = topHabitCard,
+        )
+    }
+    // Whatever the now card is holding is not printed again further down the same screen: the
+    // habit loses its full card in the feed, the step loses its row in the plan. It has not gone
+    // anywhere, it is at the top, and the day's list is a page long by the afternoon.
+    val promotedCardId = if (presentMoment?.kind == PresentMoment.Kind.HABIT) topHabitCard?.id else null
+    val promotedMilestoneId = presentMoment?.milestoneId
+    val planRows = remember(plan, promotedMilestoneId) {
+        plan.filterNot { it.milestoneId == promotedMilestoneId }
+    }
+
     var filter by remember { mutableStateOf<FeedSection?>(null) }
+    // Which learn card is open, reading inline. One at a time: the feed is a page, not an accordion.
+    var expandedLessonId by remember { mutableStateOf<String?>(null) }
     val introGate = rememberFeatureIntroGate()
-    val visible = remember(feed, filter) {
+    val visible = remember(feed, filter, promotedCardId) {
         val f = filter
-        if (f == null) feed else feed.filter { it.kind.section() == f }
+        feed.filter { (f == null || it.kind.section() == f) && it.id != promotedCardId }
     }
     val grouped = remember(visible) { visible.groupBy { it.kind.section() } }
     // Only sections that actually have cards earn a chip. A week-one feed is DO_NEXT and
     // KNOWLEDGE only, and tapping "Reflect on today" used to render a feed of nothing at all
     // (same rule as the wheel history's offered periods).
-    val offeredSections = remember(feed) {
-        FeedSection.entries.filter { sec -> feed.any { it.kind.section() == sec } }
+    val offeredSections = remember(feed, promotedCardId) {
+        FeedSection.entries.filter { sec ->
+            feed.any { it.kind.section() == sec && it.id != promotedCardId }
+        }
     }
     LaunchedEffect(offeredSections) {
         // A selected section can empty out from under the filter (last card acted on).
@@ -219,7 +257,7 @@ fun ForYouScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("For You", fontWeight = FontWeight.Bold) },
+                title = { Text("Present", fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = c.background, titleContentColor = c.textPrimary),
             )
         },
@@ -242,6 +280,42 @@ fun ForYouScreen(
             // Hourly detail lives inside the tap-to-expand weather popup, not as a second feed card.
             if (weatherState is TodayWeatherViewModel.State.NeedsPermission) {
                 item(key = "weather_prompt") { WeatherPromptCard(onEnable = locationPermission.request) }
+            }
+
+            // Then the hour itself. The plan, the wheel and the feed are all true of the day or the
+            // life; this one line is true of right now, which is the question the tab is named after.
+            presentMoment?.let { m ->
+                val milestoneId = m.milestoneId
+                val habitId = m.habitId
+                val goalId = m.goalId
+                item(key = "present_now") {
+                    PresentNowCard(
+                        moment = m,
+                        tz = tz,
+                        onAct = when {
+                            milestoneId != null -> ({ viewModel.completePlanItem(milestoneId) })
+                            habitId != null -> ({ viewModel.checkInHabit(habitId) })
+                            else -> null
+                        },
+                        onOpen = goalId?.let { g -> ({ onOpenRoute("goal_detail/$g") }) },
+                    )
+                }
+            }
+
+            // A breath, still only on a day that gives us a reason to mention it, but now beside the
+            // rest of the present rather than under the day's list: on the days it has something to
+            // say, this minute is the thing to do with this minute.
+            val breathMoment = BreathMoment.of(
+                hourOfDay = feedNowHour,
+                planItems = plan.size + healthHabits.size + todayEvents.size,
+                mentalScore = wheel?.scores
+                    ?.firstOrNull { it.area == WheelArea.MENTAL && it.source != ScoreSource.ESTIMATED }
+                    ?.score,
+                breathsToday = breathsToday,
+                overdueItems = plan.count { it.overdue },
+            )
+            if (breathMoment != null) {
+                item(key = "breath") { BreathingCard(reason = breathMoment.reason) }
             }
 
             if (!coachSetupDone) {
@@ -273,7 +347,7 @@ fun ForYouScreen(
             // Only rendered when the day actually has something in it. A header over a "you're all
             // caught up" line is just chrome on an empty day, and it pushes the feed down.
             val hasCalendarToday = calendarConnected && todayEvents.isNotEmpty()
-            if (plan.isNotEmpty() || hasCalendarToday || healthHabits.isNotEmpty()) {
+            if (planRows.isNotEmpty() || hasCalendarToday || healthHabits.isNotEmpty()) {
                 item(key = "plan_header") { SectionHeader(label = "Today's plan", onSeeAll = null) }
                 // Calendar events lead the plan: they are time-anchored, so they read top-of-day.
                 if (hasCalendarToday) {
@@ -286,28 +360,13 @@ fun ForYouScreen(
                 items(healthHabits, key = { "health_${it.habitId}" }) { habit ->
                     HealthHabitRow(progress = habit)
                 }
-                items(plan, key = { "plan_${it.milestoneId}" }) { p ->
+                items(planRows, key = { "plan_${it.milestoneId}" }) { p ->
                     PlanRow(
                         item = p,
                         onComplete = { viewModel.completePlanItem(p.milestoneId) },
                         onOpen = { onOpenRoute("goal_detail/${p.goalId}") },
                     )
                 }
-            }
-
-            // A breath, but only on a day that gives us a reason to mention it, and below the plan
-            // rather than above it: it is a reminder, not the first thing you came here for.
-            val breathMoment = BreathMoment.of(
-                hourOfDay = feedNowHour,
-                planItems = plan.size + healthHabits.size + todayEvents.size,
-                mentalScore = wheel?.scores
-                    ?.firstOrNull { it.area == WheelArea.MENTAL && it.source != ScoreSource.ESTIMATED }
-                    ?.score,
-                breathsToday = breathsToday,
-                overdueItems = plan.count { it.overdue },
-            )
-            if (breathMoment != null) {
-                item(key = "breath") { BreathingCard(reason = breathMoment.reason) }
             }
 
             // With one section there is nothing to filter between, so the row would be All plus
@@ -337,9 +396,18 @@ fun ForYouScreen(
                         }
                         items(cards, key = { it.id }) { fi ->
                             val accent = accentFor(fi)
-                            // Opening the card's destination (a feature the user hasn't met explains
-                            // itself first via the intro gate). Shared by the card body and the button.
-                            val open: () -> Unit = { fi.route?.let { route -> introGate.open(fi.introId, accent) { onOpenRoute(route) } } }
+                            // A lesson reads where it is: tapping expands the card into the full
+                            // lesson instead of leaving for a reader page. Everything else keeps
+                            // navigating (a feature the user hasn't met explains itself first via
+                            // the intro gate).
+                            val lesson = if (fi.kind == FeedKind.KNOWLEDGE) {
+                                fi.route?.substringAfterLast("/")?.let(KnowledgeLibrary::byId)
+                            } else null
+                            val open: () -> Unit = if (lesson != null) {
+                                { expandedLessonId = if (expandedLessonId == fi.id) null else fi.id }
+                            } else {
+                                { fi.route?.let { route -> introGate.open(fi.introId, accent) { onOpenRoute(route) } } }
+                            }
                             FeedCard(
                                 item = fi,
                                 accent = accent,
@@ -348,6 +416,14 @@ fun ForYouScreen(
                                 // place to act, so the labeled button always does what it says.
                                 onAction = { fi.actionHabitId?.let(viewModel::checkInHabit) ?: open() },
                                 onOpen = open,
+                                lesson = lesson,
+                                lessonExpanded = expandedLessonId == fi.id,
+                                onCompleteLesson = lesson?.let {
+                                    {
+                                        viewModel.completeLesson(it.id)
+                                        expandedLessonId = null
+                                    }
+                                },
                             )
                         }
                     }
@@ -426,6 +502,10 @@ private fun FeedCard(
     pulse: ForYouViewModel.CheckinPulse? = null,
     onAction: () -> Unit,
     onOpen: () -> Unit,
+    /** Non-null for learn cards: tapping expands the lesson here instead of opening a page. */
+    lesson: az.tribe.lifeplanner.domain.service.KnowledgeBit? = null,
+    lessonExpanded: Boolean = false,
+    onCompleteLesson: (() -> Unit)? = null,
 ) {
     val c = MaterialTheme.modernColors
     Surface(
@@ -446,6 +526,35 @@ private fun FeedCard(
                 }
                 if (item.route != null && item.actionLabel == null) {
                     Icon(PhosphorIcons.Regular.CaretRight, contentDescription = null, tint = c.textTertiary, modifier = Modifier.size(LifePlannerDesign.IconSize.small))
+                }
+            }
+            if (lesson != null && lessonExpanded) {
+                lesson.detail.forEach { paragraph ->
+                    Text(paragraph, style = MaterialTheme.typography.bodyMedium, color = c.textSecondary)
+                }
+                if (lesson.takeaway.isNotBlank()) {
+                    Surface(
+                        color = accent.copy(alpha = 0.08f),
+                        shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.medium),
+                    ) {
+                        Text(
+                            "Try it: ${lesson.takeaway}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = c.textPrimary,
+                            modifier = Modifier.fillMaxWidth().padding(12.dp),
+                        )
+                    }
+                }
+                lesson.source?.let {
+                    Text(it, style = MaterialTheme.typography.labelSmall, color = c.textTertiary)
+                }
+                if (onCompleteLesson != null) {
+                    AppButton(
+                        text = "Got it",
+                        onClick = onCompleteLesson,
+                        variant = AppButtonVariant.PRIMARY,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                 }
             }
             if (item.actionLabel != null) {
@@ -960,31 +1069,10 @@ private fun eventTimeLabel(event: CalendarEvent, tz: TimeZone): String {
 @Composable
 private fun PlanRow(item: PlanItem, onComplete: () -> Unit, onOpen: () -> Unit) {
     val c = MaterialTheme.modernColors
-    val haptic = rememberHapticManager()
     val overdueColor = Color(0xFFE53935)
-
-    // Steps that are written as a length of time ("Hold crow pose 30 seconds") are timers wearing a
-    // tick box: the user has to do the thing, watch a clock elsewhere, then come back and tick.
-    // When we can read the duration, the row runs it and ticks itself at zero.
     val totalSeconds = remember(item.title) { StepDuration.secondsIn(item.title) }
-    var remaining by remember(item.milestoneId) { mutableStateOf<Int?>(null) }
-
-    LaunchedEffect(remaining != null) {
-        while (remaining != null) {
-            delay(1000)
-            val left = (remaining ?: return@LaunchedEffect) - 1
-            if (left <= 0) {
-                remaining = null
-                haptic.success()
-                onComplete()
-            } else {
-                remaining = left
-                // A tick each second makes it feel like something is happening in your hand rather
-                // than only on screen.
-                haptic.click()
-            }
-        }
-    }
+    val timer = totalSeconds?.let { rememberStepTimer(item.milestoneId, it, onComplete) }
+    val running = timer?.running == true
 
     // Completion is deliberate: only the check circle (or a countdown the user started and let run)
     // marks the step done. Tapping the row body opens the goal for context, so a stray tap can
@@ -999,14 +1087,8 @@ private fun PlanRow(item: PlanItem, onComplete: () -> Unit, onOpen: () -> Unit) 
             horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            if (totalSeconds != null) {
-                StepTimerButton(
-                    totalSeconds = totalSeconds,
-                    remaining = remaining,
-                    accent = if (item.overdue) overdueColor else c.primary,
-                    onStart = { remaining = totalSeconds },
-                    onCancel = { remaining = null },
-                )
+            if (timer != null) {
+                StepTimerControl(timer, accent = if (item.overdue) overdueColor else c.primary)
             } else {
                 Icon(
                     imageVector = PhosphorIcons.Regular.Circle,
@@ -1022,79 +1104,13 @@ private fun PlanRow(item: PlanItem, onComplete: () -> Unit, onOpen: () -> Unit) 
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(item.title, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = c.textPrimary, maxLines = 1)
                 Text(
-                    if (remaining != null) "Keep going. Ticks itself at zero." else item.goalTitle,
+                    if (running) "Keep going. Ticks itself at zero." else item.goalTitle,
                     style = MaterialTheme.typography.bodySmall,
-                    color = if (remaining != null) c.primary else c.textSecondary,
+                    color = if (running) c.primary else c.textSecondary,
                     maxLines = 1,
                 )
             }
-            if (remaining == null) DueChip(overdue = item.overdue)
-        }
-    }
-}
-
-/**
- * Play, then a countdown ring in the same 40dp the tick box occupied.
- *
- * Tapping mid-run cancels rather than completing: someone who stops early did not do the thing, and
- * an app that ticks it anyway is lying to them about their own week.
- */
-@Composable
-private fun StepTimerButton(
-    totalSeconds: Int,
-    remaining: Int?,
-    accent: Color,
-    onStart: () -> Unit,
-    onCancel: () -> Unit,
-) {
-    val c = MaterialTheme.modernColors
-    // One continuous sweep over the whole duration, not a new 950ms tween per tick. Chasing the
-    // per-second state made the arc advance in visible steps; time does not pass in steps.
-    val progress = remember { Animatable(0f) }
-    LaunchedEffect(remaining != null) {
-        if (remaining == null) {
-            progress.snapTo(0f)
-        } else {
-            progress.snapTo(1f - (remaining.toFloat() / totalSeconds))
-            progress.animateTo(
-                1f,
-                tween(durationMillis = remaining * 1000, easing = LinearEasing),
-            )
-        }
-    }
-
-    Box(
-        modifier = Modifier
-            .size(40.dp)
-            .clip(CircleShape)
-            .background(accent.copy(alpha = 0.12f))
-            .bouncyClickable { if (remaining == null) onStart() else onCancel() },
-        contentAlignment = Alignment.Center,
-    ) {
-        if (remaining != null) {
-            Box(
-                Modifier.fillMaxSize().drawBehind {
-                    drawArc(
-                        color = accent,
-                        startAngle = -90f,
-                        sweepAngle = progress.value * 360f,
-                        useCenter = false,
-                        style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round),
-                    )
-                }
-            )
-            Text(
-                StepDuration.format(remaining),
-                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                color = accent,
-            )
-        } else {
-            Icon(
-                PhosphorIcons.Fill.Play,
-                contentDescription = "Start ${StepDuration.format(totalSeconds)} timer",
-                tint = accent,
-                modifier = Modifier.size(16.dp),
-            )
+            if (!running) DueChip(overdue = item.overdue)
         }
     }
 }

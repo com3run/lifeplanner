@@ -36,8 +36,16 @@ class CoachMissingSlotsTest {
 
         // Without this the coach opens with a checklist, which is the questionnaire again wearing
         // a chat bubble.
-        assertTrue("ONE per reply" in context, context)
-        assertTrue("Never open" in context, context)
+        // One question, not a checklist — that part has to hold whatever the wording.
+        assertTrue("ONE short question" in context, context)
+        // And it must stop if the user deflects.
+        assertTrue("let it go" in context, context)
+
+        // The first version hedged: "only when it genuinely helps", "never open with it", "drop it
+        // if the user does not want to say" — three discouragements to one weak invitation. Across
+        // real conversations with two coaches it never asked once, including where the answer
+        // plainly depended on the answer. If that phrasing comes back, so does the silence.
+        assertFalse("only when it genuinely helps" in context, context)
     }
 
     @Test

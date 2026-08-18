@@ -39,6 +39,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.animation.core.Animatable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -306,6 +308,64 @@ internal fun CoachStripAvatar(
                 modifier = Modifier.fillMaxSize()
             )
             emoji != null -> Text(text = emoji, style = MaterialTheme.typography.bodyLarge)
+        }
+    }
+}
+
+/**
+ * Whose chat this is, and nothing else.
+ *
+ * For a returning user with an empty conversation: [CoachStoryIntro] has already been shown once
+ * and repeating it makes it furniture, but an empty screen with a text box does not say who is
+ * about to answer. This fades the character in and stops there.
+ */
+@Composable
+internal fun CoachQuietIntro(coach: CoachPersona?, modifier: Modifier = Modifier) {
+    val entrance = remember(coach?.id) { Animatable(0f) }
+    LaunchedEffect(coach?.id) {
+        entrance.snapTo(0f)
+        entrance.animateTo(1f, animationSpec = tween(durationMillis = 450))
+    }
+
+    Box(modifier = modifier, contentAlignment = Alignment.Center) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.graphicsLayer {
+                alpha = entrance.value
+                translationY = (1f - entrance.value) * 16f
+            },
+        ) {
+            val bg = remember(coach?.id) {
+                try { Color(("FF" + (coach?.avatar?.backgroundColor ?: "#6366F1").removePrefix("#")).toLong(16)) }
+                catch (_: Exception) { Color(0xFF6366F1) }
+            }
+            Box(
+                Modifier.size(72.dp).clip(CircleShape).background(bg),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (coach?.imageUrl != null) {
+                    AsyncImage(
+                        model = coach.imageUrl,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        alignment = Alignment.TopCenter,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                } else {
+                    Text(coach?.emoji ?: "\u2728", style = MaterialTheme.typography.headlineSmall)
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+            Text(
+                coach?.name ?: "Luna",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                coach?.title ?: "Life Coach",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

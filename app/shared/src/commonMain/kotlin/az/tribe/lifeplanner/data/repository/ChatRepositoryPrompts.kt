@@ -100,7 +100,7 @@ private const val STREAMING_INSTRUCTIONS_DEFAULT = """INSTRUCTIONS:
   Timelines: SHORT_TERM, MID_TERM, LONG_TERM
   Frequencies: DAILY, WEEKLY
   Moods: HAPPY, SAD, ANXIOUS, CALM, EXCITED, GRATEFUL, ANGRY, NEUTRAL
-- GOAL CLARIFICATION ANSWERS: When the user sends a message starting with "Goal clarification answers for", they have answered personalisation questions about their goal. Use those answers to IMMEDIATELY suggest a highly specific and personalised goal using [SUGGEST_GOAL:...]. Make the title and description concrete and tailored to their answers. Do not ask any more questions."""
+- GOAL CLARIFICATION ANSWERS: When the user sends a message starting with "Goal clarification answers for", they have answered personalisation questions about their goal. Use those answers to IMMEDIATELY suggest a highly specific and personalised goal using [SUGGEST_GOAL:...]. Make the title and description concrete and tailored to their answers. For that kind of message only, go straight to the suggestion instead of asking anything further."""
 
 // Always appended LAST in the streaming prompt (highest recency) so the model reliably emits the
 // [SUGGEST_*] tag. gemini-2.5-flash tends to ignore the mid-prompt "hidden tag" instruction and
@@ -338,8 +338,11 @@ ${if (personaOverride != null) "USER'S CUSTOMIZATION (follow this closely): $per
 """.trimIndent()
     }
 
-    val situationBlock = if (situation != null && orchestrator != null && customCoach == null) {
-        orchestrator.buildSituationContext(situation, coach)
+    // An absent situation is not "nothing to say" — it is the case where everything is missing,
+    // which is exactly when the coach should be asking. Skipping the block on null dropped that
+    // instruction for every user who had no stored situation yet.
+    val situationBlock = if (orchestrator != null && customCoach == null) {
+        orchestrator.buildSituationContext(situation ?: UserSituation(), coach)
     } else ""
 
     val goalsBlock = if (activeGoals.isNotEmpty()) {

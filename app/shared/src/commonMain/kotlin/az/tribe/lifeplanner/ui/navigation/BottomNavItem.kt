@@ -1,6 +1,7 @@
 package az.tribe.lifeplanner.ui.navigation
 
 import az.tribe.lifeplanner.core.FeatureFlags
+import az.tribe.lifeplanner.domain.service.DayPhase
 
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.adamglin.PhosphorIcons
@@ -9,18 +10,22 @@ import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.fill.ArrowsClockwise
 import com.adamglin.phosphoricons.fill.Flag
 import com.adamglin.phosphoricons.fill.Flower
-import com.adamglin.phosphoricons.fill.House
 import com.adamglin.phosphoricons.fill.Lifebuoy
+import com.adamglin.phosphoricons.fill.Moon
 import com.adamglin.phosphoricons.fill.SquaresFour
 import com.adamglin.phosphoricons.fill.Star
+import com.adamglin.phosphoricons.fill.Sun
+import com.adamglin.phosphoricons.fill.SunHorizon
 import com.adamglin.phosphoricons.fill.User
 import com.adamglin.phosphoricons.regular.ArrowsClockwise
 import com.adamglin.phosphoricons.regular.Flag
 import com.adamglin.phosphoricons.regular.Flower
-import com.adamglin.phosphoricons.regular.House
 import com.adamglin.phosphoricons.regular.Lifebuoy
+import com.adamglin.phosphoricons.regular.Moon
 import com.adamglin.phosphoricons.regular.SquaresFour
 import com.adamglin.phosphoricons.regular.Star
+import com.adamglin.phosphoricons.regular.Sun
+import com.adamglin.phosphoricons.regular.SunHorizon
 import com.adamglin.phosphoricons.regular.User
 
 sealed class BottomNavItem(
@@ -29,12 +34,32 @@ sealed class BottomNavItem(
     val selectedIcon: ImageVector,
     val unselectedIcon: ImageVector
 ) {
+
+    /**
+     * The icon to draw right now. Fixed for every tab except [Home], which is named after the
+     * present moment and so has to look like it.
+     */
+    open fun iconFor(phase: DayPhase, selected: Boolean): ImageVector =
+        if (selected) selectedIcon else unselectedIcon
+
+    /**
+     * The tab the app opens on. It used to be "Today" under a house, which named a date and a
+     * building, neither of which is what the screen is about. It is the present: what is happening
+     * now, in the hour you opened the app. So the icon is the sky at the hour you open it.
+     */
     data object Home : BottomNavItem(
         route = Screen.ForYou.route,
-        title = "Today",
-        selectedIcon = PhosphorIcons.Fill.House,
-        unselectedIcon = PhosphorIcons.Regular.House
-    )
+        title = "Present",
+        selectedIcon = PhosphorIcons.Fill.Sun,
+        unselectedIcon = PhosphorIcons.Regular.Sun
+    ) {
+        override fun iconFor(phase: DayPhase, selected: Boolean): ImageVector = when (phase) {
+            DayPhase.NIGHT -> if (selected) PhosphorIcons.Fill.Moon else PhosphorIcons.Regular.Moon
+            DayPhase.DAWN, DayPhase.DUSK ->
+                if (selected) PhosphorIcons.Fill.SunHorizon else PhosphorIcons.Regular.SunHorizon
+            DayPhase.DAY -> if (selected) PhosphorIcons.Fill.Sun else PhosphorIcons.Regular.Sun
+        }
+    }
 
     data object Goals : BottomNavItem(
         route = Screen.Goals.route,
