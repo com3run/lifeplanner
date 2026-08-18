@@ -13,6 +13,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -22,6 +23,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import az.tribe.lifeplanner.domain.service.PresentMoment
+import az.tribe.lifeplanner.domain.service.StepDuration
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
 import az.tribe.lifeplanner.ui.theme.bouncyClickable
 import az.tribe.lifeplanner.ui.theme.modernColors
@@ -125,14 +127,26 @@ fun PresentNowCard(
                 }
             }
             // Only things the user can finish get a tick. An event is attended, not completed.
-            if (onAct != null) {
-                Icon(
+            // A step that names a length of time gets the countdown it gets in the plan: promoting
+            // it to the top of the screen should not take the timer away from it.
+            val milestoneId = moment.milestoneId
+            val seconds = remember(moment.title, milestoneId) {
+                if (milestoneId == null) null else StepDuration.secondsIn(moment.title)
+            }
+            val act = onAct
+            val timer = if (act != null && seconds != null && milestoneId != null) {
+                rememberStepTimer(milestoneId, seconds, act)
+            } else null
+            when {
+                timer != null -> StepTimerControl(timer, accent = accent)
+
+                act != null -> Icon(
                     imageVector = PhosphorIcons.Regular.Circle,
                     contentDescription = "Mark done",
                     tint = accent,
                     modifier = Modifier
                         .clip(CircleShape)
-                        .bouncyClickable(onClick = onAct)
+                        .bouncyClickable(onClick = act)
                         .padding(4.dp)
                         .size(LifePlannerDesign.IconSize.large),
                 )

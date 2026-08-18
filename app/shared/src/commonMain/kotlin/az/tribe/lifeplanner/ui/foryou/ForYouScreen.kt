@@ -17,9 +17,7 @@ import az.tribe.lifeplanner.ui.calendar.rememberCalendarPermission
 import az.tribe.lifeplanner.ui.components.rememberHapticManager
 import androidx.compose.foundation.background
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
@@ -96,12 +94,8 @@ import az.tribe.lifeplanner.domain.model.ScoreSource
 import az.tribe.lifeplanner.ui.components.todayBreathKey
 import az.tribe.lifeplanner.ui.onboarding.CoachOnboardingViewModel
 import az.tribe.lifeplanner.ui.wheel.WheelStripCard
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import az.tribe.lifeplanner.domain.service.KnowledgeLibrary
 import az.tribe.lifeplanner.domain.service.StepDuration
-import com.adamglin.phosphoricons.fill.Play
 import az.tribe.lifeplanner.ui.today.PlanItem
 import az.tribe.lifeplanner.ui.today.TodayWeatherViewModel
 import az.tribe.lifeplanner.ui.intro.rememberFeatureIntroGate
@@ -221,10 +215,14 @@ fun ForYouScreen(
             nudge = topHabitCard,
         )
     }
-    // A habit lifted into the now card is not printed again as a full card two screens down.
-    // The plan keeps its rows: that list is the day in full, and losing a line out of a checklist
-    // reads as a bug, where a repeated suggestion just reads as noise.
+    // Whatever the now card is holding is not printed again further down the same screen: the
+    // habit loses its full card in the feed, the step loses its row in the plan. It has not gone
+    // anywhere, it is at the top, and the day's list is a page long by the afternoon.
     val promotedCardId = if (presentMoment?.kind == PresentMoment.Kind.HABIT) topHabitCard?.id else null
+    val promotedMilestoneId = presentMoment?.milestoneId
+    val planRows = remember(plan, promotedMilestoneId) {
+        plan.filterNot { it.milestoneId == promotedMilestoneId }
+    }
 
     var filter by remember { mutableStateOf<FeedSection?>(null) }
     // Which learn card is open, reading inline. One at a time: the feed is a page, not an accordion.
@@ -349,7 +347,7 @@ fun ForYouScreen(
             // Only rendered when the day actually has something in it. A header over a "you're all
             // caught up" line is just chrome on an empty day, and it pushes the feed down.
             val hasCalendarToday = calendarConnected && todayEvents.isNotEmpty()
-            if (plan.isNotEmpty() || hasCalendarToday || healthHabits.isNotEmpty()) {
+            if (planRows.isNotEmpty() || hasCalendarToday || healthHabits.isNotEmpty()) {
                 item(key = "plan_header") { SectionHeader(label = "Today's plan", onSeeAll = null) }
                 // Calendar events lead the plan: they are time-anchored, so they read top-of-day.
                 if (hasCalendarToday) {
@@ -362,7 +360,7 @@ fun ForYouScreen(
                 items(healthHabits, key = { "health_${it.habitId}" }) { habit ->
                     HealthHabitRow(progress = habit)
                 }
-                items(plan, key = { "plan_${it.milestoneId}" }) { p ->
+                items(planRows, key = { "plan_${it.milestoneId}" }) { p ->
                     PlanRow(
                         item = p,
                         onComplete = { viewModel.completePlanItem(p.milestoneId) },
@@ -1071,31 +1069,10 @@ private fun eventTimeLabel(event: CalendarEvent, tz: TimeZone): String {
 @Composable
 private fun PlanRow(item: PlanItem, onComplete: () -> Unit, onOpen: () -> Unit) {
     val c = MaterialTheme.modernColors
-    val haptic = rememberHapticManager()
     val overdueColor = Color(0xFFE53935)
-
-    // Steps that are written as a length of time ("Hold crow pose 30 seconds") are timers wearing a
-    // tick box: the user has to do the thing, watch a clock elsewhere, then come back and tick.
-    // When we can read the duration, the row runs it and ticks itself at zero.
     val totalSeconds = remember(item.title) { StepDuration.secondsIn(item.title) }
-    var remaining by remember(item.milestoneId) { mutableStateOf<Int?>(null) }
-
-    LaunchedEffect(remaining != null) {
-        while (remaining != null) {
-            delay(1000)
-            val left = (remaining ?: return@LaunchedEffect) - 1
-            if (left <= 0) {
-                remaining = null
-                haptic.success()
-                onComplete()
-            } else {
-                remaining = left
-                // A tick each second makes it feel like something is happening in your hand rather
-                // than only on screen.
-                haptic.click()
-            }
-        }
-    }
+    val timer = totalSeconds?.let { rememberStepTimer(item.milestoneId, it, onComplete) }
+    val running = timer?.running == true
 
     // Completion is deliberate: only the check circle (or a countdown the user started and let run)
     // marks the step done. Tapping the row body opens the goal for context, so a stray tap can
@@ -1110,14 +1087,8 @@ private fun PlanRow(item: PlanItem, onComplete: () -> Unit, onOpen: () -> Unit) 
             horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            if (totalSeconds != null) {
-                StepTimerButton(
-                    totalSeconds = totalSeconds,
-                    remaining = remaining,
-                    accent = if (item.overdue) overdueColor else c.primary,
-                    onStart = { remaining = totalSeconds },
-                    onCancel = { remaining = null },
-                )
+            if (timer != null) {
+                StepTimerControl(timer, accent = if (item.overdue) overdueColor else c.primary)
             } else {
                 Icon(
                     imageVector = PhosphorIcons.Regular.Circle,
@@ -1133,79 +1104,13 @@ private fun PlanRow(item: PlanItem, onComplete: () -> Unit, onOpen: () -> Unit) 
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(item.title, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = c.textPrimary, maxLines = 1)
                 Text(
-                    if (remaining != null) "Keep going. Ticks itself at zero." else item.goalTitle,
+                    if (running) "Keep going. Ticks itself at zero." else item.goalTitle,
                     style = MaterialTheme.typography.bodySmall,
-                    color = if (remaining != null) c.primary else c.textSecondary,
+                    color = if (running) c.primary else c.textSecondary,
                     maxLines = 1,
                 )
             }
-            if (remaining == null) DueChip(overdue = item.overdue)
-        }
-    }
-}
-
-/**
- * Play, then a countdown ring in the same 40dp the tick box occupied.
- *
- * Tapping mid-run cancels rather than completing: someone who stops early did not do the thing, and
- * an app that ticks it anyway is lying to them about their own week.
- */
-@Composable
-private fun StepTimerButton(
-    totalSeconds: Int,
-    remaining: Int?,
-    accent: Color,
-    onStart: () -> Unit,
-    onCancel: () -> Unit,
-) {
-    val c = MaterialTheme.modernColors
-    // One continuous sweep over the whole duration, not a new 950ms tween per tick. Chasing the
-    // per-second state made the arc advance in visible steps; time does not pass in steps.
-    val progress = remember { Animatable(0f) }
-    LaunchedEffect(remaining != null) {
-        if (remaining == null) {
-            progress.snapTo(0f)
-        } else {
-            progress.snapTo(1f - (remaining.toFloat() / totalSeconds))
-            progress.animateTo(
-                1f,
-                tween(durationMillis = remaining * 1000, easing = LinearEasing),
-            )
-        }
-    }
-
-    Box(
-        modifier = Modifier
-            .size(40.dp)
-            .clip(CircleShape)
-            .background(accent.copy(alpha = 0.12f))
-            .bouncyClickable { if (remaining == null) onStart() else onCancel() },
-        contentAlignment = Alignment.Center,
-    ) {
-        if (remaining != null) {
-            Box(
-                Modifier.fillMaxSize().drawBehind {
-                    drawArc(
-                        color = accent,
-                        startAngle = -90f,
-                        sweepAngle = progress.value * 360f,
-                        useCenter = false,
-                        style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round),
-                    )
-                }
-            )
-            Text(
-                StepDuration.format(remaining),
-                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                color = accent,
-            )
-        } else {
-            Icon(
-                PhosphorIcons.Fill.Play,
-                contentDescription = "Start ${StepDuration.format(totalSeconds)} timer",
-                tint = accent,
-                modifier = Modifier.size(16.dp),
-            )
+            if (!running) DueChip(overdue = item.overdue)
         }
     }
 }
