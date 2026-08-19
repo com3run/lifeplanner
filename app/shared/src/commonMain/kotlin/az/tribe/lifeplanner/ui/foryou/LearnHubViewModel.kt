@@ -38,6 +38,24 @@ data class CollectionUi(
     val isComplete: Boolean get() = readCount == total && total > 0
 }
 
+/**
+ * One collection, resolved against a reader's level and read set. Shared by the hub and the Present
+ * tab so a zone counts the same on both, locked lessons included in the total and excluded from the
+ * trail (see [CollectionUi]).
+ */
+internal fun zoneUi(collection: KnowledgeCollection, level: Int, readIds: Set<String>): CollectionUi {
+    val all = KnowledgeLibrary.lessonsOf(collection)
+    val unlocked = all.filter { it.minLevel <= level }
+    return CollectionUi(
+        collection = collection,
+        lessons = unlocked,
+        readCount = unlocked.count { it.id in readIds },
+        total = all.size,
+        lockedCount = all.size - unlocked.size,
+        nextUnreadId = unlocked.firstOrNull { it.id !in readIds }?.id,
+    )
+}
+
 /** The whole Learn hub screen state. */
 data class LearnHubUi(
     val loading: Boolean = true,
@@ -143,18 +161,7 @@ class LearnHubViewModel(
         val recommended = KnowledgeRecommender.recommend(signals, count = 3)
         val unlockedAll = KnowledgeLibrary.all.filter { it.minLevel <= level }
 
-        val collections = KnowledgeLibrary.collections.map { c ->
-            val all = KnowledgeLibrary.lessonsOf(c)
-            val unlocked = all.filter { it.minLevel <= level }
-            CollectionUi(
-                collection = c,
-                lessons = unlocked,
-                readCount = unlocked.count { it.id in readIds },
-                total = all.size,
-                lockedCount = all.size - unlocked.size,
-                nextUnreadId = unlocked.firstOrNull { it.id !in readIds }?.id,
-            )
-        }
+        val collections = KnowledgeLibrary.collections.map { zoneUi(it, level, readIds) }
 
         // Prefer the path already in progress; otherwise the first not-yet-started path.
         val inProgress = collections.firstOrNull { it.readCount in 1 until it.total && it.nextUnreadId != null }

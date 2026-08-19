@@ -62,6 +62,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -150,8 +151,8 @@ fun ForYouScreen(
     val plan by viewModel.todayPlan.collectAsState()
     val healthHabits by viewModel.healthHabits.collectAsState()
     val learning by viewModel.learning.collectAsState()
-    val lessonStream by viewModel.lessonStream.collectAsState()
-    val lessonsShown by viewModel.lessonsShown.collectAsState()
+    val zones by viewModel.zones.collectAsState()
+    val zonesShown by viewModel.zonesShown.collectAsState()
     val readLessonIds by viewModel.readLessonIds.collectAsState()
     val wheel by viewModel.wheel.collectAsState()
     val checkinPulse by viewModel.checkinPulse.collectAsState()
@@ -231,7 +232,9 @@ fun ForYouScreen(
     var filter by remember { mutableStateOf<FeedSection?>(null) }
     // The path card opens in place like the feed's lessons do, but keeps its own flag: it is not
     // one of the ranked cards and must not close because the feed re-ranked underneath it.
-    var learningExpanded by remember { mutableStateOf(false) }
+    // Which stop on the map is open, and which cleared zones have been unfolded to walk again.
+    var openLessonId by rememberSaveable { mutableStateOf<String?>(null) }
+    var unfoldedZones by rememberSaveable { mutableStateOf(emptySet<String>()) }
     val introGate = rememberFeatureIntroGate()
     val visible = remember(feed, filter, promotedCardId) {
         val f = filter
@@ -321,26 +324,6 @@ fun ForYouScreen(
             )
             if (breathMoment != null) {
                 item(key = "breath") { BreathingCard(reason = breathMoment.reason) }
-            }
-
-            // Then the reading, which is the other thing that is genuinely still in progress. It sits
-            // with the present rather than in the Learn band at the bottom, because a session you
-            // are three lessons into is not a suggestion to browse later.
-            learning?.let { l ->
-                item(key = "learning") {
-                    LearningPathCard(
-                        state = l,
-                        lesson = KnowledgeLibrary.byId(l.lessonId),
-                        expanded = learningExpanded,
-                        onToggle = { learningExpanded = !learningExpanded },
-                        onComplete = {
-                            viewModel.completeLesson(l.lessonId)
-                            // Closed on finish, so the next lesson arrives as an invitation rather
-                            // than as an already-open page the reader did not ask for.
-                            learningExpanded = false
-                        },
-                    )
-                }
             }
 
             if (!coachSetupDone) {
@@ -441,30 +424,93 @@ fun ForYouScreen(
                 }
             }
 
-            // ── The reading, which does not end ──────────────────────────────
+            // ── The map, which does not end ──────────────────────────────────
             // Everything above is finite by design: the hour, the day, the life. This is the part
-            // that keeps going. Whole lessons, one after another, four at a time, and the next four
-            // arrive when the reader reaches the bottom of these. There is no "see all" and no hub
-            // to enter: the scroll is the library.
-            if (lessonStream.isNotEmpty()) {
-                item(key = "learn_stream_header") {
-                    SectionHeader(label = "Keep reading", onSeeAll = null)
+            // that keeps going, and it is the same trail the Learn hub draws rather than a flat list
+            // of lessons wearing its name. The zone you are walking comes first, the next unrolls
+            // when you reach the end of this one, and a stop opens where you tapped it.
+            if (zones.isNotEmpty()) {
+                item(key = "map_header") { SectionHeader(label = "Your map", onSeeAll = null) }
+                // One line of where you are, from the same numbers the trail is drawn from.
+                learning?.let { l ->
+                    item(key = "map_line") {
+                        Text(
+                            l.line,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = c.textSecondary,
+                        )
+                    }
                 }
-                items(lessonStream.take(lessonsShown), key = { "lesson_${it.lesson.id}" }) { entry ->
-                    LessonPage(
-                        entry = entry,
-                        read = entry.lesson.id in readLessonIds,
-                        onComplete = { viewModel.completeLesson(entry.lesson.id) },
-                    )
+
+                zones.take(zonesShown).forEach { cui ->
+                    val zoneId = cui.collection.id
+                    // Cleared ground folds to a line. Walking past finished zones to reach the one
+                    // you are on is the main thing wrong with a long map.
+                    val unfolded = !cui.isComplete || zoneId in unfoldedZones
+                    item(key = "zone_$zoneId") {
+                        if (cui.isComplete) {
+                            ClearedZoneRow(
+                                cui = cui,
+                                expanded = unfolded,
+                                onToggle = {
+                                    unfoldedZones = if (zoneId in unfoldedZones) {
+                                        unfoldedZones - zoneId
+                                    } else {
+                                        unfoldedZones + zoneId
+                                    }
+                                },
+                            )
+                        } else {
+                            ZoneHeader(cui)
+                        }
+                    }
+                    if (unfolded) {
+                        item(key = "trail_$zoneId") {
+                            ZoneTrail(
+                                cui = cui,
+                                readIds = readLessonIds,
+                                onOpen = { id -> openLessonId = if (openLessonId == id) null else id },
+                            )
+                        }
+                    }
                 }
-                item(key = "learn_stream_more") {
-                    // Composing this footer is the signal: the reader has reached the end of what
-                    // they were given, so give them more. It stops asking when the library runs out,
-                    // and scrolls out of view once the new pages push it down.
-                    LaunchedEffect(lessonsShown) { viewModel.showMoreLessons() }
-                    StreamFooter(atEnd = lessonsShown >= lessonStream.size)
+
+                item(key = "map_more") {
+                    // Composing this footer is the signal: the reader has walked off the end of the
+                    // map they were given, so unroll the next zone. It stops asking when the library
+                    // runs out, and scrolls out of view once the new ground pushes it down.
+                    // The pause matters: without it the effect re-fires faster than the list can
+                    // push the footer out of view, and the whole map unrolls in one go.
+                    LaunchedEffect(zonesShown) {
+                        delay(350)
+                        viewModel.showMoreZones()
+                    }
+                    StreamFooter(atEnd = zonesShown >= zones.size)
                 }
             }
+        }
+    }
+
+    // A stop opens over the map rather than under it. The lesson can be several nodes up the trail
+    // from where the list is scrolled, and a card that appears somewhere off screen has not opened
+    // at all; a sheet arrives where the reader is looking, with the trail still visible behind it.
+    openLessonId?.let { id ->
+        val zone = zones.firstOrNull { z -> z.lessons.any { it.id == id } }
+        val lesson = zone?.lessons?.firstOrNull { it.id == id }
+        if (zone != null && lesson != null) {
+            LessonSheet(
+                lesson = lesson,
+                pathTitle = zone.collection.title,
+                position = zone.lessons.indexOfFirst { it.id == id } + 1,
+                total = zone.total,
+                read = id in readLessonIds,
+                onComplete = {
+                    viewModel.completeLesson(id)
+                    // Closed on finish, so the eye goes back to the trail and sees the stop it lit.
+                    openLessonId = null
+                },
+                onDismiss = { openLessonId = null },
+            )
         }
     }
 

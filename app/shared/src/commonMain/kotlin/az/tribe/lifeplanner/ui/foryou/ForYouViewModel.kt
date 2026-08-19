@@ -115,32 +115,39 @@ class ForYouViewModel(
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     /**
-     * The reading, ordered once and then walked: the path in progress first, the rest of the library
-     * behind it, already-read lessons last as revisits (see [LearningStream]).
-     *
-     * Held whole rather than re-derived per page, and deliberately not rebuilt when a lesson is
-     * marked read: finishing the lesson under your thumb should not reorder everything below it.
-     * Only a level change, which genuinely unlocks new content, rebuilds the order.
+     * The map, in walking order: the zone in progress first (see [LearningStream]). The order is
+     * held rather than recomputed, so clearing a zone never slides the map under the reader; only
+     * the zones' own read counts move.
      */
-    private val _lessonStream = MutableStateFlow<List<az.tribe.lifeplanner.domain.service.LearningStream.Entry>>(emptyList())
-    val lessonStream: StateFlow<List<az.tribe.lifeplanner.domain.service.LearningStream.Entry>> = _lessonStream.asStateFlow()
-    private var lessonStreamLevel: Int? = null
+    private val _zoneOrder = MutableStateFlow<List<az.tribe.lifeplanner.domain.service.KnowledgeCollection>>(emptyList())
+    private var zoneOrderLevel: Int? = null
 
-    /** How much of [lessonStream] has been handed to the screen. Grows as the reader reaches the end. */
-    private val _lessonsShown = MutableStateFlow(LESSON_PAGE)
-    val lessonsShown: StateFlow<Int> = _lessonsShown.asStateFlow()
+    private val _zones = MutableStateFlow<List<CollectionUi>>(emptyList())
+    val zones: StateFlow<List<CollectionUi>> = _zones.asStateFlow()
 
-    /** Which lessons are read, live, so a page can show its own state without rebuilding the stream. */
+    /** How many zones the screen has been handed. Grows as the reader walks off the end of them. */
+    private val _zonesShown = MutableStateFlow(1)
+    val zonesShown: StateFlow<Int> = _zonesShown.asStateFlow()
+
+    /** Which lessons are read, live, so a trail lights up the moment one is finished. */
     val readLessonIds: StateFlow<Set<String>> =
         knowledgeRepository.readIds()
             .catch { e -> Logger.w("ForYouViewModel") { "read ids unavailable: ${e.message}" } }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
 
-    /** Called when the reader reaches the bottom of what has been handed over. */
-    fun showMoreLessons() {
-        val total = _lessonStream.value.size
-        if (_lessonsShown.value >= total) return
-        _lessonsShown.value = (_lessonsShown.value + LESSON_PAGE).coerceAtMost(total)
+    /** Called when the reader reaches the end of the map they have been given. */
+    fun showMoreZones() {
+        val total = _zoneOrder.value.size
+        if (_zonesShown.value >= total) return
+        _zonesShown.value = (_zonesShown.value + 1).coerceAtMost(total)
+    }
+
+    init {
+        viewModelScope.launch {
+            combine(_zoneOrder, readLessonIds, progress) { order, readIds, p ->
+                order.map { zoneUi(it, p?.currentLevel ?: 1, readIds) }
+            }.collect { _zones.value = it }
+        }
     }
 
     private val _isLoading = MutableStateFlow(true)
@@ -197,23 +204,18 @@ class ForYouViewModel(
 
             runCatching {
                 val level = _progress.value?.currentLevel ?: 1
-                if (lessonStreamLevel != level || _lessonStream.value.isEmpty()) {
-                    lessonStreamLevel = level
-                    _lessonStream.value = az.tribe.lifeplanner.domain.service.LearningStream
-                        .build(level, knowledgeRepository.readIds().first())
+                if (zoneOrderLevel != level || _zoneOrder.value.isEmpty()) {
+                    zoneOrderLevel = level
+                    _zoneOrder.value = az.tribe.lifeplanner.domain.service.LearningStream
+                        .pathOrder(level, knowledgeRepository.readIds().first())
                 }
-            }.onFailure { Logger.w("ForYouViewModel") { "Lesson stream build failed: ${it.message}" } }
+            }.onFailure { Logger.w("ForYouViewModel") { "Map order build failed: ${it.message}" } }
 
             _isLoading.value = false
         }
     }
 
     /** Planner-style: tick a plan item (milestone) done right on the Today feed, no navigation. */
-    private companion object {
-        /** Lessons handed over at a time. Enough to scroll into, small enough not to build a page nobody reaches. */
-        const val LESSON_PAGE = 4
-    }
-
     fun completePlanItem(milestoneId: String) {
         viewModelScope.launch {
             runCatching {
