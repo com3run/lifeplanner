@@ -13,7 +13,6 @@ import az.tribe.lifeplanner.domain.repository.GoalRepository
 import az.tribe.lifeplanner.domain.repository.LifeValueRepository
 import az.tribe.lifeplanner.domain.repository.IdentityStatementRepository
 import az.tribe.lifeplanner.domain.service.CausalInsightProvider
-import az.tribe.lifeplanner.domain.service.KnowledgeLibrary
 import az.tribe.lifeplanner.domain.service.PossibilityContextProvider
 import az.tribe.lifeplanner.domain.service.PossibilityEngine
 import az.tribe.lifeplanner.ui.intro.FeatureIntroCatalog
@@ -57,7 +56,6 @@ class HomeFeedBuilder(
     private val behaviorRepository: BehaviorRepository,
     private val goalRepository: GoalRepository,
     private val lifeValueRepository: LifeValueRepository,
-    private val knowledgeRepository: az.tribe.lifeplanner.domain.repository.KnowledgeRepository,
     private val settings: Settings = Settings(),
 ) {
 
@@ -335,30 +333,12 @@ class HomeFeedBuilder(
 
         items += invitations.take(2)
 
-        // ── Learn: the daily picks ──────────────────────────────────────────
-        // The lesson the user is actually in the middle of is no longer a card down here. It is the
-        // path card at the top of the screen, which can say where they are on the path and what
-        // finishing pays, neither of which fits in a feed row. What stays is the browse: a couple of
-        // picks from elsewhere in the library, skipping anything read (re-recommending a read lesson
-        // tells the user we are not paying attention) and skipping the resume lesson, which is
-        // already on screen above.
-        val readIds = runCatching { knowledgeRepository.readIds().first() }.getOrDefault(emptySet())
-        val resume = KnowledgeLibrary.resumePoint(level, readIds)
-        KnowledgeLibrary.forLevel(level, daySeed, count = 5)
-            .filter { it.id !in readIds && it.id != resume?.lesson?.id }
-            .take(2)
-            .forEachIndexed { i, k ->
-                items += FeedItem(
-                    id = k.id,
-                    kind = FeedKind.KNOWLEDGE,
-                    eyebrow = "LEARN · ${k.readMin} min",
-                    title = k.title,
-                    body = k.body,
-                    emoji = k.emoji,
-                    route = "knowledge_detail/${k.id}",
-                    score = 50.0 - i,
-                )
-            }
+        // ── Learn ───────────────────────────────────────────────────────────
+        // No lessons in the feed any more. Two teaser rows here and a hub page behind them was a
+        // library you had to decide to enter; the reading now runs off the bottom of the Present
+        // tab as whole lessons (LearningStream), with the path card above it holding the place.
+        // Ranked cards and an endless stream cannot share a screen: the feed re-ranks under the
+        // reader, which is exactly what you must not do to someone mid-paragraph.
 
         Logger.d("HomeFeedBuilder") { "Built feed: ${items.size} items (level $level)" }
         // Group into bands (Right now, Reflect, Learn), strongest first within each.

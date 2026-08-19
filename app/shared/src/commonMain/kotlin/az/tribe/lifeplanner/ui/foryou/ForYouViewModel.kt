@@ -114,6 +114,35 @@ class ForYouViewModel(
             .catch { e -> Logger.w("ForYouViewModel") { "learning state unavailable: ${e.message}" } }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
+    /**
+     * The reading, ordered once and then walked: the path in progress first, the rest of the library
+     * behind it, already-read lessons last as revisits (see [LearningStream]).
+     *
+     * Held whole rather than re-derived per page, and deliberately not rebuilt when a lesson is
+     * marked read: finishing the lesson under your thumb should not reorder everything below it.
+     * Only a level change, which genuinely unlocks new content, rebuilds the order.
+     */
+    private val _lessonStream = MutableStateFlow<List<az.tribe.lifeplanner.domain.service.LearningStream.Entry>>(emptyList())
+    val lessonStream: StateFlow<List<az.tribe.lifeplanner.domain.service.LearningStream.Entry>> = _lessonStream.asStateFlow()
+    private var lessonStreamLevel: Int? = null
+
+    /** How much of [lessonStream] has been handed to the screen. Grows as the reader reaches the end. */
+    private val _lessonsShown = MutableStateFlow(LESSON_PAGE)
+    val lessonsShown: StateFlow<Int> = _lessonsShown.asStateFlow()
+
+    /** Which lessons are read, live, so a page can show its own state without rebuilding the stream. */
+    val readLessonIds: StateFlow<Set<String>> =
+        knowledgeRepository.readIds()
+            .catch { e -> Logger.w("ForYouViewModel") { "read ids unavailable: ${e.message}" } }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
+
+    /** Called when the reader reaches the bottom of what has been handed over. */
+    fun showMoreLessons() {
+        val total = _lessonStream.value.size
+        if (_lessonsShown.value >= total) return
+        _lessonsShown.value = (_lessonsShown.value + LESSON_PAGE).coerceAtMost(total)
+    }
+
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
@@ -165,11 +194,26 @@ class ForYouViewModel(
             runCatching { feedBuilder.build() }
                 .onSuccess { _feed.value = it }
                 .onFailure { Logger.w("ForYouViewModel") { "Feed build failed: ${it.message}" } }
+
+            runCatching {
+                val level = _progress.value?.currentLevel ?: 1
+                if (lessonStreamLevel != level || _lessonStream.value.isEmpty()) {
+                    lessonStreamLevel = level
+                    _lessonStream.value = az.tribe.lifeplanner.domain.service.LearningStream
+                        .build(level, knowledgeRepository.readIds().first())
+                }
+            }.onFailure { Logger.w("ForYouViewModel") { "Lesson stream build failed: ${it.message}" } }
+
             _isLoading.value = false
         }
     }
 
     /** Planner-style: tick a plan item (milestone) done right on the Today feed, no navigation. */
+    private companion object {
+        /** Lessons handed over at a time. Enough to scroll into, small enough not to build a page nobody reaches. */
+        const val LESSON_PAGE = 4
+    }
+
     fun completePlanItem(milestoneId: String) {
         viewModelScope.launch {
             runCatching {

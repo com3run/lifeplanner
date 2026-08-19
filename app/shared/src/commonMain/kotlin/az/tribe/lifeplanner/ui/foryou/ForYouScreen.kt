@@ -150,6 +150,9 @@ fun ForYouScreen(
     val plan by viewModel.todayPlan.collectAsState()
     val healthHabits by viewModel.healthHabits.collectAsState()
     val learning by viewModel.learning.collectAsState()
+    val lessonStream by viewModel.lessonStream.collectAsState()
+    val lessonsShown by viewModel.lessonsShown.collectAsState()
+    val readLessonIds by viewModel.readLessonIds.collectAsState()
     val wheel by viewModel.wheel.collectAsState()
     val checkinPulse by viewModel.checkinPulse.collectAsState()
     val c = MaterialTheme.modernColors
@@ -226,8 +229,6 @@ fun ForYouScreen(
     }
 
     var filter by remember { mutableStateOf<FeedSection?>(null) }
-    // Which learn card is open, reading inline. One at a time: the feed is a page, not an accordion.
-    var expandedLessonId by remember { mutableStateOf<String?>(null) }
     // The path card opens in place like the feed's lessons do, but keeps its own flag: it is not
     // one of the ranked cards and must not close because the feed re-ranked underneath it.
     var learningExpanded by remember { mutableStateOf(false) }
@@ -420,17 +421,11 @@ fun ForYouScreen(
                         }
                         items(cards, key = { it.id }) { fi ->
                             val accent = accentFor(fi)
-                            // A lesson reads where it is: tapping expands the card into the full
-                            // lesson instead of leaving for a reader page. Everything else keeps
-                            // navigating (a feature the user hasn't met explains itself first via
-                            // the intro gate).
-                            val lesson = if (fi.kind == FeedKind.KNOWLEDGE) {
-                                fi.route?.substringAfterLast("/")?.let(KnowledgeLibrary::byId)
-                            } else null
-                            val open: () -> Unit = if (lesson != null) {
-                                { expandedLessonId = if (expandedLessonId == fi.id) null else fi.id }
-                            } else {
-                                { fi.route?.let { route -> introGate.open(fi.introId, accent) { onOpenRoute(route) } } }
+                            // A card opens the place to act (a feature the user hasn't met explains
+                            // itself first via the intro gate). Lessons are no longer feed cards:
+                            // they are whole pages in the stream below.
+                            val open: () -> Unit = {
+                                fi.route?.let { route -> introGate.open(fi.introId, accent) { onOpenRoute(route) } }
                             }
                             FeedCard(
                                 item = fi,
@@ -440,17 +435,34 @@ fun ForYouScreen(
                                 // place to act, so the labeled button always does what it says.
                                 onAction = { fi.actionHabitId?.let(viewModel::checkInHabit) ?: open() },
                                 onOpen = open,
-                                lesson = lesson,
-                                lessonExpanded = expandedLessonId == fi.id,
-                                onCompleteLesson = lesson?.let {
-                                    {
-                                        viewModel.completeLesson(it.id)
-                                        expandedLessonId = null
-                                    }
-                                },
                             )
                         }
                     }
+                }
+            }
+
+            // ── The reading, which does not end ──────────────────────────────
+            // Everything above is finite by design: the hour, the day, the life. This is the part
+            // that keeps going. Whole lessons, one after another, four at a time, and the next four
+            // arrive when the reader reaches the bottom of these. There is no "see all" and no hub
+            // to enter: the scroll is the library.
+            if (lessonStream.isNotEmpty()) {
+                item(key = "learn_stream_header") {
+                    SectionHeader(label = "Keep reading", onSeeAll = null)
+                }
+                items(lessonStream.take(lessonsShown), key = { "lesson_${it.lesson.id}" }) { entry ->
+                    LessonPage(
+                        entry = entry,
+                        read = entry.lesson.id in readLessonIds,
+                        onComplete = { viewModel.completeLesson(entry.lesson.id) },
+                    )
+                }
+                item(key = "learn_stream_more") {
+                    // Composing this footer is the signal: the reader has reached the end of what
+                    // they were given, so give them more. It stops asking when the library runs out,
+                    // and scrolls out of view once the new pages push it down.
+                    LaunchedEffect(lessonsShown) { viewModel.showMoreLessons() }
+                    StreamFooter(atEnd = lessonsShown >= lessonStream.size)
                 }
             }
         }
@@ -526,10 +538,6 @@ private fun FeedCard(
     pulse: ForYouViewModel.CheckinPulse? = null,
     onAction: () -> Unit,
     onOpen: () -> Unit,
-    /** Non-null for learn cards: tapping expands the lesson here instead of opening a page. */
-    lesson: az.tribe.lifeplanner.domain.service.KnowledgeBit? = null,
-    lessonExpanded: Boolean = false,
-    onCompleteLesson: (() -> Unit)? = null,
 ) {
     val c = MaterialTheme.modernColors
     Surface(
@@ -551,9 +559,6 @@ private fun FeedCard(
                 if (item.route != null && item.actionLabel == null) {
                     Icon(PhosphorIcons.Regular.CaretRight, contentDescription = null, tint = c.textTertiary, modifier = Modifier.size(LifePlannerDesign.IconSize.small))
                 }
-            }
-            if (lesson != null && lessonExpanded) {
-                LessonBody(lesson = lesson, accent = accent, onComplete = onCompleteLesson)
             }
             if (item.actionLabel != null) {
                 val haptic = rememberHapticManager()
