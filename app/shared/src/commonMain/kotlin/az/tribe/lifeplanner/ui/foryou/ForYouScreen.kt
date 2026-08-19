@@ -149,6 +149,7 @@ fun ForYouScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val plan by viewModel.todayPlan.collectAsState()
     val healthHabits by viewModel.healthHabits.collectAsState()
+    val learning by viewModel.learning.collectAsState()
     val wheel by viewModel.wheel.collectAsState()
     val checkinPulse by viewModel.checkinPulse.collectAsState()
     val c = MaterialTheme.modernColors
@@ -227,6 +228,9 @@ fun ForYouScreen(
     var filter by remember { mutableStateOf<FeedSection?>(null) }
     // Which learn card is open, reading inline. One at a time: the feed is a page, not an accordion.
     var expandedLessonId by remember { mutableStateOf<String?>(null) }
+    // The path card opens in place like the feed's lessons do, but keeps its own flag: it is not
+    // one of the ranked cards and must not close because the feed re-ranked underneath it.
+    var learningExpanded by remember { mutableStateOf(false) }
     val introGate = rememberFeatureIntroGate()
     val visible = remember(feed, filter, promotedCardId) {
         val f = filter
@@ -316,6 +320,26 @@ fun ForYouScreen(
             )
             if (breathMoment != null) {
                 item(key = "breath") { BreathingCard(reason = breathMoment.reason) }
+            }
+
+            // Then the reading, which is the other thing that is genuinely still in progress. It sits
+            // with the present rather than in the Learn band at the bottom, because a session you
+            // are three lessons into is not a suggestion to browse later.
+            learning?.let { l ->
+                item(key = "learning") {
+                    LearningPathCard(
+                        state = l,
+                        lesson = KnowledgeLibrary.byId(l.lessonId),
+                        expanded = learningExpanded,
+                        onToggle = { learningExpanded = !learningExpanded },
+                        onComplete = {
+                            viewModel.completeLesson(l.lessonId)
+                            // Closed on finish, so the next lesson arrives as an invitation rather
+                            // than as an already-open page the reader did not ask for.
+                            learningExpanded = false
+                        },
+                    )
+                }
             }
 
             if (!coachSetupDone) {
@@ -529,33 +553,7 @@ private fun FeedCard(
                 }
             }
             if (lesson != null && lessonExpanded) {
-                lesson.detail.forEach { paragraph ->
-                    Text(paragraph, style = MaterialTheme.typography.bodyMedium, color = c.textSecondary)
-                }
-                if (lesson.takeaway.isNotBlank()) {
-                    Surface(
-                        color = accent.copy(alpha = 0.08f),
-                        shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.medium),
-                    ) {
-                        Text(
-                            "Try it: ${lesson.takeaway}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = c.textPrimary,
-                            modifier = Modifier.fillMaxWidth().padding(12.dp),
-                        )
-                    }
-                }
-                lesson.source?.let {
-                    Text(it, style = MaterialTheme.typography.labelSmall, color = c.textTertiary)
-                }
-                if (onCompleteLesson != null) {
-                    AppButton(
-                        text = "Got it",
-                        onClick = onCompleteLesson,
-                        variant = AppButtonVariant.PRIMARY,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
+                LessonBody(lesson = lesson, accent = accent, onComplete = onCompleteLesson)
             }
             if (item.actionLabel != null) {
                 val haptic = rememberHapticManager()

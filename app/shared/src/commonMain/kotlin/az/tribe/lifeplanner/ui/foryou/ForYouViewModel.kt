@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -100,6 +101,18 @@ class ForYouViewModel(
 
     private val _progress = MutableStateFlow<UserProgress?>(null)
     val progress: StateFlow<UserProgress?> = _progress.asStateFlow()
+
+    /**
+     * The learn session, as a position on a path rather than a card in a list. Lives here rather
+     * than in the feed because it is not a suggestion that can be re-ranked away: it is where the
+     * user got to, and it should be in the same place tomorrow.
+     */
+    val learning: StateFlow<az.tribe.lifeplanner.domain.service.LearningMomentum.State?> =
+        combine(knowledgeRepository.readIds(), progress) { readIds, p ->
+            az.tribe.lifeplanner.domain.service.LearningMomentum.of(p?.currentLevel ?: 1, readIds)
+        }
+            .catch { e -> Logger.w("ForYouViewModel") { "learning state unavailable: ${e.message}" } }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()

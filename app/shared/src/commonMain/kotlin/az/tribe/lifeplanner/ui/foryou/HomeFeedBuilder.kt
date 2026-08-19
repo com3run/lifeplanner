@@ -335,29 +335,15 @@ class HomeFeedBuilder(
 
         items += invitations.take(2)
 
-        // ── Learn: the session, inline ──────────────────────────────────────
-        // The resume card leads the band: the next lesson of the path in progress, so the learn
-        // session lives on this tab rather than behind a separate hub page. The daily picks
-        // follow it, skipping anything already read; re-recommending a read lesson tells the
-        // user we are not paying attention.
+        // ── Learn: the daily picks ──────────────────────────────────────────
+        // The lesson the user is actually in the middle of is no longer a card down here. It is the
+        // path card at the top of the screen, which can say where they are on the path and what
+        // finishing pays, neither of which fits in a feed row. What stays is the browse: a couple of
+        // picks from elsewhere in the library, skipping anything read (re-recommending a read lesson
+        // tells the user we are not paying attention) and skipping the resume lesson, which is
+        // already on screen above.
         val readIds = runCatching { knowledgeRepository.readIds().first() }.getOrDefault(emptySet())
         val resume = KnowledgeLibrary.resumePoint(level, readIds)
-        resume?.let { r ->
-            items += FeedItem(
-                id = "learn_resume_${r.lesson.id}",
-                kind = FeedKind.KNOWLEDGE,
-                eyebrow = if (r.readInPath == 0) {
-                    "START ${r.path.title.uppercase()} · ${r.lesson.readMin} min"
-                } else {
-                    "CONTINUE ${r.path.title.uppercase()} · ${r.readInPath + 1} of ${r.totalInPath}"
-                },
-                title = r.lesson.title,
-                body = r.lesson.body,
-                emoji = r.lesson.emoji,
-                route = "knowledge_detail/${r.lesson.id}",
-                score = 60.0,
-            )
-        }
         KnowledgeLibrary.forLevel(level, daySeed, count = 5)
             .filter { it.id !in readIds && it.id != resume?.lesson?.id }
             .take(2)
