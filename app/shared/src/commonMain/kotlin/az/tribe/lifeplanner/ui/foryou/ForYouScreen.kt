@@ -62,6 +62,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -149,6 +150,10 @@ fun ForYouScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val plan by viewModel.todayPlan.collectAsState()
     val healthHabits by viewModel.healthHabits.collectAsState()
+    val learning by viewModel.learning.collectAsState()
+    val zones by viewModel.zones.collectAsState()
+    val zonesShown by viewModel.zonesShown.collectAsState()
+    val readLessonIds by viewModel.readLessonIds.collectAsState()
     val wheel by viewModel.wheel.collectAsState()
     val checkinPulse by viewModel.checkinPulse.collectAsState()
     val c = MaterialTheme.modernColors
@@ -225,8 +230,11 @@ fun ForYouScreen(
     }
 
     var filter by remember { mutableStateOf<FeedSection?>(null) }
-    // Which learn card is open, reading inline. One at a time: the feed is a page, not an accordion.
-    var expandedLessonId by remember { mutableStateOf<String?>(null) }
+    // The path card opens in place like the feed's lessons do, but keeps its own flag: it is not
+    // one of the ranked cards and must not close because the feed re-ranked underneath it.
+    // Which stop on the map is open, and which cleared zones have been unfolded to walk again.
+    var openLessonId by rememberSaveable { mutableStateOf<String?>(null) }
+    var unfoldedZones by rememberSaveable { mutableStateOf(emptySet<String>()) }
     val introGate = rememberFeatureIntroGate()
     val visible = remember(feed, filter, promotedCardId) {
         val f = filter
@@ -396,17 +404,11 @@ fun ForYouScreen(
                         }
                         items(cards, key = { it.id }) { fi ->
                             val accent = accentFor(fi)
-                            // A lesson reads where it is: tapping expands the card into the full
-                            // lesson instead of leaving for a reader page. Everything else keeps
-                            // navigating (a feature the user hasn't met explains itself first via
-                            // the intro gate).
-                            val lesson = if (fi.kind == FeedKind.KNOWLEDGE) {
-                                fi.route?.substringAfterLast("/")?.let(KnowledgeLibrary::byId)
-                            } else null
-                            val open: () -> Unit = if (lesson != null) {
-                                { expandedLessonId = if (expandedLessonId == fi.id) null else fi.id }
-                            } else {
-                                { fi.route?.let { route -> introGate.open(fi.introId, accent) { onOpenRoute(route) } } }
+                            // A card opens the place to act (a feature the user hasn't met explains
+                            // itself first via the intro gate). Lessons are no longer feed cards:
+                            // they are whole pages in the stream below.
+                            val open: () -> Unit = {
+                                fi.route?.let { route -> introGate.open(fi.introId, accent) { onOpenRoute(route) } }
                             }
                             FeedCard(
                                 item = fi,
@@ -416,19 +418,99 @@ fun ForYouScreen(
                                 // place to act, so the labeled button always does what it says.
                                 onAction = { fi.actionHabitId?.let(viewModel::checkInHabit) ?: open() },
                                 onOpen = open,
-                                lesson = lesson,
-                                lessonExpanded = expandedLessonId == fi.id,
-                                onCompleteLesson = lesson?.let {
-                                    {
-                                        viewModel.completeLesson(it.id)
-                                        expandedLessonId = null
-                                    }
-                                },
                             )
                         }
                     }
                 }
             }
+
+            // ── The map, which does not end ──────────────────────────────────
+            // Everything above is finite by design: the hour, the day, the life. This is the part
+            // that keeps going, and it is the same trail the Learn hub draws rather than a flat list
+            // of lessons wearing its name. The zone you are walking comes first, the next unrolls
+            // when you reach the end of this one, and a stop opens where you tapped it.
+            if (zones.isNotEmpty()) {
+                item(key = "map_header") { SectionHeader(label = "Your map", onSeeAll = null) }
+                // One line of where you are, from the same numbers the trail is drawn from.
+                learning?.let { l ->
+                    item(key = "map_line") {
+                        Text(
+                            l.line,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = c.textSecondary,
+                        )
+                    }
+                }
+
+                zones.take(zonesShown).forEach { cui ->
+                    val zoneId = cui.collection.id
+                    // Cleared ground folds to a line. Walking past finished zones to reach the one
+                    // you are on is the main thing wrong with a long map.
+                    val unfolded = !cui.isComplete || zoneId in unfoldedZones
+                    item(key = "zone_$zoneId") {
+                        if (cui.isComplete) {
+                            ClearedZoneRow(
+                                cui = cui,
+                                expanded = unfolded,
+                                onToggle = {
+                                    unfoldedZones = if (zoneId in unfoldedZones) {
+                                        unfoldedZones - zoneId
+                                    } else {
+                                        unfoldedZones + zoneId
+                                    }
+                                },
+                            )
+                        } else {
+                            ZoneHeader(cui)
+                        }
+                    }
+                    if (unfolded) {
+                        item(key = "trail_$zoneId") {
+                            ZoneTrail(
+                                cui = cui,
+                                readIds = readLessonIds,
+                                onOpen = { id -> openLessonId = if (openLessonId == id) null else id },
+                            )
+                        }
+                    }
+                }
+
+                item(key = "map_more") {
+                    // Composing this footer is the signal: the reader has walked off the end of the
+                    // map they were given, so unroll the next zone. It stops asking when the library
+                    // runs out, and scrolls out of view once the new ground pushes it down.
+                    // The pause matters: without it the effect re-fires faster than the list can
+                    // push the footer out of view, and the whole map unrolls in one go.
+                    LaunchedEffect(zonesShown) {
+                        delay(350)
+                        viewModel.showMoreZones()
+                    }
+                    StreamFooter(atEnd = zonesShown >= zones.size)
+                }
+            }
+        }
+    }
+
+    // A stop opens over the map rather than under it. The lesson can be several nodes up the trail
+    // from where the list is scrolled, and a card that appears somewhere off screen has not opened
+    // at all; a sheet arrives where the reader is looking, with the trail still visible behind it.
+    openLessonId?.let { id ->
+        val zone = zones.firstOrNull { z -> z.lessons.any { it.id == id } }
+        val lesson = zone?.lessons?.firstOrNull { it.id == id }
+        if (zone != null && lesson != null) {
+            LessonSheet(
+                lesson = lesson,
+                pathTitle = zone.collection.title,
+                position = zone.lessons.indexOfFirst { it.id == id } + 1,
+                total = zone.total,
+                read = id in readLessonIds,
+                onComplete = {
+                    viewModel.completeLesson(id)
+                    // Closed on finish, so the eye goes back to the trail and sees the stop it lit.
+                    openLessonId = null
+                },
+                onDismiss = { openLessonId = null },
+            )
         }
     }
 
@@ -502,10 +584,6 @@ private fun FeedCard(
     pulse: ForYouViewModel.CheckinPulse? = null,
     onAction: () -> Unit,
     onOpen: () -> Unit,
-    /** Non-null for learn cards: tapping expands the lesson here instead of opening a page. */
-    lesson: az.tribe.lifeplanner.domain.service.KnowledgeBit? = null,
-    lessonExpanded: Boolean = false,
-    onCompleteLesson: (() -> Unit)? = null,
 ) {
     val c = MaterialTheme.modernColors
     Surface(
@@ -526,35 +604,6 @@ private fun FeedCard(
                 }
                 if (item.route != null && item.actionLabel == null) {
                     Icon(PhosphorIcons.Regular.CaretRight, contentDescription = null, tint = c.textTertiary, modifier = Modifier.size(LifePlannerDesign.IconSize.small))
-                }
-            }
-            if (lesson != null && lessonExpanded) {
-                lesson.detail.forEach { paragraph ->
-                    Text(paragraph, style = MaterialTheme.typography.bodyMedium, color = c.textSecondary)
-                }
-                if (lesson.takeaway.isNotBlank()) {
-                    Surface(
-                        color = accent.copy(alpha = 0.08f),
-                        shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.medium),
-                    ) {
-                        Text(
-                            "Try it: ${lesson.takeaway}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = c.textPrimary,
-                            modifier = Modifier.fillMaxWidth().padding(12.dp),
-                        )
-                    }
-                }
-                lesson.source?.let {
-                    Text(it, style = MaterialTheme.typography.labelSmall, color = c.textTertiary)
-                }
-                if (onCompleteLesson != null) {
-                    AppButton(
-                        text = "Got it",
-                        onClick = onCompleteLesson,
-                        variant = AppButtonVariant.PRIMARY,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
                 }
             }
             if (item.actionLabel != null) {

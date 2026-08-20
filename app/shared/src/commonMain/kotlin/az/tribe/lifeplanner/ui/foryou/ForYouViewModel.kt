@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -101,6 +102,54 @@ class ForYouViewModel(
     private val _progress = MutableStateFlow<UserProgress?>(null)
     val progress: StateFlow<UserProgress?> = _progress.asStateFlow()
 
+    /**
+     * The learn session, as a position on a path rather than a card in a list. Lives here rather
+     * than in the feed because it is not a suggestion that can be re-ranked away: it is where the
+     * user got to, and it should be in the same place tomorrow.
+     */
+    val learning: StateFlow<az.tribe.lifeplanner.domain.service.LearningMomentum.State?> =
+        combine(knowledgeRepository.readIds(), progress) { readIds, p ->
+            az.tribe.lifeplanner.domain.service.LearningMomentum.of(p?.currentLevel ?: 1, readIds)
+        }
+            .catch { e -> Logger.w("ForYouViewModel") { "learning state unavailable: ${e.message}" } }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    /**
+     * The map, in walking order: the zone in progress first (see [LearningStream]). The order is
+     * held rather than recomputed, so clearing a zone never slides the map under the reader; only
+     * the zones' own read counts move.
+     */
+    private val _zoneOrder = MutableStateFlow<List<az.tribe.lifeplanner.domain.service.KnowledgeCollection>>(emptyList())
+    private var zoneOrderLevel: Int? = null
+
+    private val _zones = MutableStateFlow<List<CollectionUi>>(emptyList())
+    val zones: StateFlow<List<CollectionUi>> = _zones.asStateFlow()
+
+    /** How many zones the screen has been handed. Grows as the reader walks off the end of them. */
+    private val _zonesShown = MutableStateFlow(1)
+    val zonesShown: StateFlow<Int> = _zonesShown.asStateFlow()
+
+    /** Which lessons are read, live, so a trail lights up the moment one is finished. */
+    val readLessonIds: StateFlow<Set<String>> =
+        knowledgeRepository.readIds()
+            .catch { e -> Logger.w("ForYouViewModel") { "read ids unavailable: ${e.message}" } }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
+
+    /** Called when the reader reaches the end of the map they have been given. */
+    fun showMoreZones() {
+        val total = _zoneOrder.value.size
+        if (_zonesShown.value >= total) return
+        _zonesShown.value = (_zonesShown.value + 1).coerceAtMost(total)
+    }
+
+    init {
+        viewModelScope.launch {
+            combine(_zoneOrder, readLessonIds, progress) { order, readIds, p ->
+                order.map { zoneUi(it, p?.currentLevel ?: 1, readIds) }
+            }.collect { _zones.value = it }
+        }
+    }
+
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
@@ -152,6 +201,16 @@ class ForYouViewModel(
             runCatching { feedBuilder.build() }
                 .onSuccess { _feed.value = it }
                 .onFailure { Logger.w("ForYouViewModel") { "Feed build failed: ${it.message}" } }
+
+            runCatching {
+                val level = _progress.value?.currentLevel ?: 1
+                if (zoneOrderLevel != level || _zoneOrder.value.isEmpty()) {
+                    zoneOrderLevel = level
+                    _zoneOrder.value = az.tribe.lifeplanner.domain.service.LearningStream
+                        .pathOrder(level, knowledgeRepository.readIds().first())
+                }
+            }.onFailure { Logger.w("ForYouViewModel") { "Map order build failed: ${it.message}" } }
+
             _isLoading.value = false
         }
     }
