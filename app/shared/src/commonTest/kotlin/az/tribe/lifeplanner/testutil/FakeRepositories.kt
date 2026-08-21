@@ -484,16 +484,47 @@ class FakeAiProxyService : AiProxyService {
 // ─── AbilityRepository ───────────────────────────────────────────────────────
 
 class FakeAbilityRepository : az.tribe.lifeplanner.domain.repository.AbilityRepository {
-    override fun observeAllAbilities(): Flow<List<az.tribe.lifeplanner.domain.model.Ability>> = kotlinx.coroutines.flow.flowOf(emptyList())
-    override suspend fun getAbilityById(id: String): az.tribe.lifeplanner.domain.model.Ability? = null
-    override suspend fun createAbility(ability: az.tribe.lifeplanner.domain.model.Ability) {}
-    override suspend fun updateAbility(ability: az.tribe.lifeplanner.domain.model.Ability) {}
-    override suspend fun deleteAbility(id: String) {}
+    /** Abilities this fake holds, keyed by id. Tests seed these and assert on them afterwards. */
+    val abilities = mutableMapOf<String, az.tribe.lifeplanner.domain.model.Ability>()
+
+    /** Every awardXp call in order, so a test can assert what was credited and how much. */
+    val awards = mutableListOf<Pair<String, Int>>()
+
+    override fun observeAllAbilities(): Flow<List<az.tribe.lifeplanner.domain.model.Ability>> =
+        kotlinx.coroutines.flow.flowOf(abilities.values.toList())
+    override suspend fun getAbilityById(id: String) = abilities[id]
+    override suspend fun createAbility(ability: az.tribe.lifeplanner.domain.model.Ability) { abilities[ability.id] = ability }
+    override suspend fun updateAbility(ability: az.tribe.lifeplanner.domain.model.Ability) { abilities[ability.id] = ability }
+    override suspend fun deleteAbility(id: String) { abilities.remove(id) }
     override suspend fun linkHabit(abilityId: String, habitId: String, xpWeight: Float) {}
     override suspend fun unlinkHabit(abilityId: String, habitId: String) {}
     override suspend fun getLinksForAbility(abilityId: String) = emptyList<az.tribe.lifeplanner.domain.model.AbilityHabitLink>()
     override suspend fun getLinksForHabit(habitId: String) = emptyList<az.tribe.lifeplanner.domain.model.AbilityHabitLink>()
     override suspend fun awardXpToAbilitiesForHabit(habitId: String, baseXp: Int) {}
+
+    override suspend fun awardXp(abilityId: String, xp: Int): az.tribe.lifeplanner.domain.model.XpAward? {
+        if (xp <= 0) return null
+        val before = abilities[abilityId] ?: return null
+        awards += abilityId to xp
+        val newTotal = before.totalXp + xp
+        val newLevel = levelFor(newTotal)
+        val after = before.copy(totalXp = newTotal, currentLevel = newLevel)
+        abilities[abilityId] = after
+        return az.tribe.lifeplanner.domain.model.XpAward(after, xp, newLevel > before.currentLevel)
+    }
+
+    // Mirrors AbilityRepositoryImpl.calculateLevel: each level costs level*50 XP.
+    private fun levelFor(totalXp: Int): Int {
+        var level = 1
+        var acc = 0
+        while (true) {
+            acc += level * 50
+            if (acc > totalXp) break
+            level++
+        }
+        return maxOf(1, level)
+    }
+
     override suspend fun linkGoal(abilityId: String, goalId: String) {}
     override suspend fun unlinkGoal(abilityId: String, goalId: String) {}
     override suspend fun getGoalLinksForAbility(abilityId: String) = emptyList<az.tribe.lifeplanner.domain.model.AbilityGoalLink>()
