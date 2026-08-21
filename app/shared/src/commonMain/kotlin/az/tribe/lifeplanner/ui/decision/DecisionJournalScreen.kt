@@ -36,6 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import az.tribe.lifeplanner.domain.model.ChoicePoint
+import az.tribe.lifeplanner.domain.service.DecisionScorecard
 import az.tribe.lifeplanner.domain.model.Decision
 import az.tribe.lifeplanner.ui.components.InlineEmptyState
 import az.tribe.lifeplanner.ui.theme.modernColors
@@ -60,6 +61,7 @@ fun DecisionJournalScreen(
     reviewViewModel: MetacognitiveReviewViewModel = koinViewModel(),
 ) {
     val decisions by viewModel.decisions.collectAsState()
+    val scorecard by viewModel.scorecard.collectAsState()
     val choicePoints by viewModel.choicePoints.collectAsState()
     val pendingDecisions by viewModel.pendingDecisions.collectAsState()
     var activeChoicePoint by remember { mutableStateOf<ChoicePoint?>(null) }
@@ -103,6 +105,12 @@ fun DecisionJournalScreen(
                     reviewCount = toReview.size,
                     onTabSelected = { currentTab = it },
                 )
+            }
+
+            // The track record belongs on the log, not on the review tab: the review tab is where
+            // you answer for one call, this is where you see what all of them add up to.
+            if (currentTab == 0) {
+                item { ScorecardCard(scorecard) }
             }
 
             if (currentTab == 1) {
@@ -216,6 +224,75 @@ private fun DecisionTabRow(selectedTab: Int, reviewCount: Int, onTabSelected: (I
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
             }
+        }
+    }
+}
+
+/**
+ * The track record. Process hit rate leads, because that is the score worth chasing: it credits a
+ * sound call that went badly and refuses to credit a lucky one. Calibration sits underneath as the
+ * honest mirror, and both stay hidden until something has actually been reviewed rather than
+ * showing a demoralising 0%.
+ */
+@Composable
+internal fun ScorecardCard(card: DecisionScorecard) {
+    val c = MaterialTheme.modernColors
+    Surface(
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)),
+        color = c.primaryContainer,
+        shape = RoundedCornerShape(14.dp)
+    ) {
+        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(
+                "TRACK RECORD",
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                color = c.onPrimaryContainer
+            )
+
+            val hitRate = card.processHitRate
+            if (hitRate == null) {
+                Text(
+                    if (card.logged == 0) "No calls logged yet." else "Review a call to start your record.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = c.onPrimaryContainer
+                )
+            } else {
+                Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(
+                        "$hitRate%",
+                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                        color = c.onPrimaryContainer
+                    )
+                    Text(
+                        "sound thinking",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = c.onPrimaryContainer,
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    )
+                }
+                card.calibrationGap?.let { gap ->
+                    val verdict = when {
+                        gap > 10 -> "overconfident by $gap points"
+                        gap < -10 -> "you sell yourself short by ${-gap} points"
+                        else -> "well calibrated"
+                    }
+                    Text(
+                        "Said ${card.averageConfidence}% \u00b7 right ${card.actualSuccessRate}% \u00b7 $verdict",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = c.onPrimaryContainer
+                    )
+                }
+            }
+
+            Text(
+                buildString {
+                    append("${card.logged} logged")
+                    append(" \u00b7 ${card.reviewed} reviewed")
+                    if (card.awaitingReview > 0) append(" \u00b7 ${card.awaitingReview} still owed an answer")
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = c.onPrimaryContainer
+            )
         }
     }
 }

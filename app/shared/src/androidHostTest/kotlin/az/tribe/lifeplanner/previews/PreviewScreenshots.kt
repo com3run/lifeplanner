@@ -20,10 +20,12 @@ import androidx.compose.foundation.layout.Column
 import az.tribe.lifeplanner.domain.model.Badge
 import az.tribe.lifeplanner.domain.model.Goal
 import az.tribe.lifeplanner.domain.model.Milestone
+import az.tribe.lifeplanner.domain.service.DecisionScorecard
 import az.tribe.lifeplanner.domain.service.LocalPossibilityFallback
 import az.tribe.lifeplanner.ui.possibility.PossibilityCard
 import az.tribe.lifeplanner.ui.components.BadgeCard
 import az.tribe.lifeplanner.ui.components.BadgeMedallion
+import az.tribe.lifeplanner.ui.decision.ScorecardCard
 import az.tribe.lifeplanner.ui.goal.GoalJourneyCard
 import az.tribe.lifeplanner.ui.intro.FeatureIntroCatalog
 import az.tribe.lifeplanner.ui.intro.FeatureIntroSheet
@@ -72,6 +74,30 @@ class PreviewScreenshots {
         compose.mainClock.advanceTimeBy(800)
         compose.onRoot().captureRoboImage("build/previews/$name.png")
     }
+
+    // Decision journal track record, in the three states that actually differ: nothing reviewed
+    // yet, a badly calibrated record, and a well calibrated one. Rendered in both themes because
+    // this card sits on primaryContainer and needs to read on either.
+    private val freshScorecard = DecisionScorecard(logged = 4, reviewed = 0)
+    private val overconfidentScorecard =
+        DecisionScorecard(logged = 18, reviewed = 11, goodProcess = 8, goodResult = 7, averageConfidence = 84)
+    private val calibratedScorecard =
+        DecisionScorecard(logged = 30, reviewed = 30, goodProcess = 24, goodResult = 19, averageConfidence = 65)
+
+    @Test
+    fun scorecardFresh() = snap("scorecard_fresh", darkTheme = false) { ScorecardCard(freshScorecard) }
+
+    @Test
+    fun scorecardOverconfidentLight() =
+        snap("scorecard_overconfident_light", darkTheme = false) { ScorecardCard(overconfidentScorecard) }
+
+    @Test
+    fun scorecardOverconfidentDark() =
+        snap("scorecard_overconfident_dark", darkTheme = true) { ScorecardCard(overconfidentScorecard) }
+
+    @Test
+    fun scorecardCalibrated() =
+        snap("scorecard_calibrated", darkTheme = false) { ScorecardCard(calibratedScorecard) }
 
     private val earnedBadge = Badge(
         id = "preview-badge",

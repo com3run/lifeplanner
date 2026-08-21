@@ -116,6 +116,7 @@ import az.tribe.lifeplanner.usecases.journal.GetJournalEntriesByGoalUseCase
 import az.tribe.lifeplanner.usecases.journal.GetRecentJournalEntriesUseCase
 import az.tribe.lifeplanner.usecases.journal.UpdateJournalEntryUseCase
 import az.tribe.lifeplanner.usecases.ability.AwardAbilityXpUseCase
+import az.tribe.lifeplanner.usecases.ability.AwardDecisionXpUseCase
 import az.tribe.lifeplanner.usecases.health.AutoCompleteHealthHabitsUseCase
 import az.tribe.lifeplanner.usecases.health.SyncHealthDataUseCase
 import az.tribe.lifeplanner.usecases.habit.BackfillHabitTargetsUseCase
@@ -387,6 +388,7 @@ val appModule = module {
 
     // Ability Use Cases
     factory { AwardAbilityXpUseCase(get()) }
+    factory { AwardDecisionXpUseCase(get()) }
 
     // Health Use Cases
     factory { AutoCompleteHealthHabitsUseCase(get(), get(), get()) }
@@ -438,7 +440,7 @@ val appModule = module {
     viewModel { az.tribe.lifeplanner.ui.decision.DecisionViewModel(get(), get(), get(), get(), get()) }
     viewModel { az.tribe.lifeplanner.ui.causal.CausalInsightsViewModel(get(), get(), get()) }
     viewModel { az.tribe.lifeplanner.ui.becoming.BecomingViewModel(get(), get(), get()) }
-    viewModel { az.tribe.lifeplanner.ui.decision.MetacognitiveReviewViewModel(get()) }
+    viewModel { az.tribe.lifeplanner.ui.decision.MetacognitiveReviewViewModel(get(), get()) }
     viewModel { az.tribe.lifeplanner.ui.wiring.WiringViewModel(get()) }
     viewModelOf(::BackupViewModel)
     viewModelOf(::FocusViewModel)
