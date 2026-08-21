@@ -7,6 +7,8 @@ import az.tribe.lifeplanner.domain.model.DecisionStatus
 import az.tribe.lifeplanner.domain.model.OutcomeQuality
 import az.tribe.lifeplanner.domain.model.XpAward
 import az.tribe.lifeplanner.domain.repository.DecisionRepository
+import az.tribe.lifeplanner.domain.service.DecisionScorecard
+import az.tribe.lifeplanner.usecases.ability.AwardDecisionBadgesUseCase
 import az.tribe.lifeplanner.usecases.ability.AwardDecisionXpUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -26,6 +28,7 @@ import kotlin.time.Clock
 class MetacognitiveReviewViewModel(
     private val decisionRepository: DecisionRepository,
     private val awardDecisionXp: AwardDecisionXpUseCase,
+    private val awardDecisionBadges: AwardDecisionBadgesUseCase,
 ) : ViewModel() {
 
     private val _lastAward = MutableStateFlow<XpAward?>(null)
@@ -58,6 +61,12 @@ class MetacognitiveReviewViewModel(
             if (isFirstReview) {
                 _lastAward.value = awardDecisionXp.onDecisionReviewed(quality)
             }
+
+            // Patch the graded decision into the current list rather than waiting for the flow to
+            // re-emit, so the badge check always sees this review instead of racing it.
+            val updated = decision.copy(outcomeQuality = quality, outcomeReviewedAt = now)
+            val current = decisions.value.map { if (it.id == updated.id) updated else it }
+            awardDecisionBadges(DecisionScorecard.from(current))
         }
     }
 }
