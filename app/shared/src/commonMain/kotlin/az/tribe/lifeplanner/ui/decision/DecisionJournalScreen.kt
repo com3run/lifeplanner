@@ -5,6 +5,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,6 +17,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Button
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -24,6 +27,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -54,8 +58,14 @@ import com.adamglin.phosphoricons.regular.ArrowLeft
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
+ * Which slice of the log the track record is pointing at. The stat row is the control: the numbers
+ * are not decoration, each one is the entry point to the decisions behind it.
+ */
+internal enum class DecisionFilter { ALL, REVIEWED, AWAITING }
+
+/**
  * Pillar 3, Decision Journal. Surfaces any pending [ChoicePoint]s at the top (tap to
- * re-choose via [ChoicePointBottomSheet]), then lists logged [Decision]s with reasoning
+ * re-choose inline on the card), then lists logged [Decision]s with reasoning
  * and outcome status.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -76,6 +86,7 @@ fun DecisionJournalScreen(
     // Reviewing your reasoning is part of keeping a decision journal, not a separate destination,
     // so it lives here as a tab instead of its own row on the You page.
     var currentTab by rememberSaveable { mutableStateOf(0) }
+    var filter by rememberSaveable { mutableStateOf(DecisionFilter.ALL) }
     val toReview = decisions.filter { it.outcomeQuality == null }
 
     Scaffold(
@@ -116,7 +127,7 @@ fun DecisionJournalScreen(
             // The track record belongs on the log, not on the review tab: the review tab is where
             // you answer for one call, this is where you see what all of them add up to.
             if (currentTab == 0) {
-                item { ScorecardCard(scorecard) }
+                item { ScorecardCard(scorecard, filter, onFilter = { filter = it }) }
             }
 
             if (currentTab == 1) {
@@ -164,7 +175,19 @@ fun DecisionJournalScreen(
                 if (pendingDecisions.isNotEmpty()) {
                     item { SectionHeader("From your journal") }
                     items(pendingDecisions, key = { it.id }) { d ->
-                        PendingDecisionCard(d, onClick = { activePendingDecision = d })
+                        PendingDecisionCard(
+                            d = d,
+                            expanded = activePendingDecision == d,
+                            onToggle = { activePendingDecision = if (activePendingDecision == d) null else d },
+                            onConfirm = { chosen, reasoning ->
+                                viewModel.confirm(d, chosen, reasoning)
+                                activePendingDecision = null
+                            },
+                            onDismissDecision = {
+                                viewModel.dismiss(d)
+                                activePendingDecision = null
+                            },
+                        )
                     }
                 }
 
@@ -178,37 +201,103 @@ fun DecisionJournalScreen(
                         )
                     }
                 } else {
-                    items(decisions, key = { it.id }) { d -> DecisionCard(d, onClick = { onDecisionClick(d.id) }) }
+                    val shown = when (filter) {
+                        DecisionFilter.ALL -> decisions
+                        DecisionFilter.REVIEWED -> decisions.filter { it.outcomeQuality != null }
+                        DecisionFilter.AWAITING -> decisions.filter { it.outcomeQuality == null }
+                    }
+                    if (shown.isEmpty()) {
+                        item {
+                            Text(
+                                when (filter) {
+                                    DecisionFilter.REVIEWED -> "Nothing reviewed yet."
+                                    DecisionFilter.AWAITING -> "Every call has been answered for."
+                                    DecisionFilter.ALL -> ""
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.modernColors.textSecondary
+                            )
+                        }
+                    } else {
+                        items(shown, key = { it.id }) { d -> DecisionCard(d, onClick = { onDecisionClick(d.id) }) }
+                    }
                 }
             }
         }
     }
 
-    activePendingDecision?.let { d ->
-        PendingDecisionSheet(
-            decision = d,
-            onConfirm = { chosenOption, reasoning -> viewModel.confirm(d, chosenOption, reasoning) },
-            onDismissDecision = { viewModel.dismiss(d) },
-            onDismiss = { activePendingDecision = null }
-        )
-    }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun PendingDecisionCard(d: Decision, onClick: () -> Unit) {
+private fun PendingDecisionCard(
+    d: Decision,
+    expanded: Boolean,
+    onToggle: () -> Unit,
+    onConfirm: (String, String) -> Unit,
+    onDismissDecision: () -> Unit,
+) {
+    val c = MaterialTheme.modernColors
+    var chosen by remember(d.id) { mutableStateOf(d.chosenOption) }
+    var reasoning by remember(d.id) { mutableStateOf(d.reasoning) }
+
     Surface(
-        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable(onClick = onClick),
-        color = MaterialTheme.modernColors.secondaryContainer,
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)),
+        color = c.secondaryContainer,
         shape = RoundedCornerShape(14.dp)
     ) {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(d.question, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = MaterialTheme.modernColors.onSecondaryContainer, maxLines = 2)
-            Text("Tap to log or dismiss", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.modernColors.onSecondaryContainer)
+        Column(
+            Modifier.fillMaxWidth().clickable(onClick = onToggle).padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text("Looks like a decision", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold), color = c.onSecondaryContainer)
+            Text(d.question, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = c.onSecondaryContainer, maxLines = 2)
+
+            if (!expanded) {
+                Text("Tap to log or dismiss", style = MaterialTheme.typography.bodySmall, color = c.onSecondaryContainer)
+            } else {
+                // Confirming happens on the card. This is the app guessing that something in your
+                // journal was a decision, and a modal makes a guess feel like a demand.
+                if (d.optionsConsidered.isNotEmpty()) {
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        d.optionsConsidered.forEach { option ->
+                            FilterChip(
+                                selected = chosen == option,
+                                onClick = { chosen = option },
+                                label = { Text(option) }
+                            )
+                        }
+                    }
+                }
+                OutlinedTextField(
+                    value = chosen,
+                    onValueChange = { chosen = it },
+                    label = { Text("Chosen option") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp)
+                )
+                OutlinedTextField(
+                    value = reasoning,
+                    onValueChange = { reasoning = it },
+                    label = { Text("Why? (optional)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 2,
+                    maxLines = 4,
+                    shape = RoundedCornerShape(12.dp)
+                )
+                Button(
+                    onClick = { onConfirm(chosen.trim(), reasoning.trim()) },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                ) { Text("Log this decision") }
+                TextButton(onClick = onDismissDecision, modifier = Modifier.fillMaxWidth()) {
+                    Text("Not a decision", color = c.onSecondaryContainer)
+                }
+            }
         }
     }
 }
-
-/** Pill tabs matching the Artifact hub's row. The count makes the review backlog visible up front. */
 @Composable
 private fun DecisionTabRow(selectedTab: Int, reviewCount: Int, onTabSelected: (Int) -> Unit) {
     val tabs = listOf("Journal", if (reviewCount > 0) "Review · $reviewCount" else "Review")
@@ -245,8 +334,16 @@ private fun DecisionTabRow(selectedTab: Int, reviewCount: Int, onTabSelected: (I
  * over zero reviews is not a zero, it is an absence.
  */
 @Composable
-internal fun ScorecardCard(card: DecisionScorecard) {
+internal fun ScorecardCard(
+    card: DecisionScorecard,
+    filter: DecisionFilter = DecisionFilter.ALL,
+    onFilter: (DecisionFilter) -> Unit = {},
+) {
     val c = MaterialTheme.modernColors
+    // The gap is the one number nobody can read cold, so it explains itself on tap rather than in
+    // a dialog. Everything else on this card is a door into the decisions behind it.
+    var explainGap by remember { mutableStateOf(false) }
+
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -258,10 +355,7 @@ internal fun ScorecardCard(card: DecisionScorecard) {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
                 "TRACK RECORD",
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontWeight = FontWeight.SemiBold,
-                    letterSpacing = 1.5.sp
-                ),
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold, letterSpacing = 1.5.sp),
                 color = c.textTertiary
             )
 
@@ -290,41 +384,74 @@ internal fun ScorecardCard(card: DecisionScorecard) {
             HorizontalDivider(color = c.divider)
 
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Stat(card.logged.toString(), "LOGGED")
-                Stat(card.reviewed.toString(), "REVIEWED")
-                Stat(
-                    value = card.calibrationGap?.let { if (it > 0) "+$it" else "$it" } ?: "\u2014",
-                    label = "CONFIDENCE GAP"
-                )
+                Stat(card.logged.toString(), "LOGGED", filter == DecisionFilter.ALL) { onFilter(DecisionFilter.ALL) }
+                Stat(card.reviewed.toString(), "REVIEWED", filter == DecisionFilter.REVIEWED) { onFilter(DecisionFilter.REVIEWED) }
+                Stat(card.awaitingReview.toString(), "STILL OWED", filter == DecisionFilter.AWAITING) { onFilter(DecisionFilter.AWAITING) }
             }
 
             card.calibrationGap?.let { gap ->
-                Text(
-                    when {
-                        gap > 10 -> "You said ${card.averageConfidence}%. You were right ${card.actualSuccessRate}%. Overconfident."
-                        gap < -10 -> "You said ${card.averageConfidence}%. You were right ${card.actualSuccessRate}%. You undersell yourself."
-                        else -> "You said ${card.averageConfidence}%. You were right ${card.actualSuccessRate}%. Well calibrated."
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = c.textSecondary
-                )
+                HorizontalDivider(color = c.divider)
+                Column(
+                    Modifier.fillMaxWidth().clickable { explainGap = !explainGap },
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(
+                            "CONFIDENCE GAP",
+                            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.8.sp),
+                            color = c.textTertiary
+                        )
+                        Text(
+                            if (gap > 0) "+$gap" else "$gap",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = c.textPrimary
+                        )
+                    }
+                    Text(
+                        when {
+                            gap > 10 -> "You said ${card.averageConfidence}%. You were right ${card.actualSuccessRate}%. Overconfident."
+                            gap < -10 -> "You said ${card.averageConfidence}%. You were right ${card.actualSuccessRate}%. You undersell yourself."
+                            else -> "You said ${card.averageConfidence}%. You were right ${card.actualSuccessRate}%. Well calibrated."
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = c.textSecondary
+                    )
+                    Text(
+                        if (explainGap) {
+                            "Every call records how sure you were. This compares that against how often " +
+                                "things actually worked out. Zero means your confidence is honest. A big " +
+                                "positive number means you back yourself harder than the results deserve. " +
+                                "Tap to hide."
+                        } else "What is this?",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = c.textTertiary
+                    )
+                }
             }
         }
     }
 }
 
+/** One number in the stat row, and the door to the decisions behind it. */
 @Composable
-private fun Stat(value: String, label: String) {
-    Column(horizontalAlignment = Alignment.Start) {
+private fun Stat(value: String, label: String, selected: Boolean, onClick: () -> Unit) {
+    val c = MaterialTheme.modernColors
+    Column(
+        modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        horizontalAlignment = Alignment.Start
+    ) {
         Text(
             value,
             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.modernColors.textPrimary
+            color = if (selected) c.primary else c.textPrimary
         )
         Text(
             label,
             style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.8.sp),
-            color = MaterialTheme.modernColors.textTertiary
+            color = if (selected) c.primary else c.textTertiary
         )
     }
 }
