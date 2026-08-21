@@ -1,6 +1,7 @@
 package az.tribe.lifeplanner.ui.decision
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -13,9 +14,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Button
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -34,6 +39,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
 import az.tribe.lifeplanner.domain.model.ChoicePoint
 import az.tribe.lifeplanner.domain.service.DecisionScorecard
@@ -143,7 +149,15 @@ fun DecisionJournalScreen(
                 if (choicePoints.isNotEmpty()) {
                     item { SectionHeader("Needs a decision") }
                     items(choicePoints, key = { it.trigger.name + (it.relatedGoalId ?: it.relatedHabitId ?: it.title) }) { cp ->
-                        ChoicePointCard(cp, onClick = { activeChoicePoint = cp })
+                        ChoicePointCard(
+                            cp = cp,
+                            expanded = activeChoicePoint == cp,
+                            onToggle = { activeChoicePoint = if (activeChoicePoint == cp) null else cp },
+                            onResolve = { action, reasoning ->
+                                viewModel.resolve(cp, action, reasoning)
+                                activeChoicePoint = null
+                            },
+                        )
                     }
                 }
 
@@ -168,14 +182,6 @@ fun DecisionJournalScreen(
                 }
             }
         }
-    }
-
-    activeChoicePoint?.let { cp ->
-        ChoicePointBottomSheet(
-            choicePoint = cp,
-            onResolve = { action, reasoning -> viewModel.resolve(cp, action, reasoning) },
-            onDismiss = { activeChoicePoint = null }
-        )
     }
 
     activePendingDecision?.let { d ->
@@ -229,24 +235,34 @@ private fun DecisionTabRow(selectedTab: Int, reviewCount: Int, onTabSelected: (I
 }
 
 /**
- * The track record. Process hit rate leads, because that is the score worth chasing: it credits a
- * sound call that went badly and refuses to credit a lucky one. Calibration sits underneath as the
- * honest mirror, and both stay hidden until something has actually been reviewed rather than
- * showing a demoralising 0%.
+ * The track record, styled as an instrument rather than a card that shouts.
+ *
+ * A hairline over a flat surface, one figure that matters, and a row of raw counts underneath.
+ * The point of this screen is to tell you something slightly uncomfortable about your own
+ * judgement, and a bright filled panel reads as congratulation, which is the wrong register.
+ *
+ * Everything below the rule stays hidden until something has been reviewed, because a hit rate
+ * over zero reviews is not a zero, it is an absence.
  */
 @Composable
 internal fun ScorecardCard(card: DecisionScorecard) {
     val c = MaterialTheme.modernColors
     Surface(
-        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)),
-        color = c.primaryContainer,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .border(1.dp, c.outlineVariant, RoundedCornerShape(14.dp)),
+        color = c.surface,
         shape = RoundedCornerShape(14.dp)
     ) {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
                 "TRACK RECORD",
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = c.onPrimaryContainer
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 1.5.sp
+                ),
+                color = c.textTertiary
             )
 
             val hitRate = card.processHitRate
@@ -254,46 +270,62 @@ internal fun ScorecardCard(card: DecisionScorecard) {
                 Text(
                     if (card.logged == 0) "No calls logged yet." else "Review a call to start your record.",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = c.onPrimaryContainer
+                    color = c.textSecondary
                 )
             } else {
-                Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
                         "$hitRate%",
-                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                        color = c.onPrimaryContainer
+                        style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold),
+                        color = c.textPrimary
                     )
                     Text(
-                        "sound thinking",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = c.onPrimaryContainer,
-                        modifier = Modifier.padding(bottom = 4.dp)
-                    )
-                }
-                card.calibrationGap?.let { gap ->
-                    val verdict = when {
-                        gap > 10 -> "overconfident by $gap points"
-                        gap < -10 -> "you sell yourself short by ${-gap} points"
-                        else -> "well calibrated"
-                    }
-                    Text(
-                        "Said ${card.averageConfidence}% \u00b7 right ${card.actualSuccessRate}% \u00b7 $verdict",
+                        "of your reviewed calls were sound thinking",
                         style = MaterialTheme.typography.bodySmall,
-                        color = c.onPrimaryContainer
+                        color = c.textSecondary
                     )
                 }
             }
 
-            Text(
-                buildString {
-                    append("${card.logged} logged")
-                    append(" \u00b7 ${card.reviewed} reviewed")
-                    if (card.awaitingReview > 0) append(" \u00b7 ${card.awaitingReview} still owed an answer")
-                },
-                style = MaterialTheme.typography.bodySmall,
-                color = c.onPrimaryContainer
-            )
+            HorizontalDivider(color = c.divider)
+
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Stat(card.logged.toString(), "LOGGED")
+                Stat(card.reviewed.toString(), "REVIEWED")
+                Stat(
+                    value = card.calibrationGap?.let { if (it > 0) "+$it" else "$it" } ?: "\u2014",
+                    label = "CONFIDENCE GAP"
+                )
+            }
+
+            card.calibrationGap?.let { gap ->
+                Text(
+                    when {
+                        gap > 10 -> "You said ${card.averageConfidence}%. You were right ${card.actualSuccessRate}%. Overconfident."
+                        gap < -10 -> "You said ${card.averageConfidence}%. You were right ${card.actualSuccessRate}%. You undersell yourself."
+                        else -> "You said ${card.averageConfidence}%. You were right ${card.actualSuccessRate}%. Well calibrated."
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = c.textSecondary
+                )
+            }
         }
+    }
+}
+
+@Composable
+private fun Stat(value: String, label: String) {
+    Column(horizontalAlignment = Alignment.Start) {
+        Text(
+            value,
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.modernColors.textPrimary
+        )
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.8.sp),
+            color = MaterialTheme.modernColors.textTertiary
+        )
     }
 }
 
@@ -308,19 +340,57 @@ private fun SectionHeader(text: String) {
 }
 
 @Composable
-private fun ChoicePointCard(cp: ChoicePoint, onClick: () -> Unit) {
+private fun ChoicePointCard(
+    cp: ChoicePoint,
+    expanded: Boolean,
+    onToggle: () -> Unit,
+    onResolve: (ChoicePointAction, String) -> Unit,
+) {
+    val c = MaterialTheme.modernColors
+    var reasoning by remember(cp.title) { mutableStateOf("") }
+
     Surface(
-        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable(onClick = onClick),
-        color = MaterialTheme.modernColors.warningContainer,
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)),
+        color = c.warningContainer,
         shape = RoundedCornerShape(14.dp)
     ) {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(cp.title, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = MaterialTheme.modernColors.onWarningContainer)
-            Text(cp.prompt, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.modernColors.onWarningContainer)
+        Column(
+            Modifier.fillMaxWidth().clickable(onClick = onToggle).padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text(cp.title, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = c.onWarningContainer)
+            Text(cp.prompt, style = MaterialTheme.typography.bodySmall, color = c.onWarningContainer)
+
+            // Resolving happens here rather than in a modal sheet. The list scrolls, so the
+            // keyboard can never strand the actions the way the sheet did.
+            if (expanded) {
+                OutlinedTextField(
+                    value = reasoning,
+                    onValueChange = { reasoning = it },
+                    label = { Text("Why? (optional)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 2,
+                    maxLines = 4,
+                    shape = RoundedCornerShape(12.dp)
+                )
+                Button(
+                    onClick = { onResolve(ChoicePointAction.KEEP, reasoning.trim()) },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                ) { Text("Keep going") }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = { onResolve(ChoicePointAction.RESCHEDULE, reasoning.trim()) }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp)) { Text("Reschedule", maxLines = 1) }
+                    OutlinedButton(onClick = { onResolve(ChoicePointAction.SHRINK, reasoning.trim()) }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp)) { Text("Shrink", maxLines = 1) }
+                }
+                OutlinedButton(
+                    onClick = { onResolve(ChoicePointAction.DROP, reasoning.trim()) },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                ) { Text("Drop") }
+            }
         }
     }
 }
-
 @Composable
 private fun DecisionCard(d: Decision, onClick: () -> Unit) {
     Surface(

@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import az.tribe.lifeplanner.domain.model.Decision
 import az.tribe.lifeplanner.domain.model.DecisionStatus
 import az.tribe.lifeplanner.domain.model.OutcomeQuality
-import az.tribe.lifeplanner.domain.model.XpAward
 import az.tribe.lifeplanner.domain.repository.DecisionRepository
 import az.tribe.lifeplanner.domain.service.DecisionScorecard
 import az.tribe.lifeplanner.usecases.ability.AwardDecisionBadgesUseCase
@@ -31,12 +30,16 @@ class MetacognitiveReviewViewModel(
     private val awardDecisionBadges: AwardDecisionBadgesUseCase,
 ) : ViewModel() {
 
-    private val _lastAward = MutableStateFlow<XpAward?>(null)
+    private val _justReviewed = MutableStateFlow<DecisionScorecard?>(null)
 
-    /** Set when a review just earned XP, so the screen can show the burst. Cleared by [clearAward]. */
-    val lastAward: StateFlow<XpAward?> = _lastAward.asStateFlow()
+    /**
+     * The track record as it stands immediately after a review, so the screen can reflect what the
+     * answer changed. Deliberately not the XP award: Abilities is switched off, so naming the
+     * ability would point at a screen the user cannot open. XP still accrues underneath.
+     */
+    val justReviewed: StateFlow<DecisionScorecard?> = _justReviewed.asStateFlow()
 
-    fun clearAward() { _lastAward.value = null }
+    fun clearReviewed() { _justReviewed.value = null }
 
     // Only confirmed decisions are reviewable, un-graded first, then most recent.
     val decisions: StateFlow<List<Decision>> =
@@ -59,14 +62,16 @@ class MetacognitiveReviewViewModel(
                 decision.copy(outcomeQuality = quality, outcomeReviewedAt = now)
             )
             if (isFirstReview) {
-                _lastAward.value = awardDecisionXp.onDecisionReviewed(quality)
+                awardDecisionXp.onDecisionReviewed(quality)
             }
 
             // Patch the graded decision into the current list rather than waiting for the flow to
             // re-emit, so the badge check always sees this review instead of racing it.
             val updated = decision.copy(outcomeQuality = quality, outcomeReviewedAt = now)
             val current = decisions.value.map { if (it.id == updated.id) updated else it }
-            awardDecisionBadges(DecisionScorecard.from(current))
+            val card = DecisionScorecard.from(current)
+            awardDecisionBadges(card)
+            _justReviewed.value = card
         }
     }
 }

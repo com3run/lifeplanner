@@ -33,7 +33,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import az.tribe.lifeplanner.domain.model.Decision
 import az.tribe.lifeplanner.domain.model.OutcomeQuality
-import az.tribe.lifeplanner.domain.model.XpAward
+import az.tribe.lifeplanner.domain.service.DecisionScorecard
 import az.tribe.lifeplanner.ui.theme.modernColors
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
@@ -52,7 +52,7 @@ fun MetacognitiveReviewScreen(
     viewModel: MetacognitiveReviewViewModel = koinViewModel(),
 ) {
     val decisions by viewModel.decisions.collectAsState()
-    val lastAward by viewModel.lastAward.collectAsState()
+    val justReviewed by viewModel.justReviewed.collectAsState()
 
     Scaffold(
         containerColor = MaterialTheme.modernColors.background,
@@ -80,8 +80,8 @@ fun MetacognitiveReviewScreen(
             ),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            lastAward?.let { award ->
-                item { XpRevealBanner(award, onDismiss = viewModel::clearAward) }
+            justReviewed?.let { card ->
+                item { ReviewedBanner(card, onDismiss = viewModel::clearReviewed) }
             }
             item {
                 Text(
@@ -172,31 +172,35 @@ internal fun DecisionGradeCard(d: Decision, onGrade: (OutcomeQuality) -> Unit) {
 }
 
 /**
- * What a review just earned. Deliberately a quiet line rather than confetti: the moment worth
- * marking is that you came back and answered, and a card that shouts undercuts the honesty it is
- * paying for. A level-up gets one extra line and nothing more.
+ * What the answer changed, shown as the record rather than a reward.
+ *
+ * There is no XP figure here on purpose. XP feeds the Judgment ability, and Abilities is switched
+ * off, so a number pointing at a hidden screen is noise. What you get back instead is the thing
+ * you were actually building: one more call answered for, and where that leaves your hit rate.
  */
 @Composable
-private fun XpRevealBanner(award: XpAward, onDismiss: () -> Unit) {
+private fun ReviewedBanner(card: DecisionScorecard, onDismiss: () -> Unit) {
     val c = MaterialTheme.modernColors
     Surface(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onDismiss),
-        color = c.primaryContainer,
+        color = c.surface,
         shape = RoundedCornerShape(14.dp)
     ) {
         Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
-                "+${award.xpEarned} XP \u00b7 ${award.ability.title}",
+                "Answered.",
                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                color = c.onPrimaryContainer
+                color = c.textPrimary
             )
-            if (award.leveledUp) {
-                Text(
-                    "${award.ability.title} reached level ${award.ability.currentLevel}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = c.onPrimaryContainer
-                )
-            }
+            Text(
+                buildString {
+                    append("${card.reviewed} reviewed")
+                    card.processHitRate?.let { append(" \u00b7 $it% sound") }
+                    if (card.awaitingReview > 0) append(" \u00b7 ${card.awaitingReview} still owed")
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = c.textSecondary
+            )
         }
     }
 }
