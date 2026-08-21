@@ -4,8 +4,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -46,7 +49,15 @@ fun ChoicePointBottomSheet(
         containerColor = MaterialTheme.modernColors.background
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 32.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                // The sheet holds a text field. Without imePadding the keyboard covered the
+                // actions, and without a scroll there was no way to reach them: you could type
+                // your reasoning and then be unable to resolve the choice point at all.
+                .imePadding()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 32.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
@@ -78,11 +89,14 @@ fun ChoicePointBottomSheet(
                 shape = RoundedCornerShape(12.dp)
             ) { Text("Keep going") }
 
+            // Two alternatives share a row, both of which fit at half width. Drop takes its own
+            // full-width row as the last resort. All three at weight(1f) squeezed "Reschedule"
+            // into a third of the screen, where it ellipsized on narrow devices.
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(onClick = { pick(ChoicePointAction.RESCHEDULE) }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp)) { Text("Reschedule") }
                 OutlinedButton(onClick = { pick(ChoicePointAction.SHRINK) }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp)) { Text("Shrink") }
-                OutlinedButton(onClick = { pick(ChoicePointAction.DROP) }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp)) { Text("Drop") }
             }
+            OutlinedButton(onClick = { pick(ChoicePointAction.DROP) }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)) { Text("Drop") }
         }
     }
 }
