@@ -578,3 +578,41 @@ class FakeKnowledgeRepository : KnowledgeRepository {
     override suspend fun markRead(id: String) { read.add(id); _flow.value = read.toSet() }
     override suspend fun markUnread(id: String) { read.remove(id); _flow.value = read.toSet() }
 }
+
+// ─── DecisionRepository ──────────────────────────────────────────────────────
+
+/** In-memory decision log. Seed via [setDecisions]; mutations are reflected in the flow. */
+class FakeDecisionRepository(
+    initial: List<az.tribe.lifeplanner.domain.model.Decision> = emptyList(),
+) : az.tribe.lifeplanner.domain.repository.DecisionRepository {
+    private val _flow = MutableStateFlow(initial)
+
+    fun setDecisions(list: List<az.tribe.lifeplanner.domain.model.Decision>) { _flow.value = list }
+
+    override fun observeAllDecisions(): Flow<List<az.tribe.lifeplanner.domain.model.Decision>> = _flow
+    override suspend fun getAllDecisions() = _flow.value
+    override suspend fun getDecisionById(id: String) = _flow.value.firstOrNull { it.id == id }
+    override suspend fun getDecisionsForGoal(goalId: String) = _flow.value.filter { it.relatedGoalId == goalId }
+    override suspend fun insertDecision(decision: az.tribe.lifeplanner.domain.model.Decision) {
+        _flow.value = _flow.value + decision
+    }
+    override suspend fun updateDecision(decision: az.tribe.lifeplanner.domain.model.Decision) {
+        _flow.value = _flow.value.map { if (it.id == decision.id) decision else it }
+    }
+    override suspend fun deleteDecisionById(id: String) {
+        _flow.value = _flow.value.filterNot { it.id == id }
+    }
+}
+
+// ─── DecisionProfileRepository ───────────────────────────────────────────────
+
+class FakeDecisionProfileRepository(
+    initial: az.tribe.lifeplanner.domain.model.DecisionProfile? = null,
+) : az.tribe.lifeplanner.domain.repository.DecisionProfileRepository {
+    private val _flow = MutableStateFlow(initial)
+    override fun observeProfile(): Flow<az.tribe.lifeplanner.domain.model.DecisionProfile?> = _flow
+    override suspend fun getProfile() = _flow.value
+    override suspend fun upsertProfile(profile: az.tribe.lifeplanner.domain.model.DecisionProfile) {
+        _flow.value = profile
+    }
+}
