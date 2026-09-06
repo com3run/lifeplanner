@@ -1,4 +1,4 @@
-package az.tribe.lifeplanner.data.model
+package az.tribe.lifeplanner.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import az.tribe.lifeplanner.ui.UiText
 
 @Composable
 fun ErrorMessage(

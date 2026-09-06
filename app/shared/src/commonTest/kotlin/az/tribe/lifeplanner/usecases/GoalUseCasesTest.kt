@@ -1,10 +1,10 @@
 package az.tribe.lifeplanner.usecases
 
-import az.tribe.lifeplanner.data.model.DataError
+import az.tribe.lifeplanner.domain.model.DataError
 import az.tribe.lifeplanner.data.model.GoalTypeQuestions
 import az.tribe.lifeplanner.data.model.Question
 import az.tribe.lifeplanner.data.model.QuestionAnswer
-import az.tribe.lifeplanner.data.model.Result
+import az.tribe.lifeplanner.domain.model.Result
 import az.tribe.lifeplanner.data.model.UserQuestionnaireAnswers
 import az.tribe.lifeplanner.domain.enum.GoalCategory
 import az.tribe.lifeplanner.domain.enum.GoalStatus
@@ -922,7 +922,7 @@ class GoalUseCasesTest {
     @Test
     fun `GenerateAiQuestionnaire returns error on failure`() = runTest {
         val fakeGemini = FakeGeminiRepository(
-            questionnaireResult = Result.Error(DataError.Remote.SERVER_ERROR)
+            questionnaireResult = Result.Error(DataError.Network.SERVER_ERROR)
         )
         val useCase = GenerateAiQuestionnaireUseCase(fakeGemini)
 
@@ -951,7 +951,7 @@ class GoalUseCasesTest {
     @Test
     fun `GenerateAiGoals returns error on failure`() = runTest {
         val fakeGemini = FakeGeminiRepository(
-            goalsResult = Result.Error(DataError.Remote.NO_INTERNET)
+            goalsResult = Result.Error(DataError.Network.NO_INTERNET)
         )
         val useCase = GenerateAiGoalsUseCase(fakeGemini)
         val answers = UserQuestionnaireAnswers(listOf(QuestionAnswer("Q1", "A1")))
@@ -980,31 +980,31 @@ class GoalUseCasesTest {
 // ── Minimal FakeGeminiRepository for AI use case tests ───────────────────
 
 private class FakeGeminiRepository(
-    private val questionnaireResult: Result<List<GoalTypeQuestions>, DataError.Remote> =
+    private val questionnaireResult: Result<List<GoalTypeQuestions>, DataError.Network> =
         Result.Success(emptyList()),
-    private val goalsResult: Result<List<Goal>, DataError.Remote> =
+    private val goalsResult: Result<List<Goal>, DataError.Network> =
         Result.Success(emptyList()),
-    private val directGoalsResult: Result<List<Goal>, DataError.Remote> =
+    private val directGoalsResult: Result<List<Goal>, DataError.Network> =
         Result.Success(emptyList())
 ) : GeminiRepository {
 
     var lastOriginalPrompt: String? = null
     var lastUserAnswers: UserQuestionnaireAnswers? = null
 
-    override suspend fun generateQuestionnaire(userPrompt: String): Result<List<GoalTypeQuestions>, DataError.Remote> {
+    override suspend fun generateQuestionnaire(userPrompt: String): Result<List<GoalTypeQuestions>, DataError.Network> {
         return questionnaireResult
     }
 
     override suspend fun generatePersonalizedGoals(
         originalPrompt: String,
         userAnswers: UserQuestionnaireAnswers
-    ): Result<List<Goal>, DataError.Remote> {
+    ): Result<List<Goal>, DataError.Network> {
         lastOriginalPrompt = originalPrompt
         lastUserAnswers = userAnswers
         return goalsResult
     }
 
-    override suspend fun generateGoalsDirect(prompt: String): Result<List<Goal>, DataError.Remote> {
+    override suspend fun generateGoalsDirect(prompt: String): Result<List<Goal>, DataError.Network> {
         return directGoalsResult
     }
 }

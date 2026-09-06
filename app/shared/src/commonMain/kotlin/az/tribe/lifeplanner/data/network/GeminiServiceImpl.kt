@@ -1,7 +1,8 @@
 package az.tribe.lifeplanner.data.network
 
 import az.tribe.lifeplanner.data.model.*
-import az.tribe.lifeplanner.data.model.DataError.Remote
+import az.tribe.lifeplanner.domain.model.DataError
+import az.tribe.lifeplanner.domain.model.Result
 import co.touchlab.kermit.Logger
 import kotlinx.serialization.json.*
 
@@ -24,7 +25,7 @@ class GeminiServiceImpl(
         )
     }
 
-    override suspend fun generateQuestions(userPrompt: String): Result<GeminiResponseDto, Remote> {
+    override suspend fun generateQuestions(userPrompt: String): Result<GeminiResponseDto, DataError.Network> {
         val prompt = """
             Based on the user's goal statement: "$userPrompt"
 
@@ -55,14 +56,14 @@ class GeminiServiceImpl(
             Result.Success(wrapInGeminiResponseDto(text))
         } catch (e: Exception) {
             log.e(e) { "generateQuestions failed" }
-            Result.Error(Remote.UNKNOWN)
+            Result.Error(DataError.Network.UNKNOWN)
         }
     }
 
     override suspend fun generateGoalsFromAnswers(
         originalPrompt: String,
         userAnswers: UserQuestionnaireAnswers
-    ): Result<GeminiResponseDto, Remote> {
+    ): Result<GeminiResponseDto, DataError.Network> {
         val answersText = formatAnswersForPrompt(userAnswers)
 
         val prompt = """
@@ -92,11 +93,11 @@ class GeminiServiceImpl(
             Result.Success(wrapInGeminiResponseDto(text))
         } catch (e: Exception) {
             log.e(e) { "generateGoalsFromAnswers failed" }
-            Result.Error(Remote.UNKNOWN)
+            Result.Error(DataError.Network.UNKNOWN)
         }
     }
 
-    override suspend fun generateGoalsDirect(prompt: String): Result<GeminiResponseDto, Remote> {
+    override suspend fun generateGoalsDirect(prompt: String): Result<GeminiResponseDto, DataError.Network> {
         val enrichedPrompt = """
             Based on the user's goal statement: "$prompt"
 
@@ -120,7 +121,7 @@ class GeminiServiceImpl(
             Result.Success(wrapInGeminiResponseDto(text))
         } catch (e: Exception) {
             log.e(e) { "generateGoalsDirect failed" }
-            Result.Error(Remote.UNKNOWN)
+            Result.Error(DataError.Network.UNKNOWN)
         }
     }
 
