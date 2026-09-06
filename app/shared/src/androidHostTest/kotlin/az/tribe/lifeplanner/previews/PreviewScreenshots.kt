@@ -58,30 +58,11 @@ class PreviewScreenshots {
     @get:Rule
     val compose = createComposeRule()
 
-    /** Like [snap] but edge to edge, for whole screens that own their own Scaffold. */
-    private fun snapScreen(name: String, darkTheme: Boolean = true, content: @Composable () -> Unit) {
-        compose.mainClock.autoAdvance = false
-        compose.setContent {
-            LifePlannerTheme(darkTheme = darkTheme) { content() }
-        }
-        compose.mainClock.advanceTimeBy(800)
-        compose.onRoot().captureRoboImage("build/previews/$name.png")
-    }
+    private fun snapScreen(name: String, darkTheme: Boolean = true, content: @Composable () -> Unit) =
+        compose.snapScreen(name, darkTheme, content)
 
-    private fun snap(name: String, darkTheme: Boolean = true, content: @Composable () -> Unit) {
-        compose.mainClock.autoAdvance = false
-        compose.setContent {
-            LifePlannerTheme(darkTheme = darkTheme) {
-                Surface(color = MaterialTheme.colorScheme.background) {
-                    Box(Modifier.padding(16.dp)) { content() }
-                }
-            }
-        }
-        // Advance past entrance animations to a stable frame; infinite transitions
-        // (badge wobble) stay frozen because autoAdvance is off.
-        compose.mainClock.advanceTimeBy(800)
-        compose.onRoot().captureRoboImage("build/previews/$name.png")
-    }
+    private fun snap(name: String, darkTheme: Boolean = true, content: @Composable () -> Unit) =
+        compose.snapComponent(name, darkTheme, content)
 
     private val earnedBadge = Badge(
         id = "preview-badge",
