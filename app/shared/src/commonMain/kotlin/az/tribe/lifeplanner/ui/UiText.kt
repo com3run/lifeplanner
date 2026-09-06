@@ -1,6 +1,7 @@
 package az.tribe.lifeplanner.ui
 
 import androidx.compose.runtime.Composable
+import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -20,5 +21,11 @@ sealed interface UiText {
     fun asString(): String = when (this) {
         is DynamicString -> value
         is StringResource -> stringResource(resource = id, formatArgs = args)
+    }
+
+    /** The same text outside composition, for one-shot events such as a snackbar. */
+    suspend fun resolve(): String = when (this) {
+        is DynamicString -> value
+        is StringResource -> getString(id, *args)
     }
 }

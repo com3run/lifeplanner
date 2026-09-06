@@ -1,6 +1,7 @@
 package az.tribe.lifeplanner.ui.habit
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,36 +28,35 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.foundation.clickable
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
+import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import az.tribe.lifeplanner.domain.enum.GoalCategory
+import az.tribe.lifeplanner.domain.enum.HabitFrequency
 import az.tribe.lifeplanner.domain.enum.HabitType
 import az.tribe.lifeplanner.domain.model.Habit
-import az.tribe.lifeplanner.domain.service.KnowledgeBit
-import com.adamglin.phosphoricons.regular.Play
 import az.tribe.lifeplanner.domain.service.HabitTrackMode
+import az.tribe.lifeplanner.domain.service.KnowledgeBit
 import az.tribe.lifeplanner.domain.service.trackMode
+import az.tribe.lifeplanner.ui.ObserveAsEvents
 import az.tribe.lifeplanner.ui.components.AppButton
 import az.tribe.lifeplanner.ui.components.AppButtonVariant
 import az.tribe.lifeplanner.ui.components.IconChip
 import az.tribe.lifeplanner.ui.components.StatTile
 import az.tribe.lifeplanner.ui.components.StateView
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
+import az.tribe.lifeplanner.ui.theme.LifePlannerTheme
 import az.tribe.lifeplanner.ui.theme.bouncyClickable
-import az.tribe.lifeplanner.ui.theme.gradient
 import az.tribe.lifeplanner.ui.theme.gradientColors
 import az.tribe.lifeplanner.ui.theme.modernColors
 import com.adamglin.PhosphorIcons
@@ -64,53 +64,61 @@ import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.ArrowLeft
 import com.adamglin.phosphoricons.regular.CheckCircle
 import com.adamglin.phosphoricons.regular.Circle
-import com.adamglin.phosphoricons.regular.Fire
 import com.adamglin.phosphoricons.regular.Flag
 import com.adamglin.phosphoricons.regular.Pencil
+import com.adamglin.phosphoricons.regular.Play
 import com.adamglin.phosphoricons.regular.Prohibit
-import com.adamglin.phosphoricons.regular.Repeat
-import com.adamglin.phosphoricons.regular.Trophy
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.TimeZone
+import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.plus
-import kotlinx.datetime.toLocalDateTime
+import leanlifeplanner.app.shared.generated.resources.Res
+import leanlifeplanner.app.shared.generated.resources.cd_back
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import kotlin.math.roundToInt
-import kotlin.time.Clock
-import leanlifeplanner.app.shared.generated.resources.Res
-import org.jetbrains.compose.resources.stringResource
-import leanlifeplanner.app.shared.generated.resources.cd_back
 
 /**
- * D7, the redesigned **Habit Detail**. Category-gradient hero + consistency ring, the signature
- * one-tap today check-in, streak stat tiles, a five-week consistency heatmap, the goal it supports
- * (Pillar-1 "why" chain), and Edit reusing the existing bottom sheet.
+ * D7, the redesigned **Habit Detail**. The Root owns the ViewModel and turns its events into
+ * navigation and snackbars; [HabitDetailScreen] below renders state and forwards actions, so it
+ * can be previewed and tested without Koin.
  */
+@Composable
+fun HabitDetailRoot(
+    habitId: String,
+    onNavigateBack: () -> Unit,
+    onNavigateToLesson: (String) -> Unit = {},
+    onNavigateToPractice: (String) -> Unit = {},
+    viewModel: HabitDetailViewModel = koinViewModel { parametersOf(habitId) },
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    ObserveAsEvents(viewModel.events) { event ->
+        when (event) {
+            HabitDetailEvent.NavigateBack -> onNavigateBack()
+            is HabitDetailEvent.NavigateToLesson -> onNavigateToLesson(event.lessonId)
+            is HabitDetailEvent.NavigateToPractice -> onNavigateToPractice(event.habitId)
+            is HabitDetailEvent.ShowSnackbar -> snackbarHostState.showSnackbar(event.message.resolve())
+        }
+    }
+
+    HabitDetailScreen(
+        state = state,
+        onAction = viewModel::onAction,
+        snackbarHostState = snackbarHostState,
+    )
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HabitDetailScreen(
-    habitId: String,
-    onBackClick: () -> Unit,
-    onOpenLesson: (String) -> Unit = {},
-    onPractice: (String) -> Unit = {},
-    viewModel: HabitDetailViewModel = koinViewModel { parametersOf(habitId) },
+    state: HabitDetailState,
+    onAction: (HabitDetailAction) -> Unit,
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
-    val habit by viewModel.habit.collectAsStateWithLifecycle()
-    val doneToday by viewModel.doneToday.collectAsStateWithLifecycle()
-    val goalTitle by viewModel.linkedGoalTitle.collectAsStateWithLifecycle()
-    val completedDates by viewModel.completedDates.collectAsStateWithLifecycle()
-    val rate by viewModel.completionRate.collectAsStateWithLifecycle()
-    val lessons by viewModel.relatedLessons.collectAsStateWithLifecycle()
     val c = MaterialTheme.modernColors
-
-    var showEdit by remember { mutableStateOf(false) }
-
-    val snackbarHostState = remember { SnackbarHostState() }
-    LaunchedEffect(Unit) {
-        viewModel.xpEvent.collect { xp -> if (xp > 0) snackbarHostState.showSnackbar("+$xp XP") }
-    }
 
     Scaffold(
         containerColor = c.background,
@@ -119,145 +127,197 @@ fun HabitDetailScreen(
             TopAppBar(
                 title = { Text("Habit", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = stringResource(Res.string.cd_back), tint = c.textPrimary)
+                    IconButton(onClick = { onAction(HabitDetailAction.OnBackClick) }) {
+                        Icon(
+                            PhosphorIcons.Regular.ArrowLeft,
+                            contentDescription = stringResource(Res.string.cd_back),
+                            tint = c.textPrimary,
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = c.background, titleContentColor = c.textPrimary),
             )
         },
     ) { padding ->
-        val h = habit
-        if (h == null) {
-            StateView(
+        val habit = state.habit
+        when {
+            // Quiet until the store answers, so a real habit never flashes as missing.
+            state.isLoading -> Box(Modifier.fillMaxSize().padding(padding))
+            habit == null -> StateView(
                 title = "Habit not found",
                 message = "It may have been deleted.",
                 modifier = Modifier.fillMaxSize().padding(padding),
             )
-            return@Scaffold
+            else -> HabitDetailContent(habit = habit, state = state, padding = padding, onAction = onAction)
         }
-        val isQuit = h.type == HabitType.QUIT
+    }
 
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(
-                top = padding.calculateTopPadding() + LifePlannerDesign.Spacing.xs,
-                bottom = padding.calculateBottomPadding() + 84.dp,
-                start = LifePlannerDesign.Padding.screenHorizontal,
-                end = LifePlannerDesign.Padding.screenHorizontal,
-            ),
-            verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.md),
-        ) {
-            item {
-                HabitPaperHeader(habit = h, ratePercent = rate)
-            }
+    if (state.isEditing) {
+        state.habit?.let { habit ->
+            EditHabitBottomSheet(
+                habit = habit,
+                onDismiss = { onAction(HabitDetailAction.OnEditDismiss) },
+                onConfirm = { onAction(HabitDetailAction.OnEditConfirm(it)) },
+            )
+        }
+    }
+}
 
-            // Signature interaction: one-tap today check-in
-            item {
-                TodayCheckInCard(
-                    done = doneToday,
-                    isQuit = isQuit,
-                    accent = c.success,
-                    onToggle = viewModel::toggleToday,
+@Composable
+private fun HabitDetailContent(
+    habit: Habit,
+    state: HabitDetailState,
+    padding: PaddingValues,
+    onAction: (HabitDetailAction) -> Unit,
+) {
+    val c = MaterialTheme.modernColors
+    val isQuit = habit.type == HabitType.QUIT
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(
+            top = padding.calculateTopPadding() + LifePlannerDesign.Spacing.xs,
+            bottom = padding.calculateBottomPadding() + 84.dp,
+            start = LifePlannerDesign.Padding.screenHorizontal,
+            end = LifePlannerDesign.Padding.screenHorizontal,
+        ),
+        verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.md),
+    ) {
+        item {
+            HabitPaperHeader(habit = habit, ratePercent = state.completionRate)
+        }
+
+        // Signature interaction: one-tap today check-in
+        item {
+            TodayCheckInCard(
+                done = state.doneToday,
+                isQuit = isQuit,
+                accent = c.success,
+                onToggle = { onAction(HabitDetailAction.OnToggleTodayClick) },
+            )
+        }
+
+        // Streak stats
+        item {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm)) {
+                StatTile(
+                    value = "${habit.currentStreak}",
+                    label = if (isQuit) "Days clean" else "Current",
+                    accent = if (isQuit) c.success else c.warning,
+                    modifier = Modifier.weight(1f)
                 )
+                StatTile(value = "${habit.longestStreak}", label = "Best", accent = c.secondary, modifier = Modifier.weight(1f))
+                StatTile(value = "${habit.totalCompletions}", label = "Total", accent = c.primary, modifier = Modifier.weight(1f))
             }
+        }
 
-            // Streak stats
+        // Consistency heatmap (last 5 weeks)
+        item {
+            state.today?.let { today ->
+                ConsistencyCard(completedDates = state.completedDates, today = today, accent = habit.category.gradientColors().first())
+            }
+        }
+
+        // Supports, the goal this habit serves (Pillar 1 "why")
+        state.linkedGoalTitle?.let { goalTitle ->
             item {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm)) {
-                    StatTile(
-                        value = "${h.currentStreak}",
-                        label = if (isQuit) "Days clean" else "Current",
-                        accent = if (isQuit) c.success else c.warning,
-                        modifier = Modifier.weight(1f)
-                    )
-                    StatTile(value = "${h.longestStreak}", label = "Best", accent = c.secondary, modifier = Modifier.weight(1f))
-                    StatTile(value = "${h.totalCompletions}", label = "Total", accent = c.primary, modifier = Modifier.weight(1f))
-                }
-            }
-
-            // Consistency heatmap (last 5 weeks)
-            item {
-                ConsistencyCard(completedDates = completedDates, accent = h.category.gradientColors().first())
-            }
-
-            // Supports, the goal this habit serves (Pillar 1 "why")
-            goalTitle?.let { gt ->
-                item {
-                    Surface(Modifier.fillMaxWidth(), color = c.cardBackground, shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large)) {
-                        Row(Modifier.fillMaxWidth().padding(LifePlannerDesign.Padding.cardContent), horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm), verticalAlignment = Alignment.CenterVertically) {
-                            IconChip(PhosphorIcons.Regular.Flag, tint = c.secondary)
-                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                Text("Supports $gt", style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = c.textPrimary)
-                                Text("Every check-in moves this goal forward.", style = MaterialTheme.typography.bodySmall, color = c.textSecondary)
-                            }
+                Surface(Modifier.fillMaxWidth(), color = c.cardBackground, shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large)) {
+                    Row(Modifier.fillMaxWidth().padding(LifePlannerDesign.Padding.cardContent), horizontalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm), verticalAlignment = Alignment.CenterVertically) {
+                        IconChip(PhosphorIcons.Regular.Flag, tint = c.secondary)
+                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text("Supports $goalTitle", style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = c.textPrimary)
+                            Text("Every check-in moves this goal forward.", style = MaterialTheme.typography.bodySmall, color = c.textSecondary)
                         }
                     }
                 }
             }
+        }
 
-            // Why this works: lessons matched to what this habit is about, so the knowledge shows up
-            // next to the practice instead of waiting to be found in the Learn hub.
-            if (lessons.isNotEmpty()) {
-                item {
-                    Column(verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm)) {
-                        Text(
-                            "Why this works",
-                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                            color = c.textPrimary,
-                        )
-                        lessons.forEach { lesson ->
-                            RelatedLessonRow(lesson = lesson, onClick = { onOpenLesson(lesson.id) })
-                        }
-                    }
-                }
-            }
-
-            if (h.description.isNotBlank()) {
-                item {
-                    Surface(Modifier.fillMaxWidth(), color = c.cardBackground, shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large)) {
-                        Text(h.description, style = MaterialTheme.typography.bodyMedium, color = c.textSecondary, modifier = Modifier.padding(LifePlannerDesign.Padding.cardContent))
-                    }
-                }
-            }
-
-            // A timed or counted habit is something you *do*, so offer somewhere to do it.
-            // A plain check-off habit has nothing to run, so it gets no practice button.
+        // Why this works: lessons matched to what this habit is about, so the knowledge shows up
+        // next to the practice instead of waiting to be found in the Learn hub.
+        if (state.relatedLessons.isNotEmpty()) {
             item {
-                habit?.takeIf { it.trackMode != HabitTrackMode.SINGLE }?.let { h ->
-                    AppButton(
-                        text = if (h.trackMode == HabitTrackMode.DURATION) "Start practice" else "Count reps",
-                        onClick = { onPractice(h.id) },
-                        leadingIcon = PhosphorIcons.Regular.Play,
-                        modifier = Modifier.fillMaxWidth().padding(top = LifePlannerDesign.Spacing.xs),
+                Column(verticalArrangement = Arrangement.spacedBy(LifePlannerDesign.Spacing.sm)) {
+                    Text(
+                        "Why this works",
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                        color = c.textPrimary,
                     )
+                    state.relatedLessons.forEach { lesson ->
+                        RelatedLessonRow(lesson = lesson, onClick = { onAction(HabitDetailAction.OnLessonClick(lesson.id)) })
+                    }
                 }
             }
+        }
 
+        if (habit.description.isNotBlank()) {
+            item {
+                Surface(Modifier.fillMaxWidth(), color = c.cardBackground, shape = RoundedCornerShape(LifePlannerDesign.CornerRadius.large)) {
+                    Text(habit.description, style = MaterialTheme.typography.bodyMedium, color = c.textSecondary, modifier = Modifier.padding(LifePlannerDesign.Padding.cardContent))
+                }
+            }
+        }
+
+        // A timed or counted habit is something you *do*, so offer somewhere to do it.
+        // A plain check-off habit has nothing to run, so it gets no practice button.
+        if (habit.trackMode != HabitTrackMode.SINGLE) {
             item {
                 AppButton(
-                    text = "Edit habit",
-                    onClick = { showEdit = true },
-                    variant = AppButtonVariant.SECONDARY,
-                    leadingIcon = PhosphorIcons.Regular.Pencil,
+                    text = if (habit.trackMode == HabitTrackMode.DURATION) "Start practice" else "Count reps",
+                    onClick = { onAction(HabitDetailAction.OnPracticeClick) },
+                    leadingIcon = PhosphorIcons.Regular.Play,
                     modifier = Modifier.fillMaxWidth().padding(top = LifePlannerDesign.Spacing.xs),
                 )
             }
         }
-    }
 
-    if (showEdit) {
-        habit?.let { h ->
-            EditHabitBottomSheet(
-                habit = h,
-                onDismiss = { showEdit = false },
-                onConfirm = { updated ->
-                    viewModel.updateHabit(updated)
-                    showEdit = false
-                },
+        item {
+            AppButton(
+                text = "Edit habit",
+                onClick = { onAction(HabitDetailAction.OnEditClick) },
+                variant = AppButtonVariant.SECONDARY,
+                leadingIcon = PhosphorIcons.Regular.Pencil,
+                modifier = Modifier.fillMaxWidth().padding(top = LifePlannerDesign.Spacing.xs),
             )
         }
     }
+}
+
+@Preview
+@Composable
+private fun HabitDetailScreenPreview() {
+    LifePlannerTheme(darkTheme = true) {
+        HabitDetailScreen(state = habitDetailPreviewState(), onAction = {})
+    }
+}
+
+/** A realistic detail state: a running habit mid-streak, linked to a goal, with lessons to read. */
+internal fun habitDetailPreviewState(): HabitDetailState {
+    val today = LocalDate(2026, 6, 20)
+    return HabitDetailState(
+        habit = Habit(
+            id = "habit-run",
+            title = "Run before the day starts, whatever the weather looks like",
+            description = "Thirty minutes, easy pace. The point is showing up, not the split.",
+            category = GoalCategory.BODY,
+            frequency = HabitFrequency.DAILY,
+            currentStreak = 6,
+            longestStreak = 12,
+            totalCompletions = 41,
+            linkedGoalId = "goal-marathon",
+            createdAt = LocalDateTime(2026, 5, 1, 7, 0),
+        ),
+        isLoading = false,
+        doneToday = true,
+        linkedGoalTitle = "Finish a half marathon",
+        today = today,
+        completedDates = (0 until 28).filter { it % 3 != 1 }.map { today.plus(-it, DateTimeUnit.DAY) }.toSet(),
+        completionRate = 72f,
+        relatedLessons = listOf(
+            KnowledgeBit(id = "l1", title = "Why mornings win", body = "", emoji = "🌅", minLevel = 1, readMin = 3),
+            KnowledgeBit(id = "l2", title = "Streaks are a tool, not a scoreboard", body = "", emoji = "🔥", minLevel = 1, readMin = 2),
+        ),
+    )
 }
 
 /**
@@ -359,9 +419,8 @@ private fun TodayCheckInCard(done: Boolean, isQuit: Boolean, accent: Color, onTo
 }
 
 @Composable
-private fun ConsistencyCard(completedDates: Set<LocalDate>, accent: Color) {
+private fun ConsistencyCard(completedDates: Set<LocalDate>, today: LocalDate, accent: Color) {
     val c = MaterialTheme.modernColors
-    val today = remember { Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date }
     // Monday five weeks back, so columns read Mon..Sun.
     val start = remember(today) {
         var d = today

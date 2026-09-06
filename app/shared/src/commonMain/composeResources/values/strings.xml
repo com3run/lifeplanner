@@ -86,5 +86,6 @@
     <string name="cd_changes_waiting_to_sync">%1$d changes waiting to sync</string>
     <string name="cd_add_named">Add %1$s</string>
     <string name="cd_rate_star">Rate %1$s</string>
-    <string name="cd_start_timer">Start %1$s timer</string>
+    <string name="cd_start_timer">Start %1$s timer</string>    <!-- Rewards. -->
+    <string name="xp_earned">+%1$d XP</string>
 </resources>

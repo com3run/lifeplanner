@@ -58,6 +58,16 @@ class PreviewScreenshots {
     @get:Rule
     val compose = createComposeRule()
 
+    /** Like [snap] but edge to edge, for whole screens that own their own Scaffold. */
+    private fun snapScreen(name: String, darkTheme: Boolean = true, content: @Composable () -> Unit) {
+        compose.mainClock.autoAdvance = false
+        compose.setContent {
+            LifePlannerTheme(darkTheme = darkTheme) { content() }
+        }
+        compose.mainClock.advanceTimeBy(800)
+        compose.onRoot().captureRoboImage("build/previews/$name.png")
+    }
+
     private fun snap(name: String, darkTheme: Boolean = true, content: @Composable () -> Unit) {
         compose.mainClock.autoAdvance = false
         compose.setContent {
@@ -244,6 +254,24 @@ class PreviewScreenshots {
                 completions = 0,
             ),
             ratePercent = 0f,
+        )
+    }
+
+    /** The whole Habit Detail screen from a pure state, no Koin: the MVI template for other screens. */
+    @Test
+    fun habitDetailScreen() = snapScreen("HabitDetailScreen") {
+        az.tribe.lifeplanner.ui.habit.HabitDetailScreen(
+            state = az.tribe.lifeplanner.ui.habit.habitDetailPreviewState(),
+            onAction = {},
+        )
+    }
+
+    /** The practice ground for a counted habit, halfway through. */
+    @Test
+    fun habitPracticeScreen() = snapScreen("HabitPracticeScreen") {
+        az.tribe.lifeplanner.ui.habit.HabitPracticeScreen(
+            state = az.tribe.lifeplanner.ui.habit.habitPracticePreviewState(),
+            onAction = {},
         )
     }
 
