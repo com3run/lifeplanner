@@ -38,7 +38,7 @@ fun HabitTrackerScreen(
     isFromBottomNav: Boolean = false,
     viewModel: HabitViewModel = koinViewModel(),
     journalViewModel: JournalViewModel = koinViewModel(),
-    goalViewModel: GoalViewModel = koinInject(),
+    goalViewModel: GoalViewModel = koinViewModel(),
     aiProxy: AiProxyService = koinInject()
 ) {
     val habits by viewModel.habits.collectAsState()

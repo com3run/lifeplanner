@@ -17,7 +17,7 @@ import az.tribe.lifeplanner.ui.coach.CoachViewModel
 import az.tribe.lifeplanner.ui.coach.CreateCoachScreen
 import az.tribe.lifeplanner.ui.coach.CreateGroupScreen
 import az.tribe.lifeplanner.ui.navigation.Screen
-import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
 
 internal fun NavGraphBuilder.appNavCoach(navController: NavController) {
     // AI Chat Screen - Coach List
@@ -124,7 +124,7 @@ internal fun NavGraphBuilder.appNavCoach(navController: NavController) {
 
     // Create Custom Coach Screen
     composable(Screen.CreateCoach.route) {
-        val coachViewModel: CoachViewModel = koinInject()
+        val coachViewModel: CoachViewModel = koinViewModel()
         CreateCoachScreen(
             onNavigateBack = { navController.popBackStack() },
             onCoachSaved = { coach ->
@@ -141,7 +141,7 @@ internal fun NavGraphBuilder.appNavCoach(navController: NavController) {
     ) { backStackEntry ->
         val coachId = backStackEntry.arguments?.read { getStringOrNull("coachId") }
             ?: return@composable
-        val coachViewModel: CoachViewModel = koinInject()
+        val coachViewModel: CoachViewModel = koinViewModel()
         val coachToEdit = coachViewModel.getCoachById(coachId)
         CreateCoachScreen(
             coachToEdit = coachToEdit,
@@ -155,7 +155,7 @@ internal fun NavGraphBuilder.appNavCoach(navController: NavController) {
 
     // Create Coach Group Screen
     composable(Screen.CreateGroup.route) {
-        val coachViewModel: CoachViewModel = koinInject()
+        val coachViewModel: CoachViewModel = koinViewModel()
         val uiState by coachViewModel.uiState.collectAsState()
         CreateGroupScreen(
             customCoaches = uiState.customCoaches,
@@ -174,7 +174,7 @@ internal fun NavGraphBuilder.appNavCoach(navController: NavController) {
     ) { backStackEntry ->
         val groupId = backStackEntry.arguments?.read { getStringOrNull("groupId") }
             ?: return@composable
-        val coachViewModel: CoachViewModel = koinInject()
+        val coachViewModel: CoachViewModel = koinViewModel()
         val uiState by coachViewModel.uiState.collectAsState()
         val groupToEdit = coachViewModel.getGroupById(groupId)
         CreateGroupScreen(

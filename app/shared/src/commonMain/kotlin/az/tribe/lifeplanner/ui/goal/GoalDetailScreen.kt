@@ -73,13 +73,14 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GoalDetailScreen(
     goalId: String,
     viewModel: GoalViewModel,
-    dependencyViewModel: GoalDependencyViewModel = koinInject(),
+    dependencyViewModel: GoalDependencyViewModel = koinViewModel(),
     journalRepository: JournalRepository = koinInject(),
     abilityRepository: AbilityRepository = koinInject(),
     habitRepository: az.tribe.lifeplanner.domain.repository.HabitRepository = koinInject(),

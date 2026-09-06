@@ -248,7 +248,7 @@ fun CoachOnboardingScreen(
     onNeedsIntro: () -> Unit = {},
     viewModel: CoachOnboardingViewModel = koinViewModel()
 ) {
-    val authViewModel: AuthViewModel = koinInject()
+    val authViewModel: AuthViewModel = koinViewModel()
     val authState by authViewModel.authState.collectAsState()
     val settings: Settings = koinInject()
 

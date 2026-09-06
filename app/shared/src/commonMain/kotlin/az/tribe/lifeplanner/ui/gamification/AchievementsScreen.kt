@@ -64,13 +64,13 @@ import az.tribe.lifeplanner.ui.components.BadgeCard
 import az.tribe.lifeplanner.ui.components.BadgeMedallion
 import az.tribe.lifeplanner.ui.components.rememberHapticManager
 import az.tribe.lifeplanner.ui.gamification.GamificationViewModel
-import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AchievementsScreen(
     onNavigateBack: () -> Unit,
-    viewModel: GamificationViewModel = koinInject()
+    viewModel: GamificationViewModel = koinViewModel()
 ) {
     val userProgress by viewModel.userProgress.collectAsState()
     val badges by viewModel.badges.collectAsState()

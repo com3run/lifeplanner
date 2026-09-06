@@ -64,7 +64,6 @@ import com.adamglin.phosphoricons.fill.Lock
 import com.adamglin.phosphoricons.regular.ArrowLeft
 import com.adamglin.phosphoricons.regular.ChatCircle
 import com.adamglin.phosphoricons.regular.Play
-import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -78,7 +77,7 @@ fun CoachProfileScreen(
     val coach = remember(coachId, storeCoaches) { BuiltinCoachStore.getById(coachId) }
     var showAuthSheet by remember { mutableStateOf(false) }
 
-    val authViewModel: AuthViewModel = koinInject()
+    val authViewModel: AuthViewModel = koinViewModel()
     val authState by authViewModel.authState.collectAsState()
     val gamificationViewModel: GamificationViewModel = koinViewModel()
     val userProgress by gamificationViewModel.userProgress.collectAsState()

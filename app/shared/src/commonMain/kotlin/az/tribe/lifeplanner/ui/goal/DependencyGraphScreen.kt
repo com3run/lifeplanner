@@ -39,12 +39,12 @@ import com.adamglin.phosphoricons.regular.Crosshair
 import com.adamglin.phosphoricons.regular.Funnel
 import com.adamglin.phosphoricons.regular.MagnifyingGlassMinus
 import com.adamglin.phosphoricons.regular.MagnifyingGlassPlus
-import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DependencyGraphScreen(
-    viewModel: GoalDependencyViewModel = koinInject(),
+    viewModel: GoalDependencyViewModel = koinViewModel(),
     focusGoalId: String? = null,
     onNavigateBack: () -> Unit,
     onGoalClick: (String) -> Unit

@@ -37,13 +37,12 @@ import com.adamglin.phosphoricons.regular.Gear
 import com.adamglin.phosphoricons.regular.Lightning
 import com.adamglin.phosphoricons.regular.Scales
 import com.adamglin.phosphoricons.regular.Sliders
-import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
-    authViewModel: AuthViewModel = koinInject(),
+    authViewModel: AuthViewModel = koinViewModel(),
     gamificationViewModel: GamificationViewModel = koinViewModel(),
     homeViewModel: HomeViewModel = koinViewModel(),
     youViewModel: YouViewModel = koinViewModel(),

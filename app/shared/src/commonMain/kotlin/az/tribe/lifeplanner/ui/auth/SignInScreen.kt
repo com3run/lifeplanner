@@ -30,7 +30,7 @@ import az.tribe.lifeplanner.ui.theme.modernColors
 import az.tribe.lifeplanner.ui.viewmodel.AuthState
 import az.tribe.lifeplanner.ui.viewmodel.AuthViewModel
 import az.tribe.lifeplanner.ui.viewmodel.*
-import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,7 +38,7 @@ fun SignInScreen(
     onSignInSuccess: () -> Unit = {},
     onBackClick: () -> Unit = {}
 ) {
-    val authViewModel: AuthViewModel = koinInject()
+    val authViewModel: AuthViewModel = koinViewModel()
     val authState by authViewModel.authState.collectAsState()
     val successMessage by authViewModel.successMessage.collectAsState()
     val magicLinkSent by authViewModel.magicLinkSent.collectAsState()

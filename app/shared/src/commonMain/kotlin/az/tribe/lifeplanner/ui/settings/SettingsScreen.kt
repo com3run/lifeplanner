@@ -63,7 +63,7 @@ fun SettingsScreen(
     onNavigateToHealth: () -> Unit,
     onNavigateToCalendarSettings: () -> Unit,
     onResetOnboarding: () -> Unit,
-    authViewModel: AuthViewModel = koinInject(),
+    authViewModel: AuthViewModel = koinViewModel(),
     gamificationViewModel: GamificationViewModel = koinViewModel(),
     healthViewModel: HealthViewModel = koinViewModel(),
     calendarViewModel: CalendarViewModel = koinViewModel(),

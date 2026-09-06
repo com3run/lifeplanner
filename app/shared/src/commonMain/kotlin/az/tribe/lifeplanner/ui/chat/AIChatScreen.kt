@@ -61,7 +61,7 @@ import org.koin.compose.viewmodel.koinViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AIChatScreen(
-    viewModel: ChatViewModel = koinInject(),
+    viewModel: ChatViewModel = koinViewModel(),
     coachId: String? = null,
     onNavigateBack: () -> Unit,
     onNavigateToCoach: (String) -> Unit = {},

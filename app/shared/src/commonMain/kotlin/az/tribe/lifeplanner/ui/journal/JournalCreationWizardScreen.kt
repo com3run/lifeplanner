@@ -31,7 +31,7 @@ fun JournalCreationWizardScreen(
     /** Day this entry belongs to; null means today. */
     initialDate: kotlinx.datetime.LocalDate? = null,
     viewModel: JournalViewModel = koinViewModel(),
-    goalViewModel: GoalViewModel = koinInject(),
+    goalViewModel: GoalViewModel = koinViewModel(),
     habitViewModel: az.tribe.lifeplanner.ui.habit.HabitViewModel = koinViewModel(),
     aiProxy: AiProxyService = koinInject()
 ) {

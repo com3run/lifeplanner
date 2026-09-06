@@ -92,8 +92,8 @@ import kotlin.time.Clock
 @Composable
 @Preview
 fun App(
-    viewModel: GoalViewModel = koinInject(),
-    authViewModel: AuthViewModel = koinInject(),
+    viewModel: GoalViewModel = koinViewModel(),
+    authViewModel: AuthViewModel = koinViewModel(),
     promoRoute: String? = null
 ) {
     // D3 audit G2: appearance follows a persisted preference (defaults to System), not a hardcoded dark.
