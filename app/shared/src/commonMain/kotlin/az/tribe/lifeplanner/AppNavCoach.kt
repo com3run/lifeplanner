@@ -1,6 +1,6 @@
 package az.tribe.lifeplanner
 
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
@@ -156,7 +156,7 @@ internal fun NavGraphBuilder.appNavCoach(navController: NavController) {
     // Create Coach Group Screen
     composable(Screen.CreateGroup.route) {
         val coachViewModel: CoachViewModel = koinViewModel()
-        val uiState by coachViewModel.uiState.collectAsState()
+        val uiState by coachViewModel.uiState.collectAsStateWithLifecycle()
         CreateGroupScreen(
             customCoaches = uiState.customCoaches,
             onNavigateBack = { navController.popBackStack() },
@@ -175,7 +175,7 @@ internal fun NavGraphBuilder.appNavCoach(navController: NavController) {
         val groupId = backStackEntry.arguments?.read { getStringOrNull("groupId") }
             ?: return@composable
         val coachViewModel: CoachViewModel = koinViewModel()
-        val uiState by coachViewModel.uiState.collectAsState()
+        val uiState by coachViewModel.uiState.collectAsStateWithLifecycle()
         val groupToEdit = coachViewModel.getGroupById(groupId)
         CreateGroupScreen(
             groupToEdit = groupToEdit,

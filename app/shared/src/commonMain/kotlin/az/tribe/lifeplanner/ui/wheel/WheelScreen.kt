@@ -42,6 +42,9 @@ import az.tribe.lifeplanner.domain.model.WheelReport
 import az.tribe.lifeplanner.domain.model.WheelScore
 import az.tribe.lifeplanner.ui.components.DotScale
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_back
 
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
@@ -62,7 +65,7 @@ fun WheelScreen(
                     IconButton(onClick = onBack) {
                         Icon(
                             imageVector = PhosphorIcons.Regular.ArrowLeft,
-                            contentDescription = "Back",
+                            contentDescription = stringResource(Res.string.cd_back),
                         )
                     }
                 },

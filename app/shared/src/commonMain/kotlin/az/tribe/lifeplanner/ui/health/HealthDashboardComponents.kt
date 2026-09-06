@@ -68,6 +68,9 @@ import com.adamglin.phosphoricons.bold.Plus
 import com.adamglin.phosphoricons.bold.TrendDown
 import com.adamglin.phosphoricons.bold.TrendUp
 import kotlin.math.roundToInt
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_add_weight
 
 internal enum class WeightTrend { UP, DOWN, STABLE }
 
@@ -344,7 +347,7 @@ internal fun WeightCard(
             IconButton(onClick = onAddWeight) {
                 Icon(
                     PhosphorIcons.Bold.Plus,
-                    contentDescription = "Add weight",
+                    contentDescription = stringResource(Res.string.cd_add_weight),
                     tint = MaterialTheme.colorScheme.onSecondaryContainer
                 )
             }

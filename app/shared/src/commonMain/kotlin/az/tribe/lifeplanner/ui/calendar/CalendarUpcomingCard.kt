@@ -23,7 +23,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -62,8 +62,8 @@ fun CalendarUpcomingCard(
     viewModel: CalendarViewModel = koinViewModel(),
 ) {
     val permission = rememberCalendarPermission()
-    val upcoming by viewModel.events.collectAsState()
-    val dayEvents by viewModel.dayEvents.collectAsState()
+    val upcoming by viewModel.events.collectAsStateWithLifecycle()
+    val dayEvents by viewModel.dayEvents.collectAsStateWithLifecycle()
 
     val today = remember { Clock.System.todayIn(TimeZone.currentSystemDefault()) }
     var selectedEpochDay by rememberSaveable { mutableStateOf(today.toEpochDays()) }
@@ -106,7 +106,7 @@ fun CalendarDayEvents(
     viewModel: CalendarViewModel = koinViewModel(),
 ) {
     val permission = rememberCalendarPermission()
-    val dayEvents by viewModel.dayEvents.collectAsState()
+    val dayEvents by viewModel.dayEvents.collectAsStateWithLifecycle()
 
     LaunchedEffect(permission.state, selectedDate) {
         if (permission.state == CalendarPermissionState.GRANTED) {

@@ -47,6 +47,9 @@ import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.Copy
 import com.adamglin.phosphoricons.regular.Sparkle
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_copy
 
 @Composable
 fun StreamingMessageBubble(text: String) {
@@ -210,7 +213,7 @@ fun MessageBubble(
                             ) {
                                 Icon(
                                     imageVector = PhosphorIcons.Regular.Copy,
-                                    contentDescription = "Copy",
+                                    contentDescription = stringResource(Res.string.cd_copy),
                                     modifier = Modifier.size(14.dp),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )

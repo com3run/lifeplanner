@@ -22,7 +22,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,11 +47,11 @@ internal fun FocusCompleteContent(
     onStartAnother: () -> Unit,
     wasCancelled: Boolean = false
 ) {
-    val lastXpEarned by focusViewModel.lastXpEarned.collectAsState()
-    val selectedGoal by focusViewModel.selectedGoal.collectAsState()
-    val selectedMilestone by focusViewModel.selectedMilestone.collectAsState()
-    val elapsedSeconds by focusViewModel.elapsedSeconds.collectAsState()
-    val selectedMood by focusViewModel.selectedMood.collectAsState()
+    val lastXpEarned by focusViewModel.lastXpEarned.collectAsStateWithLifecycle()
+    val selectedGoal by focusViewModel.selectedGoal.collectAsStateWithLifecycle()
+    val selectedMilestone by focusViewModel.selectedMilestone.collectAsStateWithLifecycle()
+    val elapsedSeconds by focusViewModel.elapsedSeconds.collectAsStateWithLifecycle()
+    val selectedMood by focusViewModel.selectedMood.collectAsStateWithLifecycle()
 
     val elapsedDisplay = formatDuration(elapsedSeconds)
 
@@ -150,9 +150,9 @@ internal fun FocusCompleteContent(
             }
         }
 
-        val showMilestonePrompt by focusViewModel.showMilestonePrompt.collectAsState()
-        val milestoneMarkedComplete by focusViewModel.milestoneMarkedComplete.collectAsState()
-        val canCompleteMilestone by focusViewModel.canCompleteMilestone.collectAsState()
+        val showMilestonePrompt by focusViewModel.showMilestonePrompt.collectAsStateWithLifecycle()
+        val milestoneMarkedComplete by focusViewModel.milestoneMarkedComplete.collectAsStateWithLifecycle()
+        val canCompleteMilestone by focusViewModel.canCompleteMilestone.collectAsStateWithLifecycle()
 
         if (showMilestonePrompt) selectedMilestone?.let { milestone ->
             Spacer(Modifier.height(24.dp))

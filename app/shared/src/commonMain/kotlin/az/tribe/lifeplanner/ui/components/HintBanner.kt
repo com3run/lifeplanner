@@ -30,6 +30,9 @@ import com.adamglin.phosphoricons.Regular
 import az.tribe.lifeplanner.util.FeatureFlags
 import com.adamglin.phosphoricons.regular.Lightbulb
 import com.adamglin.phosphoricons.regular.X
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_dismiss
 
 @Composable
 fun HintBanner(
@@ -93,7 +96,7 @@ fun HintBanner(
                 ) {
                     Icon(
                         imageVector = PhosphorIcons.Regular.X,
-                        contentDescription = "Dismiss",
+                        contentDescription = stringResource(Res.string.cd_dismiss),
                         tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f),
                         modifier = Modifier.size(16.dp)
                     )

@@ -63,6 +63,10 @@ import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.PaperPlaneRight
 import com.adamglin.phosphoricons.regular.Plus
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_more
+import leanlifeplanner.app.shared.generated.resources.cd_send
 
 @Composable
 fun ChatContent(
@@ -359,14 +363,14 @@ fun ChatInputField(
                             if (showSend) {
                                 Icon(
                                     PhosphorIcons.Regular.PaperPlaneRight,
-                                    contentDescription = "Send",
+                                    contentDescription = stringResource(Res.string.cd_send),
                                     modifier = Modifier.size(20.dp),
                                     tint = MaterialTheme.colorScheme.onPrimary
                                 )
                             } else {
                                 Icon(
                                     PhosphorIcons.Regular.Plus,
-                                    contentDescription = "More",
+                                    contentDescription = stringResource(Res.string.cd_more),
                                     modifier = Modifier.size(24.dp),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )

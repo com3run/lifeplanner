@@ -57,6 +57,9 @@ import az.tribe.lifeplanner.domain.model.CustomCoach
 import kotlin.time.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_back
 
 /**
  * Screen for creating or editing a custom coach
@@ -110,7 +113,7 @@ fun CreateCoachScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             PhosphorIcons.Regular.ArrowLeft,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(Res.string.cd_back)
                         )
                     }
                 },

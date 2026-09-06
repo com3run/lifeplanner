@@ -25,14 +25,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
@@ -48,19 +47,20 @@ import com.adamglin.phosphoricons.regular.Pause
 import com.adamglin.phosphoricons.regular.Play
 import com.adamglin.phosphoricons.regular.X
 import kotlinx.coroutines.delay
+import androidx.compose.ui.graphics.graphicsLayer
 
 @Composable
 internal fun FocusActiveContent(
     focusViewModel: FocusViewModel
 ) {
-    val timerState by focusViewModel.timerState.collectAsState()
-    val remainingSeconds by focusViewModel.remainingSeconds.collectAsState()
-    val progress by focusViewModel.progress.collectAsState()
-    val selectedGoal by focusViewModel.selectedGoal.collectAsState()
-    val selectedMilestone by focusViewModel.selectedMilestone.collectAsState()
-    val elapsedSeconds by focusViewModel.elapsedSeconds.collectAsState()
-    val isFreeFlow by focusViewModel.isFreeFlow.collectAsState()
-    val selectedFocusTheme by focusViewModel.selectedFocusTheme.collectAsState()
+    val timerState by focusViewModel.timerState.collectAsStateWithLifecycle()
+    val remainingSeconds by focusViewModel.remainingSeconds.collectAsStateWithLifecycle()
+    val progress by focusViewModel.progress.collectAsStateWithLifecycle()
+    val selectedGoal by focusViewModel.selectedGoal.collectAsStateWithLifecycle()
+    val selectedMilestone by focusViewModel.selectedMilestone.collectAsStateWithLifecycle()
+    val elapsedSeconds by focusViewModel.elapsedSeconds.collectAsStateWithLifecycle()
+    val isFreeFlow by focusViewModel.isFreeFlow.collectAsStateWithLifecycle()
+    val selectedFocusTheme by focusViewModel.selectedFocusTheme.collectAsStateWithLifecycle()
 
     val isRunning = timerState == TimerState.RUNNING
     val gradientColors = selectedGoal?.category?.gradientColors()
@@ -133,7 +133,7 @@ internal fun FocusActiveContent(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .padding(top = 24.dp)
-                .alpha(controlsAlpha),
+                .graphicsLayer { this.alpha = controlsAlpha },
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             selectedGoal?.let { goal ->
@@ -172,7 +172,7 @@ internal fun FocusActiveContent(
                     start = LifePlannerDesign.Padding.screenHorizontal,
                     end = LifePlannerDesign.Padding.screenHorizontal
                 )
-                .alpha(controlsAlpha),
+                .graphicsLayer { this.alpha = controlsAlpha },
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {

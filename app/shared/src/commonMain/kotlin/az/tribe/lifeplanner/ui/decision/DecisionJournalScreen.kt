@@ -26,7 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,6 +45,8 @@ import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.ArrowLeft
 import org.koin.compose.viewmodel.koinViewModel
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_back
 
 /**
  * Pillar 3, Decision Journal. Surfaces any pending [ChoicePoint]s at the top (tap to
@@ -59,9 +61,9 @@ fun DecisionJournalScreen(
     viewModel: DecisionViewModel = koinViewModel(),
     reviewViewModel: MetacognitiveReviewViewModel = koinViewModel(),
 ) {
-    val decisions by viewModel.decisions.collectAsState()
-    val choicePoints by viewModel.choicePoints.collectAsState()
-    val pendingDecisions by viewModel.pendingDecisions.collectAsState()
+    val decisions by viewModel.decisions.collectAsStateWithLifecycle()
+    val choicePoints by viewModel.choicePoints.collectAsStateWithLifecycle()
+    val pendingDecisions by viewModel.pendingDecisions.collectAsStateWithLifecycle()
     var activeChoicePoint by remember { mutableStateOf<ChoicePoint?>(null) }
     var activePendingDecision by remember { mutableStateOf<Decision?>(null) }
 
@@ -77,7 +79,7 @@ fun DecisionJournalScreen(
                 title = { Text("Decisions", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = "Back", tint = MaterialTheme.modernColors.textPrimary)
+                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = stringResource(Res.string.cd_back), tint = MaterialTheme.modernColors.textPrimary)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

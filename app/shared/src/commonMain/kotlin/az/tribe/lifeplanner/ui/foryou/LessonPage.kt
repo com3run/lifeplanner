@@ -37,6 +37,10 @@ import com.adamglin.phosphoricons.Fill
 import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.fill.CheckCircle
 import com.adamglin.phosphoricons.regular.X
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_close_lesson
+import leanlifeplanner.app.shared.generated.resources.cd_read
 
 /**
  * The lesson at the stop you just tapped, opened where you are standing on the map.
@@ -99,14 +103,14 @@ fun LessonPage(
                 if (read) {
                     Icon(
                         PhosphorIcons.Fill.CheckCircle,
-                        contentDescription = "Read",
+                        contentDescription = stringResource(Res.string.cd_read),
                         tint = accent,
                         modifier = Modifier.size(LifePlannerDesign.IconSize.medium),
                     )
                 }
                 Icon(
                     PhosphorIcons.Regular.X,
-                    contentDescription = "Close lesson",
+                    contentDescription = stringResource(Res.string.cd_close_lesson),
                     tint = c.textTertiary,
                     modifier = Modifier
                         .clip(CircleShape)

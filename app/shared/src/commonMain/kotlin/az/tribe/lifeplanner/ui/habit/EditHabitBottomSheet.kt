@@ -24,6 +24,10 @@ import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.Clock
 import com.adamglin.phosphoricons.regular.X
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_clear_time
+import leanlifeplanner.app.shared.generated.resources.cd_close
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -118,7 +122,7 @@ internal fun EditHabitBottomSheet(
                 IconButton(onClick = onDismiss) {
                     Icon(
                         imageVector = PhosphorIcons.Regular.X,
-                        contentDescription = "Close"
+                        contentDescription = stringResource(Res.string.cd_close)
                     )
                 }
             }
@@ -262,7 +266,7 @@ internal fun EditHabitBottomSheet(
                             ) {
                                 Icon(
                                     imageVector = PhosphorIcons.Regular.X,
-                                    contentDescription = "Clear time",
+                                    contentDescription = stringResource(Res.string.cd_clear_time),
                                     modifier = Modifier.size(16.dp)
                                 )
                             }

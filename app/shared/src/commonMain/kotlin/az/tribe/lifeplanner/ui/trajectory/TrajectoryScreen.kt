@@ -29,7 +29,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -56,6 +56,9 @@ import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.ArrowLeft
 import org.koin.compose.viewmodel.koinViewModel
 import kotlin.math.roundToInt
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_back
 
 /**
  * The explorable **life-balance trajectory**. Four lines, how it's gone, where the current pace
@@ -69,7 +72,7 @@ fun TrajectoryScreen(
     onBackClick: () -> Unit,
     viewModel: TrajectoryViewModel = koinViewModel(),
 ) {
-    val s by viewModel.state.collectAsState()
+    val s by viewModel.state.collectAsStateWithLifecycle()
     val c = MaterialTheme.modernColors
     var effort by remember { mutableStateOf(0.5f) }
 
@@ -91,7 +94,7 @@ fun TrajectoryScreen(
                 title = { Text("Your trajectory", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = "Back", tint = c.textPrimary)
+                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = stringResource(Res.string.cd_back), tint = c.textPrimary)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = c.background, titleContentColor = c.textPrimary),

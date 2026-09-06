@@ -34,7 +34,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -47,6 +46,13 @@ import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.Calendar
 import com.adamglin.phosphoricons.regular.Plus
 import com.adamglin.phosphoricons.regular.Trash
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_add_milestone
+import leanlifeplanner.app.shared.generated.resources.cd_remove_milestone
+import leanlifeplanner.app.shared.generated.resources.cd_select_date
+import leanlifeplanner.app.shared.generated.resources.cd_add_named
+import androidx.compose.ui.graphics.graphicsLayer
 
 @Composable
 fun FormSectionHeader(
@@ -75,7 +81,7 @@ fun FormSectionHeader(
             ) {
                 Icon(
                     imageVector = icon,
-                    contentDescription = "Add $title",
+                    contentDescription = stringResource(Res.string.cd_add_named, title),
                     tint = MaterialTheme.modernColors.primary
                 )
             }
@@ -112,7 +118,7 @@ fun DateSelector(
 
             Icon(
                 PhosphorIcons.Regular.Calendar,
-                contentDescription = "Select Date",
+                contentDescription = stringResource(Res.string.cd_select_date),
                 tint = MaterialTheme.modernColors.primary
             )
         }
@@ -142,7 +148,7 @@ fun EmptyMilestoneCard(
         ) {
             Icon(
                 PhosphorIcons.Regular.Plus,
-                contentDescription = "Add Milestone",
+                contentDescription = stringResource(Res.string.cd_add_milestone),
                 tint = MaterialTheme.modernColors.primary,
                 modifier = Modifier.size(32.dp)
             )
@@ -171,7 +177,7 @@ fun MilestoneItem(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
-            .alpha(alpha),
+            .graphicsLayer { this.alpha = alpha },
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
@@ -200,7 +206,7 @@ fun MilestoneItem(
                 ) {
                     Icon(
                         PhosphorIcons.Regular.Trash,
-                        contentDescription = "Remove Milestone",
+                        contentDescription = stringResource(Res.string.cd_remove_milestone),
                         tint = MaterialTheme.colorScheme.error,
                         modifier = Modifier.size(20.dp)
                     )

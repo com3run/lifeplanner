@@ -25,6 +25,11 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.*
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_ai
+import leanlifeplanner.app.shared.generated.resources.cd_ai_generated
+import leanlifeplanner.app.shared.generated.resources.cd_close
 
 /**
  * Quick reflection bottom sheet shown after habit check-in with AI-generated content
@@ -107,7 +112,7 @@ internal fun QuickReflectionBottomSheet(
                         // AI sparkle icon
                         Icon(
                             imageVector = PhosphorIcons.Regular.Sparkle,
-                            contentDescription = "AI Generated",
+                            contentDescription = stringResource(Res.string.cd_ai_generated),
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp)
                         )
@@ -142,7 +147,7 @@ internal fun QuickReflectionBottomSheet(
                 IconButton(onClick = onDismiss) {
                     Icon(
                         imageVector = PhosphorIcons.Regular.X,
-                        contentDescription = "Close"
+                        contentDescription = stringResource(Res.string.cd_close)
                     )
                 }
             }
@@ -248,7 +253,7 @@ internal fun QuickReflectionBottomSheet(
                         if (hasGenerated) {
                             Icon(
                                 imageVector = PhosphorIcons.Regular.Sparkle,
-                                contentDescription = "AI",
+                                contentDescription = stringResource(Res.string.cd_ai),
                                 modifier = Modifier.size(14.dp),
                                 tint = MaterialTheme.colorScheme.primary
                             )
@@ -284,7 +289,7 @@ internal fun QuickReflectionBottomSheet(
                             if (hasGenerated) {
                                 Icon(
                                     imageVector = PhosphorIcons.Regular.Sparkle,
-                                    contentDescription = "AI",
+                                    contentDescription = stringResource(Res.string.cd_ai),
                                     modifier = Modifier.size(14.dp),
                                     tint = MaterialTheme.colorScheme.primary
                                 )

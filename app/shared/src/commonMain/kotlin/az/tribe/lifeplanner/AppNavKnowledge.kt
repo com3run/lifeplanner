@@ -1,7 +1,7 @@
 package az.tribe.lifeplanner
 
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
@@ -34,9 +34,9 @@ internal fun NavGraphBuilder.appNavKnowledge(navController: NavController) {
         // Finishing the reading session is what counts as reading it: that marks it read, pays the
         // XP once, and clears the zone if it was the path's last lesson.
         val readVm: KnowledgeDetailViewModel = koinViewModel()
-        val earnedXp by readVm.earnedXp.collectAsState()
-        val earnedBadge by readVm.earnedBadgeName.collectAsState()
-        val next by readVm.nextLesson.collectAsState()
+        val earnedXp by readVm.earnedXp.collectAsStateWithLifecycle()
+        val earnedBadge by readVm.earnedBadgeName.collectAsStateWithLifecycle()
+        val next by readVm.nextLesson.collectAsStateWithLifecycle()
         LaunchedEffect(id) { readVm.onOpened(id) }
 
         KnowledgeDetailScreen(

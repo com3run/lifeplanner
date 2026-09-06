@@ -40,6 +40,10 @@ import az.tribe.lifeplanner.ui.backup.BackupViewModel
 import az.tribe.lifeplanner.worker.getBackupScheduler
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_back
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -48,7 +52,7 @@ fun BackupSettingsScreen(
     fileSharer: FileSharer = koinInject(),
     onNavigateBack: () -> Unit
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     // File picker for restore
     val filePicker = rememberFilePicker { result ->
@@ -75,7 +79,7 @@ fun BackupSettingsScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = PhosphorIcons.Regular.ArrowLeft,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(Res.string.cd_back)
                         )
                     }
                 },

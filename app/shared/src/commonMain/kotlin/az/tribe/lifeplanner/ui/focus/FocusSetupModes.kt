@@ -25,7 +25,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,13 +54,13 @@ internal fun FocusFreeFlowSetup(
     focusViewModel: FocusViewModel,
     onStartFocus: () -> Unit
 ) {
-    val milestoneItems by focusViewModel.milestoneItems.collectAsState()
-    val selectedMilestone by focusViewModel.selectedMilestone.collectAsState()
-    val selectedGoal by focusViewModel.selectedGoal.collectAsState()
-    val todaySeconds by focusViewModel.todaySeconds.collectAsState()
-    val allTimeSeconds by focusViewModel.allTimeSeconds.collectAsState()
-    val selectedMood by focusViewModel.selectedMood.collectAsState()
-    val selectedFocusTheme by focusViewModel.selectedFocusTheme.collectAsState()
+    val milestoneItems by focusViewModel.milestoneItems.collectAsStateWithLifecycle()
+    val selectedMilestone by focusViewModel.selectedMilestone.collectAsStateWithLifecycle()
+    val selectedGoal by focusViewModel.selectedGoal.collectAsStateWithLifecycle()
+    val todaySeconds by focusViewModel.todaySeconds.collectAsStateWithLifecycle()
+    val allTimeSeconds by focusViewModel.allTimeSeconds.collectAsStateWithLifecycle()
+    val selectedMood by focusViewModel.selectedMood.collectAsStateWithLifecycle()
+    val selectedFocusTheme by focusViewModel.selectedFocusTheme.collectAsStateWithLifecycle()
 
     val freeFlowGoals = remember(milestoneItems) {
         milestoneItems.map { it.goal }.distinctBy { it.id }
@@ -262,17 +262,17 @@ internal fun FocusTimedSetup(
     focusViewModel: FocusViewModel,
     onStartFocus: () -> Unit
 ) {
-    val milestoneItems by focusViewModel.milestoneItems.collectAsState()
-    val selectedMilestone by focusViewModel.selectedMilestone.collectAsState()
-    val durationMinutes by focusViewModel.durationMinutes.collectAsState()
-    val todaySessionCount by focusViewModel.todaySessionCount.collectAsState()
-    val todaySeconds by focusViewModel.todaySeconds.collectAsState()
-    val allTimeSessionCount by focusViewModel.allTimeSessionCount.collectAsState()
-    val allTimeSeconds by focusViewModel.allTimeSeconds.collectAsState()
-    val selectedMood by focusViewModel.selectedMood.collectAsState()
-    val selectedFocusTheme by focusViewModel.selectedFocusTheme.collectAsState()
-    val isCustomDuration by focusViewModel.isCustomDuration.collectAsState()
-    val customDurationMinutes by focusViewModel.customDurationMinutes.collectAsState()
+    val milestoneItems by focusViewModel.milestoneItems.collectAsStateWithLifecycle()
+    val selectedMilestone by focusViewModel.selectedMilestone.collectAsStateWithLifecycle()
+    val durationMinutes by focusViewModel.durationMinutes.collectAsStateWithLifecycle()
+    val todaySessionCount by focusViewModel.todaySessionCount.collectAsStateWithLifecycle()
+    val todaySeconds by focusViewModel.todaySeconds.collectAsStateWithLifecycle()
+    val allTimeSessionCount by focusViewModel.allTimeSessionCount.collectAsStateWithLifecycle()
+    val allTimeSeconds by focusViewModel.allTimeSeconds.collectAsStateWithLifecycle()
+    val selectedMood by focusViewModel.selectedMood.collectAsStateWithLifecycle()
+    val selectedFocusTheme by focusViewModel.selectedFocusTheme.collectAsStateWithLifecycle()
+    val isCustomDuration by focusViewModel.isCustomDuration.collectAsStateWithLifecycle()
+    val customDurationMinutes by focusViewModel.customDurationMinutes.collectAsStateWithLifecycle()
 
     val canStart = selectedMilestone != null
 

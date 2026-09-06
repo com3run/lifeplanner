@@ -36,6 +36,10 @@ import az.tribe.lifeplanner.domain.model.Habit
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_rename
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,13 +49,13 @@ fun AbilityDetailScreen(
     onGoalClick: (String) -> Unit = {},
     viewModel: AbilityDetailViewModel = koinViewModel(parameters = { parametersOf(abilityId) })
 ) {
-    val ability by viewModel.ability.collectAsState()
-    val linkedHabits by viewModel.linkedHabits.collectAsState()
-    val allHabitsForLinking by viewModel.allHabitsForLinking.collectAsState()
-    val linkedGoals by viewModel.linkedGoals.collectAsState()
-    val allGoalsForLinking by viewModel.allGoalsForLinking.collectAsState()
-    val supervisionInsight by viewModel.supervisionInsight.collectAsState()
-    val isGeneratingInsight by viewModel.isGeneratingInsight.collectAsState()
+    val ability by viewModel.ability.collectAsStateWithLifecycle()
+    val linkedHabits by viewModel.linkedHabits.collectAsStateWithLifecycle()
+    val allHabitsForLinking by viewModel.allHabitsForLinking.collectAsStateWithLifecycle()
+    val linkedGoals by viewModel.linkedGoals.collectAsStateWithLifecycle()
+    val allGoalsForLinking by viewModel.allGoalsForLinking.collectAsStateWithLifecycle()
+    val supervisionInsight by viewModel.supervisionInsight.collectAsStateWithLifecycle()
+    val isGeneratingInsight by viewModel.isGeneratingInsight.collectAsStateWithLifecycle()
     var showLinkHabitSheet by remember { mutableStateOf(false) }
     var showLinkGoalSheet by remember { mutableStateOf(false) }
 
@@ -174,7 +178,7 @@ fun AbilityDetailScreen(
                                 Spacer(Modifier.width(6.dp))
                                 Icon(
                                     PhosphorIcons.Regular.PencilSimple,
-                                    contentDescription = "Rename",
+                                    contentDescription = stringResource(Res.string.cd_rename),
                                     modifier = Modifier.size(16.dp),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                                 )

@@ -35,7 +35,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -55,6 +55,10 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.viewmodel.koinViewModel
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_back
+import leanlifeplanner.app.shared.generated.resources.cd_regenerate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,7 +66,7 @@ fun RetrospectiveScreen(
     onNavigateBack: () -> Unit,
     viewModel: RetrospectiveViewModel = koinViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showDatePicker by remember { mutableStateOf(false) }
 
     val today = remember {
@@ -82,7 +86,7 @@ fun RetrospectiveScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = "Back")
+                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = stringResource(Res.string.cd_back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -307,7 +311,7 @@ private fun AiRecapCard(
                         ) {
                             Icon(
                                 PhosphorIcons.Regular.ArrowsClockwise,
-                                contentDescription = "Regenerate",
+                                contentDescription = stringResource(Res.string.cd_regenerate),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                                 modifier = Modifier.size(16.dp)
                             )

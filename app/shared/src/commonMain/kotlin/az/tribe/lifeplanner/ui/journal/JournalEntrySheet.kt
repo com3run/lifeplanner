@@ -34,7 +34,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -59,6 +59,11 @@ import com.adamglin.phosphoricons.regular.Repeat
 import com.adamglin.phosphoricons.regular.Sparkle
 import com.adamglin.phosphoricons.regular.X
 import az.tribe.lifeplanner.ui.components.rememberHapticManager
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_clear
+import leanlifeplanner.app.shared.generated.resources.cd_clear_prompt
+import leanlifeplanner.app.shared.generated.resources.cd_close
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -79,9 +84,9 @@ internal fun NewJournalEntryBottomSheet(
     var selectedHabitId by remember { mutableStateOf(preselectedHabitId) }
     var showGoalDropdown by remember { mutableStateOf(false) }
     var showHabitDropdown by remember { mutableStateOf(false) }
-    val isGeneratingAi by viewModel.isGeneratingAi.collectAsState()
-    val aiResult by viewModel.aiResult.collectAsState()
-    val aiError by viewModel.aiError.collectAsState()
+    val isGeneratingAi by viewModel.isGeneratingAi.collectAsStateWithLifecycle()
+    val aiResult by viewModel.aiResult.collectAsStateWithLifecycle()
+    val aiError by viewModel.aiError.collectAsStateWithLifecycle()
     var selectedPrompt by remember { mutableStateOf<String?>(null) }
     var showPromptLibrary by remember { mutableStateOf(false) }
     val haptic = rememberHapticManager()
@@ -111,7 +116,7 @@ internal fun NewJournalEntryBottomSheet(
             ) {
                 Text("New Journal Entry", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 IconButton(onClick = onDismiss) {
-                    Icon(imageVector = PhosphorIcons.Regular.X, contentDescription = "Close")
+                    Icon(imageVector = PhosphorIcons.Regular.X, contentDescription = stringResource(Res.string.cd_close))
                 }
             }
 
@@ -142,7 +147,7 @@ internal fun NewJournalEntryBottomSheet(
                                         Row(modifier = Modifier.padding(12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                                             Icon(PhosphorIcons.Regular.Flag, contentDescription = null, modifier = Modifier.size(18.dp), tint = if (selectedGoalId != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
                                             Text(selectedGoalId?.let { id -> goals.find { it.id == id }?.title ?: "Goal" } ?: "Goal", style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                                            if (selectedGoalId != null) Icon(PhosphorIcons.Regular.X, contentDescription = "Clear", modifier = Modifier.size(16.dp).clickable { selectedGoalId = null }, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            if (selectedGoalId != null) Icon(PhosphorIcons.Regular.X, contentDescription = stringResource(Res.string.cd_clear), modifier = Modifier.size(16.dp).clickable { selectedGoalId = null }, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                         }
                                     }
                                     DropdownMenu(expanded = showGoalDropdown, onDismissRequest = { showGoalDropdown = false }) {
@@ -168,7 +173,7 @@ internal fun NewJournalEntryBottomSheet(
                                         Row(modifier = Modifier.padding(12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                                             Icon(PhosphorIcons.Regular.Repeat, contentDescription = null, modifier = Modifier.size(18.dp), tint = if (selectedHabitId != null) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant)
                                             Text(selectedHabitId?.let { id -> habits.find { it.id == id }?.title ?: "Habit" } ?: "Habit", style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                                            if (selectedHabitId != null) Icon(PhosphorIcons.Regular.X, contentDescription = "Clear", modifier = Modifier.size(16.dp).clickable { selectedHabitId = null }, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            if (selectedHabitId != null) Icon(PhosphorIcons.Regular.X, contentDescription = stringResource(Res.string.cd_clear), modifier = Modifier.size(16.dp).clickable { selectedHabitId = null }, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                         }
                                     }
                                     DropdownMenu(expanded = showHabitDropdown, onDismissRequest = { showHabitDropdown = false }) {
@@ -210,7 +215,7 @@ internal fun NewJournalEntryBottomSheet(
                                     maxLines = 2,
                                     overflow = TextOverflow.Ellipsis
                                 )
-                                if (selectedPrompt != null) Icon(PhosphorIcons.Regular.X, contentDescription = "Clear prompt", modifier = Modifier.size(16.dp).clickable { selectedPrompt = null }, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                if (selectedPrompt != null) Icon(PhosphorIcons.Regular.X, contentDescription = stringResource(Res.string.cd_clear_prompt), modifier = Modifier.size(16.dp).clickable { selectedPrompt = null }, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
 
@@ -324,7 +329,7 @@ private fun PromptLibrarySheet(onDismiss: () -> Unit, onPromptSelected: (String)
             ) {
                 Text("Prompt Library", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 IconButton(onClick = onDismiss) {
-                    Icon(imageVector = PhosphorIcons.Regular.X, contentDescription = "Close")
+                    Icon(imageVector = PhosphorIcons.Regular.X, contentDescription = stringResource(Res.string.cd_close))
                 }
             }
             LazyColumn(

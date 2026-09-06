@@ -31,6 +31,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_back
+import leanlifeplanner.app.shared.generated.resources.cd_search
 
 /**
  * Simplified top app bar for Goals screen
@@ -100,7 +104,7 @@ fun GoalsTopAppBar(
                 IconButton(onClick = onBack) {
                     Icon(
                         PhosphorIcons.Regular.ArrowLeft,
-                        contentDescription = "Back",
+                        contentDescription = stringResource(Res.string.cd_back),
                         tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
@@ -111,7 +115,7 @@ fun GoalsTopAppBar(
                 IconButton(onClick = { onSearchToggle(true) }) {
                     Icon(
                         PhosphorIcons.Regular.MagnifyingGlass,
-                        contentDescription = "Search",
+                        contentDescription = stringResource(Res.string.cd_search),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }

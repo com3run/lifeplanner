@@ -60,6 +60,10 @@ import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.number
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_next_month
+import leanlifeplanner.app.shared.generated.resources.cd_previous_month
 
 @Composable
 fun MoodCalendar(
@@ -285,7 +289,7 @@ private fun CalendarHeader(
         IconButton(onClick = onPreviousMonth) {
             Icon(
                 imageVector = PhosphorIcons.Regular.CaretLeft,
-                contentDescription = "Previous month",
+                contentDescription = stringResource(Res.string.cd_previous_month),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
@@ -299,7 +303,7 @@ private fun CalendarHeader(
         IconButton(onClick = onNextMonth) {
             Icon(
                 imageVector = PhosphorIcons.Regular.CaretRight,
-                contentDescription = "Next month",
+                contentDescription = stringResource(Res.string.cd_next_month),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }

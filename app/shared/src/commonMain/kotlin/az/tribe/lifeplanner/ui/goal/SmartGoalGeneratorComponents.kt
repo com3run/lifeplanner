@@ -27,6 +27,10 @@ import az.tribe.lifeplanner.domain.enum.GoalCategory
 import az.tribe.lifeplanner.domain.model.Goal
 import az.tribe.lifeplanner.ui.theme.modernColors
 import kotlinx.coroutines.delay
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_added
+import leanlifeplanner.app.shared.generated.resources.cd_back
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,7 +63,7 @@ internal fun SmartGeneratorTopBar(
             navigationIcon = {
                 if (currentStep != GeneratorStep.GENERATING) {
                     IconButton(onClick = onBackClick) {
-                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = "Back")
+                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = stringResource(Res.string.cd_back))
                     }
                 }
             },
@@ -263,7 +267,7 @@ internal fun GeneratedGoalCard(
                     ) {
                         Icon(
                             PhosphorIcons.Regular.Check,
-                            contentDescription = "Added",
+                            contentDescription = stringResource(Res.string.cd_added),
                             tint = Color.White,
                             modifier = Modifier
                                 .padding(4.dp)

@@ -65,6 +65,10 @@ import androidx.compose.ui.unit.sp
 import az.tribe.lifeplanner.data.analytics.Analytics
 import az.tribe.lifeplanner.data.analytics.PostHogAnalytics
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_back
+import leanlifeplanner.app.shared.generated.resources.cd_rate_star
 
 enum class FeedbackCategory(
     val label: String,
@@ -97,7 +101,7 @@ fun FeedbackScreen(
                 title = { Text("Feedback", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = "Back")
+                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = stringResource(Res.string.cd_back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -404,7 +408,7 @@ private fun RatingBar(
                 ) {
                     Icon(
                         PhosphorIcons.Regular.Star,
-                        contentDescription = "Rate $star",
+                        contentDescription = stringResource(Res.string.cd_rate_star, star),
                         tint = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
                         modifier = Modifier.size(28.dp)
                     )

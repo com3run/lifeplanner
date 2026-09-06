@@ -17,7 +17,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,10 +44,10 @@ fun FocusScreen(
     milestoneId: String? = null,
     focusViewModel: FocusViewModel = koinViewModel()
 ) {
-    val timerState by focusViewModel.timerState.collectAsState()
-    val selectedAmbientSound by focusViewModel.selectedAmbientSound.collectAsState()
-    val selectedFocusTheme by focusViewModel.selectedFocusTheme.collectAsState()
-    val selectedMood by focusViewModel.selectedMood.collectAsState()
+    val timerState by focusViewModel.timerState.collectAsStateWithLifecycle()
+    val selectedAmbientSound by focusViewModel.selectedAmbientSound.collectAsStateWithLifecycle()
+    val selectedFocusTheme by focusViewModel.selectedFocusTheme.collectAsStateWithLifecycle()
+    val selectedMood by focusViewModel.selectedMood.collectAsStateWithLifecycle()
     val soundPlayer = rememberCelebrationSoundPlayer()
     val hapticManager = rememberHapticManager()
     val ambientSoundPlayer = rememberAmbientSoundPlayer()
@@ -156,7 +156,7 @@ private fun FocusSetupContent(
     focusViewModel: FocusViewModel,
     onStartFocus: () -> Unit
 ) {
-    val isFreeFlow by focusViewModel.isFreeFlow.collectAsState()
+    val isFreeFlow by focusViewModel.isFreeFlow.collectAsStateWithLifecycle()
     if (isFreeFlow) {
         FocusFreeFlowSetup(focusViewModel, onStartFocus)
     } else {

@@ -41,6 +41,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import az.tribe.lifeplanner.domain.enum.ChallengeType
 import az.tribe.lifeplanner.domain.model.Challenge
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_completed
+import leanlifeplanner.app.shared.generated.resources.cd_start_challenge
+import leanlifeplanner.app.shared.generated.resources.cd_time_remaining
+import leanlifeplanner.app.shared.generated.resources.cd_xp
 
 /**
  * Card component for displaying active challenges
@@ -110,7 +116,7 @@ fun ChallengeCard(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             imageVector = PhosphorIcons.Regular.Star,
-                            contentDescription = "XP",
+                            contentDescription = stringResource(Res.string.cd_xp),
                             modifier = Modifier.size(14.dp),
                             tint = Color.White
                         )
@@ -170,7 +176,7 @@ fun ChallengeCard(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             imageVector = PhosphorIcons.Regular.CheckCircle,
-                            contentDescription = "Completed",
+                            contentDescription = stringResource(Res.string.cd_completed),
                             modifier = Modifier.size(16.dp),
                             tint = MaterialTheme.colorScheme.primary
                         )
@@ -186,7 +192,7 @@ fun ChallengeCard(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             imageVector = PhosphorIcons.Regular.Clock,
-                            contentDescription = "Time remaining",
+                            contentDescription = stringResource(Res.string.cd_time_remaining),
                             modifier = Modifier.size(16.dp),
                             tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                         )
@@ -276,7 +282,7 @@ fun AvailableChallengeCard(
             ) {
                 Icon(
                     imageVector = PhosphorIcons.Regular.Play,
-                    contentDescription = "Start challenge",
+                    contentDescription = stringResource(Res.string.cd_start_challenge),
                     tint = Color.White
                 )
             }

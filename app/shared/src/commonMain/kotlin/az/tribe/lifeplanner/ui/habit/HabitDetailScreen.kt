@@ -30,7 +30,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.foundation.clickable
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -79,6 +79,9 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import kotlin.math.roundToInt
 import kotlin.time.Clock
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_back
 
 /**
  * D7, the redesigned **Habit Detail**. Category-gradient hero + consistency ring, the signature
@@ -94,12 +97,12 @@ fun HabitDetailScreen(
     onPractice: (String) -> Unit = {},
     viewModel: HabitDetailViewModel = koinViewModel { parametersOf(habitId) },
 ) {
-    val habit by viewModel.habit.collectAsState()
-    val doneToday by viewModel.doneToday.collectAsState()
-    val goalTitle by viewModel.linkedGoalTitle.collectAsState()
-    val completedDates by viewModel.completedDates.collectAsState()
-    val rate by viewModel.completionRate.collectAsState()
-    val lessons by viewModel.relatedLessons.collectAsState()
+    val habit by viewModel.habit.collectAsStateWithLifecycle()
+    val doneToday by viewModel.doneToday.collectAsStateWithLifecycle()
+    val goalTitle by viewModel.linkedGoalTitle.collectAsStateWithLifecycle()
+    val completedDates by viewModel.completedDates.collectAsStateWithLifecycle()
+    val rate by viewModel.completionRate.collectAsStateWithLifecycle()
+    val lessons by viewModel.relatedLessons.collectAsStateWithLifecycle()
     val c = MaterialTheme.modernColors
 
     var showEdit by remember { mutableStateOf(false) }
@@ -117,7 +120,7 @@ fun HabitDetailScreen(
                 title = { Text("Habit", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = "Back", tint = c.textPrimary)
+                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = stringResource(Res.string.cd_back), tint = c.textPrimary)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = c.background, titleContentColor = c.textPrimary),

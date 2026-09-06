@@ -34,6 +34,9 @@ import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.X
 import kotlinx.coroutines.delay
 import kotlin.time.Clock
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_dismiss
 
 private const val NUDGE_VISIBLE_MS = 9_000L // how long the awareness pill lingers before it fades on its own
 private const val TICK_MS = 5_000L
@@ -112,7 +115,7 @@ fun BreatheAwarenessNudge(
                         )
                         Icon(
                             PhosphorIcons.Regular.X,
-                            contentDescription = "Dismiss",
+                            contentDescription = stringResource(Res.string.cd_dismiss),
                             tint = c.textTertiary,
                             modifier = Modifier
                                 .size(28.dp)

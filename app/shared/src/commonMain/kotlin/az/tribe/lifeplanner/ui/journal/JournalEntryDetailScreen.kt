@@ -18,7 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,6 +51,10 @@ import com.adamglin.phosphoricons.regular.PencilSimple
 import com.adamglin.phosphoricons.regular.Trash
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_back
+import leanlifeplanner.app.shared.generated.resources.cd_more_options
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,7 +65,7 @@ fun JournalEntryDetailScreen(
     onBackClick: () -> Unit,
     onNavigateToGoal: (String) -> Unit = {}
 ) {
-    val entries by viewModel.entries.collectAsState()
+    val entries by viewModel.entries.collectAsStateWithLifecycle()
     val entry = entries.find { it.id == entryId }
 
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -91,7 +95,7 @@ fun JournalEntryDetailScreen(
                     IconButton(onClick = onBackClick) {
                         Icon(
                             imageVector = PhosphorIcons.Regular.ArrowLeft,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(Res.string.cd_back)
                         )
                     }
                 },
@@ -100,7 +104,7 @@ fun JournalEntryDetailScreen(
                         IconButton(onClick = { showOverflowMenu = true }) {
                             Icon(
                                 imageVector = PhosphorIcons.Regular.DotsThreeVertical,
-                                contentDescription = "More options"
+                                contentDescription = stringResource(Res.string.cd_more_options)
                             )
                         }
                         DropdownMenu(

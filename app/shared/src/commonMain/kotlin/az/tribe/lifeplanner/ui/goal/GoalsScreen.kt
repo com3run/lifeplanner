@@ -28,7 +28,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
@@ -50,6 +50,9 @@ import az.tribe.lifeplanner.ui.components.SwipeableGoalItem
 import az.tribe.lifeplanner.ui.components.SearchResultsSummary
 import az.tribe.lifeplanner.ui.components.backgroundColor
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_add_goal
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,7 +64,7 @@ fun GoalsScreen(
     onBack: (() -> Unit)? = null
 ) {
     val snackBarHostState = remember { SnackbarHostState() }
-    val goals by viewModel.goals.collectAsState()
+    val goals by viewModel.goals.collectAsStateWithLifecycle()
 
     // Show smart reminder snackbar events
     LaunchedEffect(Unit) {
@@ -156,7 +159,7 @@ fun GoalsScreen(
                 ) {
                     Icon(
                         imageVector = PhosphorIcons.Regular.Plus,
-                        contentDescription = "Add Goal"
+                        contentDescription = stringResource(Res.string.cd_add_goal)
                     )
                 }
             }

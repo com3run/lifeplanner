@@ -25,6 +25,9 @@ import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.Note
 import com.adamglin.phosphoricons.regular.PencilSimple
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_edit_notes
 
 @Composable
 internal fun GoalDescriptionCard(
@@ -96,7 +99,7 @@ internal fun GoalDescriptionCard(
                         ) {
                             Icon(
                                 PhosphorIcons.Regular.PencilSimple,
-                                contentDescription = "Edit Notes",
+                                contentDescription = stringResource(Res.string.cd_edit_notes),
                                 tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                 modifier = Modifier.size(14.dp)
                             )

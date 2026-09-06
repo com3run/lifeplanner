@@ -66,6 +66,9 @@ import az.tribe.lifeplanner.domain.model.JournalEntry
 import az.tribe.lifeplanner.ui.utils.formatHumanDetailed
 import co.touchlab.kermit.Logger
 import kotlinx.coroutines.launch
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_close
 
 /**
  * The entry written like a page rather than announced like a poster, matching goal and habit
@@ -372,7 +375,7 @@ internal fun EditJournalEntryBottomSheet(
                 IconButton(onClick = onDismiss) {
                     Icon(
                         imageVector = PhosphorIcons.Regular.X,
-                        contentDescription = "Close"
+                        contentDescription = stringResource(Res.string.cd_close)
                     )
                 }
             }

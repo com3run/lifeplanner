@@ -5,7 +5,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import az.tribe.lifeplanner.ui.auth.SignInScreen
 import az.tribe.lifeplanner.ui.navigation.Screen
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import az.tribe.lifeplanner.ui.onboarding.CoachOnboardingScreen
 
@@ -38,7 +38,7 @@ internal fun NavGraphBuilder.appNavAuth(navController: NavController, homeRoute:
     // have to get through. Reached from the Today card, never as a gate.
     composable(Screen.AboutYou.route) {
         val vm: az.tribe.lifeplanner.ui.onboarding.AboutYouViewModel = org.koin.compose.viewmodel.koinViewModel()
-        val state by vm.state.collectAsState()
+        val state by vm.state.collectAsStateWithLifecycle()
         az.tribe.lifeplanner.ui.onboarding.AboutYouScreen(
             name = state.name,
             age = state.age,

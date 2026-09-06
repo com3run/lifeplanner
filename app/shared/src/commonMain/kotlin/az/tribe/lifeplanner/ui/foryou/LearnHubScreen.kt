@@ -35,7 +35,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -78,6 +78,9 @@ import leanlifeplanner.app.shared.generated.resources.illus_learn_motivation
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.viewmodel.koinViewModel
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_back
+import leanlifeplanner.app.shared.generated.resources.cd_read
 
 /**
  * The Learn map. Each collection is a zone, and its lessons are stops on a winding trail you walk
@@ -91,7 +94,7 @@ fun LearnHubScreen(
     onOpen: (String) -> Unit,
     viewModel: LearnHubViewModel = koinViewModel(),
 ) {
-    val state by viewModel.state.collectAsState()
+    val state by viewModel.state.collectAsStateWithLifecycle()
     val c = MaterialTheme.modernColors
     // Cleared zones start folded; re-opening one is a deliberate act, and it survives leaving the
     // screen so re-reading a lesson doesn't collapse the trail under you on the way back.
@@ -104,7 +107,7 @@ fun LearnHubScreen(
                 title = { Text("Learn", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = "Back", tint = c.textPrimary)
+                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = stringResource(Res.string.cd_back), tint = c.textPrimary)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = c.background, titleContentColor = c.textPrimary),
@@ -360,7 +363,7 @@ private fun PickedForYou(lessons: List<KnowledgeBit>, readIds: Set<String>, onOp
                     if (bit.id in readIds) {
                         Icon(
                             PhosphorIcons.Regular.Check,
-                            contentDescription = "Read",
+                            contentDescription = stringResource(Res.string.cd_read),
                             tint = c.success,
                             modifier = Modifier.size(16.dp),
                         )

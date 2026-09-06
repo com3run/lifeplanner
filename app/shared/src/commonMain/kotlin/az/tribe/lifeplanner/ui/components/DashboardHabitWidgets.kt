@@ -36,6 +36,9 @@ import androidx.compose.ui.unit.dp
 import az.tribe.lifeplanner.domain.model.Habit
 import az.tribe.lifeplanner.ui.habit.HabitWithStatus
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_completed
 
 @Composable
 fun TodayHabitsSection(
@@ -175,7 +178,7 @@ fun CompactHabitRow(
             if (isCompleted) {
                 Icon(
                     PhosphorIcons.Regular.Check,
-                    contentDescription = "Completed",
+                    contentDescription = stringResource(Res.string.cd_completed),
                     tint = checkColor,
                     modifier = Modifier.size(16.dp)
                 )

@@ -24,7 +24,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -46,6 +46,10 @@ import com.adamglin.phosphoricons.bold.Heartbeat
 import com.adamglin.phosphoricons.bold.Moon
 import kotlin.math.roundToInt
 import org.koin.compose.viewmodel.koinViewModel
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_back
+import leanlifeplanner.app.shared.generated.resources.cd_sync
 
 private enum class HealthScreenState { LOADING, NOT_AVAILABLE, NEEDS_PERMISSION, CONNECTED }
 
@@ -55,20 +59,20 @@ fun HealthDashboardScreen(
     navController: NavController,
     viewModel: HealthViewModel = koinViewModel()
 ) {
-    val isLoading by viewModel.isLoading.collectAsState()
-    val error by viewModel.error.collectAsState()
-    val permissionState by viewModel.permissionState.collectAsState()
-    val todaySteps by viewModel.todaySteps.collectAsState()
-    val stepsHistory by viewModel.stepsHistory.collectAsState()
-    val stepsWeekTotal by viewModel.stepsWeekTotal.collectAsState()
-    val stepsMonthTotal by viewModel.stepsMonthTotal.collectAsState()
-    val weightHistory by viewModel.weightHistory.collectAsState()
-    val latestWeight by viewModel.latestWeight.collectAsState()
-    val heartRateHistory by viewModel.heartRateHistory.collectAsState()
-    val latestHeartRate by viewModel.latestHeartRate.collectAsState()
-    val sleepHistory by viewModel.sleepHistory.collectAsState()
-    val latestSleep by viewModel.latestSleep.collectAsState()
-    val showWeightDialog by viewModel.showWeightDialog.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    val error by viewModel.error.collectAsStateWithLifecycle()
+    val permissionState by viewModel.permissionState.collectAsStateWithLifecycle()
+    val todaySteps by viewModel.todaySteps.collectAsStateWithLifecycle()
+    val stepsHistory by viewModel.stepsHistory.collectAsStateWithLifecycle()
+    val stepsWeekTotal by viewModel.stepsWeekTotal.collectAsStateWithLifecycle()
+    val stepsMonthTotal by viewModel.stepsMonthTotal.collectAsStateWithLifecycle()
+    val weightHistory by viewModel.weightHistory.collectAsStateWithLifecycle()
+    val latestWeight by viewModel.latestWeight.collectAsStateWithLifecycle()
+    val heartRateHistory by viewModel.heartRateHistory.collectAsStateWithLifecycle()
+    val latestHeartRate by viewModel.latestHeartRate.collectAsStateWithLifecycle()
+    val sleepHistory by viewModel.sleepHistory.collectAsStateWithLifecycle()
+    val latestSleep by viewModel.latestSleep.collectAsStateWithLifecycle()
+    val showWeightDialog by viewModel.showWeightDialog.collectAsStateWithLifecycle()
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -91,7 +95,7 @@ fun HealthDashboardScreen(
                 title = { Text("Health") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(PhosphorIcons.Bold.ArrowLeft, contentDescription = "Back")
+                        Icon(PhosphorIcons.Bold.ArrowLeft, contentDescription = stringResource(Res.string.cd_back))
                     }
                 },
                 actions = {
@@ -110,7 +114,7 @@ fun HealthDashboardScreen(
                         }
                         AnimatedIcon(
                             imageVector = syncIcon,
-                            contentDescription = "Sync",
+                            contentDescription = stringResource(Res.string.cd_sync),
                             animate = !isLoading && permissionState == HealthPermissionState.GRANTED,
                             tint = syncTint,
                             effect = IconAnimationEffect.PULSE

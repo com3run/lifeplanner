@@ -24,6 +24,10 @@ import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.Clock
 import com.adamglin.phosphoricons.regular.Sparkle
 import com.adamglin.phosphoricons.regular.Trash
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_delete
+import leanlifeplanner.app.shared.generated.resources.cd_smart_timing
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -77,7 +81,7 @@ internal fun ReminderCard(
                 contentAlignment = Alignment.CenterEnd
             ) {
                 if (dismissState.dismissDirection == SwipeToDismissBoxValue.EndToStart) {
-                    Icon(PhosphorIcons.Regular.Trash, contentDescription = "Delete", tint = Color.White, modifier = Modifier.size(28.dp).scale(scale))
+                    Icon(PhosphorIcons.Regular.Trash, contentDescription = stringResource(Res.string.cd_delete), tint = Color.White, modifier = Modifier.size(28.dp).scale(scale))
                 }
             }
         },
@@ -154,7 +158,7 @@ internal fun ReminderCardContent(reminder: Reminder, onToggle: () -> Unit, onCli
                     }
                     if (reminder.isSmartTiming) {
                         Spacer(Modifier.width(4.dp))
-                        Icon(imageVector = PhosphorIcons.Regular.Sparkle, contentDescription = "Smart timing", modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.tertiary)
+                        Icon(imageVector = PhosphorIcons.Regular.Sparkle, contentDescription = stringResource(Res.string.cd_smart_timing), modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.tertiary)
                     }
                 }
 

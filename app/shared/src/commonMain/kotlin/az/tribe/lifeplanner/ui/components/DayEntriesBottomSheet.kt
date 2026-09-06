@@ -42,6 +42,8 @@ import leanlifeplanner.app.shared.generated.resources.Res
 import leanlifeplanner.app.shared.generated.resources.illus_empty_journal
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.number
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_close
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -101,7 +103,7 @@ fun DayEntriesBottomSheet(
                 IconButton(onClick = onDismiss) {
                     Icon(
                         imageVector = PhosphorIcons.Regular.X,
-                        contentDescription = "Close"
+                        contentDescription = stringResource(Res.string.cd_close)
                     )
                 }
             }

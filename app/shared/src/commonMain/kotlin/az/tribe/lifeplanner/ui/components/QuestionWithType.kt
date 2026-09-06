@@ -51,6 +51,9 @@ import az.tribe.lifeplanner.domain.model.Goal
 import az.tribe.lifeplanner.domain.model.Milestone
 import az.tribe.lifeplanner.ui.theme.backgroundColor
 import az.tribe.lifeplanner.ui.utils.formatHuman
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_selected
 
 // Helper data class
 data class QuestionWithType(
@@ -285,7 +288,7 @@ fun OptionCard(
             if (isSelected) {
                 Icon(
                     PhosphorIcons.Regular.Check,
-                    contentDescription = "Selected",
+                    contentDescription = stringResource(Res.string.cd_selected),
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(20.dp)
                 )

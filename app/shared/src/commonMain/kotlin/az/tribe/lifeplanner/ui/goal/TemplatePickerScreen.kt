@@ -30,6 +30,9 @@ import az.tribe.lifeplanner.ui.theme.containerColor
 import az.tribe.lifeplanner.ui.theme.modernColors
 import com.adamglin.phosphoricons.fill.Star
 import com.adamglin.phosphoricons.regular.Star
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_back
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -75,7 +78,7 @@ fun TemplatePickerScreen(
                     IconButton(onClick = onBackClick) {
                         Icon(
                             PhosphorIcons.Regular.ArrowLeft,
-                            contentDescription = "Back",
+                            contentDescription = stringResource(Res.string.cd_back),
                             tint = MaterialTheme.modernColors.textPrimary
                         )
                     }

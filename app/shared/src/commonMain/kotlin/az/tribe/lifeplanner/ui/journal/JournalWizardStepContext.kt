@@ -23,6 +23,9 @@ import com.adamglin.phosphoricons.regular.Flag
 import com.adamglin.phosphoricons.regular.Repeat
 import com.adamglin.phosphoricons.regular.Sparkle
 import com.adamglin.phosphoricons.regular.X
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_clear
 
 @Composable
 internal fun ContextAndGenerateStep(
@@ -98,7 +101,7 @@ internal fun ContextAndGenerateStep(
                                 if (selectedGoalId != null) {
                                     Icon(
                                         imageVector = PhosphorIcons.Regular.X,
-                                        contentDescription = "Clear",
+                                        contentDescription = stringResource(Res.string.cd_clear),
                                         modifier = Modifier
                                             .size(16.dp)
                                             .clickable { onGoalSelected(null) },
@@ -165,7 +168,7 @@ internal fun ContextAndGenerateStep(
                                 if (selectedHabitId != null) {
                                     Icon(
                                         imageVector = PhosphorIcons.Regular.X,
-                                        contentDescription = "Clear",
+                                        contentDescription = stringResource(Res.string.cd_clear),
                                         modifier = Modifier
                                             .size(16.dp)
                                             .clickable { onHabitSelected(null) },

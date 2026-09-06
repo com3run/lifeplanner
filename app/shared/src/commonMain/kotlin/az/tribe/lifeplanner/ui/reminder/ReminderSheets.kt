@@ -35,6 +35,9 @@ import kotlin.time.Clock as KtClock
 import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_pick_time
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -104,7 +107,7 @@ internal fun AddReminderSheet(
                         Text("Time", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(timeText, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
                     }
-                    Icon(PhosphorIcons.Regular.Clock, contentDescription = "Pick time", tint = MaterialTheme.colorScheme.primary)
+                    Icon(PhosphorIcons.Regular.Clock, contentDescription = stringResource(Res.string.cd_pick_time), tint = MaterialTheme.colorScheme.primary)
                 }
             }
 
@@ -252,7 +255,7 @@ internal fun EditReminderSheet(
                         Text("Time", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(timeText, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
                     }
-                    Icon(PhosphorIcons.Regular.Clock, contentDescription = "Pick time", tint = MaterialTheme.colorScheme.primary)
+                    Icon(PhosphorIcons.Regular.Clock, contentDescription = stringResource(Res.string.cd_pick_time), tint = MaterialTheme.colorScheme.primary)
                 }
             }
 

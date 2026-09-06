@@ -21,7 +21,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,6 +53,9 @@ import com.adamglin.phosphoricons.regular.Sliders
 import com.adamglin.phosphoricons.regular.Sparkle
 import com.adamglin.phosphoricons.regular.Star
 import org.koin.compose.koinInject
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_back
 
 /**
  * D7, the redesigned **You** canvas (D2). Premium gradient header + grouped cards with colored
@@ -67,7 +70,7 @@ fun YouScreen(
 ) {
     val c = MaterialTheme.modernColors
     val themeController: ThemeController = koinInject()
-    val themeMode by themeController.mode.collectAsState()
+    val themeMode by themeController.mode.collectAsStateWithLifecycle()
 
     Scaffold(
         containerColor = c.background,
@@ -76,7 +79,7 @@ fun YouScreen(
                 title = { Text("You", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = "Back", tint = c.textPrimary)
+                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = stringResource(Res.string.cd_back), tint = c.textPrimary)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = c.background, titleContentColor = c.textPrimary),

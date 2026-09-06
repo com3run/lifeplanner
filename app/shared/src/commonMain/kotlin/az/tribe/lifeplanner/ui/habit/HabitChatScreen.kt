@@ -25,7 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,6 +45,10 @@ import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.ArrowLeft
 import com.adamglin.phosphoricons.regular.PaperPlaneRight
 import org.koin.compose.viewmodel.koinViewModel
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_back
+import leanlifeplanner.app.shared.generated.resources.cd_send
 
 /**
  * Conversational habit setup: chat with the coach, tap to add proposed habits (dedup-guarded), and
@@ -57,9 +61,9 @@ fun HabitChatScreen(
     viewModel: HabitChatViewModel = koinViewModel(),
 ) {
     val c = MaterialTheme.modernColors
-    val messages by viewModel.messages.collectAsState()
-    val sending by viewModel.sending.collectAsState()
-    val added by viewModel.addedTitles.collectAsState()
+    val messages by viewModel.messages.collectAsStateWithLifecycle()
+    val sending by viewModel.sending.collectAsStateWithLifecycle()
+    val added by viewModel.addedTitles.collectAsStateWithLifecycle()
     var input by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
 
@@ -75,7 +79,7 @@ fun HabitChatScreen(
                 title = { Text("New habit", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = "Back", tint = c.textPrimary)
+                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = stringResource(Res.string.cd_back), tint = c.textPrimary)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = c.background, titleContentColor = c.textPrimary),
@@ -103,7 +107,7 @@ fun HabitChatScreen(
                     ) {
                         Icon(
                             PhosphorIcons.Regular.PaperPlaneRight,
-                            contentDescription = "Send",
+                            contentDescription = stringResource(Res.string.cd_send),
                             tint = if (input.isNotBlank() && !sending) c.primary else c.textTertiary,
                         )
                     }

@@ -39,6 +39,9 @@ import az.tribe.lifeplanner.domain.enum.GoalCategory
 import az.tribe.lifeplanner.domain.model.GoalNode
 import az.tribe.lifeplanner.ui.components.backgroundColor
 import az.tribe.lifeplanner.ui.components.color
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_close
 
 @Composable
 internal fun CategoryFilterRow(
@@ -114,7 +117,7 @@ internal fun NodeInfoCard(
                 IconButton(onClick = onDismiss) {
                     Icon(
                         PhosphorIcons.Regular.Link,
-                        contentDescription = "Close",
+                        contentDescription = stringResource(Res.string.cd_close),
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }

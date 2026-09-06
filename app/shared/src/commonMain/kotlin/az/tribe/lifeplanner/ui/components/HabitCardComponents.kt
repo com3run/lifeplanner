@@ -65,6 +65,9 @@ import kotlinx.coroutines.launch
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_completed
 
 @Composable
 internal fun HabitSwipeBackgroundNew(
@@ -395,7 +398,7 @@ internal fun CheckInCircle(
                 ) {
                     Icon(
                         imageVector = PhosphorIcons.Regular.Check,
-                        contentDescription = "Completed",
+                        contentDescription = stringResource(Res.string.cd_completed),
                         // Contrast against the gray fill in both light and dark.
                         tint = MaterialTheme.colorScheme.surface,
                         modifier = Modifier

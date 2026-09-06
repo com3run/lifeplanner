@@ -18,6 +18,11 @@ import com.adamglin.phosphoricons.regular.Gear
 import com.adamglin.phosphoricons.regular.Plus
 import com.mmk.kmpnotifier.notification.NotifierManager
 import org.koin.compose.viewmodel.koinViewModel
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_back
+import leanlifeplanner.app.shared.generated.resources.cd_settings
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -25,7 +30,7 @@ fun ReminderSettingsScreen(
     onNavigateBack: () -> Unit,
     viewModel: ReminderViewModel = koinViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     val objectiveViewModel: BeginnerObjectiveViewModel = koinViewModel()
     LaunchedEffect(Unit) {
@@ -56,12 +61,12 @@ fun ReminderSettingsScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = "Back", tint = MaterialTheme.modernColors.textPrimary)
+                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = stringResource(Res.string.cd_back), tint = MaterialTheme.modernColors.textPrimary)
                     }
                 },
                 actions = {
                     IconButton(onClick = { viewModel.showSettingsSheet() }) {
-                        Icon(PhosphorIcons.Regular.Gear, contentDescription = "Settings", tint = MaterialTheme.modernColors.textPrimary)
+                        Icon(PhosphorIcons.Regular.Gear, contentDescription = stringResource(Res.string.cd_settings), tint = MaterialTheme.modernColors.textPrimary)
                     }
                 }
             )
