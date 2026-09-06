@@ -5,36 +5,36 @@ import androidx.lifecycle.viewModelScope
 import az.tribe.lifeplanner.domain.model.Habit
 import az.tribe.lifeplanner.domain.repository.GoalRepository
 import az.tribe.lifeplanner.domain.repository.HabitRepository
-import az.tribe.lifeplanner.domain.service.KnowledgeBit
+import az.tribe.lifeplanner.ui.UiText
 import az.tribe.lifeplanner.usecases.habit.AwardHabitCompletionUseCase
 import az.tribe.lifeplanner.usecases.habit.CheckInHabitUseCase
 import az.tribe.lifeplanner.usecases.habit.RecommendLessonsForHabitUseCase
 import az.tribe.lifeplanner.usecases.habit.UncheckHabitUseCase
 import co.touchlab.kermit.Logger
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
-import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Clock
+import leanlifeplanner.app.shared.generated.resources.Res
+import leanlifeplanner.app.shared.generated.resources.xp_earned
 
 /**
- * D7, backs the redesigned **Habit Detail** screen. Reactive over the habit + today's status (so a
- * check-in reflects instantly), resolves the linked **goal** ("supports" chain), and loads the last
- * five weeks of check-ins for the consistency heatmap. Check-in / undo go through the canonical
- * [CheckInHabitUseCase] / [UncheckHabitUseCase] so streaks stay correct.
+ * Backs the **Habit Detail** screen. One [HabitDetailState] holds everything the screen shows;
+ * the screen sends [HabitDetailAction]s and reacts to one-shot [HabitDetailEvent]s.
+ *
+ * Reactive over the habit and today's status (so a check-in reflects instantly), resolves the
+ * linked goal ("supports" chain), and loads the last five weeks of check-ins for the consistency
+ * heatmap. Check-in and undo go through the canonical [CheckInHabitUseCase] and
+ * [UncheckHabitUseCase] so streaks stay correct.
  */
 class HabitDetailViewModel(
     private val habitId: String,
@@ -46,99 +46,118 @@ class HabitDetailViewModel(
     private val recommendLessonsForHabit: RecommendLessonsForHabitUseCase,
 ) : ViewModel() {
 
-    private fun today(): LocalDate =
-        Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+    private val _state = MutableStateFlow(HabitDetailState())
+    val state: StateFlow<HabitDetailState> = _state.asStateFlow()
 
-    /**
-     * Lessons about *this* habit, ranked against what it is about rather than the whole library.
-     * A sleep habit surfaces the sleep science; a meditation practice surfaces attention and mind.
-     * Read lessons sink but are not hidden, so the section keeps something useful to show.
-     */
-    private val _relatedLessons = MutableStateFlow<List<KnowledgeBit>>(emptyList())
-    val relatedLessons: StateFlow<List<KnowledgeBit>> = _relatedLessons.asStateFlow()
-
-    /** XP the check-in just earned, one-shot, so the screen can confirm the reward. */
-    private val _xpEvent = MutableSharedFlow<Int>()
-    val xpEvent: SharedFlow<Int> = _xpEvent.asSharedFlow()
-
-    /** The number of weeks shown in the consistency grid. */
-    private val weeks = 5
-
-    /** Reactive source of truth, re-emits on every check-in/mutation, refreshing history below. */
-    private val statusFlow = habitRepository.observeHabitsWithTodayStatus()
-        .onEach { loadHistory() }
-
-    val habit: StateFlow<Habit?> =
-        statusFlow.map { list -> list.firstOrNull { it.first.id == habitId }?.first }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
-
-    val doneToday: StateFlow<Boolean> =
-        statusFlow.map { list -> list.firstOrNull { it.first.id == habitId }?.second ?: false }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
-
-    /** The goal this habit supports (its "why"), resolved from [Habit.linkedGoalId]; null if unlinked. */
-    val linkedGoalTitle: StateFlow<String?> =
-        habit.map { h -> h?.linkedGoalId?.let { runCatching { goalRepository.getGoalById(it)?.title }.getOrNull() } }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
-
-    private val _completedDates = MutableStateFlow<Set<LocalDate>>(emptySet())
-    /** Dates (within the last [weeks] weeks) the habit was completed, drives the heatmap. */
-    val completedDates: StateFlow<Set<LocalDate>> = _completedDates.asStateFlow()
-
-    private val _completionRate = MutableStateFlow(0f)
-    /** 30-day completion rate (0..1) shown in the hero ring. */
-    val completionRate: StateFlow<Float> = _completionRate.asStateFlow()
-
-    /** First day of the heatmap grid: the Monday five weeks back, so columns are Mon..Sun. */
-    fun gridStart(today: LocalDate = today()): LocalDate =
-        today.minus(today.dayOfWeek.ordinal, DateTimeUnit.DAY).minus((weeks - 1) * 7, DateTimeUnit.DAY)
+    private val _events = Channel<HabitDetailEvent>()
+    val events = _events.receiveAsFlow()
 
     init {
         viewModelScope.launch {
-            habit.collect { h -> if (h != null) loadRelatedLessons(h) }
+            habitRepository.observeHabitsWithTodayStatus().collect { habits ->
+                val entry = habits.firstOrNull { it.first.id == habitId }
+                val previous = _state.value.habit
+                _state.update {
+                    it.copy(habit = entry?.first, doneToday = entry?.second ?: false, isLoading = false)
+                }
+                loadHistory()
+                val habit = entry?.first
+                if (habit != null && habit != previous) {
+                    loadLinkedGoal(habit)
+                    loadRelatedLessons(habit)
+                }
+            }
         }
     }
 
-    private suspend fun loadRelatedLessons(h: Habit) {
-        _relatedLessons.value = runCatching { recommendLessonsForHabit(h, RELATED_LESSON_COUNT) }
+    fun onAction(action: HabitDetailAction) {
+        when (action) {
+            HabitDetailAction.OnBackClick -> send(HabitDetailEvent.NavigateBack)
+            HabitDetailAction.OnToggleTodayClick -> toggleToday()
+            HabitDetailAction.OnEditClick -> _state.update { it.copy(isEditing = true) }
+            HabitDetailAction.OnEditDismiss -> _state.update { it.copy(isEditing = false) }
+            is HabitDetailAction.OnEditConfirm -> updateHabit(action.habit)
+            HabitDetailAction.OnPracticeClick ->
+                _state.value.habit?.let { send(HabitDetailEvent.NavigateToPractice(it.id)) }
+            is HabitDetailAction.OnLessonClick -> send(HabitDetailEvent.NavigateToLesson(action.lessonId))
+        }
+    }
+
+    private fun send(event: HabitDetailEvent) {
+        viewModelScope.launch { _events.send(event) }
+    }
+
+    private fun today(): LocalDate =
+        Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+
+    /** First day of the heatmap grid: the Monday five weeks back, so columns are Mon..Sun. */
+    private fun gridStart(today: LocalDate): LocalDate =
+        today.minus(today.dayOfWeek.ordinal, DateTimeUnit.DAY).minus((WEEKS - 1) * 7, DateTimeUnit.DAY)
+
+    private suspend fun loadLinkedGoal(habit: Habit) {
+        val title = habit.linkedGoalId?.let { id ->
+            runCatching { goalRepository.getGoalById(id)?.title }.getOrNull()
+        }
+        _state.update { it.copy(linkedGoalTitle = title) }
+    }
+
+    private suspend fun loadRelatedLessons(habit: Habit) {
+        val lessons = runCatching { recommendLessonsForHabit(habit, RELATED_LESSON_COUNT) }
             .getOrDefault(emptyList())
+        _state.update { it.copy(relatedLessons = lessons) }
     }
 
     private fun loadHistory() {
         viewModelScope.launch {
             runCatching {
                 val today = today()
-                val start = gridStart(today)
-                val checkIns = habitRepository.getCheckInsInRange(habitId, start, today)
-                _completedDates.value = checkIns.filter { it.completed }.map { it.date }.toSet()
-                _completionRate.value = habitRepository.getHabitCompletionRate(habitId, 30)
-            }.onFailure { Logger.w("HabitDetailViewModel") { "History load failed: ${it.message}" } }
+                val checkIns = habitRepository.getCheckInsInRange(habitId, gridStart(today), today)
+                val rate = habitRepository.getHabitCompletionRate(habitId, 30)
+                _state.update {
+                    it.copy(
+                        today = today,
+                        completedDates = checkIns.filter { c -> c.completed }.map { c -> c.date }.toSet(),
+                        completionRate = rate,
+                    )
+                }
+            }.onFailure { Logger.w(TAG) { "History load failed: ${it.message}" } }
         }
     }
 
-    fun toggleToday() {
+    private fun toggleToday() {
         viewModelScope.launch {
             runCatching {
-                if (doneToday.value) {
+                if (_state.value.doneToday) {
                     uncheckHabitUseCase(habitId)
                 } else {
                     val today = today()
                     checkInHabitUseCase(habitId, today)
-                    _xpEvent.emit(awardHabitCompletionUseCase(habitId, today))
+                    val xp = awardHabitCompletionUseCase(habitId, today)
+                    if (xp > 0) {
+                        _events.send(
+                            HabitDetailEvent.ShowSnackbar(UiText.StringResource(Res.string.xp_earned, arrayOf(xp)))
+                        )
+                    }
                 }
                 loadHistory()
-            }.onFailure { Logger.w("HabitDetailViewModel") { "Toggle check-in failed: ${it.message}" } }
+            }.onFailure { Logger.w(TAG) { "Toggle check-in failed: ${it.message}" } }
         }
     }
 
-    fun updateHabit(updated: Habit) {
+    private fun updateHabit(updated: Habit) {
         viewModelScope.launch {
             runCatching { habitRepository.updateHabit(updated) }
-                .onFailure { Logger.w("HabitDetailViewModel") { "Update habit failed: ${it.message}" } }
+                .onFailure { Logger.w(TAG) { "Update habit failed: ${it.message}" } }
+            _state.update { it.copy(isEditing = false) }
         }
     }
 
     private companion object {
+        const val TAG = "HabitDetailViewModel"
+
+        /** The number of weeks shown in the consistency grid. */
+        const val WEEKS = 5
+
         /** Enough to feel like a shelf, few enough to stay a sidebar rather than a screen. */
         const val RELATED_LESSON_COUNT = 3
     }

@@ -20,7 +20,7 @@ class AiProxyServiceStreamingTest {
     private fun createService(
         mockEngine: MockEngine,
         token: String = "test-jwt-token"
-    ): AiProxyServiceImpl {
+    ): EdgeFunctionAiProxyService {
         val httpClient = HttpClient(mockEngine) {
             install(ContentNegotiation) {
                 json(Json { ignoreUnknownKeys = true })
@@ -30,7 +30,7 @@ class AiProxyServiceStreamingTest {
             putString("ai_provider", AiProvider.GEMINI.name)
         }
         val tokenProvider = AuthTokenProvider { token }
-        return AiProxyServiceImpl(settings, httpClient, tokenProvider)
+        return EdgeFunctionAiProxyService(settings, httpClient, tokenProvider)
     }
 
     private val testMessages = listOf(

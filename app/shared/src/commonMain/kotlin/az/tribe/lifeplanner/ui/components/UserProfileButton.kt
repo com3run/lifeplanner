@@ -17,6 +17,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import az.tribe.lifeplanner.domain.model.User
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_profile
 
 @Composable
 fun UserProfileButton(
@@ -50,7 +53,7 @@ fun UserProfileButton(
                 } else {
                     Icon(
                         imageVector = PhosphorIcons.Regular.User,
-                        contentDescription = "Profile",
+                        contentDescription = stringResource(Res.string.cd_profile),
                         tint = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 }

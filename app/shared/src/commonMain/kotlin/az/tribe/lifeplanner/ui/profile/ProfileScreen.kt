@@ -1,6 +1,7 @@
 package az.tribe.lifeplanner.ui.profile
 
 import az.tribe.lifeplanner.core.FeatureFlags
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -37,13 +38,12 @@ import com.adamglin.phosphoricons.regular.Gear
 import com.adamglin.phosphoricons.regular.Lightning
 import com.adamglin.phosphoricons.regular.Scales
 import com.adamglin.phosphoricons.regular.Sliders
-import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
-    authViewModel: AuthViewModel = koinInject(),
+    authViewModel: AuthViewModel = koinViewModel(),
     gamificationViewModel: GamificationViewModel = koinViewModel(),
     homeViewModel: HomeViewModel = koinViewModel(),
     youViewModel: YouViewModel = koinViewModel(),
@@ -70,14 +70,14 @@ fun ProfileScreen(
     // introduce itself on first tap instead of dropping them into it cold.
     val introGate = rememberFeatureIntroGate()
     val introAccent = MaterialTheme.colorScheme.primary
-    val authState by authViewModel.authState.collectAsState()
-    val syncStatus by authViewModel.syncStatus.collectAsState()
-    val isLocalOnlyGuest by authViewModel.isLocalOnlyGuest.collectAsState()
-    val userProgress by gamificationViewModel.userProgress.collectAsState()
-    val badges by gamificationViewModel.badges.collectAsState()
-    val recentSession by homeViewModel.recentSession.collectAsState()
-    val recentCoach by homeViewModel.recentCoach.collectAsState()
-    val youState by youViewModel.state.collectAsState()
+    val authState by authViewModel.authState.collectAsStateWithLifecycle()
+    val syncStatus by authViewModel.syncStatus.collectAsStateWithLifecycle()
+    val isLocalOnlyGuest by authViewModel.isLocalOnlyGuest.collectAsStateWithLifecycle()
+    val userProgress by gamificationViewModel.userProgress.collectAsStateWithLifecycle()
+    val badges by gamificationViewModel.badges.collectAsStateWithLifecycle()
+    val recentSession by homeViewModel.recentSession.collectAsStateWithLifecycle()
+    val recentCoach by homeViewModel.recentCoach.collectAsStateWithLifecycle()
+    val youState by youViewModel.state.collectAsStateWithLifecycle()
 
     var showAccountSheet by remember { mutableStateOf(false) }
     var showEditNameDialog by remember { mutableStateOf(false) }

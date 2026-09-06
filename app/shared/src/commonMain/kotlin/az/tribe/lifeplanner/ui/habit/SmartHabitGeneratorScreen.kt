@@ -10,6 +10,7 @@ import az.tribe.lifeplanner.domain.enum.GoalCategory
 import az.tribe.lifeplanner.util.NetworkConnectivityObserver
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 data class HabitScenario(
     val id: String,
@@ -86,15 +87,15 @@ fun SmartHabitGeneratorScreen(
     onNavigateToManual: () -> Unit,
     viewModel: SmartHabitGeneratorViewModel = koinViewModel()
 ) {
-    val step by viewModel.step.collectAsState()
-    val generatedHabits by viewModel.generatedHabits.collectAsState()
-    val error by viewModel.error.collectAsState()
-    val addedTitles by viewModel.addedTitles.collectAsState()
+    val step by viewModel.step.collectAsStateWithLifecycle()
+    val generatedHabits by viewModel.generatedHabits.collectAsStateWithLifecycle()
+    val error by viewModel.error.collectAsStateWithLifecycle()
+    val addedTitles by viewModel.addedTitles.collectAsStateWithLifecycle()
 
     var customPrompt by remember { mutableStateOf("") }
 
     val connectivityObserver: NetworkConnectivityObserver = koinInject()
-    val isConnected by connectivityObserver.isConnected.collectAsState()
+    val isConnected by connectivityObserver.isConnected.collectAsStateWithLifecycle()
     val isOffline = !isConnected
 
     val snackbarHostState = remember { SnackbarHostState() }

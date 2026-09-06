@@ -35,6 +35,9 @@ import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Fill
 import com.adamglin.phosphoricons.fill.Play
 import kotlinx.coroutines.delay
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_start_timer
 
 /**
  * A step written as a length of time ("Hold crow pose 30 seconds") is a timer wearing a tick box:
@@ -154,7 +157,7 @@ internal fun StepTimerControl(state: StepTimerState, accent: Color) {
         } else {
             Icon(
                 PhosphorIcons.Fill.Play,
-                contentDescription = "Start ${StepDuration.format(state.totalSeconds)} timer",
+                contentDescription = stringResource(Res.string.cd_start_timer, StepDuration.format(state.totalSeconds)),
                 tint = accent,
                 modifier = Modifier.size(16.dp),
             )

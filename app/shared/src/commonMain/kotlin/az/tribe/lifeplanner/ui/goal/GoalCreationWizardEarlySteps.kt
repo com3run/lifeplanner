@@ -72,6 +72,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import az.tribe.lifeplanner.domain.enum.GoalCategory
 import az.tribe.lifeplanner.domain.model.CoachPersona
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_back
+import leanlifeplanner.app.shared.generated.resources.cd_clear
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -93,7 +97,7 @@ internal fun WizardTopBar(
             navigationIcon = {
                 if (showBack) {
                     IconButton(onClick = onBackClick) {
-                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = "Back")
+                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = stringResource(Res.string.cd_back))
                     }
                 }
             },
@@ -260,7 +264,7 @@ internal fun IntentStep(
                     IconButton(onClick = { onIntentChange("") }) {
                         Icon(
                             imageVector = PhosphorIcons.Regular.X,
-                            contentDescription = "Clear",
+                            contentDescription = stringResource(Res.string.cd_clear),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }

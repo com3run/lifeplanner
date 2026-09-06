@@ -30,7 +30,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,6 +49,10 @@ import com.adamglin.phosphoricons.regular.ArrowLeft
 import com.adamglin.phosphoricons.regular.Plus
 import com.adamglin.phosphoricons.regular.Trash
 import org.koin.compose.viewmodel.koinViewModel
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_back
+import leanlifeplanner.app.shared.generated.resources.cd_delete
 
 /**
  * Pillar 5, the "Becoming" view. Identity statements + value-alignment, shown alongside (not
@@ -60,7 +64,7 @@ fun BecomingScreen(
     onBackClick: () -> Unit,
     viewModel: BecomingViewModel = koinViewModel(),
 ) {
-    val state by viewModel.state.collectAsState()
+    val state by viewModel.state.collectAsStateWithLifecycle()
     var showAdd by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -70,7 +74,7 @@ fun BecomingScreen(
                 title = { Text("Becoming", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = "Back", tint = MaterialTheme.modernColors.textPrimary)
+                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = stringResource(Res.string.cd_back), tint = MaterialTheme.modernColors.textPrimary)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -170,7 +174,7 @@ private fun StatementCard(s: IdentityStatement, valueTitle: String?, onDelete: (
                 }
             }
             IconButton(onClick = onDelete) {
-                Icon(PhosphorIcons.Regular.Trash, contentDescription = "Delete", tint = MaterialTheme.modernColors.textSecondary)
+                Icon(PhosphorIcons.Regular.Trash, contentDescription = stringResource(Res.string.cd_delete), tint = MaterialTheme.modernColors.textSecondary)
             }
         }
     }

@@ -13,11 +13,15 @@ import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.ArrowLeft
 import az.tribe.lifeplanner.ui.goal.GoalViewModel
 import az.tribe.lifeplanner.ui.goal.*
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_back
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AnalyticsDashboard(viewModel: GoalViewModel, onBackClick: () -> Unit) {
-    val analytics by viewModel.analytics.collectAsState()
+    val analytics by viewModel.analytics.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         viewModel.loadAnalytics()
@@ -41,7 +45,7 @@ fun AnalyticsDashboard(viewModel: GoalViewModel, onBackClick: () -> Unit) {
                 title = { },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = "Back")
+                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = stringResource(Res.string.cd_back))
                     }
                 }
             )

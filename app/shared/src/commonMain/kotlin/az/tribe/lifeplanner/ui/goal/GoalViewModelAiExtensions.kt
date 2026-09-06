@@ -3,8 +3,8 @@ package az.tribe.lifeplanner.ui.goal
 import az.tribe.lifeplanner.data.analytics.Analytics
 import az.tribe.lifeplanner.data.model.QuestionAnswer
 import az.tribe.lifeplanner.data.model.UserQuestionnaireAnswers
-import az.tribe.lifeplanner.data.model.onError
-import az.tribe.lifeplanner.data.model.onSuccess
+import az.tribe.lifeplanner.domain.model.onFailure
+import az.tribe.lifeplanner.domain.model.onSuccess
 import az.tribe.lifeplanner.domain.model.Goal
 import co.touchlab.kermit.Logger
 import kotlinx.coroutines.launch
@@ -33,7 +33,7 @@ fun GoalViewModel.generateQuestionnaire(userPrompt: String) {
                     _questions.value = questions
                     _questionnaireStep.value = QuestionnaireStep.ANSWERING
                 }
-                .onError { error ->
+                .onFailure { error ->
                     _error.value = "Failed to generate questions: ${error}"
                     _questionnaireStep.value = QuestionnaireStep.INPUT
                 }
@@ -106,7 +106,7 @@ fun GoalViewModel.generatePersonalizedGoals() {
                         }
                     }
                 }
-                .onError { error ->
+                .onFailure { error ->
                     _error.value = "Failed to generate personalized goals: ${error}"
                     _questionnaireStep.value = QuestionnaireStep.ANSWERING
                 }
@@ -147,7 +147,7 @@ fun GoalViewModel.generateGoalsDirectly(prompt: String) {
                         _questionnaireStep.value = QuestionnaireStep.RESULTS
                     }
                 }
-                .onError { error ->
+                .onFailure { error ->
                     Logger.e("GoalViewModel") { "AI Goal Generation: Error - $error" }
                     _error.value = "Could not generate goals. Check your internet connection and try again."
                     _questionnaireStep.value = QuestionnaireStep.INPUT

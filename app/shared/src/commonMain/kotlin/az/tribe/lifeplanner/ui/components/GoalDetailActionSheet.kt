@@ -40,6 +40,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import az.tribe.lifeplanner.domain.model.Goal
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_close
 
 /**
  * Bottom sheet for goal detail actions
@@ -89,7 +92,7 @@ fun GoalDetailActionSheet(
                 IconButton(onClick = onDismiss) {
                     Icon(
                         imageVector = PhosphorIcons.Regular.X,
-                        contentDescription = "Close"
+                        contentDescription = stringResource(Res.string.cd_close)
                     )
                 }
             }

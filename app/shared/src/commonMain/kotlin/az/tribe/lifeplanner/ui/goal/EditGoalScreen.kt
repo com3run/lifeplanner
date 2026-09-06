@@ -36,6 +36,12 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_back
+import leanlifeplanner.app.shared.generated.resources.cd_remove_milestone
+import leanlifeplanner.app.shared.generated.resources.cd_save
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @OptIn(ExperimentalUuidApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -45,8 +51,8 @@ fun EditGoalScreen(
     onGoalSaved: () -> Unit,
     onBackClick: () -> Unit
 ) {
-    val goals by viewModel.goals.collectAsState()
-    val lifeValues by viewModel.lifeValues.collectAsState()
+    val goals by viewModel.goals.collectAsStateWithLifecycle()
+    val lifeValues by viewModel.lifeValues.collectAsStateWithLifecycle()
     val existingGoal = goals.find { it.id == goalId }
 
     // If goal not found, show error state
@@ -120,7 +126,7 @@ fun EditGoalScreen(
                     IconButton(onClick = onBackClick) {
                         Icon(
                             PhosphorIcons.Regular.ArrowLeft,
-                            contentDescription = "Back",
+                            contentDescription = stringResource(Res.string.cd_back),
                             tint = MaterialTheme.modernColors.textPrimary
                         )
                     }
@@ -164,7 +170,7 @@ fun EditGoalScreen(
                 icon = {
                     Icon(
                         imageVector = PhosphorIcons.Regular.Check,
-                        contentDescription = "Save"
+                        contentDescription = stringResource(Res.string.cd_save)
                     )
                 },
                 expanded = isFormValid,
@@ -455,7 +461,7 @@ fun EditMilestoneItem(
                 ) {
                     Icon(
                         PhosphorIcons.Regular.Trash,
-                        contentDescription = "Remove Milestone",
+                        contentDescription = stringResource(Res.string.cd_remove_milestone),
                         tint = MaterialTheme.colorScheme.error,
                         modifier = Modifier.size(20.dp)
                     )

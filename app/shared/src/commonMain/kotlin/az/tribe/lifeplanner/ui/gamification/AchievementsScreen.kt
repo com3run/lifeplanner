@@ -44,7 +44,7 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -64,17 +64,21 @@ import az.tribe.lifeplanner.ui.components.BadgeCard
 import az.tribe.lifeplanner.ui.components.BadgeMedallion
 import az.tribe.lifeplanner.ui.components.rememberHapticManager
 import az.tribe.lifeplanner.ui.gamification.GamificationViewModel
-import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_back
+import leanlifeplanner.app.shared.generated.resources.cd_close
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AchievementsScreen(
     onNavigateBack: () -> Unit,
-    viewModel: GamificationViewModel = koinInject()
+    viewModel: GamificationViewModel = koinViewModel()
 ) {
-    val userProgress by viewModel.userProgress.collectAsState()
-    val badges by viewModel.badges.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
+    val userProgress by viewModel.userProgress.collectAsStateWithLifecycle()
+    val badges by viewModel.badges.collectAsStateWithLifecycle()
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
 
     // Badge detail bottom sheet state
     var selectedBadgeType by remember { mutableStateOf<BadgeType?>(null) }
@@ -119,7 +123,7 @@ fun AchievementsScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = PhosphorIcons.Regular.ArrowLeft,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(Res.string.cd_back)
                         )
                     }
                 },
@@ -250,7 +254,7 @@ private fun BadgeDetailBottomSheet(
                 IconButton(onClick = onDismiss) {
                     Icon(
                         imageVector = PhosphorIcons.Regular.X,
-                        contentDescription = "Close"
+                        contentDescription = stringResource(Res.string.cd_close)
                     )
                 }
             }

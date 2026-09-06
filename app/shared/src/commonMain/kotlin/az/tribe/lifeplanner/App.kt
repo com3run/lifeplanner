@@ -19,7 +19,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -88,17 +88,25 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import kotlin.time.Clock
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_add_ability
+import leanlifeplanner.app.shared.generated.resources.cd_add_goal
+import leanlifeplanner.app.shared.generated.resources.cd_coach
+import leanlifeplanner.app.shared.generated.resources.cd_new_habit
+import leanlifeplanner.app.shared.generated.resources.cd_search
+import leanlifeplanner.app.shared.generated.resources.cd_write
 
 @Composable
 @Preview
 fun App(
-    viewModel: GoalViewModel = koinInject(),
-    authViewModel: AuthViewModel = koinInject(),
+    viewModel: GoalViewModel = koinViewModel(),
+    authViewModel: AuthViewModel = koinViewModel(),
     promoRoute: String? = null
 ) {
     // D3 audit G2: appearance follows a persisted preference (defaults to System), not a hardcoded dark.
     val themeController: ThemeController = koinInject()
-    val themeMode by themeController.mode.collectAsState()
+    val themeMode by themeController.mode.collectAsStateWithLifecycle()
     val darkTheme = when (themeMode) {
         ThemeMode.SYSTEM -> isSystemInDarkTheme()
         ThemeMode.LIGHT -> false
@@ -107,8 +115,8 @@ fun App(
     LifePlannerTheme(darkTheme = darkTheme) {
         var myPushNotificationToken by remember { mutableStateOf("") }
 
-        val hasCompletedOnboarding by authViewModel.hasCompletedOnboarding.collectAsState()
-        val authState by authViewModel.authState.collectAsState()
+        val hasCompletedOnboarding by authViewModel.hasCompletedOnboarding.collectAsStateWithLifecycle()
+        val authState by authViewModel.authState.collectAsStateWithLifecycle()
         val settings: com.russhwolf.settings.Settings = koinInject()
 
         LaunchedEffect(true) {
@@ -515,7 +523,7 @@ fun App(
             // Today's FAB is Search: quick find + act from the front door.
             homeRoute -> NavContextAction(
                 icon = PhosphorIcons.Regular.MagnifyingGlass,
-                contentDescription = "Search",
+                contentDescription = stringResource(Res.string.cd_search),
                 onClick = {
                     navController.navigate(Screen.Search.route) { launchSingleTop = true }
                 },
@@ -523,25 +531,25 @@ fun App(
             Screen.Journal.route -> when (hubSelectedTab) {
                 1 -> NavContextAction(
                     icon = PhosphorIcons.Regular.Flag,
-                    contentDescription = "Add Goal"
+                    contentDescription = stringResource(Res.string.cd_add_goal)
                 ) {
                     navController.navigate(Screen.GoalWizard.route) { launchSingleTop = true }
                 }
                 2 -> NavContextAction(
                     icon = PhosphorIcons.Regular.Sparkle,
-                    contentDescription = "New Habit"
+                    contentDescription = stringResource(Res.string.cd_new_habit)
                 ) {
                     navController.navigate(Screen.HabitChat.route) { launchSingleTop = true }
                 }
                 3 -> if (FeatureFlags.ABILITIES_ENABLED) NavContextAction(
                     icon = PhosphorIcons.Regular.Star,
-                    contentDescription = "Add Ability"
+                    contentDescription = stringResource(Res.string.cd_add_ability)
                 ) {
                     navController.navigate(Screen.CreateAbility.route) { launchSingleTop = true }
                 } else null
                 else -> NavContextAction(
                     icon = PhosphorIcons.Regular.PencilSimple,
-                    contentDescription = "Write"
+                    contentDescription = stringResource(Res.string.cd_write)
                 ) {
                     val route = hubSelectedDate?.let { "journal_wizard?date=$it" } ?: "journal_wizard"
                     navController.navigate(route) { launchSingleTop = true }
@@ -549,7 +557,7 @@ fun App(
             }
             Screen.Profile.route -> NavContextAction(
                 icon = PhosphorIcons.Regular.Brain,
-                contentDescription = "Coach"
+                contentDescription = stringResource(Res.string.cd_coach)
             ) {
                 navController.navigate(Screen.AIChat.route) { launchSingleTop = true }
             }

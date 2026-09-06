@@ -46,6 +46,9 @@ import az.tribe.lifeplanner.ui.habit.HabitWithStatus
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
 import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_practice
 
 // Haptic feedback
 private var lastThresholdState: ThresholdState = ThresholdState.NONE
@@ -346,7 +349,7 @@ fun HabitCard(
                     IconButton(onClick = onPractice, modifier = Modifier.size(32.dp)) {
                         Icon(
                             imageVector = PhosphorIcons.Regular.Play,
-                            contentDescription = "Practice",
+                            contentDescription = stringResource(Res.string.cd_practice),
                             tint = categoryColor,
                             modifier = Modifier.size(18.dp),
                         )

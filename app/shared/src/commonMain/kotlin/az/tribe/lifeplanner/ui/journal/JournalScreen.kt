@@ -80,6 +80,7 @@ import az.tribe.lifeplanner.ui.ability.AbilityViewModel
 import az.tribe.lifeplanner.ui.habit.HabitViewModel
 import az.tribe.lifeplanner.ui.habit.*
 import org.koin.compose.viewmodel.koinViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -108,15 +109,15 @@ fun JournalScreen(
     homeViewModel: HomeViewModel = koinViewModel(),
     weeklyEngagementViewModel: WeeklyEngagementViewModel = koinViewModel()
 ) {
-    val entries by viewModel.entries.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
-    val showNewEntryDialog by viewModel.showNewEntryDialog.collectAsState()
-    val selectedDay by viewModel.selectedDay.collectAsState()
+    val entries by viewModel.entries.collectAsStateWithLifecycle()
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    val showNewEntryDialog by viewModel.showNewEntryDialog.collectAsStateWithLifecycle()
+    val selectedDay by viewModel.selectedDay.collectAsStateWithLifecycle()
 
-    val goals by goalViewModel.goals.collectAsState()
-    val habitsWithStatus by habitViewModel.habits.collectAsState()
+    val goals by goalViewModel.goals.collectAsStateWithLifecycle()
+    val habitsWithStatus by habitViewModel.habits.collectAsStateWithLifecycle()
     val habits = habitsWithStatus.map { it.habit }
-    val abilities by abilityViewModel.abilities.collectAsState()
+    val abilities by abilityViewModel.abilities.collectAsStateWithLifecycle()
 
     // Own tab state locally, the NavGraphBuilder closure captures selectedTab once at
     // graph-build time, so the parent parameter is stale after first composition.
@@ -127,7 +128,7 @@ fun JournalScreen(
 
     // The hub is long-lived, so the view model's own init-time load would go stale. The week's output
     // now rides in the day-lens banner above every sub-tab, so recount on each tab change.
-    val weeklyEngagement by weeklyEngagementViewModel.engagement.collectAsState()
+    val weeklyEngagement by weeklyEngagementViewModel.engagement.collectAsStateWithLifecycle()
     LaunchedEffect(currentTab) { weeklyEngagementViewModel.load() }
 
     // Shared "day lens": the selected date persists across the hub's sub-tabs (rememberSaveable via
@@ -139,7 +140,7 @@ fun JournalScreen(
 
     var habitToEdit by remember { mutableStateOf<Habit?>(null) }
     val listState = rememberLazyListState()
-    val error by viewModel.error.collectAsState()
+    val error by viewModel.error.collectAsStateWithLifecycle()
 
     val habitsCompleted = habitsWithStatus.count { it.isCompletedToday }
     val habitsTotal = habitsWithStatus.size
@@ -193,7 +194,7 @@ fun JournalScreen(
     val plannedForSelected = plannedByDay[selectedDate].orEmpty()
 
     // Habits day lens: which habits were completed on the selected (non-today) day.
-    val habitDayCompletions by habitViewModel.lensCompletions.collectAsState()
+    val habitDayCompletions by habitViewModel.lensCompletions.collectAsStateWithLifecycle()
     LaunchedEffect(selectedDate) {
         habitViewModel.setLensDate(if (selectedDate == today) null else selectedDate)
     }
@@ -229,7 +230,7 @@ fun JournalScreen(
             .mapNotNull { goal -> goal.milestones.firstOrNull { !it.isCompleted }?.let { goal to it } }
             .take(5)
     }
-    val milestoneFocusMinutes by homeViewModel.milestoneFocusMinutes.collectAsState()
+    val milestoneFocusMinutes by homeViewModel.milestoneFocusMinutes.collectAsStateWithLifecycle()
     LaunchedEffect(nextMilestones) { homeViewModel.loadMilestoneFocusMinutes(nextMilestones) }
 
     val bannerTitle = when (currentTab) {

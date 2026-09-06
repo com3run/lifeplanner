@@ -10,6 +10,7 @@ import az.tribe.lifeplanner.domain.enum.GoalCategory
 import az.tribe.lifeplanner.ui.theme.modernColors
 import az.tribe.lifeplanner.util.NetworkConnectivityObserver
 import org.koin.compose.koinInject
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 // Life scenarios for quick selection
 data class LifeScenario(
@@ -93,14 +94,14 @@ fun SmartGoalGeneratorScreen(
     var currentStep by remember { mutableStateOf(GeneratorStep.SCENARIO_SELECT) }
     var customPrompt by remember { mutableStateOf("") }
     val connectivityObserver: NetworkConnectivityObserver = koinInject()
-    val isConnected by connectivityObserver.isConnected.collectAsState()
+    val isConnected by connectivityObserver.isConnected.collectAsStateWithLifecycle()
     val isOffline = !isConnected
 
-    val generatedGoals by viewModel.generatedGoalsFromAI.collectAsState()
-    val questionnaireStep by viewModel.questionnaireStep.collectAsState()
-    val questions by viewModel.questions.collectAsState()
-    val isLoadingQuestions by viewModel.isLoadingQuestions.collectAsState()
-    val error by viewModel.error.collectAsState()
+    val generatedGoals by viewModel.generatedGoalsFromAI.collectAsStateWithLifecycle()
+    val questionnaireStep by viewModel.questionnaireStep.collectAsStateWithLifecycle()
+    val questions by viewModel.questions.collectAsStateWithLifecycle()
+    val isLoadingQuestions by viewModel.isLoadingQuestions.collectAsStateWithLifecycle()
+    val error by viewModel.error.collectAsStateWithLifecycle()
 
     // Reset when screen opens
     LaunchedEffect(Unit) {

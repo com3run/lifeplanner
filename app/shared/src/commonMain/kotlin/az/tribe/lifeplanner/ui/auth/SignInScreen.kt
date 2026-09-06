@@ -30,7 +30,11 @@ import az.tribe.lifeplanner.ui.theme.modernColors
 import az.tribe.lifeplanner.ui.viewmodel.AuthState
 import az.tribe.lifeplanner.ui.viewmodel.AuthViewModel
 import az.tribe.lifeplanner.ui.viewmodel.*
-import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_back
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,10 +42,10 @@ fun SignInScreen(
     onSignInSuccess: () -> Unit = {},
     onBackClick: () -> Unit = {}
 ) {
-    val authViewModel: AuthViewModel = koinInject()
-    val authState by authViewModel.authState.collectAsState()
-    val successMessage by authViewModel.successMessage.collectAsState()
-    val magicLinkSent by authViewModel.magicLinkSent.collectAsState()
+    val authViewModel: AuthViewModel = koinViewModel()
+    val authState by authViewModel.authState.collectAsStateWithLifecycle()
+    val successMessage by authViewModel.successMessage.collectAsStateWithLifecycle()
+    val magicLinkSent by authViewModel.magicLinkSent.collectAsStateWithLifecycle()
 
     val focusManager = LocalFocusManager.current
     var email by remember { mutableStateOf("") }
@@ -117,7 +121,7 @@ fun SignInScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = "Back")
+                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = stringResource(Res.string.cd_back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

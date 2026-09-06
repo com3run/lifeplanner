@@ -1,8 +1,8 @@
 package az.tribe.lifeplanner.usecases
 
-import az.tribe.lifeplanner.data.model.DataError.Remote
+import az.tribe.lifeplanner.domain.model.DataError
 import az.tribe.lifeplanner.data.model.GoalTypeQuestions
-import az.tribe.lifeplanner.data.model.Result
+import az.tribe.lifeplanner.domain.model.Result
 import az.tribe.lifeplanner.domain.repository.GeminiRepository
 
 /**
@@ -11,7 +11,7 @@ import az.tribe.lifeplanner.domain.repository.GeminiRepository
 class GenerateAiQuestionnaireUseCase(
     private val repository: GeminiRepository
 ) {
-    suspend operator fun invoke(userPrompt: String): Result<List<GoalTypeQuestions>, Remote> {
+    suspend operator fun invoke(userPrompt: String): Result<List<GoalTypeQuestions>, DataError.Network> {
         return repository.generateQuestionnaire(userPrompt)
     }
 }

@@ -21,6 +21,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_complete
+import leanlifeplanner.app.shared.generated.resources.cd_next
+import leanlifeplanner.app.shared.generated.resources.cd_previous
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -62,7 +67,7 @@ fun QuestionNavigationBar(
         ) {
             Icon(
                 imageVector = PhosphorIcons.Regular.ArrowLeft,
-                contentDescription = "Previous"
+                contentDescription = stringResource(Res.string.cd_previous)
             )
             Text(
                 text = "Previous",
@@ -91,12 +96,12 @@ fun QuestionNavigationBar(
             if (!isLastPage) {
                 Icon(
                     imageVector = PhosphorIcons.Regular.ArrowRight,
-                    contentDescription = "Next"
+                    contentDescription = stringResource(Res.string.cd_next)
                 )
             } else {
                 Icon(
                     imageVector = PhosphorIcons.Regular.Check,
-                    contentDescription = "Complete"
+                    contentDescription = stringResource(Res.string.cd_complete)
                 )
             }
         }

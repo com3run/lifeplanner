@@ -29,6 +29,9 @@ import az.tribe.lifeplanner.ui.theme.modernColors
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.Check
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_selected
 
 /**
  * Which part of your life this goal is for.
@@ -131,7 +134,7 @@ fun WheelAreaPickerSheet(
                             if (isSelected) {
                                 Icon(
                                     PhosphorIcons.Regular.Check,
-                                    contentDescription = "Selected",
+                                    contentDescription = stringResource(Res.string.cd_selected),
                                     tint = c.onPrimaryContainer,
                                 )
                             }

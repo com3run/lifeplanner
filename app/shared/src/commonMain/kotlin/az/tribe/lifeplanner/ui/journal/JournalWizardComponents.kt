@@ -22,6 +22,10 @@ import com.adamglin.phosphoricons.regular.ArrowLeft
 import com.adamglin.phosphoricons.regular.Sparkle
 import com.adamglin.phosphoricons.regular.X
 import kotlinx.coroutines.delay
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_back
+import leanlifeplanner.app.shared.generated.resources.cd_close
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,14 +59,14 @@ internal fun JournalWizardTopBar(
                 IconButton(onClick = onBackClick) {
                     Icon(
                         PhosphorIcons.Regular.ArrowLeft,
-                        contentDescription = "Back"
+                        contentDescription = stringResource(Res.string.cd_back)
                     )
                 }
             },
             actions = {
                 if (currentStep == JournalWizardStep.MOOD) {
                     IconButton(onClick = onBackClick) {
-                        Icon(PhosphorIcons.Regular.X, contentDescription = "Close")
+                        Icon(PhosphorIcons.Regular.X, contentDescription = stringResource(Res.string.cd_close))
                     }
                 }
             },

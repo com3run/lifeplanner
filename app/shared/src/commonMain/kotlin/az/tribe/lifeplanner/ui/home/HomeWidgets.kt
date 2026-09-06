@@ -63,6 +63,10 @@ import com.adamglin.phosphoricons.regular.CaretRight
 import com.adamglin.phosphoricons.regular.Heart
 import com.adamglin.phosphoricons.regular.Play
 import com.adamglin.phosphoricons.regular.UserCircle
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_profile
+import leanlifeplanner.app.shared.generated.resources.cd_start_focus
 
 /** Reusable section header with optional "See all" link. */
 @Composable
@@ -199,7 +203,7 @@ fun HeroBanner(
                     }
                 }
                 IconButton(onClick = onProfileClick, modifier = Modifier.size(36.dp)) {
-                    Icon(PhosphorIcons.Regular.UserCircle, contentDescription = "Profile",
+                    Icon(PhosphorIcons.Regular.UserCircle, contentDescription = stringResource(Res.string.cd_profile),
                         tint = if (isSignedIn) Color(0xFF34D399) else Color.White.copy(alpha = 0.5f),
                         modifier = Modifier.size(22.dp))
                 }
@@ -342,7 +346,7 @@ fun CompactHomeMilestoneRow(
             modifier = Modifier.size(28.dp).clip(CircleShape).background(Color(0xFFFF6B35).copy(alpha = 0.15f)).clickable(onClick = onStartFocus),
             contentAlignment = Alignment.Center
         ) {
-            Icon(PhosphorIcons.Regular.Play, contentDescription = "Start focus", tint = Color(0xFFFF6B35), modifier = Modifier.size(16.dp))
+            Icon(PhosphorIcons.Regular.Play, contentDescription = stringResource(Res.string.cd_start_focus), tint = Color(0xFFFF6B35), modifier = Modifier.size(16.dp))
         }
     }
 }

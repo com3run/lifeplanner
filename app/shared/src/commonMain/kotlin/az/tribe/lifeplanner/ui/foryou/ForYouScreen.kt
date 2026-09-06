@@ -57,7 +57,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -131,6 +131,11 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.todayIn
 import kotlin.time.Clock
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_close
+import leanlifeplanner.app.shared.generated.resources.cd_expand_weather
+import leanlifeplanner.app.shared.generated.resources.cd_mark_done
 
 /**
  * The new home: a "For You" feed. A calm gradient header (greeting + level/streak ring), filter
@@ -145,24 +150,24 @@ fun ForYouScreen(
     onOpenWeather: (TodayWeather) -> Unit,
     viewModel: ForYouViewModel = koinViewModel(),
 ) {
-    val feed by viewModel.feed.collectAsState()
-    val progress by viewModel.progress.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
-    val plan by viewModel.todayPlan.collectAsState()
-    val healthHabits by viewModel.healthHabits.collectAsState()
-    val learning by viewModel.learning.collectAsState()
-    val zones by viewModel.zones.collectAsState()
-    val zonesShown by viewModel.zonesShown.collectAsState()
-    val readLessonIds by viewModel.readLessonIds.collectAsState()
-    val wheel by viewModel.wheel.collectAsState()
-    val checkinPulse by viewModel.checkinPulse.collectAsState()
+    val feed by viewModel.feed.collectAsStateWithLifecycle()
+    val progress by viewModel.progress.collectAsStateWithLifecycle()
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    val plan by viewModel.todayPlan.collectAsStateWithLifecycle()
+    val healthHabits by viewModel.healthHabits.collectAsStateWithLifecycle()
+    val learning by viewModel.learning.collectAsStateWithLifecycle()
+    val zones by viewModel.zones.collectAsStateWithLifecycle()
+    val zonesShown by viewModel.zonesShown.collectAsStateWithLifecycle()
+    val readLessonIds by viewModel.readLessonIds.collectAsStateWithLifecycle()
+    val wheel by viewModel.wheel.collectAsStateWithLifecycle()
+    val checkinPulse by viewModel.checkinPulse.collectAsStateWithLifecycle()
     val c = MaterialTheme.modernColors
 
     // Today's device-calendar events, folded into "Today's plan" so the plan reflects real
     // appointments, not just goal milestones. Read-only; empty (and silent) without permission.
     val calendarViewModel: CalendarViewModel = koinViewModel()
     val calendarPermission = rememberCalendarPermission()
-    val todayEvents by calendarViewModel.dayEvents.collectAsState()
+    val todayEvents by calendarViewModel.dayEvents.collectAsStateWithLifecycle()
     val tz = remember { TimeZone.currentSystemDefault() }
     val feedNowHour = remember { Clock.System.now().toLocalDateTime(tz).hour }
     // Read once per open. The card hides itself the moment a breath is finished, so this only has
@@ -186,7 +191,7 @@ fun ForYouScreen(
 
     // Today's weather (Open-Meteo). The permission lives in Compose; feed its state to the VM.
     val weatherViewModel: TodayWeatherViewModel = koinViewModel()
-    val weatherState by weatherViewModel.state.collectAsState()
+    val weatherState by weatherViewModel.state.collectAsStateWithLifecycle()
     val locationPermission = rememberLocationPermission()
     LaunchedEffect(locationPermission.state) {
         weatherViewModel.onPermissionState(locationPermission.state == LocationPermissionState.GRANTED)
@@ -732,7 +737,7 @@ private fun TodayHero(progress: UserProgress?, weather: TodayWeather?, onExpand:
             subtitle = subtitle,
             gradient = heroMoodGradient(weather.condition, hour),
             trailing = {
-                Icon(PhosphorIcons.Regular.ArrowsOutSimple, contentDescription = "Expand weather", tint = Color.White.copy(alpha = 0.85f))
+                Icon(PhosphorIcons.Regular.ArrowsOutSimple, contentDescription = stringResource(Res.string.cd_expand_weather), tint = Color.White.copy(alpha = 0.85f))
             },
         )
     }
@@ -888,7 +893,7 @@ fun WeatherDetailFullScreen(weather: TodayWeather, onDismiss: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = onDismiss) {
-                Icon(PhosphorIcons.Regular.X, contentDescription = "Close", tint = toolbarTint)
+                Icon(PhosphorIcons.Regular.X, contentDescription = stringResource(Res.string.cd_close), tint = toolbarTint)
             }
             if (collapse > 0.5f) {
                 Text(
@@ -1141,7 +1146,7 @@ private fun PlanRow(item: PlanItem, onComplete: () -> Unit, onOpen: () -> Unit) 
             } else {
                 Icon(
                     imageVector = PhosphorIcons.Regular.Circle,
-                    contentDescription = "Mark done",
+                    contentDescription = stringResource(Res.string.cd_mark_done),
                     tint = if (item.overdue) overdueColor else c.textTertiary,
                     modifier = Modifier
                         .clip(CircleShape)

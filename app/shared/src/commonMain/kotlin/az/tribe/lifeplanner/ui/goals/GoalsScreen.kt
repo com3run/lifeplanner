@@ -25,7 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,6 +48,10 @@ import com.adamglin.phosphoricons.regular.ArrowLeft
 import com.adamglin.phosphoricons.regular.Flag
 import com.adamglin.phosphoricons.regular.Plus
 import org.koin.compose.viewmodel.koinViewModel
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_back
+import leanlifeplanner.app.shared.generated.resources.cd_new_goal
 
 /**
  * D7, the redesigned **Goals** canvas (D2): your commitments, active first, each laddered to a
@@ -63,7 +67,7 @@ fun GoalsScreen(
     showBack: Boolean = true,
     viewModel: GoalsViewModel = koinViewModel(),
 ) {
-    val state by viewModel.state.collectAsState()
+    val state by viewModel.state.collectAsStateWithLifecycle()
     val c = MaterialTheme.modernColors
 
     Scaffold(
@@ -74,7 +78,7 @@ fun GoalsScreen(
                 navigationIcon = {
                     if (showBack) {
                         IconButton(onClick = onBackClick) {
-                            Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = "Back", tint = c.textPrimary)
+                            Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = stringResource(Res.string.cd_back), tint = c.textPrimary)
                         }
                     }
                 },
@@ -99,7 +103,7 @@ fun GoalsScreen(
                     subtitle = summary(state),
                     trailing = {
                         IconButton(onClick = onNewGoal) {
-                            Icon(PhosphorIcons.Regular.Plus, contentDescription = "New goal", tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(LifePlannerDesign.IconSize.large))
+                            Icon(PhosphorIcons.Regular.Plus, contentDescription = stringResource(Res.string.cd_new_goal), tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(LifePlannerDesign.IconSize.large))
                         }
                     },
                 )

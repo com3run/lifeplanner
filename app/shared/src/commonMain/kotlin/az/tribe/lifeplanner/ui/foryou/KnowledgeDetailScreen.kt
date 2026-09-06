@@ -68,6 +68,8 @@ import com.adamglin.phosphoricons.regular.X
 import com.russhwolf.settings.Settings
 import org.koin.compose.koinInject
 import kotlin.time.Clock
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_close
 
 /**
  * A Learn lesson in **reader mode**: the app gets out of the way (no tabs, no cards competing for
@@ -133,7 +135,7 @@ fun KnowledgeDetailScreen(
                     title = {},
                     navigationIcon = {
                         IconButton(onClick = onBackClick) {
-                            Icon(PhosphorIcons.Regular.X, contentDescription = "Close", tint = c.textTertiary)
+                            Icon(PhosphorIcons.Regular.X, contentDescription = stringResource(Res.string.cd_close), tint = c.textTertiary)
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = c.background),

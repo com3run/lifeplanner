@@ -32,7 +32,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -61,6 +61,10 @@ import kotlinx.datetime.todayIn
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Clock
 import org.koin.compose.viewmodel.koinViewModel
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_back
+import leanlifeplanner.app.shared.generated.resources.cd_refresh
 
 private const val PREVIEW_DAYS = 7
 
@@ -76,9 +80,9 @@ fun CalendarSettingsScreen(
     viewModel: CalendarViewModel = koinViewModel(),
 ) {
     val permission = rememberCalendarPermission()
-    val calendars by viewModel.calendars.collectAsState()
-    val events by viewModel.events.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
+    val calendars by viewModel.calendars.collectAsStateWithLifecycle()
+    val events by viewModel.events.collectAsStateWithLifecycle()
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
 
     LaunchedEffect(permission.state) {
         if (permission.state == CalendarPermissionState.GRANTED) {
@@ -116,7 +120,7 @@ fun CalendarSettingsScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = "Back")
+                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = stringResource(Res.string.cd_back))
                     }
                 },
                 actions = {
@@ -127,7 +131,7 @@ fun CalendarSettingsScreen(
                         }) {
                             Icon(
                                 PhosphorIcons.Regular.ArrowsClockwise,
-                                contentDescription = "Refresh",
+                                contentDescription = stringResource(Res.string.cd_refresh),
                                 tint = if (isLoading) MaterialTheme.colorScheme.primary
                                 else MaterialTheme.colorScheme.onSurfaceVariant,
                             )

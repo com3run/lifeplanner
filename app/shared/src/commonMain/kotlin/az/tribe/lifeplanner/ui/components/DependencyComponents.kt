@@ -45,6 +45,9 @@ import androidx.compose.ui.unit.dp
 import az.tribe.lifeplanner.domain.enum.DependencyType
 import az.tribe.lifeplanner.domain.model.Goal
 import az.tribe.lifeplanner.domain.model.GoalDependency
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_remove
 
 /**
  * Card showing goal dependencies in GoalDetailScreen
@@ -227,7 +230,7 @@ fun DependencyItem(
 
         Icon(
             PhosphorIcons.Regular.X,
-            contentDescription = "Remove",
+            contentDescription = stringResource(Res.string.cd_remove),
             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f),
             modifier = Modifier
                 .size(14.dp)

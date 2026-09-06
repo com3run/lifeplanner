@@ -35,7 +35,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -64,7 +64,6 @@ import com.adamglin.phosphoricons.fill.Lock
 import com.adamglin.phosphoricons.regular.ArrowLeft
 import com.adamglin.phosphoricons.regular.ChatCircle
 import com.adamglin.phosphoricons.regular.Play
-import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -74,14 +73,14 @@ fun CoachProfileScreen(
     onStartChat: ((coachId: String) -> Unit)? = null,
     onPlayIntro: ((coachId: String) -> Unit)? = null,
 ) {
-    val storeCoaches by BuiltinCoachStore.coaches.collectAsState()
+    val storeCoaches by BuiltinCoachStore.coaches.collectAsStateWithLifecycle()
     val coach = remember(coachId, storeCoaches) { BuiltinCoachStore.getById(coachId) }
     var showAuthSheet by remember { mutableStateOf(false) }
 
-    val authViewModel: AuthViewModel = koinInject()
-    val authState by authViewModel.authState.collectAsState()
+    val authViewModel: AuthViewModel = koinViewModel()
+    val authState by authViewModel.authState.collectAsStateWithLifecycle()
     val gamificationViewModel: GamificationViewModel = koinViewModel()
-    val userProgress by gamificationViewModel.userProgress.collectAsState()
+    val userProgress by gamificationViewModel.userProgress.collectAsStateWithLifecycle()
     val level = userProgress?.currentLevel ?: 1
     val chatUnlocked = coachId == CoachPersona.LUNA_ID || level >= 3
 

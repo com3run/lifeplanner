@@ -21,7 +21,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -40,6 +40,9 @@ import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.ArrowLeft
 import org.koin.compose.viewmodel.koinViewModel
 import kotlin.math.roundToInt
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_back
 
 /**
  * Pillar 7 (Innate), "Your Wiring". Shows the user their inferred [DecisionProfile] in plain,
@@ -52,7 +55,7 @@ fun YourWiringScreen(
     onBackClick: () -> Unit,
     viewModel: WiringViewModel = koinViewModel(),
 ) {
-    val profile by viewModel.profile.collectAsState()
+    val profile by viewModel.profile.collectAsStateWithLifecycle()
 
     Scaffold(
         containerColor = MaterialTheme.modernColors.background,
@@ -61,7 +64,7 @@ fun YourWiringScreen(
                 title = { Text("Your Wiring", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = "Back", tint = MaterialTheme.modernColors.textPrimary)
+                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = stringResource(Res.string.cd_back), tint = MaterialTheme.modernColors.textPrimary)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

@@ -33,6 +33,9 @@ import androidx.compose.ui.unit.dp
 import az.tribe.lifeplanner.domain.enum.BadgeType
 import az.tribe.lifeplanner.domain.model.Badge
 import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_view_badges
 
 @Composable
 fun AchievementsCard(
@@ -161,7 +164,7 @@ fun NewBadgesCard(
             }
             Icon(
                 PhosphorIcons.Regular.CaretRight,
-                contentDescription = "View badges",
+                contentDescription = stringResource(Res.string.cd_view_badges),
                 tint = Color.White,
                 modifier = Modifier.size(24.dp)
             )

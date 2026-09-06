@@ -48,6 +48,9 @@ import com.adamglin.phosphoricons.regular.Lightning
 import com.adamglin.phosphoricons.regular.Plus
 import com.adamglin.phosphoricons.regular.Star
 import com.adamglin.phosphoricons.regular.User
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_add_reflection
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -201,7 +204,7 @@ internal fun ReflectionsCard(
                     ) {
                         Icon(
                             PhosphorIcons.Regular.Plus,
-                            contentDescription = "Add Reflection",
+                            contentDescription = stringResource(Res.string.cd_add_reflection),
                             tint = MaterialTheme.colorScheme.onPrimaryContainer,
                             modifier = Modifier.size(16.dp)
                         )

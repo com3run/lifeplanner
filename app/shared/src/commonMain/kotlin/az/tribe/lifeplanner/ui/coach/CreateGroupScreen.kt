@@ -36,7 +36,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -56,6 +56,9 @@ import az.tribe.lifeplanner.domain.model.CustomCoach
 import kotlin.time.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_back
 
 /**
  * Screen for creating or editing a coach group
@@ -69,7 +72,7 @@ fun CreateGroupScreen(
     onGroupSaved: (CoachGroup) -> Unit
 ) {
     val isEditing = groupToEdit != null
-    val builtinCoaches by BuiltinCoachStore.coaches.collectAsState()
+    val builtinCoaches by BuiltinCoachStore.coaches.collectAsStateWithLifecycle()
     val allBuiltinCoaches = builtinCoaches.ifEmpty { CoachPersona.ALL_COACHES }
 
     // Form state
@@ -106,7 +109,7 @@ fun CreateGroupScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             PhosphorIcons.Regular.ArrowLeft,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(Res.string.cd_back)
                         )
                     }
                 },

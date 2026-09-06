@@ -28,6 +28,9 @@ import az.tribe.lifeplanner.ui.theme.modernColors
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.Check
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_selected
 
 /**
  * Pillar 1, "Why this goal?" picker. Lets the user link a goal to a [LifeValue]
@@ -133,7 +136,7 @@ private fun ValueOptionRow(
             if (selected) {
                 Icon(
                     PhosphorIcons.Regular.Check,
-                    contentDescription = "Selected",
+                    contentDescription = stringResource(Res.string.cd_selected),
                     tint = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             }

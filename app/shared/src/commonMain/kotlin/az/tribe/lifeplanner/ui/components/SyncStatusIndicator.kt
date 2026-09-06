@@ -22,16 +22,24 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import az.tribe.lifeplanner.data.sync.SyncState
 import az.tribe.lifeplanner.data.sync.SyncStatus
 import kotlinx.coroutines.flow.StateFlow
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_all_data_synced
+import leanlifeplanner.app.shared.generated.resources.cd_connected
+import leanlifeplanner.app.shared.generated.resources.cd_no_internet_connection
+import leanlifeplanner.app.shared.generated.resources.cd_sync_failed_tap_to_retry
+import leanlifeplanner.app.shared.generated.resources.cd_syncing_with_cloud
+import leanlifeplanner.app.shared.generated.resources.cd_changes_waiting_to_sync
+import androidx.compose.ui.graphics.graphicsLayer
 
 @Composable
 fun SyncStatusIndicator(
@@ -40,7 +48,7 @@ fun SyncStatusIndicator(
     modifier: Modifier = Modifier,
     compact: Boolean = false
 ) {
-    val status by syncStatus.collectAsState()
+    val status by syncStatus.collectAsStateWithLifecycle()
 
     AnimatedContent(
         targetState = status.state,
@@ -60,8 +68,8 @@ fun SyncStatusIndicator(
                 )
                 Icon(
                     imageVector = PhosphorIcons.Regular.CloudArrowUp,
-                    contentDescription = "Syncing with cloud",
-                    modifier = Modifier.size(20.dp).alpha(alpha),
+                    contentDescription = stringResource(Res.string.cd_syncing_with_cloud),
+                    modifier = Modifier.size(20.dp).graphicsLayer { this.alpha = alpha },
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
@@ -69,7 +77,7 @@ fun SyncStatusIndicator(
             SyncState.SYNCED -> {
                 Icon(
                     imageVector = PhosphorIcons.Regular.CloudCheck,
-                    contentDescription = "All data synced",
+                    contentDescription = stringResource(Res.string.cd_all_data_synced),
                     modifier = Modifier.size(20.dp),
                     tint = Color(0xFF4CAF50)
                 )
@@ -78,7 +86,7 @@ fun SyncStatusIndicator(
             SyncState.OFFLINE -> {
                 Icon(
                     imageVector = PhosphorIcons.Regular.CloudSlash,
-                    contentDescription = "No internet connection",
+                    contentDescription = stringResource(Res.string.cd_no_internet_connection),
                     modifier = Modifier.size(20.dp),
                     tint = MaterialTheme.colorScheme.outline
                 )
@@ -88,7 +96,7 @@ fun SyncStatusIndicator(
                 IconButton(onClick = onRetryClick, modifier = Modifier.size(32.dp)) {
                     Icon(
                         imageVector = PhosphorIcons.Regular.WarningCircle,
-                        contentDescription = "Sync failed, tap to retry",
+                        contentDescription = stringResource(Res.string.cd_sync_failed_tap_to_retry),
                         modifier = Modifier.size(20.dp),
                         tint = MaterialTheme.colorScheme.error
                     )
@@ -99,14 +107,14 @@ fun SyncStatusIndicator(
                 if (status.pendingChanges > 0) {
                     Icon(
                         imageVector = PhosphorIcons.Regular.CloudArrowUp,
-                        contentDescription = "${status.pendingChanges} changes waiting to sync",
+                        contentDescription = stringResource(Res.string.cd_changes_waiting_to_sync, status.pendingChanges),
                         modifier = Modifier.size(20.dp),
                         tint = MaterialTheme.colorScheme.tertiary
                     )
                 } else {
                     Icon(
                         imageVector = PhosphorIcons.Regular.Cloud,
-                        contentDescription = "Connected",
+                        contentDescription = stringResource(Res.string.cd_connected),
                         modifier = Modifier.size(20.dp),
                         tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
                     )

@@ -42,6 +42,10 @@ import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_back
+import leanlifeplanner.app.shared.generated.resources.cd_save
 
 @OptIn(ExperimentalUuidApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -134,7 +138,7 @@ fun AddGoalFromTemplateScreen(
                     IconButton(onClick = onBackClick) {
                         Icon(
                             PhosphorIcons.Regular.ArrowLeft,
-                            contentDescription = "Back",
+                            contentDescription = stringResource(Res.string.cd_back),
                             tint = MaterialTheme.modernColors.textPrimary
                         )
                     }
@@ -184,7 +188,7 @@ fun AddGoalFromTemplateScreen(
                 icon = {
                     Icon(
                         imageVector = PhosphorIcons.Regular.Check,
-                        contentDescription = "Save"
+                        contentDescription = stringResource(Res.string.cd_save)
                     )
                 },
                 expanded = isFormValid,

@@ -22,7 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,6 +51,10 @@ import org.koin.compose.viewmodel.koinViewModel
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Clock
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_back
+import leanlifeplanner.app.shared.generated.resources.cd_mark_done
 
 /**
  * D7, the redesigned **Today** agency surface (D2): a calm "top stories for your life" front door
@@ -67,9 +71,9 @@ fun TodayScreen(
     onStartFocus: () -> Unit = {},
     viewModel: TodayViewModel = koinViewModel(),
 ) {
-    val habits by viewModel.habitsToday.collectAsState()
-    val possibilities by viewModel.possibilities.collectAsState()
-    val plan by viewModel.todayPlan.collectAsState()
+    val habits by viewModel.habitsToday.collectAsStateWithLifecycle()
+    val possibilities by viewModel.possibilities.collectAsStateWithLifecycle()
+    val plan by viewModel.todayPlan.collectAsStateWithLifecycle()
     val c = MaterialTheme.modernColors
     val doneCount = habits.count { it.doneToday }
 
@@ -81,7 +85,7 @@ fun TodayScreen(
                 navigationIcon = {
                     if (showBack) {
                         IconButton(onClick = onBackClick) {
-                            Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = "Back", tint = c.textPrimary)
+                            Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = stringResource(Res.string.cd_back), tint = c.textPrimary)
                         }
                     }
                 },
@@ -244,7 +248,7 @@ private fun PlanRow(item: PlanItem, onComplete: () -> Unit) {
         ) {
             Icon(
                 imageVector = PhosphorIcons.Regular.Circle,
-                contentDescription = "Mark done",
+                contentDescription = stringResource(Res.string.cd_mark_done),
                 tint = if (item.overdue) overdueColor else c.textTertiary,
                 modifier = Modifier.size(LifePlannerDesign.IconSize.large),
             )

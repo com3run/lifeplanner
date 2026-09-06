@@ -78,6 +78,8 @@ import leanlifeplanner.app.shared.generated.resources.illus_learn_motivation
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.viewmodel.koinViewModel
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_read
 
 /**
  * The map itself: a zone's heading, its winding trail, and the stops on it.
@@ -351,7 +353,7 @@ internal fun TrailNode(stop: TrailStop, modifier: Modifier = Modifier, onOpen: (
                     ) {
                         Icon(
                             PhosphorIcons.Regular.Check,
-                            contentDescription = "Read",
+                            contentDescription = stringResource(Res.string.cd_read),
                             tint = Color.White,
                             modifier = Modifier.size(12.dp),
                         )

@@ -55,6 +55,10 @@ import com.adamglin.phosphoricons.regular.PencilSimple
 import com.adamglin.phosphoricons.regular.Plus
 import com.adamglin.phosphoricons.regular.Sparkle
 import com.adamglin.phosphoricons.regular.Warning
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_add_milestone
+import leanlifeplanner.app.shared.generated.resources.cd_edit_notes
 
 @Composable
 internal fun CompletedGoalBanner(
@@ -242,7 +246,7 @@ internal fun ModernNotesCard(
                     ) {
                         Icon(
                             PhosphorIcons.Regular.PencilSimple,
-                            contentDescription = "Edit Notes",
+                            contentDescription = stringResource(Res.string.cd_edit_notes),
                             tint = MaterialTheme.colorScheme.onPrimaryContainer,
                             modifier = Modifier.size(16.dp)
                         )
@@ -339,7 +343,7 @@ internal fun ModernMilestonesCard(
                     ) {
                         Icon(
                             PhosphorIcons.Regular.Plus,
-                            contentDescription = "Add Milestone",
+                            contentDescription = stringResource(Res.string.cd_add_milestone),
                             tint = MaterialTheme.colorScheme.onPrimaryContainer,
                             modifier = Modifier.size(16.dp)
                         )

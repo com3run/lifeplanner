@@ -35,6 +35,9 @@ import com.adamglin.phosphoricons.regular.PlusCircle
 import com.adamglin.phosphoricons.regular.Sparkle
 import com.adamglin.phosphoricons.regular.WifiSlash
 import kotlinx.coroutines.delay
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_back
 
 // ── Top Bar ──────────────────────────────────────────────────────────────────
 
@@ -63,7 +66,7 @@ internal fun HabitGeneratorTopBar(step: HabitGeneratorStep, onBackClick: () -> U
             navigationIcon = {
                 if (step != HabitGeneratorStep.GENERATING) {
                     IconButton(onClick = onBackClick) {
-                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = "Back")
+                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = stringResource(Res.string.cd_back))
                     }
                 }
             },

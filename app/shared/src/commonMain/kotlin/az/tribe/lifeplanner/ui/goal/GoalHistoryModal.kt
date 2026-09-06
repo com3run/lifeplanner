@@ -34,7 +34,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,6 +54,8 @@ import com.adamglin.phosphoricons.regular.ArrowLeft
 import leanlifeplanner.app.shared.generated.resources.Res
 import leanlifeplanner.app.shared.generated.resources.illus_empty_folder
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_back
 
 @Composable
 fun GoalHistoryModal(
@@ -103,8 +105,8 @@ fun GoalHistoryContent(
     viewModel: GoalViewModel,
     onBackClick: () -> Unit
 ) {
-    val historyState by viewModel.goalHistory.collectAsState()
-    val goals by viewModel.goals.collectAsState()
+    val historyState by viewModel.goalHistory.collectAsStateWithLifecycle()
+    val goals by viewModel.goals.collectAsStateWithLifecycle()
     val goal = goals.find { it.id == goalId }
 
     LaunchedEffect(goalId) {
@@ -133,7 +135,7 @@ fun GoalHistoryContent(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = "Back")
+                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = stringResource(Res.string.cd_back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

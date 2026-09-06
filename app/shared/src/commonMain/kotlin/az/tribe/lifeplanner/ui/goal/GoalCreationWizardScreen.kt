@@ -17,7 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -145,7 +145,7 @@ fun GoalCreationWizardScreen(
 
     // Pillar 1: the life-value link. No longer a manual chore, it is auto-inferred from the goal's
     // category + text and pre-filled here; the user only taps if they want to change it.
-    val lifeValues by viewModel.lifeValues.collectAsState()
+    val lifeValues by viewModel.lifeValues.collectAsStateWithLifecycle()
     var selectedValueId by remember { mutableStateOf<String?>(null) }
     var valueTouched by remember { mutableStateOf(false) }
     var showValueSheet by remember { mutableStateOf(false) }

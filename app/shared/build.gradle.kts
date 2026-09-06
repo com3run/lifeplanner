@@ -172,6 +172,7 @@ kotlin {
             implementation(libs.kotlinx.coroutines.test)
             implementation(libs.koin.test)
             implementation(libs.turbine)
+            implementation(libs.assertk)
             implementation(libs.ktor.client.mock)
             implementation(libs.multiplatform.settings.test)
         }

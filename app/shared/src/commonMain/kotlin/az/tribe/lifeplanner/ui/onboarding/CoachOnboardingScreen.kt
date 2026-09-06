@@ -40,7 +40,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -66,6 +66,9 @@ import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.ArrowLeft
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_back
 
 private data class ChatMessage(
     val isCoach: Boolean, val text: String,
@@ -248,13 +251,13 @@ fun CoachOnboardingScreen(
     onNeedsIntro: () -> Unit = {},
     viewModel: CoachOnboardingViewModel = koinViewModel()
 ) {
-    val authViewModel: AuthViewModel = koinInject()
-    val authState by authViewModel.authState.collectAsState()
+    val authViewModel: AuthViewModel = koinViewModel()
+    val authState by authViewModel.authState.collectAsStateWithLifecycle()
     val settings: Settings = koinInject()
 
-    val phase by viewModel.phase.collectAsState()
-    val isSaving by viewModel.isSaving.collectAsState()
-    val isAnalyzing by viewModel.isAnalyzing.collectAsState()
+    val phase by viewModel.phase.collectAsStateWithLifecycle()
+    val isSaving by viewModel.isSaving.collectAsStateWithLifecycle()
+    val isAnalyzing by viewModel.isAnalyzing.collectAsStateWithLifecycle()
 
     var showSignInSheet by remember { mutableStateOf(false) }
     var isLoadingGuest by remember { mutableStateOf(false) }
@@ -510,7 +513,7 @@ private fun ChatTopBar(
                 IconButton(onClick = onBack) {
                     Icon(
                         imageVector = PhosphorIcons.Regular.ArrowLeft,
-                        contentDescription = "Back",
+                        contentDescription = stringResource(Res.string.cd_back),
                         tint = MaterialTheme.colorScheme.onSurface
                     )
                 }

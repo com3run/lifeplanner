@@ -29,7 +29,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -57,11 +57,14 @@ import com.adamglin.phosphoricons.regular.ArrowLeft
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_back
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AIChatScreen(
-    viewModel: ChatViewModel = koinInject(),
+    viewModel: ChatViewModel = koinViewModel(),
     coachId: String? = null,
     onNavigateBack: () -> Unit,
     onNavigateToCoach: (String) -> Unit = {},
@@ -69,11 +72,11 @@ fun AIChatScreen(
     onNavigateToCreateGroup: () -> Unit = {},
     onNavigateToCoachProfile: (String) -> Unit = {}
 ) {
-    val uiState by viewModel.uiState.collectAsState()
-    val builtinCoaches by BuiltinCoachStore.coaches.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val builtinCoaches by BuiltinCoachStore.coaches.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val connectivityObserver: NetworkConnectivityObserver = koinInject()
-    val isConnected by connectivityObserver.isConnected.collectAsState()
+    val isConnected by connectivityObserver.isConnected.collectAsStateWithLifecycle()
     val isOffline = !isConnected
     val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
     val scope = rememberCoroutineScope()
@@ -141,7 +144,7 @@ fun AIChatScreen(
                 ) {
                     Icon(
                         PhosphorIcons.Regular.ArrowLeft,
-                        contentDescription = "Back",
+                        contentDescription = stringResource(Res.string.cd_back),
                         tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(20.dp)
                     )

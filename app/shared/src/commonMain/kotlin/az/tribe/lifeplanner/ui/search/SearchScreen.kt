@@ -16,7 +16,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -37,9 +37,9 @@ fun SearchScreen(
     initialFilter: SearchFilter? = null,
     viewModel: SearchViewModel = koinViewModel(),
 ) {
-    val query by viewModel.query.collectAsState()
-    val results by viewModel.results.collectAsState()
-    val selectedFilters by viewModel.selectedFilters.collectAsState()
+    val query by viewModel.query.collectAsStateWithLifecycle()
+    val results by viewModel.results.collectAsStateWithLifecycle()
+    val selectedFilters by viewModel.selectedFilters.collectAsStateWithLifecycle()
     val focusRequester = remember { FocusRequester() }
 
     // Apply the pre-selected filter passed from the calling screen (e.g. "All Goals" on Home)

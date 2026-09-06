@@ -34,6 +34,12 @@ import com.adamglin.phosphoricons.regular.Sparkle
 import com.adamglin.phosphoricons.regular.X
 import az.tribe.lifeplanner.domain.service.HabitTrackMode
 import org.koin.compose.viewmodel.koinViewModel
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_back
+import leanlifeplanner.app.shared.generated.resources.cd_clear_time
+import leanlifeplanner.app.shared.generated.resources.cd_save
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,7 +61,7 @@ fun AddHabitScreen(
     var showTitleError by remember { mutableStateOf(false) }
     var titleErrorText by remember { mutableStateOf("") }
     // Collected so the duplicate check below sees the real list (the flow is WhileSubscribed).
-    val existingHabits by viewModel.habits.collectAsState()
+    val existingHabits by viewModel.habits.collectAsStateWithLifecycle()
     var trackMode by remember { mutableStateOf(HabitTrackMode.SINGLE) }
     var userPickedTrackMode by remember { mutableStateOf(false) }
     var countTargetText by remember { mutableStateOf("") }
@@ -272,7 +278,7 @@ fun AddHabitScreen(
                     IconButton(onClick = onBackClick) {
                         Icon(
                             PhosphorIcons.Regular.ArrowLeft,
-                            contentDescription = "Back",
+                            contentDescription = stringResource(Res.string.cd_back),
                             tint = MaterialTheme.modernColors.textPrimary
                         )
                     }
@@ -321,7 +327,7 @@ fun AddHabitScreen(
                 icon = {
                     Icon(
                         imageVector = PhosphorIcons.Regular.Check,
-                        contentDescription = "Save"
+                        contentDescription = stringResource(Res.string.cd_save)
                     )
                 },
                 expanded = isFormValid,
@@ -607,7 +613,7 @@ fun AddHabitScreen(
                             ) {
                                 Icon(
                                     imageVector = PhosphorIcons.Regular.X,
-                                    contentDescription = "Clear time",
+                                    contentDescription = stringResource(Res.string.cd_clear_time),
                                     modifier = Modifier.size(16.dp)
                                 )
                             }

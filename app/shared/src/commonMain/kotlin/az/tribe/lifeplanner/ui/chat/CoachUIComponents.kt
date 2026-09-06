@@ -62,6 +62,9 @@ import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.ArrowLeft
 import com.adamglin.phosphoricons.regular.Brain
 import com.adamglin.phosphoricons.regular.UsersThree
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_back
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -80,7 +83,7 @@ internal fun CoachLockedScreen(
                 title = { Text("Personal Coach") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = "Back")
+                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = stringResource(Res.string.cd_back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)

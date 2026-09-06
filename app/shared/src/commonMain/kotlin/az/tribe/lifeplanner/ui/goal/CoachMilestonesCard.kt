@@ -42,6 +42,9 @@ import az.tribe.lifeplanner.ui.theme.modernColors
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.Check
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_add_step
 
 /**
  * Step ideas for a goal, written as quiet advice rather than an offer.
@@ -176,7 +179,7 @@ private fun StepField(
                         .bouncyClickable(onClick = onSubmit),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(PhosphorIcons.Regular.Check, contentDescription = "Add step", tint = Color.White, modifier = Modifier.size(16.dp))
+                    Icon(PhosphorIcons.Regular.Check, contentDescription = stringResource(Res.string.cd_add_step), tint = Color.White, modifier = Modifier.size(16.dp))
                 }
             }
         },

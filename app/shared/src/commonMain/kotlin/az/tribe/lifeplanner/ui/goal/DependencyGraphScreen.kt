@@ -20,7 +20,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -39,17 +39,24 @@ import com.adamglin.phosphoricons.regular.Crosshair
 import com.adamglin.phosphoricons.regular.Funnel
 import com.adamglin.phosphoricons.regular.MagnifyingGlassMinus
 import com.adamglin.phosphoricons.regular.MagnifyingGlassPlus
-import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_back
+import leanlifeplanner.app.shared.generated.resources.cd_filter
+import leanlifeplanner.app.shared.generated.resources.cd_reset_view
+import leanlifeplanner.app.shared.generated.resources.cd_zoom_in
+import leanlifeplanner.app.shared.generated.resources.cd_zoom_out
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DependencyGraphScreen(
-    viewModel: GoalDependencyViewModel = koinInject(),
+    viewModel: GoalDependencyViewModel = koinViewModel(),
     focusGoalId: String? = null,
     onNavigateBack: () -> Unit,
     onGoalClick: (String) -> Unit
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         viewModel.loadData()
@@ -73,14 +80,14 @@ fun DependencyGraphScreen(
                 title = { Text("Goal Dependencies") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = "Back")
+                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = stringResource(Res.string.cd_back))
                     }
                 },
                 actions = {
                     IconButton(onClick = { showFilters = !showFilters }) {
                         Icon(
                             PhosphorIcons.Regular.Funnel,
-                            contentDescription = "Filter",
+                            contentDescription = stringResource(Res.string.cd_filter),
                             tint = if (selectedCategory != null) {
                                 MaterialTheme.colorScheme.primary
                             } else {
@@ -103,14 +110,14 @@ fun DependencyGraphScreen(
                     onClick = { scale = (scale + 0.2f).coerceAtMost(2.5f) },
                     containerColor = MaterialTheme.colorScheme.secondaryContainer
                 ) {
-                    Icon(PhosphorIcons.Regular.MagnifyingGlassPlus, contentDescription = "Zoom In")
+                    Icon(PhosphorIcons.Regular.MagnifyingGlassPlus, contentDescription = stringResource(Res.string.cd_zoom_in))
                 }
 
                 SmallFloatingActionButton(
                     onClick = { scale = (scale - 0.2f).coerceAtLeast(0.5f) },
                     containerColor = MaterialTheme.colorScheme.secondaryContainer
                 ) {
-                    Icon(PhosphorIcons.Regular.MagnifyingGlassMinus, contentDescription = "Zoom Out")
+                    Icon(PhosphorIcons.Regular.MagnifyingGlassMinus, contentDescription = stringResource(Res.string.cd_zoom_out))
                 }
 
                 FloatingActionButton(
@@ -124,7 +131,7 @@ fun DependencyGraphScreen(
                 ) {
                     Icon(
                         PhosphorIcons.Regular.Crosshair,
-                        contentDescription = "Reset View"
+                        contentDescription = stringResource(Res.string.cd_reset_view)
                     )
                 }
             }

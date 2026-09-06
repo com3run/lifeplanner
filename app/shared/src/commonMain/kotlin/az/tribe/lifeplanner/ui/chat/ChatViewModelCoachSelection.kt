@@ -1,6 +1,6 @@
 package az.tribe.lifeplanner.ui.chat
 
-import az.tribe.lifeplanner.data.repository.ChatRepositoryImpl
+import az.tribe.lifeplanner.data.repository.SqlDelightChatRepository
 import az.tribe.lifeplanner.domain.model.CoachGroup
 import az.tribe.lifeplanner.domain.model.CoachPersona
 import az.tribe.lifeplanner.domain.model.CustomCoach
@@ -99,7 +99,7 @@ fun ChatViewModel.selectCustomCoach(customCoach: CustomCoach) {
     viewModelScope.launch {
         _uiState.value = _uiState.value.copy(isLoading = true)
         try {
-            val coachId = ChatRepositoryImpl.makeCustomCoachId(customCoach.id)
+            val coachId = SqlDelightChatRepository.makeCustomCoachId(customCoach.id)
             val session = chatRepository.getOrCreateSessionForCoach(coachId)
             val messages = chatRepository.getMessages(session.id)
             val isNewSession = messages.isEmpty()
@@ -141,7 +141,7 @@ fun ChatViewModel.selectCoachGroup(coachGroup: CoachGroup) {
     viewModelScope.launch {
         _uiState.value = _uiState.value.copy(isLoading = true)
         try {
-            val groupId = ChatRepositoryImpl.makeGroupId(coachGroup.id)
+            val groupId = SqlDelightChatRepository.makeGroupId(coachGroup.id)
             val session = chatRepository.getOrCreateSessionForCoach(groupId)
             val messages = chatRepository.getMessages(session.id)
 

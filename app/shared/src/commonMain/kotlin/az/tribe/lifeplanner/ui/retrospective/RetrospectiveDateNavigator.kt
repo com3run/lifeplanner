@@ -35,6 +35,10 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlinx.datetime.toLocalDateTime
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_next_day
+import leanlifeplanner.app.shared.generated.resources.cd_previous_day
 
 @Composable
 internal fun DateNavigator(
@@ -72,7 +76,7 @@ internal fun DateNavigator(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             IconButton(onClick = onPrevious) {
-                Icon(PhosphorIcons.Regular.CaretLeft, contentDescription = "Previous day")
+                Icon(PhosphorIcons.Regular.CaretLeft, contentDescription = stringResource(Res.string.cd_previous_day))
             }
 
             Surface(
@@ -126,7 +130,7 @@ internal fun DateNavigator(
             ) {
                 Icon(
                     PhosphorIcons.Regular.CaretRight,
-                    contentDescription = "Next day",
+                    contentDescription = stringResource(Res.string.cd_next_day),
                     tint = if (!isToday)
                         MaterialTheme.colorScheme.onSurface
                     else

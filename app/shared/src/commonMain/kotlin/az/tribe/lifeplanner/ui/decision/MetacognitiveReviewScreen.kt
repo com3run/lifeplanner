@@ -22,7 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -34,6 +34,9 @@ import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.ArrowLeft
 import org.koin.compose.viewmodel.koinViewModel
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_back
 
 /**
  * Pillar 5 (P5.4), metacognitive review. Surfaces logged Decisions and asks the user to grade
@@ -46,7 +49,7 @@ fun MetacognitiveReviewScreen(
     onBackClick: () -> Unit,
     viewModel: MetacognitiveReviewViewModel = koinViewModel(),
 ) {
-    val decisions by viewModel.decisions.collectAsState()
+    val decisions by viewModel.decisions.collectAsStateWithLifecycle()
 
     Scaffold(
         containerColor = MaterialTheme.modernColors.background,
@@ -55,7 +58,7 @@ fun MetacognitiveReviewScreen(
                 title = { Text("Review Decisions", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = "Back", tint = MaterialTheme.modernColors.textPrimary)
+                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = stringResource(Res.string.cd_back), tint = MaterialTheme.modernColors.textPrimary)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

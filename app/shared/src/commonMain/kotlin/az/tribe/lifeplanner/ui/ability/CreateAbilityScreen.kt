@@ -22,6 +22,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.koin.compose.viewmodel.koinViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 private val emojiOptions = listOf(
     "⚡", "🧠", "🎯", "💪", "🗣️", "🎨", "📚", "🧘", "🏃", "💡",
@@ -36,7 +37,7 @@ fun CreateAbilityScreen(
     viewModel: AbilityViewModel = koinViewModel()
 ) {
     var selectedEmoji by remember { mutableStateOf("⚡") }
-    val lastCreatedId by viewModel.lastCreatedId.collectAsState()
+    val lastCreatedId by viewModel.lastCreatedId.collectAsStateWithLifecycle()
 
     // Navigate to detail as soon as ability is persisted
     LaunchedEffect(lastCreatedId) {

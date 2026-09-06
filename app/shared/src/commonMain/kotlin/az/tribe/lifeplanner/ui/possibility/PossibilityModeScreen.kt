@@ -24,7 +24,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -50,6 +50,9 @@ import com.adamglin.phosphoricons.regular.Plus
 import com.adamglin.phosphoricons.regular.Scales
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_back
 
 /**
  * Pillar 6 — Possibility Mode. The app's one divergent surface: when a goal is stuck, widen the
@@ -66,12 +69,12 @@ fun PossibilityModeScreen(
     onTalkToCoach: (String, String) -> Unit,
     viewModel: PossibilityModeViewModel = koinViewModel { parametersOf(goalId) },
 ) {
-    val goal by viewModel.goal.collectAsState()
-    val possibilities by viewModel.possibilities.collectAsState()
-    val selectedIds by viewModel.selectedIds.collectAsState()
-    val isEnhancing by viewModel.isEnhancing.collectAsState()
-    val error by viewModel.error.collectAsState()
-    val nav by viewModel.nav.collectAsState()
+    val goal by viewModel.goal.collectAsStateWithLifecycle()
+    val possibilities by viewModel.possibilities.collectAsStateWithLifecycle()
+    val selectedIds by viewModel.selectedIds.collectAsStateWithLifecycle()
+    val isEnhancing by viewModel.isEnhancing.collectAsStateWithLifecycle()
+    val error by viewModel.error.collectAsStateWithLifecycle()
+    val nav by viewModel.nav.collectAsStateWithLifecycle()
     val c = MaterialTheme.modernColors
 
     // Actions move the user somewhere real instead of just flashing a toast.
@@ -95,7 +98,7 @@ fun PossibilityModeScreen(
                 title = { Text("Possibility Mode", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = "Back", tint = c.textPrimary)
+                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = stringResource(Res.string.cd_back), tint = c.textPrimary)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = c.background, titleContentColor = c.textPrimary),

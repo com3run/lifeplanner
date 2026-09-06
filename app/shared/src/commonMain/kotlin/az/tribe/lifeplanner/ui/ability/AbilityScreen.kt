@@ -12,7 +12,7 @@ import com.adamglin.phosphoricons.regular.Lightning
 import com.adamglin.phosphoricons.regular.Plus
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,6 +26,8 @@ import az.tribe.lifeplanner.ui.theme.LifePlannerDesign
 import leanlifeplanner.app.shared.generated.resources.Res
 import leanlifeplanner.app.shared.generated.resources.illus_empty_box
 import org.koin.compose.viewmodel.koinViewModel
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_create_ability
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,7 +36,7 @@ fun AbilityScreen(
     onCreateAbility: () -> Unit,
     viewModel: AbilityViewModel = koinViewModel()
 ) {
-    val abilities by viewModel.abilities.collectAsState()
+    val abilities by viewModel.abilities.collectAsStateWithLifecycle()
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -58,7 +60,7 @@ fun AbilityScreen(
                     onClick = onCreateAbility,
                     containerColor = MaterialTheme.colorScheme.primary
                 ) {
-                    Icon(PhosphorIcons.Regular.Plus, contentDescription = "Create Ability")
+                    Icon(PhosphorIcons.Regular.Plus, contentDescription = stringResource(Res.string.cd_create_ability))
                 }
             }
         }

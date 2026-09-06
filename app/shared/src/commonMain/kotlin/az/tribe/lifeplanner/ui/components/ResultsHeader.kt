@@ -20,6 +20,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_add_all
+import leanlifeplanner.app.shared.generated.resources.cd_go_home
 
 @Composable
 fun ResultsHeader(
@@ -66,7 +70,7 @@ fun ResultsHeader(
                 ) {
                     Icon(
                         imageVector = PhosphorIcons.Regular.Plus,
-                        contentDescription = "Add All"
+                        contentDescription = stringResource(Res.string.cd_add_all)
                     )
                     Text(
                         text = "Add All Goals",
@@ -81,7 +85,7 @@ fun ResultsHeader(
                 ) {
                     Icon(
                         imageVector = PhosphorIcons.Regular.House,
-                        contentDescription = "Go Home"
+                        contentDescription = stringResource(Res.string.cd_go_home)
                     )
                     Text(
                         text = "Go Home",

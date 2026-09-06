@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import az.tribe.lifeplanner.data.analytics.Analytics
 import az.tribe.lifeplanner.data.network.AiProxyService
-import az.tribe.lifeplanner.data.repository.ChatRepositoryImpl
+import az.tribe.lifeplanner.data.repository.SqlDelightChatRepository
 import az.tribe.lifeplanner.domain.model.ChatMessage
 import az.tribe.lifeplanner.domain.model.ChatSession
 import az.tribe.lifeplanner.domain.model.CoachGroup
@@ -203,15 +203,15 @@ class ChatViewModel(
                 coachId == CoachPersona.COUNCIL_ID -> {
                     selectCouncil()
                 }
-                ChatRepositoryImpl.isCustomCoachId(coachId) -> {
-                    val customId = ChatRepositoryImpl.extractCustomCoachId(coachId)
+                SqlDelightChatRepository.isCustomCoachId(coachId) -> {
+                    val customId = SqlDelightChatRepository.extractCustomCoachId(coachId)
                     val customCoach = coachRepository?.getCustomCoachById(customId)
                     if (customCoach != null) {
                         selectCustomCoach(customCoach)
                     }
                 }
-                ChatRepositoryImpl.isGroupId(coachId) -> {
-                    val groupId = ChatRepositoryImpl.extractGroupId(coachId)
+                SqlDelightChatRepository.isGroupId(coachId) -> {
+                    val groupId = SqlDelightChatRepository.extractGroupId(coachId)
                     val group = coachRepository?.getCoachGroupById(groupId)
                     if (group != null) {
                         selectCoachGroup(group)

@@ -55,6 +55,9 @@ import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.Flag
 import com.adamglin.phosphoricons.regular.Repeat
 import com.adamglin.phosphoricons.regular.Trash
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_delete
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -133,7 +136,7 @@ private fun JournalSwipeBackground(dismissDirection: SwipeToDismissBoxValue) {
         contentAlignment = Alignment.CenterEnd
     ) {
         if (dismissDirection == SwipeToDismissBoxValue.EndToStart) {
-            Icon(PhosphorIcons.Regular.Trash, contentDescription = "Delete", tint = Color.White, modifier = Modifier.size(28.dp).scale(scale))
+            Icon(PhosphorIcons.Regular.Trash, contentDescription = stringResource(Res.string.cd_delete), tint = Color.White, modifier = Modifier.size(28.dp).scale(scale))
         }
     }
 }

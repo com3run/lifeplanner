@@ -1,10 +1,10 @@
 package az.tribe.lifeplanner.ui.goal
 
 import app.cash.turbine.test
-import az.tribe.lifeplanner.data.model.DataError
+import az.tribe.lifeplanner.domain.model.DataError
 import az.tribe.lifeplanner.data.model.GoalTypeQuestions
 import az.tribe.lifeplanner.data.model.Question
-import az.tribe.lifeplanner.data.model.Result
+import az.tribe.lifeplanner.domain.model.Result
 import az.tribe.lifeplanner.data.model.UserQuestionnaireAnswers
 import az.tribe.lifeplanner.domain.enum.GoalStatus
 import az.tribe.lifeplanner.domain.model.Goal
@@ -609,7 +609,7 @@ class GoalViewModelTest {
 
     @Test
     fun `generateQuestionnaire sets error and reverts to INPUT on failure`() = runTest(testDispatcher) {
-        fakeGeminiRepository.questionnaireResult = Result.Error(DataError.Remote.SERVER_ERROR)
+        fakeGeminiRepository.questionnaireResult = Result.Error(DataError.Network.SERVER_ERROR)
 
         viewModel.generateQuestionnaire("prompt")
         testDispatcher.scheduler.advanceUntilIdle()
@@ -741,7 +741,7 @@ class GoalViewModelTest {
 
     @Test
     fun `generateGoalsDirectly sets error on failure`() = runTest(testDispatcher) {
-        fakeGeminiRepository.directGoalsResult = Result.Error(DataError.Remote.SERVER_ERROR)
+        fakeGeminiRepository.directGoalsResult = Result.Error(DataError.Network.SERVER_ERROR)
 
         viewModel.generateGoalsDirectly("prompt")
         testDispatcher.scheduler.advanceUntilIdle()
@@ -806,11 +806,11 @@ class GoalViewModelTest {
 // ─── Fake GeminiRepository ──────────────────────────────────────────────────
 
 class FakeGeminiRepository : GeminiRepository {
-    var questionnaireResult: Result<List<GoalTypeQuestions>, DataError.Remote> =
+    var questionnaireResult: Result<List<GoalTypeQuestions>, DataError.Network> =
         Result.Success(emptyList())
-    var personalizedGoalsResult: Result<List<Goal>, DataError.Remote> =
+    var personalizedGoalsResult: Result<List<Goal>, DataError.Network> =
         Result.Success(emptyList())
-    var directGoalsResult: Result<List<Goal>, DataError.Remote> =
+    var directGoalsResult: Result<List<Goal>, DataError.Network> =
         Result.Success(emptyList())
 
     override suspend fun generateQuestionnaire(userPrompt: String) = questionnaireResult

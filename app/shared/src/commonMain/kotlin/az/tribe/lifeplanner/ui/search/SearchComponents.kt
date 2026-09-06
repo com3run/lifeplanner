@@ -53,6 +53,10 @@ import com.adamglin.phosphoricons.regular.Circle
 import com.adamglin.phosphoricons.regular.Lightbulb
 import com.adamglin.phosphoricons.regular.MagnifyingGlass
 import com.adamglin.phosphoricons.regular.X
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_back
+import leanlifeplanner.app.shared.generated.resources.cd_clear
 
 // ── Filter chips ──────────────────────────────────────────────────────────────
 
@@ -135,7 +139,7 @@ internal fun SearchBar(
             IconButton(onClick = onBack) {
                 Icon(
                     PhosphorIcons.Regular.ArrowLeft,
-                    contentDescription = "Back",
+                    contentDescription = stringResource(Res.string.cd_back),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -170,7 +174,7 @@ internal fun SearchBar(
                 IconButton(onClick = { onQueryChange("") }) {
                     Icon(
                         PhosphorIcons.Regular.X,
-                        contentDescription = "Clear",
+                        contentDescription = stringResource(Res.string.cd_clear),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(18.dp),
                     )

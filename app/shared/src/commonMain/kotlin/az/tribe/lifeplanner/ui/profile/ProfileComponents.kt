@@ -30,6 +30,11 @@ import com.adamglin.phosphoricons.Fill
 import com.adamglin.phosphoricons.fill.Lock
 import kotlin.time.Clock
 import kotlin.time.Instant
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_get_started
+import leanlifeplanner.app.shared.generated.resources.cd_manage_calendars
+import leanlifeplanner.app.shared.generated.resources.cd_sync
 
 // ── Section Header ──────────────────────────────────────────────────
 
@@ -108,7 +113,7 @@ internal fun SecureAccountCTABanner(onClick: () -> Unit) {
                 Text("Sign in or create an account to sync across devices", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.85f))
             }
             Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.2f)), contentAlignment = Alignment.Center) {
-                Icon(PhosphorIcons.Regular.CaretRight, contentDescription = "Get started", tint = Color.White, modifier = Modifier.size(20.dp))
+                Icon(PhosphorIcons.Regular.CaretRight, contentDescription = stringResource(Res.string.cd_get_started), tint = Color.White, modifier = Modifier.size(20.dp))
             }
         }
 
@@ -171,7 +176,7 @@ internal fun HealthConnectionCard(
             }
             when (permissionState) {
                 HealthPermissionState.GRANTED -> IconButton(onClick = onSync) {
-                    Icon(PhosphorIcons.Regular.ArrowsClockwise, contentDescription = "Sync", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                    Icon(PhosphorIcons.Regular.ArrowsClockwise, contentDescription = stringResource(Res.string.cd_sync), tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                 }
                 HealthPermissionState.DENIED -> TextButton(onClick = onConnect) {
                     Text("Connect", style = MaterialTheme.typography.labelMedium)
@@ -244,7 +249,7 @@ internal fun CalendarIntegrationCard(
                 CalendarPermissionState.GRANTED -> {
                     Icon(
                         PhosphorIcons.Regular.CaretRight,
-                        contentDescription = "Manage calendars",
+                        contentDescription = stringResource(Res.string.cd_manage_calendars),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(18.dp)
                     )

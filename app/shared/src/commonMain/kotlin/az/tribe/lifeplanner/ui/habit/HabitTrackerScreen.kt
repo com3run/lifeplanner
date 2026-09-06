@@ -26,6 +26,10 @@ import com.adamglin.phosphoricons.regular.ArrowLeft
 import com.adamglin.phosphoricons.regular.Plus
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_back
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,14 +42,14 @@ fun HabitTrackerScreen(
     isFromBottomNav: Boolean = false,
     viewModel: HabitViewModel = koinViewModel(),
     journalViewModel: JournalViewModel = koinViewModel(),
-    goalViewModel: GoalViewModel = koinInject(),
+    goalViewModel: GoalViewModel = koinViewModel(),
     aiProxy: AiProxyService = koinInject()
 ) {
-    val habits by viewModel.habits.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
-    val error by viewModel.error.collectAsState()
-    val recentCheckIn by viewModel.recentCheckIn.collectAsState()
-    val goals by goalViewModel.goals.collectAsState()
+    val habits by viewModel.habits.collectAsStateWithLifecycle()
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    val error by viewModel.error.collectAsStateWithLifecycle()
+    val recentCheckIn by viewModel.recentCheckIn.collectAsStateWithLifecycle()
+    val goals by goalViewModel.goals.collectAsStateWithLifecycle()
 
     var habitToEdit by remember { mutableStateOf<Habit?>(null) }
     var showReflectionSheet by remember { mutableStateOf(false) }
@@ -135,7 +139,7 @@ fun HabitTrackerScreen(
                         IconButton(onClick = onNavigateBack) {
                             Icon(
                                 imageVector = PhosphorIcons.Regular.ArrowLeft,
-                                contentDescription = "Back"
+                                contentDescription = stringResource(Res.string.cd_back)
                             )
                         }
                     }

@@ -31,6 +31,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -73,13 +74,18 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_back
+import leanlifeplanner.app.shared.generated.resources.cd_more_options
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GoalDetailScreen(
     goalId: String,
     viewModel: GoalViewModel,
-    dependencyViewModel: GoalDependencyViewModel = koinInject(),
+    dependencyViewModel: GoalDependencyViewModel = koinViewModel(),
     journalRepository: JournalRepository = koinInject(),
     abilityRepository: AbilityRepository = koinInject(),
     habitRepository: az.tribe.lifeplanner.domain.repository.HabitRepository = koinInject(),
@@ -95,10 +101,10 @@ fun GoalDetailScreen(
     onExplorePossibilities: (String) -> Unit = {},
     onHabitClick: (String) -> Unit = {},
 ) {
-    val goals by viewModel.goals.collectAsState()
+    val goals by viewModel.goals.collectAsStateWithLifecycle()
     val goal = goals.find { it.id == goalId }
-    val dependencyUiState by dependencyViewModel.uiState.collectAsState()
-    val lifeValues by viewModel.lifeValues.collectAsState()
+    val dependencyUiState by dependencyViewModel.uiState.collectAsStateWithLifecycle()
+    val lifeValues by viewModel.lifeValues.collectAsStateWithLifecycle()
 
     var journalEntries by remember { mutableStateOf<List<JournalEntry>>(emptyList()) }
     var poweredByAbilities by remember { mutableStateOf<List<Ability>>(emptyList()) }
@@ -127,7 +133,7 @@ fun GoalDetailScreen(
     var showAddDependencySheet by remember { mutableStateOf(false) }
     var showOverflowMenu by remember { mutableStateOf(false) }
     var showValueSheet by remember { mutableStateOf(false) }
-    val promptCompleteGoalId by viewModel.promptCompleteGoal.collectAsState()
+    val promptCompleteGoalId by viewModel.promptCompleteGoal.collectAsStateWithLifecycle()
     LaunchedEffect(promptCompleteGoalId) {
         if (promptCompleteGoalId == goalId) {
             showAllMilestonesCompletedDialog = true
@@ -182,7 +188,7 @@ fun GoalDetailScreen(
                     IconButton(onClick = onBackClick) {
                         Icon(
                             PhosphorIcons.Regular.ArrowLeft,
-                            contentDescription = "Back",
+                            contentDescription = stringResource(Res.string.cd_back),
                             tint = barIconColor,
                         )
                     }
@@ -192,7 +198,7 @@ fun GoalDetailScreen(
                         IconButton(onClick = { showOverflowMenu = true }) {
                             Icon(
                                 PhosphorIcons.Regular.DotsThreeVertical,
-                                contentDescription = "More options",
+                                contentDescription = stringResource(Res.string.cd_more_options),
                                 tint = barIconColor,
                             )
                         }

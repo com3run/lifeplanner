@@ -17,6 +17,7 @@ import az.tribe.lifeplanner.data.analytics.Analytics
 import az.tribe.lifeplanner.ui.goal.GoalViewModel
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 enum class JournalWizardStep {
     MOOD, PROMPT, CONTEXT_GENERATE, REVIEW_SAVE
@@ -31,17 +32,17 @@ fun JournalCreationWizardScreen(
     /** Day this entry belongs to; null means today. */
     initialDate: kotlinx.datetime.LocalDate? = null,
     viewModel: JournalViewModel = koinViewModel(),
-    goalViewModel: GoalViewModel = koinInject(),
+    goalViewModel: GoalViewModel = koinViewModel(),
     habitViewModel: az.tribe.lifeplanner.ui.habit.HabitViewModel = koinViewModel(),
     aiProxy: AiProxyService = koinInject()
 ) {
-    val goals by goalViewModel.goals.collectAsState()
-    val habitsWithStatus by habitViewModel.habits.collectAsState()
+    val goals by goalViewModel.goals.collectAsStateWithLifecycle()
+    val habitsWithStatus by habitViewModel.habits.collectAsStateWithLifecycle()
     val habits = habitsWithStatus.map { it.habit }
     val haptic = rememberHapticManager()
     val coroutineScope = rememberCoroutineScope()
     val connectivityObserver: NetworkConnectivityObserver = koinInject()
-    val isConnected by connectivityObserver.isConnected.collectAsState()
+    val isConnected by connectivityObserver.isConnected.collectAsStateWithLifecycle()
     val isOffline = !isConnected
 
     // Track wizard start

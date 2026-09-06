@@ -47,6 +47,10 @@ import com.russhwolf.settings.Settings
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_back
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 /**
  * Everything that configures the app rather than describes the user: providers, integrations,
@@ -63,20 +67,20 @@ fun SettingsScreen(
     onNavigateToHealth: () -> Unit,
     onNavigateToCalendarSettings: () -> Unit,
     onResetOnboarding: () -> Unit,
-    authViewModel: AuthViewModel = koinInject(),
+    authViewModel: AuthViewModel = koinViewModel(),
     gamificationViewModel: GamificationViewModel = koinViewModel(),
     healthViewModel: HealthViewModel = koinViewModel(),
     calendarViewModel: CalendarViewModel = koinViewModel(),
 ) {
     val settings: Settings = koinInject()
     val themeController: ThemeController = koinInject()
-    val themeMode by themeController.mode.collectAsState()
-    val authState by authViewModel.authState.collectAsState()
-    val syncStatus by authViewModel.syncStatus.collectAsState()
-    val userProgress by gamificationViewModel.userProgress.collectAsState()
-    val healthPermissionState by healthViewModel.permissionState.collectAsState()
+    val themeMode by themeController.mode.collectAsStateWithLifecycle()
+    val authState by authViewModel.authState.collectAsStateWithLifecycle()
+    val syncStatus by authViewModel.syncStatus.collectAsStateWithLifecycle()
+    val userProgress by gamificationViewModel.userProgress.collectAsStateWithLifecycle()
+    val healthPermissionState by healthViewModel.permissionState.collectAsStateWithLifecycle()
     val calendarPermission = rememberCalendarPermission()
-    val deviceCalendars by calendarViewModel.calendars.collectAsState()
+    val deviceCalendars by calendarViewModel.calendars.collectAsStateWithLifecycle()
 
     var showAiProviderDialog by remember { mutableStateOf(false) }
     var showSignOutConfirm by remember { mutableStateOf(false) }
@@ -122,7 +126,7 @@ fun SettingsScreen(
                 title = { Text("Settings", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = "Back")
+                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = stringResource(Res.string.cd_back))
                     }
                 },
             )

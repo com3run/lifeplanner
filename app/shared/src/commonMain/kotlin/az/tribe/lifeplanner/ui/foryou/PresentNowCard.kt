@@ -36,6 +36,9 @@ import com.adamglin.phosphoricons.regular.Flag
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_mark_done
 
 private val LateRed = Color(0xFFE53935)
 
@@ -142,7 +145,7 @@ fun PresentNowCard(
 
                 act != null -> Icon(
                     imageVector = PhosphorIcons.Regular.Circle,
-                    contentDescription = "Mark done",
+                    contentDescription = stringResource(Res.string.cd_mark_done),
                     tint = accent,
                     modifier = Modifier
                         .clip(CircleShape)

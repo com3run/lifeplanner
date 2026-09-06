@@ -30,7 +30,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -51,6 +50,11 @@ import com.adamglin.phosphoricons.regular.CloudSlash
 import com.adamglin.phosphoricons.regular.PencilSimple
 import com.adamglin.phosphoricons.regular.User
 import com.adamglin.phosphoricons.regular.WarningCircle
+import leanlifeplanner.app.shared.generated.resources.Res
+import org.jetbrains.compose.resources.stringResource
+import leanlifeplanner.app.shared.generated.resources.cd_edit_name
+import leanlifeplanner.app.shared.generated.resources.cd_sync_status
+import androidx.compose.ui.graphics.graphicsLayer
 
 /** Amber for the XP line, the one "trophy" accent this header keeps. */
 private val LEVEL_GOLD_DEEP = Color(0xFFF5A623)
@@ -130,8 +134,8 @@ internal fun ProfilePaperHeader(
             Box(modifier = Modifier.clickable(enabled = isRetryable) { onRetrySync() }) {
                 Icon(
                     syncIcon,
-                    contentDescription = "Sync status",
-                    modifier = Modifier.size(20.dp).alpha(syncIconAlpha),
+                    contentDescription = stringResource(Res.string.cd_sync_status),
+                    modifier = Modifier.size(20.dp).graphicsLayer { this.alpha = syncIconAlpha },
                     tint = syncIconColor
                 )
             }
@@ -170,7 +174,7 @@ internal fun ProfilePaperHeader(
                     IconButton(onClick = onEditName, modifier = Modifier.size(28.dp)) {
                         Icon(
                             PhosphorIcons.Regular.PencilSimple,
-                            contentDescription = "Edit name",
+                            contentDescription = stringResource(Res.string.cd_edit_name),
                             modifier = Modifier.size(15.dp),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
