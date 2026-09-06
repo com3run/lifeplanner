@@ -70,7 +70,7 @@ npm run lint     # next lint
 The mobile app follows clean architecture with strict layer boundaries enforced by directory structure under `app/shared/src/commonMain/kotlin/az/tribe/lifeplanner/`:
 
 - `domain/` — pure Kotlin: `model/`, `enum/`, `repository/` (interfaces), `service/`. No platform or framework deps.
-- `data/` — `repository/*Impl.kt` implements domain interfaces; `mapper/` converts SQLDelight entities ↔ domain; `network/` Ktor + Supabase services (`AiProxyService`, `GeminiService`, `BuiltinCoachFetcher`, `PersonaApiFetcher`, `SystemPromptFetcher`); `sync/` bidirectional cloud sync; `auth/` (`SupabaseAuthService`); `behavior/`, `health/`, `review/`, `tutorial/`, `analytics/`.
+- `data/` — `repository/` implements domain interfaces, each class named for what it wraps (`SqlDelightGoalRepository`, `SupabaseStoryRepository`, `OpenMeteoWeatherRepository`), never with an `Impl` suffix; `mapper/` converts SQLDelight entities ↔ domain; `network/` Ktor + Supabase services (`AiProxyService`, `GeminiService`, `BuiltinCoachFetcher`, `PersonaApiFetcher`, `SystemPromptFetcher`); `sync/` bidirectional cloud sync; `auth/` (`SupabaseAuthService`); `behavior/`, `health/`, `review/`, `tutorial/`, `analytics/`.
 - `usecases/` — single-purpose actions (split into subdirs by feature: `habit/`, `journal/`, `ability/`, `health/`).
 - `ui/` — Compose screens, components, and ViewModels, organized by feature (`goal/`, `habit/`, `journal/`, `chat/`, `coach/`, `focus/`, `gamification/`, `balance/`, `dependency/`, `planner/`, `calendar/`, `retrospective/`, `screentime/`, `onboarding/`, `auth/`, `profile/`, `analytics/`, `reminder/`, `backup/`, `ability/`, `health/`, `objectives/`, `feedback/`, `search/`, `theme/`, `navigation/`, `utils/`, `viewmodel/`).
 - `di/` — Koin modules. `appModule.kt` is the central wiring file (large — repos, ViewModels, services). `networkModule.kt` and `supabaseModule.kt` are separate. `DatabaseDriverFactory`, `FileSharer`, `FilePicker` are `expect`/`actual` declarations.
@@ -112,7 +112,7 @@ When adding a new synced entity, follow an existing syncer (`GoalTableSyncer`, `
 
 ### AI
 
-There are **no client-side AI API keys**. All AI calls (Gemini, OpenAI, Grok) route through the `ai-proxy` Supabase Edge Function (`supabase/functions/ai-proxy`) via `AiProxyService`/`AiProxyServiceImpl` and `GeminiService`/`GeminiServiceImpl`. The user picks the provider in profile settings; the proxy decides which upstream to call. Built-in coach prompts and personas are seeded from `supabase/builtin_coaches.sql` and `supabase/system_prompts.sql` and fetched at runtime via `BuiltinCoachFetcher` / `SystemPromptFetcher`.
+There are **no client-side AI API keys**. All AI calls (Gemini, OpenAI, Grok) route through the `ai-proxy` Supabase Edge Function (`supabase/functions/ai-proxy`) via `AiProxyService`/`EdgeFunctionAiProxyService` and `GeminiService`/`ProxiedGeminiService`. The user picks the provider in profile settings; the proxy decides which upstream to call. Built-in coach prompts and personas are seeded from `supabase/builtin_coaches.sql` and `supabase/system_prompts.sql` and fetched at runtime via `BuiltinCoachFetcher` / `SystemPromptFetcher`.
 
 ### Entry points
 

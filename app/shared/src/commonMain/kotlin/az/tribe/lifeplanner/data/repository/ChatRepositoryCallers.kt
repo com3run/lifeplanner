@@ -28,10 +28,10 @@ private fun aiFailureText(e: Throwable, fallback: String): String =
     (e as? AiProviderException)?.userMessage ?: fallback
 
 // ============================================================================
-// AI CALL HELPERS (extension functions on ChatRepositoryImpl)
+// AI CALL HELPERS (extension functions on SqlDelightChatRepository)
 // ============================================================================
 
-internal suspend fun ChatRepositoryImpl.callGeminiChat(
+internal suspend fun SqlDelightChatRepository.callGeminiChat(
     userMessage: String,
     conversationHistory: List<ChatMessage>,
     userContext: UserContext,
@@ -223,7 +223,7 @@ IMPORTANT: If user explained what they want to achieve, include the goal/habit i
         val proxyMessages = buildAiProxyMessages(requestBody)
         val systemPrompt = extractSystemPrompt(requestBody)
         val responseSchema = extractResponseSchema(requestBody)
-        Logger.d("ChatRepositoryImpl") {
+        Logger.d("SqlDelightChatRepository") {
             "Calling aiProxy.chat: ${proxyMessages.size} messages, " +
                 "systemPrompt=${systemPrompt != null}, schema=${responseSchema != null}"
         }
@@ -232,10 +232,10 @@ IMPORTANT: If user explained what they want to achieve, include the goal/habit i
             systemPrompt = systemPrompt,
             responseSchema = responseSchema
         )
-        Logger.d("ChatRepositoryImpl") { "AI response received (${rawText.length} chars)" }
+        Logger.d("SqlDelightChatRepository") { "AI response received (${rawText.length} chars)" }
         parseCoachResponse(rawText, json)
     } catch (e: Exception) {
-        Logger.e("ChatRepositoryImpl") { "Coach chat request failed: ${e.message}\n${e.stackTraceToString()}" }
+        Logger.e("SqlDelightChatRepository") { "Coach chat request failed: ${e.message}\n${e.stackTraceToString()}" }
         CoachResponse(
             messages = listOf(aiFailureText(e, "I'm having trouble connecting right now. Could you try again in a moment?")),
             suggestions = emptyList()
@@ -246,7 +246,7 @@ IMPORTANT: If user explained what they want to achieve, include the goal/habit i
 /**
  * Custom coach chat: Uses user-defined personality and prompt
  */
-internal suspend fun ChatRepositoryImpl.callGeminiCustomCoachChat(
+internal suspend fun SqlDelightChatRepository.callGeminiCustomCoachChat(
     userMessage: String,
     conversationHistory: List<ChatMessage>,
     userContext: UserContext,
@@ -278,7 +278,7 @@ Respond as ${customCoach.name} in the required JSON format.
 /**
  * Custom group chat: Multiple coaches (custom and/or built-in) respond council-style
  */
-internal suspend fun ChatRepositoryImpl.callGeminiCustomGroupChat(
+internal suspend fun SqlDelightChatRepository.callGeminiCustomGroupChat(
     userMessage: String,
     conversationHistory: List<ChatMessage>,
     userContext: UserContext,
@@ -331,7 +331,7 @@ Have 2-4 relevant coaches respond in the required JSON format.
 /**
  * Make a Gemini API request and parse the response (for individual coach)
  */
-internal suspend fun ChatRepositoryImpl.makeGeminiRequest(prompt: String, coachName: String): CoachResponse {
+internal suspend fun SqlDelightChatRepository.makeGeminiRequest(prompt: String, coachName: String): CoachResponse {
     val requestBody = buildJsonObject {
         putJsonArray("contents") {
             addJsonObject {
@@ -355,7 +355,7 @@ internal suspend fun ChatRepositoryImpl.makeGeminiRequest(prompt: String, coachN
         )
         parseCoachResponse(rawText, json)
     } catch (e: Exception) {
-        Logger.e("ChatRepositoryImpl") { "Custom coach chat request failed: ${e.message}\n${e.stackTraceToString()}" }
+        Logger.e("SqlDelightChatRepository") { "Custom coach chat request failed: ${e.message}\n${e.stackTraceToString()}" }
         CoachResponse(
             messages = listOf(aiFailureText(e, "I'm having trouble connecting right now. Could you try again?")),
             suggestions = emptyList()
@@ -366,7 +366,7 @@ internal suspend fun ChatRepositoryImpl.makeGeminiRequest(prompt: String, coachN
 /**
  * Make a Gemini API request for council-style responses
  */
-internal suspend fun ChatRepositoryImpl.makeGeminiCouncilRequest(prompt: String, coachNames: List<String>): CoachResponse {
+internal suspend fun SqlDelightChatRepository.makeGeminiCouncilRequest(prompt: String, coachNames: List<String>): CoachResponse {
     val requestBody = buildJsonObject {
         putJsonArray("contents") {
             addJsonObject {
@@ -390,7 +390,7 @@ internal suspend fun ChatRepositoryImpl.makeGeminiCouncilRequest(prompt: String,
         )
         parseCouncilResponse(rawText, coachNames, json)
     } catch (e: Exception) {
-        Logger.e("ChatRepositoryImpl") { "Council chat request failed: ${e.message}\n${e.stackTraceToString()}" }
+        Logger.e("SqlDelightChatRepository") { "Council chat request failed: ${e.message}\n${e.stackTraceToString()}" }
         CoachResponse(
             messages = listOf(aiFailureText(e, "We're having trouble connecting right now. Please try again.")),
             suggestions = emptyList()
@@ -401,7 +401,7 @@ internal suspend fun ChatRepositoryImpl.makeGeminiCouncilRequest(prompt: String,
 /**
  * Council mode: Multiple coaches respond in a meeting-style discussion
  */
-internal suspend fun ChatRepositoryImpl.callGeminiCouncilChat(
+internal suspend fun SqlDelightChatRepository.callGeminiCouncilChat(
     userMessage: String,
     conversationHistory: List<ChatMessage>,
     userContext: UserContext
@@ -548,7 +548,7 @@ If user explained their goal clearly, one coach should propose a goal/habit sugg
         )
         parseCouncilResponse(rawText, json)
     } catch (e: Exception) {
-        Logger.e("ChatRepositoryImpl") { "Council meeting request failed: ${e.message}\n${e.stackTraceToString()}" }
+        Logger.e("SqlDelightChatRepository") { "Council meeting request failed: ${e.message}\n${e.stackTraceToString()}" }
         CoachResponse(
             messages = listOf(aiFailureText(e, "Luna: The council is having a moment. Let me help you directly!")),
             suggestions = emptyList()

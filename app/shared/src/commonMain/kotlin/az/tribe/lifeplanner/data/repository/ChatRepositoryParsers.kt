@@ -82,10 +82,10 @@ internal fun parseInlineSuggestions(rawText: String): Pair<String, List<CoachSug
 
             if (suggestion != null) {
                 suggestions.add(suggestion)
-                Logger.d("ChatRepositoryImpl") { "Parsed suggestion: $type - ${parts[0]}" }
+                Logger.d("SqlDelightChatRepository") { "Parsed suggestion: $type - ${parts[0]}" }
             }
         } catch (e: Exception) {
-            Logger.w("ChatRepositoryImpl") { "Failed to parse suggestion tag: ${match.value}, error: ${e.message}" }
+            Logger.w("SqlDelightChatRepository") { "Failed to parse suggestion tag: ${match.value}, error: ${e.message}" }
         }
     }
 
@@ -136,7 +136,7 @@ internal fun parseCouncilResponse(rawText: String, coachNames: List<String>?, js
 
         CoachResponse(messages = messages, suggestions = suggestions)
     } catch (e: Exception) {
-        Logger.e("ChatRepositoryImpl") { "Council response parsing failed: ${e.message}" }
+        Logger.e("SqlDelightChatRepository") { "Council response parsing failed: ${e.message}" }
         CoachResponse(
             messages = listOf("$fallbackCoach: Let me try again... What would you like help with?"),
             suggestions = emptyList()
@@ -168,7 +168,7 @@ internal fun parseCoachResponse(rawText: String, json: Json): CoachResponse {
 
         CoachResponse(messages = messages, suggestions = suggestions)
     } catch (e: Exception) {
-        Logger.e("ChatRepositoryImpl") { "Coach response parsing failed: ${e.message}" }
+        Logger.e("SqlDelightChatRepository") { "Coach response parsing failed: ${e.message}" }
         CoachResponse(
             messages = listOf("Let me try that again... What would you like help with?"),
             suggestions = emptyList()

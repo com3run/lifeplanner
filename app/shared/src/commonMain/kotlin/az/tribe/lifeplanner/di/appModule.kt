@@ -3,52 +3,52 @@ package az.tribe.lifeplanner.di
 import az.tribe.lifeplanner.data.auth.AuthService
 import az.tribe.lifeplanner.data.auth.SupabaseAuthService
 import az.tribe.lifeplanner.data.network.AiProxyService
-import az.tribe.lifeplanner.data.network.AiProxyServiceImpl
+import az.tribe.lifeplanner.data.network.EdgeFunctionAiProxyService
 import az.tribe.lifeplanner.data.network.AuthTokenProvider
 import az.tribe.lifeplanner.data.network.BuiltinCoachFetcher
 import az.tribe.lifeplanner.data.network.PersonaApiFetcher
 import az.tribe.lifeplanner.data.network.SystemPromptFetcher
 import az.tribe.lifeplanner.data.network.GeminiService
-import az.tribe.lifeplanner.data.network.GeminiServiceImpl
-import az.tribe.lifeplanner.data.repository.AiUsageRepositoryImpl
-import az.tribe.lifeplanner.data.repository.BackupRepositoryImpl
-import az.tribe.lifeplanner.data.repository.StoryRepositoryImpl
-import az.tribe.lifeplanner.data.repository.BeginnerObjectiveRepositoryImpl
-import az.tribe.lifeplanner.data.repository.ChatRepositoryImpl
-import az.tribe.lifeplanner.data.repository.CoachPostRepositoryImpl
-import az.tribe.lifeplanner.data.repository.CoachRepositoryImpl
+import az.tribe.lifeplanner.data.network.ProxiedGeminiService
+import az.tribe.lifeplanner.data.repository.SupabaseAiUsageRepository
+import az.tribe.lifeplanner.data.repository.SqlDelightBackupRepository
+import az.tribe.lifeplanner.data.repository.SupabaseStoryRepository
+import az.tribe.lifeplanner.data.repository.SqlDelightBeginnerObjectiveRepository
+import az.tribe.lifeplanner.data.repository.SqlDelightChatRepository
+import az.tribe.lifeplanner.data.repository.SupabaseCoachPostRepository
+import az.tribe.lifeplanner.data.repository.SqlDelightCoachRepository
 import az.tribe.lifeplanner.di.FileSharer
 import az.tribe.lifeplanner.di.createFileSharer
-import az.tribe.lifeplanner.data.repository.GamificationRepositoryImpl
-import az.tribe.lifeplanner.data.repository.GeminiRepositoryImp
-import az.tribe.lifeplanner.data.repository.GoalDependencyRepositoryImpl
-import az.tribe.lifeplanner.data.repository.GoalHistoryRepositoryImpl
-import az.tribe.lifeplanner.data.repository.FocusRepositoryImpl
-import az.tribe.lifeplanner.data.repository.RetrospectiveRepositoryImpl
-import az.tribe.lifeplanner.data.repository.GoalRepositoryImpl
-import az.tribe.lifeplanner.data.repository.KnowledgeRepositoryImpl
-import az.tribe.lifeplanner.data.repository.WheelRepositoryImpl
+import az.tribe.lifeplanner.data.repository.SqlDelightGamificationRepository
+import az.tribe.lifeplanner.data.repository.ProxiedGeminiRepository
+import az.tribe.lifeplanner.data.repository.SqlDelightGoalDependencyRepository
+import az.tribe.lifeplanner.data.repository.SqlDelightGoalHistoryRepository
+import az.tribe.lifeplanner.data.repository.SqlDelightFocusRepository
+import az.tribe.lifeplanner.data.repository.SqlDelightRetrospectiveRepository
+import az.tribe.lifeplanner.data.repository.SqlDelightGoalRepository
+import az.tribe.lifeplanner.data.repository.SqlDelightKnowledgeRepository
+import az.tribe.lifeplanner.data.repository.PredictiveWheelRepository
 import az.tribe.lifeplanner.ui.wheel.WheelViewModel
 import kotlinx.coroutines.flow.first
-import az.tribe.lifeplanner.data.repository.LifeValueRepositoryImpl
-import az.tribe.lifeplanner.data.repository.DecisionRepositoryImpl
-import az.tribe.lifeplanner.data.repository.DecisionProfileRepositoryImpl
-import az.tribe.lifeplanner.data.repository.IdentityStatementRepositoryImpl
-import az.tribe.lifeplanner.data.repository.AbilityRepositoryImpl
+import az.tribe.lifeplanner.data.repository.SqlDelightLifeValueRepository
+import az.tribe.lifeplanner.data.repository.SqlDelightDecisionRepository
+import az.tribe.lifeplanner.data.repository.SqlDelightDecisionProfileRepository
+import az.tribe.lifeplanner.data.repository.SqlDelightIdentityStatementRepository
+import az.tribe.lifeplanner.data.repository.SqlDelightAbilityRepository
 import az.tribe.lifeplanner.data.repository.CoachOrchestrator
-import az.tribe.lifeplanner.data.repository.UserSituationRepositoryImpl
-import az.tribe.lifeplanner.data.repository.HealthRepositoryImpl
+import az.tribe.lifeplanner.data.repository.SqlDelightUserSituationRepository
+import az.tribe.lifeplanner.data.repository.SqlDelightHealthRepository
 import az.tribe.lifeplanner.data.behavior.BehaviorTracker
-import az.tribe.lifeplanner.data.repository.BehaviorRepositoryImpl
+import az.tribe.lifeplanner.data.repository.SqlDelightBehaviorRepository
 import az.tribe.lifeplanner.domain.repository.BehaviorRepository
 import az.tribe.lifeplanner.ui.screentime.ScreenTimeInsightViewModel
-import az.tribe.lifeplanner.data.repository.HabitRepositoryImpl
-import az.tribe.lifeplanner.data.repository.JournalRepositoryImpl
-import az.tribe.lifeplanner.data.repository.LifeBalanceRepositoryImpl
-import az.tribe.lifeplanner.data.repository.ReminderRepositoryImpl
+import az.tribe.lifeplanner.data.repository.SqlDelightHabitRepository
+import az.tribe.lifeplanner.data.repository.SqlDelightJournalRepository
+import az.tribe.lifeplanner.data.repository.DerivedLifeBalanceRepository
+import az.tribe.lifeplanner.data.repository.SqlDelightReminderRepository
 import az.tribe.lifeplanner.data.review.ReviewMessageBuilder
 import az.tribe.lifeplanner.domain.service.SmartReminderManager
-import az.tribe.lifeplanner.data.repository.UserRepositoryImpl
+import az.tribe.lifeplanner.data.repository.SqlDelightUserRepository
 import az.tribe.lifeplanner.domain.repository.AiUsageRepository
 import az.tribe.lifeplanner.domain.repository.BackupRepository
 import az.tribe.lifeplanner.domain.repository.StoryRepository
@@ -174,7 +174,7 @@ val appModule = module {
     single { az.tribe.lifeplanner.location.LocationProvider() }
     single { az.tribe.lifeplanner.data.trajectory.BalancePastReconstructor(get()) }
     single<az.tribe.lifeplanner.domain.repository.WeatherRepository> {
-        az.tribe.lifeplanner.data.network.WeatherRepositoryImpl(get(), get())
+        az.tribe.lifeplanner.data.network.OpenMeteoWeatherRepository(get(), get())
     }
     single { SharedDatabase(get()) }
     single { Settings() }
@@ -276,21 +276,21 @@ val appModule = module {
     }
 
     // AI Proxy Service
-    single<AiProxyService> { AiProxyServiceImpl(get(), get(), get()) }
+    single<AiProxyService> { EdgeFunctionAiProxyService(get(), get(), get()) }
     single { BuiltinCoachFetcher(get()) }
     single { PersonaApiFetcher(get(), get()) }
     single { SystemPromptFetcher(get()) }
     single { az.tribe.lifeplanner.data.network.KnowledgeFetcher(get(), get()) }
 
     // Repositories
-    single<GeminiService> { GeminiServiceImpl(get<AiProxyService>()) }
-    single<GeminiRepository> { GeminiRepositoryImp(get()) }
+    single<GeminiService> { ProxiedGeminiService(get<AiProxyService>()) }
+    single<GeminiRepository> { ProxiedGeminiRepository(get()) }
 
-    single<GoalRepository> { GoalRepositoryImpl(get(), get(), get()) }
-    single<LifeValueRepository> { LifeValueRepositoryImpl(get(), get()) }
-    single<KnowledgeRepository> { KnowledgeRepositoryImpl(get(), get()) }
+    single<GoalRepository> { SqlDelightGoalRepository(get(), get(), get()) }
+    single<LifeValueRepository> { SqlDelightLifeValueRepository(get(), get()) }
+    single<KnowledgeRepository> { SqlDelightKnowledgeRepository(get(), get()) }
     single<WheelRepository> {
-        WheelRepositoryImpl(
+        PredictiveWheelRepository(
             db = get(),
             goalRepository = get(),
             habitRepository = get(),
@@ -303,17 +303,17 @@ val appModule = module {
             syncManager = get(),
         )
     }
-    single<DecisionRepository> { DecisionRepositoryImpl(get(), get()) }
-    single<IdentityStatementRepository> { IdentityStatementRepositoryImpl(get(), get()) }
-    single<DecisionProfileRepository> { DecisionProfileRepositoryImpl(get(), get()) }
-    single<GoalHistoryRepository> { GoalHistoryRepositoryImpl(get(), get()) }
-    single<GamificationRepository> { GamificationRepositoryImpl(get(), get(), get(), get()) }
-    single<UserRepository> { UserRepositoryImpl(get(), get()) }
-    single<HabitRepository> { HabitRepositoryImpl(get(), get(), get()) }
-    single<JournalRepository> { JournalRepositoryImpl(get(), get()) }
-    single<GoalDependencyRepository> { GoalDependencyRepositoryImpl(get(), get()) }
-    single<CoachRepository> { CoachRepositoryImpl(get(), get()) }
-    single<CoachPostRepository> { CoachPostRepositoryImpl(get()) }
+    single<DecisionRepository> { SqlDelightDecisionRepository(get(), get()) }
+    single<IdentityStatementRepository> { SqlDelightIdentityStatementRepository(get(), get()) }
+    single<DecisionProfileRepository> { SqlDelightDecisionProfileRepository(get(), get()) }
+    single<GoalHistoryRepository> { SqlDelightGoalHistoryRepository(get(), get()) }
+    single<GamificationRepository> { SqlDelightGamificationRepository(get(), get(), get(), get()) }
+    single<UserRepository> { SqlDelightUserRepository(get(), get()) }
+    single<HabitRepository> { SqlDelightHabitRepository(get(), get(), get()) }
+    single<JournalRepository> { SqlDelightJournalRepository(get(), get()) }
+    single<GoalDependencyRepository> { SqlDelightGoalDependencyRepository(get(), get()) }
+    single<CoachRepository> { SqlDelightCoachRepository(get(), get()) }
+    single<CoachPostRepository> { SupabaseCoachPostRepository(get()) }
     single { az.tribe.lifeplanner.domain.service.ChoicePointDetector() }
     single { az.tribe.lifeplanner.domain.service.CausalInsightEngine() }
     single { az.tribe.lifeplanner.domain.service.CausalInsightProvider(get(), get(), get(), get(), get()) }
@@ -321,25 +321,25 @@ val appModule = module {
     single { az.tribe.lifeplanner.domain.service.CalibrationProvider(get(), get(), get()) }
     single<az.tribe.lifeplanner.core.PremiumGate> { az.tribe.lifeplanner.core.DefaultPremiumGate() }
     single { CoachOrchestrator() }
-    single<ChatRepository> { ChatRepositoryImpl(get(), get<AiProxyService>(), get(), get(), get(), get()) }
+    single<ChatRepository> { SqlDelightChatRepository(get(), get<AiProxyService>(), get(), get(), get(), get()) }
     single { ReviewMessageBuilder(get()) }
-    single<ReminderRepository> { ReminderRepositoryImpl(get(), get(), get()) }
+    single<ReminderRepository> { SqlDelightReminderRepository(get(), get(), get()) }
     single { SmartReminderManager(get()) }
     single { az.tribe.lifeplanner.domain.service.PossibilityEngine() }
     single { az.tribe.lifeplanner.domain.service.PossibilityContextProvider(get(), get(), get(), get()) }
-    single<FocusRepository> { FocusRepositoryImpl(get(), get()) }
-    single<AiUsageRepository> { AiUsageRepositoryImpl(get()) }
-    single<RetrospectiveRepository> { RetrospectiveRepositoryImpl(get()) }
-    single<BeginnerObjectiveRepository> { BeginnerObjectiveRepositoryImpl(get(), get()) }
-    single<AbilityRepository> { AbilityRepositoryImpl(get()) }
-    single<UserSituationRepository> { UserSituationRepositoryImpl(get(), get()) }
+    single<FocusRepository> { SqlDelightFocusRepository(get(), get()) }
+    single<AiUsageRepository> { SupabaseAiUsageRepository(get()) }
+    single<RetrospectiveRepository> { SqlDelightRetrospectiveRepository(get()) }
+    single<BeginnerObjectiveRepository> { SqlDelightBeginnerObjectiveRepository(get(), get()) }
+    single<AbilityRepository> { SqlDelightAbilityRepository(get()) }
+    single<UserSituationRepository> { SqlDelightUserSituationRepository(get(), get()) }
     single { HealthDataManager() }
-    single<HealthRepository> { HealthRepositoryImpl(get(), get(), get()) }
+    single<HealthRepository> { SqlDelightHealthRepository(get(), get(), get()) }
     single { CalendarReader() }
     single { az.tribe.lifeplanner.data.calendar.CalendarPreferences(get()) }
 
     // Behavior tracking
-    single<BehaviorRepository> { BehaviorRepositoryImpl(get()) }
+    single<BehaviorRepository> { SqlDelightBehaviorRepository(get()) }
     single { BehaviorTracker(get()) }
 
     // Existing Use Cases
@@ -416,13 +416,13 @@ val appModule = module {
     factory { GetJournalEntriesByGoalUseCase(get()) }
 
     // Life Balance Repository
-    single<LifeBalanceRepository> { LifeBalanceRepositoryImpl(get(), get(), get<AiProxyService>(), get()) }
+    single<LifeBalanceRepository> { DerivedLifeBalanceRepository(get(), get(), get<AiProxyService>(), get()) }
 
     // Backup Repository
-    single<BackupRepository> { BackupRepositoryImpl(get(), get()) }
+    single<BackupRepository> { SqlDelightBackupRepository(get(), get()) }
 
     // Story Repository
-    single<StoryRepository> { StoryRepositoryImpl(get()) }
+    single<StoryRepository> { SupabaseStoryRepository(get()) }
 
     // ViewModels
     viewModelOf(::WheelViewModel)
